@@ -1,0 +1,124 @@
+PREFIX rollo: <https://linked-rolls.org/roll-o/>
+PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+PREFIX crmdig: <http://www.ics.forth.gr/isl/CRMdig/>
+PREFIX frbroo: <http://iflastandards.info/ns/fr/frbr/frbroo/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX midild: <http://purl.org/midi-ld/midi#>
+
+<EventSpan> {
+  a rollo:EventSpan
+    // rdfs:comment "Represents a measured region on the piano roll."  ;
+  crm:P91_has_unit xsd:string;
+  rollo:from xsd:decimal;
+  rollo:to xsd:decimal;
+}
+
+<Note> {
+  a rollo:Note ;
+  crmdig:L43_annotates IRI ?
+    // rdfs:comment  "IIIF region in string form." ;
+  rollo:has_pitch xsd:decimal
+    // rdfs:comment  "Pitch information as a MIDI key." ;
+  crm:P43_has_dimension @<EventSpan> ;
+}
+
+<Expression> {
+  a rollo:Expression ;
+  crmdig:L43_annotates IRI ?
+    // rdfs:comment  "IIIF region in string form." ;
+  rollo:has_scope [ rollo:bass rollo:treble ]? ;
+  crm:P2_has_type [
+    rollo:SustainPedalOn
+    rollo:SustainPedalOff
+    rollo:MezzoforteOff
+    rollo:MezzoforteOn
+    rollo:SlowCrescendoOn
+    rollo:SlowCrescendoOff
+    rollo:ForzandoOn
+    rollo:ForzandoOff ] ;
+  crm:P43_has_dimension @<EventSpan> ;
+}
+
+<MeasurementEvent> {
+  a [ crmdig:D11_Digital_Measurement_Event ]
+    // rdfs:comment "Represents a measurement event."  ;
+  crmdig:L20_has_created @<Note>* ;
+  crmdig:L20_has_created @<Expression>* ;
+  crm:P39_measured @<PhysicalRollCopy> ;
+}
+
+<PhysicalRollCopy> {
+  a [ frbroo:F5_Item ] ;
+  crm:P2_has_type xsd:string ;
+}
+
+<TimeSpan> {
+  a [ crm:E52_Time-Span ];
+  crm:P82_at_some_time_within xsd:string ;
+}
+
+<ConditionState> {
+  a [ crm:E5_Condition_State ] ;
+  crm:P3_has_note xsd:string ;
+  crm:P4_has_time-span @<TimeSpan> ;
+  crm:P44i_is_condition_of @<PhysicalRollCopy> ;
+}
+
+<ConditionAssessment> {
+  a [ crm:E14_Condition_Assessment ] ;
+  crm:P14_carried_out_by IRI ;
+  crm:P4_has_time-span @<TimeSpan> ;
+  crm:P35_has_identified @<ConditionState> ;
+}
+
+<CollatedEvent> {
+  a rollo:CollatedEvent ;
+  rollo:was_collated_from @<Note>* ;
+  rollo:was_collated_from @<Expression>* ;
+  rollo:is_non_musical xsd:boolean ?;
+}
+
+<RelativePlacement> {
+  a rollo:RelativePlacement ; 
+  rollo:placed @<CollatedEvent> ;
+  rollo:relative_to @<CollatedEvent>+ ;
+  rollo:with_placement_type [
+    crm:P176_starts_before_the_start_of
+    crm:P174_starts_before_the_end_of ] ;
+}
+
+<TempoAdjustment> {
+  a rollo:TempoAdjustment ;
+  rollo:adjusts frbroo:F5_Item ;
+  rollo:starts_with xsd:decimal ;
+  rollo:ends_with xsd:decimal ;
+}
+
+<NoteOnEvent> {
+  a [ midild:NoteOnEvent rollo:EmulationEvent ]? ;
+  rollo:performs @<CollatedEvent> ;
+  midild:pitch xsd:decimal ;
+  midild:velocity xsd:decimal ;
+  rollo:at xsd:decimal ;
+}
+
+<NoteOffEvent> {
+  a [ midild:NoteOffEvent rollo:EmulationEvent ]? ;
+  rollo:performs @<CollatedEvent> ;
+  midild:pitch xsd:decimal ;
+  midild:velocity xsd:decimal ;
+  rollo:at xsd:short ;
+}
+
+<PedalOnEvent> {
+  a [ midild:NoteOffEvent rollo:EmulationEvent ]? ;
+  rollo:performs @<CollatedEvent> ;
+  rollo:at xsd:short ;
+}
+
+<PedalOffEvent> {
+  a [ midild:NoteOffEvent rollo:EmulationEvent ]? ;
+  rollo:performs @<CollatedEvent> ;
+  rollo:at xsd:short ;
+}
