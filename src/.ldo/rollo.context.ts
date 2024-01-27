@@ -8,15 +8,8 @@ import { ContextDefinition } from "jsonld";
 export const rolloContext: ContextDefinition = {
   type: {
     "@id": "@type",
-    "@type": [
-      "https://linked-rolls.org/roll-o/EventSpan",
-      "https://linked-rolls.org/roll-o/Note",
-      "https://linked-rolls.org/roll-o/Expression",
-      "https://linked-rolls.org/roll-o/CollatedEvent",
-      "https://linked-rolls.org/roll-o/RelativePlacement",
-      "https://linked-rolls.org/roll-o/TempoAdjustment",
-    ],
   },
+  EventSpan: "https://linked-rolls.org/roll-o/EventSpan",
   P91HasUnit: {
     "@id": "http://www.cidoc-crm.org/cidoc-crm/P91_has_unit",
     "@type": "http://www.w3.org/2001/XMLSchema#string",
@@ -29,6 +22,7 @@ export const rolloContext: ContextDefinition = {
     "@id": "https://linked-rolls.org/roll-o/to",
     "@type": "http://www.w3.org/2001/XMLSchema#decimal",
   },
+  Note: "https://linked-rolls.org/roll-o/Note",
   L43Annotates: {
     "@id": "http://www.ics.forth.gr/isl/CRMdig/L43_annotates",
     "@type": "@id",
@@ -41,6 +35,7 @@ export const rolloContext: ContextDefinition = {
     "@id": "http://www.cidoc-crm.org/cidoc-crm/P43_has_dimension",
     "@type": "@id",
   },
+  Expression: "https://linked-rolls.org/roll-o/Expression",
   hasScope: {
     "@id": "https://linked-rolls.org/roll-o/has_scope",
   },
@@ -97,6 +92,7 @@ export const rolloContext: ContextDefinition = {
     "@id": "http://www.cidoc-crm.org/cidoc-crm/P35_has_identified",
     "@type": "@id",
   },
+  CollatedEvent: "https://linked-rolls.org/roll-o/CollatedEvent",
   wasCollatedFrom: {
     "@id": "https://linked-rolls.org/roll-o/was_collated_from",
     "@type": "@id",
@@ -106,6 +102,7 @@ export const rolloContext: ContextDefinition = {
     "@id": "https://linked-rolls.org/roll-o/is_non_musical",
     "@type": "http://www.w3.org/2001/XMLSchema#boolean",
   },
+  RelativePlacement: "https://linked-rolls.org/roll-o/RelativePlacement",
   placed: {
     "@id": "https://linked-rolls.org/roll-o/placed",
     "@type": "@id",
@@ -122,6 +119,7 @@ export const rolloContext: ContextDefinition = {
     "http://www.cidoc-crm.org/cidoc-crm/P176_starts_before_the_start_of",
   P174StartsBeforeTheEndOf:
     "http://www.cidoc-crm.org/cidoc-crm/P174_starts_before_the_end_of",
+  TempoAdjustment: "https://linked-rolls.org/roll-o/TempoAdjustment",
   adjusts: {
     "@id": "https://linked-rolls.org/roll-o/adjusts",
     "@type": "http://iflastandards.info/ns/fr/frbr/frbroo/F5_Item",
@@ -150,10 +148,9 @@ export const rolloContext: ContextDefinition = {
   },
   at: {
     "@id": "https://linked-rolls.org/roll-o/at",
-    "@type": [
-      "http://www.w3.org/2001/XMLSchema#decimal",
-      "http://www.w3.org/2001/XMLSchema#short",
-    ],
+    "@type": "http://www.w3.org/2001/XMLSchema#short",
   },
   NoteOffEvent: "http://purl.org/midi-ld/midi#NoteOffEvent",
+  SustainPedalOnEvent: "http://purl.org/midi-ld/midi#SustainPedalOnEvent",
+  SustainPedalOffEvent: "http://purl.org/midi-ld/midi#SustainPedalOffEvent",
 };

@@ -4,7 +4,7 @@
  * was taken from the midi2exp project (https://github.com/pianoroll/midi2exp)
  * and adapted to the different data representation.
  */
-import { CollatedEvent, Expression, Note, NoteOffEvent, NoteOnEvent, PedalOffEvent, PedalOnEvent, RelativePlacement, TempoAdjustment } from "./.ldo/rollo.typings";
+import { CollatedEvent, Expression, Note, NoteOffEvent, NoteOnEvent, RelativePlacement, SustainPedalOffEvent, SustainPedalOnEvent, TempoAdjustment } from "./.ldo/rollo.typings";
 import { Assumption } from "./Editor";
 
 function resize<T>(arr: T[], newSize: number, defaultValue: T) {
@@ -15,15 +15,17 @@ function resize<T>(arr: T[], newSize: number, defaultValue: T) {
 export type MIDIEvent =
     NoteOnEvent |
     NoteOffEvent |
-    PedalOnEvent | PedalOffEvent
+    SustainPedalOnEvent | SustainPedalOffEvent
 
-
+type FromCollatedEvent = {
+    fromCollatedEvent: CollatedEvent
+}
 
 type WithAssumedDimension = {
     assumedDimension: [number, number]
 }
 
-type NegotiatedEvent = (Note | Expression) & WithAssumedDimension
+type NegotiatedEvent = (Note | Expression) & WithAssumedDimension & FromCollatedEvent
 
 type EmulationOptions = {
     welte_p: number
@@ -78,7 +80,7 @@ export class Emulation {
             if (!mean) continue
 
             const placements = assumptions.filter(assumption =>
-                assumption.type === 'RelativePlacement' &&
+                assumption.type?.["@id"] === 'RelativePlacement' &&
                 (assumption as RelativePlacement).placed === collatedEvent) as RelativePlacement[]
 
             let wasShifted = false
@@ -106,6 +108,7 @@ export class Emulation {
 
             const negotiated = collatedEvent.wasCollatedFrom[0] as NegotiatedEvent
             negotiated.assumedDimension = mean
+            negotiated.fromCollatedEvent = collatedEvent
             this.negotiatedEvents.push(negotiated)
         }
 
@@ -114,7 +117,7 @@ export class Emulation {
 
     private findRollTempo(assumptions: Assumption[]) {
         const adjustments = assumptions
-            .filter(assumption => assumption.type === 'TempoAdjustment') as TempoAdjustment[]
+            .filter(assumption => assumption.type?.["@id"] === 'TempoAdjustment') as TempoAdjustment[]
 
         let meanStartTempo = 0
         let meanEndTempo = 0
@@ -146,10 +149,18 @@ export class Emulation {
         this.calculateVelocities('bass')
 
         for (const event of this.negotiatedEvents) {
-            if (event.type === 'SustainPedal') {
-                this.insertSustainPedal(event)
+            if (event.type?.["@id"] === 'Expression') {
+                const expression = event as Expression
+                if (expression.P2HasType["@id"] === 'SustainPedalOn') {
+                    this.midiEvents.push({
+                        performs: event.fromCollatedEvent,
+                        at: this.rollTimeToPhysicalTime(event.assumedDimension[0]),
+                        type: { '@id': 'SustainPedalOnEvent' }
+                    } as SustainPedalOnEvent)
+            
+                }
             }
-            else if (event.type === 'Note') {
+            else if (event.type?.["@id"] === 'Note') {
                 // TODO: check if there is a pitch correction
                 
                 // take velocity from the calculated velocity list
@@ -202,7 +213,7 @@ export class Emulation {
         // state of each expression.
 
         for (const negotiatedEvent of this.negotiatedEvents) {
-            if (negotiatedEvent.type !== 'Expression') continue
+            if (negotiatedEvent.type?.["@id"] !== 'Expression') continue
 
             const event = negotiatedEvent as Expression & WithAssumedDimension
 
@@ -306,22 +317,10 @@ export class Emulation {
         }
     }
 
-    private insertSustainPedal(event: NegotiatedEvent) {
-        this.midiEvents.push({
-            performs: event,
-            at: this.rollTimeToPhysicalTime(event.assumedDimension[0])
-        } as PedalOnEvent)
-
-        this.midiEvents.push({
-            performs: event,
-            at: this.rollTimeToPhysicalTime(event.assumedDimension[1])
-        } as PedalOffEvent)
-    }
-
     private insertNote(event: NegotiatedEvent, pitch: number, velocity: number) {
         this.midiEvents.push({
             type: { '@id': 'NoteOnEvent' },
-            performs: event,
+            performs: event.fromCollatedEvent,
             velocity,
             at: this.rollTimeToPhysicalTime(event.assumedDimension[0]),
             pitch
@@ -329,7 +328,7 @@ export class Emulation {
 
         this.midiEvents.push({
             type: { '@id': 'NoteOffEvent' },
-            performs: event,
+            performs: event.fromCollatedEvent,
             velocity: 127,
             at: this.rollTimeToPhysicalTime(event.assumedDimension[1]),
             pitch

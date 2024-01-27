@@ -133,7 +133,7 @@ export class AtonParser {
                 } else {
                     // Single string value already exists. Convert it to an array
                     // and then append new object and enter it.
-                    var temp = state.curobj[state.label];
+                    // var temp = state.curobj[state.label];
                     state.curobj[state.label] = [state.curobj[state.label], {}];
                     state.node.push({});
                     state.node[state.node.length - 1].index = state.curobj[state.label].length - 1;

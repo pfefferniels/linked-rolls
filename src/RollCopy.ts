@@ -1,6 +1,6 @@
 import { AtonParser } from "./aton/AtonParser";
 import { ConditionAssessmentShapeType, ExpressionShapeType, NoteShapeType } from "./.ldo/rollo.shapeTypes";
-import { ConditionAssessment, ConditionState, Expression, MeasurementEvent, Note, PhysicalRollCopy } from "./.ldo/rollo.typings";
+import { ConditionAssessment, ConditionState, EventSpan, Expression, MeasurementEvent, Note, PhysicalRollCopy } from "./.ldo/rollo.typings";
 import { createLdoDataset } from "ldo";
 import rdf from "@rdfjs/data-model";
 import { v4 } from "uuid";
@@ -54,8 +54,8 @@ export class RollCopy {
             const column = +hole.ORIGIN_COL.replace('px', '') - 10;
             const columnWidth = +hole.WIDTH_COL.replace('px', '') + 20;
 
-            const dimension = {
-                type: 'EventSpan',
+            const dimension: EventSpan = {
+                type: { '@id': 'EventSpan' },
                 P91HasUnit: 'mm',
                 from: pixelsToMillimeters(noteAttack, dpi),
                 to: pixelsToMillimeters(offset, dpi)
@@ -76,7 +76,7 @@ export class RollCopy {
 
                 this.events.push({
                     '@id': v4(),
-                    'type': 'Expression',
+                    'type': { '@id': 'Expression' },
                     'P2HasType': { '@id': type as any },
                     'hasScope': { '@id': scope },
                     P43HasDimension: dimension,
@@ -86,12 +86,12 @@ export class RollCopy {
             else {
                 this.events.push({
                     '@id': v4(),
-                    'type': 'Note',
+                    'type': { '@id': 'Note' },
                     L43Annotates: {
                         '@id': `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${noteAttack},${columnWidth},${height}/128,/0/default.jpg`
                     },
                     P43HasDimension: {
-                        type: 'EventSpan',
+                        type: { '@id': 'EventSpan' },
                         P91HasUnit: 'mm',
                         from: pixelsToMillimeters(noteAttack, dpi),
                         to: pixelsToMillimeters(offset, dpi)
@@ -124,7 +124,7 @@ export class RollCopy {
         const dataset = createLdoDataset()
         dataset.startTransaction()
         for (const event of this.events) {
-            if (event.type === 'Expression') {
+            if (event.type?.["@id"] === 'Expression') {
                 const entity = dataset.usingType(ExpressionShapeType).fromSubject(rdf.namedNode(`${baseURI}#${v4()}`))
                 entity.L43Annotates = event.L43Annotates
                 entity.P43HasDimension = event.P43HasDimension

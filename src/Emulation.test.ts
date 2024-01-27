@@ -22,7 +22,7 @@ describe('Emulation', () => {
 
         const emulation = new Emulation()
         emulation.emulate(collator.events, [{
-            'type': 'TempoAdjustment',
+            'type': { '@id': 'TempoAdjustment' },
             'startsWith': 100,
             'endsWith': 150,
             adjusts: 'myroll'

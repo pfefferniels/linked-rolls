@@ -7,7 +7,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX midild: <http://purl.org/midi-ld/midi#>
 
 <EventSpan> {
-  a rollo:EventSpan
+  a [ rollo:EventSpan ]?
     // rdfs:comment "Represents a measured region on the piano roll."  ;
   crm:P91_has_unit xsd:string;
   rollo:from xsd:decimal;
@@ -15,7 +15,7 @@ PREFIX midild: <http://purl.org/midi-ld/midi#>
 }
 
 <Note> {
-  a rollo:Note ;
+  a [ rollo:Note ]? ;
   crmdig:L43_annotates IRI ?
     // rdfs:comment  "IIIF region in string form." ;
   rollo:has_pitch xsd:decimal
@@ -24,7 +24,7 @@ PREFIX midild: <http://purl.org/midi-ld/midi#>
 }
 
 <Expression> {
-  a rollo:Expression ;
+  a [ rollo:Expression ]? ;
   crmdig:L43_annotates IRI ?
     // rdfs:comment  "IIIF region in string form." ;
   rollo:has_scope [ rollo:bass rollo:treble ]? ;
@@ -73,14 +73,14 @@ PREFIX midild: <http://purl.org/midi-ld/midi#>
 }
 
 <CollatedEvent> {
-  a rollo:CollatedEvent ;
+  a [ rollo:CollatedEvent ] ;
   rollo:was_collated_from @<Note>* ;
   rollo:was_collated_from @<Expression>* ;
   rollo:is_non_musical xsd:boolean ?;
 }
 
 <RelativePlacement> {
-  a rollo:RelativePlacement ; 
+  a [rollo:RelativePlacement]? ; 
   rollo:placed @<CollatedEvent> ;
   rollo:relative_to @<CollatedEvent>+ ;
   rollo:with_placement_type [
@@ -89,7 +89,7 @@ PREFIX midild: <http://purl.org/midi-ld/midi#>
 }
 
 <TempoAdjustment> {
-  a rollo:TempoAdjustment ;
+  a [ rollo:TempoAdjustment ]? ;
   rollo:adjusts frbroo:F5_Item ;
   rollo:starts_with xsd:decimal ;
   rollo:ends_with xsd:decimal ;
@@ -100,7 +100,7 @@ PREFIX midild: <http://purl.org/midi-ld/midi#>
   rollo:performs @<CollatedEvent> ;
   midild:pitch xsd:decimal ;
   midild:velocity xsd:decimal ;
-  rollo:at xsd:decimal ;
+  rollo:at xsd:short ;
 }
 
 <NoteOffEvent> {
@@ -111,14 +111,14 @@ PREFIX midild: <http://purl.org/midi-ld/midi#>
   rollo:at xsd:short ;
 }
 
-<PedalOnEvent> {
-  a [ midild:NoteOffEvent rollo:EmulationEvent ]? ;
+<SustainPedalOnEvent> {
+  a [ midild:SustainPedalOnEvent rollo:EmulationEvent ]? ;
   rollo:performs @<CollatedEvent> ;
   rollo:at xsd:short ;
 }
 
-<PedalOffEvent> {
-  a [ midild:NoteOffEvent rollo:EmulationEvent ]? ;
+<SustainPedalOffEvent> {
+  a [ midild:SustainPedalOffEvent rollo:EmulationEvent ]? ;
   rollo:performs @<CollatedEvent> ;
   rollo:at xsd:short ;
 }

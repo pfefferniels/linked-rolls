@@ -21,8 +21,10 @@ export const rolloSchema: Schema = {
               predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
               valueExpr: {
                 type: "NodeConstraint",
-                datatype: "https://linked-rolls.org/roll-o/EventSpan",
+                values: ["https://linked-rolls.org/roll-o/EventSpan"],
               },
+              min: 0,
+              max: 1,
               annotations: [
                 {
                   type: "Annotation",
@@ -74,8 +76,10 @@ export const rolloSchema: Schema = {
               predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
               valueExpr: {
                 type: "NodeConstraint",
-                datatype: "https://linked-rolls.org/roll-o/Note",
+                values: ["https://linked-rolls.org/roll-o/Note"],
               },
+              min: 0,
+              max: 1,
             },
             {
               type: "TripleConstraint",
@@ -135,8 +139,10 @@ export const rolloSchema: Schema = {
               predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
               valueExpr: {
                 type: "NodeConstraint",
-                datatype: "https://linked-rolls.org/roll-o/Expression",
+                values: ["https://linked-rolls.org/roll-o/Expression"],
               },
+              min: 0,
+              max: 1,
             },
             {
               type: "TripleConstraint",
@@ -399,7 +405,7 @@ export const rolloSchema: Schema = {
               predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
               valueExpr: {
                 type: "NodeConstraint",
-                datatype: "https://linked-rolls.org/roll-o/CollatedEvent",
+                values: ["https://linked-rolls.org/roll-o/CollatedEvent"],
               },
             },
             {
@@ -443,8 +449,10 @@ export const rolloSchema: Schema = {
               predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
               valueExpr: {
                 type: "NodeConstraint",
-                datatype: "https://linked-rolls.org/roll-o/RelativePlacement",
+                values: ["https://linked-rolls.org/roll-o/RelativePlacement"],
               },
+              min: 0,
+              max: 1,
             },
             {
               type: "TripleConstraint",
@@ -486,8 +494,10 @@ export const rolloSchema: Schema = {
               predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
               valueExpr: {
                 type: "NodeConstraint",
-                datatype: "https://linked-rolls.org/roll-o/TempoAdjustment",
+                values: ["https://linked-rolls.org/roll-o/TempoAdjustment"],
               },
+              min: 0,
+              max: 1,
             },
             {
               type: "TripleConstraint",
@@ -564,7 +574,7 @@ export const rolloSchema: Schema = {
               predicate: "https://linked-rolls.org/roll-o/at",
               valueExpr: {
                 type: "NodeConstraint",
-                datatype: "http://www.w3.org/2001/XMLSchema#decimal",
+                datatype: "http://www.w3.org/2001/XMLSchema#short",
               },
             },
           ],
@@ -626,7 +636,7 @@ export const rolloSchema: Schema = {
       },
     },
     {
-      id: "https://ldo.js.org/PedalOnEvent",
+      id: "https://ldo.js.org/SustainPedalOnEvent",
       type: "ShapeDecl",
       shapeExpr: {
         type: "Shape",
@@ -639,7 +649,7 @@ export const rolloSchema: Schema = {
               valueExpr: {
                 type: "NodeConstraint",
                 values: [
-                  "http://purl.org/midi-ld/midi#NoteOffEvent",
+                  "http://purl.org/midi-ld/midi#SustainPedalOnEvent",
                   "https://linked-rolls.org/roll-o/EmulationEvent",
                 ],
               },
@@ -664,7 +674,7 @@ export const rolloSchema: Schema = {
       },
     },
     {
-      id: "https://ldo.js.org/PedalOffEvent",
+      id: "https://ldo.js.org/SustainPedalOffEvent",
       type: "ShapeDecl",
       shapeExpr: {
         type: "Shape",
@@ -677,7 +687,7 @@ export const rolloSchema: Schema = {
               valueExpr: {
                 type: "NodeConstraint",
                 values: [
-                  "http://purl.org/midi-ld/midi#NoteOffEvent",
+                  "http://purl.org/midi-ld/midi#SustainPedalOffEvent",
                   "https://linked-rolls.org/roll-o/EmulationEvent",
                 ],
               },

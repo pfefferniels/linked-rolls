@@ -7,38 +7,38 @@ describe('Editor', () => {
 
     it('makes a relative placement of two events', async () => {
         const event1: CollatedEvent = {
-            type: 'CollatedEvent',
+            type: { '@id': 'CollatedEvent' },
             wasCollatedFrom: [{
-                'type': 'Note',
+                'type': { '@id': 'Note' },
                 'P43HasDimension': {
                     'from': 20,
                     'to': 22,
                     'P91HasUnit': 'mm',
-                    'type': 'EventSpan'
+                    'type': { '@id': 'EventSpan' }
                 },
                 'hasPitch': 60
-            }, 
+            },
             {
-                'type': 'Note',
+                'type': { '@id': 'Note' },
                 'P43HasDimension': {
                     'from': 21,
                     'to': 22,
                     'P91HasUnit': 'mm',
-                    'type': 'EventSpan'
+                    'type': { '@id': 'EventSpan' }
                 },
                 'hasPitch': 60
             }]
         }
 
         const event2: CollatedEvent = {
-            type: 'CollatedEvent',
+            type: { '@id': 'CollatedEvent' },
             wasCollatedFrom: [{
-                'type': 'Note',
+                'type': { '@id': 'Note' },
                 'P43HasDimension': {
                     'from': 20.5,
                     'to': 23,
                     'P91HasUnit': 'mm',
-                    'type': 'EventSpan'
+                    'type': { '@id': 'EventSpan' }
                 },
                 'hasPitch': 60
             }]
@@ -48,7 +48,7 @@ describe('Editor', () => {
             .makePlacement()
             .where(event1)
             .startsBeforeTheStartOf(event2)
-        
+
         expect(editor.assumptions).toHaveLength(1)
     })
 

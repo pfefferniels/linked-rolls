@@ -15,7 +15,9 @@ export interface EventSpan {
   /**
    * Represents a measured region on the piano roll.
    */
-  type: string;
+  type?: {
+    "@id": "EventSpan";
+  };
   P91HasUnit: string;
   from: number;
   to: number;
@@ -27,7 +29,9 @@ export interface EventSpan {
 export interface Note {
   "@id"?: string;
   "@context"?: ContextDefinition;
-  type: string;
+  type?: {
+    "@id": "Note";
+  };
   /**
    * IIIF region in string form.
    */
@@ -47,7 +51,9 @@ export interface Note {
 export interface Expression {
   "@id"?: string;
   "@context"?: ContextDefinition;
-  type: string;
+  type?: {
+    "@id": "Expression";
+  };
   /**
    * IIIF region in string form.
    */
@@ -165,7 +171,9 @@ export interface ConditionAssessment {
 export interface CollatedEvent {
   "@id"?: string;
   "@context"?: ContextDefinition;
-  type: string;
+  type: {
+    "@id": "CollatedEvent";
+  };
   wasCollatedFrom?: (Note | Expression)[];
   isNonMusical?: boolean;
 }
@@ -176,7 +184,9 @@ export interface CollatedEvent {
 export interface RelativePlacement {
   "@id"?: string;
   "@context"?: ContextDefinition;
-  type: string;
+  type?: {
+    "@id": "RelativePlacement";
+  };
   placed: CollatedEvent;
   relativeTo: CollatedEvent[];
   withPlacementType:
@@ -194,7 +204,9 @@ export interface RelativePlacement {
 export interface TempoAdjustment {
   "@id"?: string;
   "@context"?: ContextDefinition;
-  type: string;
+  type?: {
+    "@id": "TempoAdjustment";
+  };
   adjusts: string;
   startsWith: number;
   endsWith: number;
@@ -239,14 +251,14 @@ export interface NoteOffEvent {
 }
 
 /**
- * PedalOnEvent Type
+ * SustainPedalOnEvent Type
  */
-export interface PedalOnEvent {
+export interface SustainPedalOnEvent {
   "@id"?: string;
   "@context"?: ContextDefinition;
   type?:
     | {
-        "@id": "NoteOffEvent";
+        "@id": "SustainPedalOnEvent";
       }
     | {
         "@id": "EmulationEvent";
@@ -256,14 +268,14 @@ export interface PedalOnEvent {
 }
 
 /**
- * PedalOffEvent Type
+ * SustainPedalOffEvent Type
  */
-export interface PedalOffEvent {
+export interface SustainPedalOffEvent {
   "@id"?: string;
   "@context"?: ContextDefinition;
   type?:
     | {
-        "@id": "NoteOffEvent";
+        "@id": "SustainPedalOffEvent";
       }
     | {
         "@id": "EmulationEvent";

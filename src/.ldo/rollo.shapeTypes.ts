@@ -15,8 +15,8 @@ import {
   TempoAdjustment,
   NoteOnEvent,
   NoteOffEvent,
-  PedalOnEvent,
-  PedalOffEvent,
+  SustainPedalOnEvent,
+  SustainPedalOffEvent,
 } from "./rollo.typings";
 
 /**
@@ -143,19 +143,19 @@ export const NoteOffEventShapeType: ShapeType<NoteOffEvent> = {
 };
 
 /**
- * PedalOnEvent ShapeType
+ * SustainPedalOnEvent ShapeType
  */
-export const PedalOnEventShapeType: ShapeType<PedalOnEvent> = {
+export const SustainPedalOnEventShapeType: ShapeType<SustainPedalOnEvent> = {
   schema: rolloSchema,
-  shape: "https://ldo.js.org/PedalOnEvent",
+  shape: "https://ldo.js.org/SustainPedalOnEvent",
   context: rolloContext,
 };
 
 /**
- * PedalOffEvent ShapeType
+ * SustainPedalOffEvent ShapeType
  */
-export const PedalOffEventShapeType: ShapeType<PedalOffEvent> = {
+export const SustainPedalOffEventShapeType: ShapeType<SustainPedalOffEvent> = {
   schema: rolloSchema,
-  shape: "https://ldo.js.org/PedalOffEvent",
+  shape: "https://ldo.js.org/SustainPedalOffEvent",
   context: rolloContext,
 };

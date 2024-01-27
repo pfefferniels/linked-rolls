@@ -19,7 +19,7 @@ export class Collator {
         this.events = rollCopy.events.map(event => {
             return {
                 '@id': v4(),
-                type: 'CollatedEvent',
+                type: { '@id': 'CollatedEvent' },
                 wasCollatedFrom: [event]
             }
         })
@@ -30,7 +30,7 @@ export class Collator {
         for (const event of this.events) {
             if (!event.wasCollatedFrom || event.wasCollatedFrom.length === 0) continue
 
-            const pitch = event.wasCollatedFrom[0].type === 'Note'
+            const pitch = event.wasCollatedFrom[0].type?.["@id"] === 'Note'
                 ? (event.wasCollatedFrom[0] as Note).hasPitch
                 : typeToKey((event.wasCollatedFrom[0] as Expression).P2HasType['@id']) || 0
             myEvents.push({
@@ -44,9 +44,9 @@ export class Collator {
 
         const otherEvents: MidiNote[] = []
         for (const event of otherCopy.events) {
-            const pitch = event.type === 'Note'
-            ? (event as Note).hasPitch
-            : typeToKey((event as Expression).P2HasType['@id']) || 0
+            const pitch = event.type?.["@id"] === 'Note'
+                ? (event as Note).hasPitch
+                : typeToKey((event as Expression).P2HasType['@id']) || 0
             otherEvents.push({
                 id: event["@id"] || v4(),
                 onset: event.P43HasDimension.from / 10,
@@ -68,7 +68,7 @@ export class Collator {
 
             if (!myEvent && otherEvent) {
                 this.events.push({
-                    type: 'CollatedEvent',
+                    type: { '@id': 'CollatedEvent' },
                     wasCollatedFrom: [otherEvent]
                 })
                 return
