@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest'
 import { readFileSync } from "fs";
-import { RollCopy } from './RollCopy';
+import { RollCopy } from '../src/RollCopy';
 import { RDF } from '@inrupt/vocab-common-rdf'
 import rdf from '@rdfjs/data-model'
-import { rolloContext } from './.ldo/rollo.context';
+import { rolloContext } from '../src/.ldo/rollo.context';
 const path = require("path");
 
 describe('LinkedRoll class', () => {

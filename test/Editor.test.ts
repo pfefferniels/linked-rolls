@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { Editor } from './Editor';
-import { CollatedEvent } from './.ldo/rollo.typings';
+import { Editor } from '../src/Editor';
+import { CollatedEvent } from '../src/.ldo/rollo.typings';
 
 describe('Editor', () => {
     const editor = new Editor()

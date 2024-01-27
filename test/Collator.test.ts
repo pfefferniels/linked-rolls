@@ -1,7 +1,7 @@
 import { describe, it } from 'vitest'
 import { readFileSync } from "fs";
-import { RollCopy } from './RollCopy';
-import { Collator } from './Collator';
+import { RollCopy } from '../src/RollCopy';
+import { Collator } from '../src/Collator';
 const path = require("path");
 
 const fileToRollCopy = (filename: string) => {
