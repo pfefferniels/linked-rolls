@@ -16,7 +16,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "outDir": "lib"
+    "outDir": "lib",
+    "declaration": true
   },
   "include": ["src"]
 }
