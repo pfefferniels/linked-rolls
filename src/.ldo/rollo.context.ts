@@ -31,6 +31,10 @@ export const rolloContext: ContextDefinition = {
     "@id": "https://linked-rolls.org/roll-o/has_pitch",
     "@type": "http://www.w3.org/2001/XMLSchema#decimal",
   },
+  trackerHole: {
+    "@id": "https://linked-rolls.org/roll-o/tracker_hole",
+    "@type": "http://www.w3.org/2001/XMLSchema#decimal",
+  },
   P43HasDimension: {
     "@id": "http://www.cidoc-crm.org/cidoc-crm/P43_has_dimension",
     "@type": "@id",
@@ -153,4 +157,28 @@ export const rolloContext: ContextDefinition = {
   NoteOffEvent: "http://purl.org/midi-ld/midi#NoteOffEvent",
   SustainPedalOnEvent: "http://purl.org/midi-ld/midi#SustainPedalOnEvent",
   SustainPedalOffEvent: "http://purl.org/midi-ld/midi#SustainPedalOffEvent",
+  Stretching: "https://linked-rolls.org/roll-o/Stretching",
+  factor: {
+    "@id": "https://linked-rolls.org/roll-o/factor",
+    "@type": "http://www.w3.org/2001/XMLSchema#short",
+  },
+  P16UsedSpecificObject: {
+    "@id": "http://www.cidoc-crm.org/cidoc-crm/P16_used_specific_object",
+    "@type": "@id",
+  },
+  Shifting: "https://linked-rolls.org/roll-o/Shifting",
+  vertical: {
+    "@id": "https://linked-rolls.org/roll-o/vertical",
+    "@type": "http://www.w3.org/2001/XMLSchema#short",
+  },
+  horizontal: {
+    "@id": "https://linked-rolls.org/roll-o/horizontal",
+    "@type": "http://www.w3.org/2001/XMLSchema#short",
+  },
+  Selection: "https://linked-rolls.org/roll-o/Selection",
+  P106IsComposedOf: {
+    "@id": "http://www.cidoc-crm.org/cidoc-crm/P106_is_composed_of",
+    "@type": "@id",
+    "@container": "@set",
+  },
 };

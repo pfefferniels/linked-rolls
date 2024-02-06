@@ -22,9 +22,9 @@
   "dependencies": {
     "@inrupt/vocab-common-rdf": "^1.0.5",
     "@ldo/ldo": "^0.0.1-alpha.17",
+    "@ldo/rdf-utils": "^0.0.1-alpha.17",
     "@rdfjs/data-model": "^2.0.1",
     "@types/uuid": "^9.0.7",
-    "alignmenttool": "file:../AlignmentTool",
     "aton": "^0.0.4",
     "ldo": "^1.0.3",
     "midifile-ts": "^1.5.1",

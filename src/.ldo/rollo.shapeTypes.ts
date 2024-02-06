@@ -17,6 +17,9 @@ import {
   NoteOffEvent,
   SustainPedalOnEvent,
   SustainPedalOffEvent,
+  Stretching,
+  Shifting,
+  Cutout,
 } from "./rollo.typings";
 
 /**
@@ -157,5 +160,32 @@ export const SustainPedalOnEventShapeType: ShapeType<SustainPedalOnEvent> = {
 export const SustainPedalOffEventShapeType: ShapeType<SustainPedalOffEvent> = {
   schema: rolloSchema,
   shape: "https://ldo.js.org/SustainPedalOffEvent",
+  context: rolloContext,
+};
+
+/**
+ * Stretching ShapeType
+ */
+export const StretchingShapeType: ShapeType<Stretching> = {
+  schema: rolloSchema,
+  shape: "https://ldo.js.org/Stretching",
+  context: rolloContext,
+};
+
+/**
+ * Shifting ShapeType
+ */
+export const ShiftingShapeType: ShapeType<Shifting> = {
+  schema: rolloSchema,
+  shape: "https://ldo.js.org/Shifting",
+  context: rolloContext,
+};
+
+/**
+ * Cutout ShapeType
+ */
+export const CutoutShapeType: ShapeType<Cutout> = {
+  schema: rolloSchema,
+  shape: "https://ldo.js.org/Cutout",
   context: rolloContext,
 };

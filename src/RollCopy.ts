@@ -12,8 +12,9 @@ export class RollCopy {
     conditionAssessments: ConditionAssessment[]
     measurement?: MeasurementEvent
 
-    constructor() {
+    constructor(attachToItem?: string) {
         this.physicalItem = {
+            '@id': attachToItem,
             P2HasType: 'welte-red',
             type: { '@id': 'F5Item' }
         }
@@ -25,7 +26,7 @@ export class RollCopy {
         this.physicalItem.P2HasType = `https://linked-rolls.org/skos/${type}`
     }
 
-    readFromStanfordAton(atonString: string) {
+    readFromStanfordAton(atonString: string, adjustByRewind: boolean = true) {
         function pixelsToMillimeters(pixels: number, dpi: number): number {
             return pixels / dpi * 25.4;
         }
@@ -39,13 +40,15 @@ export class RollCopy {
         this.setRollType(json.ROLLINFO.ROLL_TYPE)
 
         const lastHole = +holes[holes.length - 1].TRACKER_HOLE
-        const shift = typeToKey('Rewind')! - lastHole
+        const rewindShift = adjustByRewind ? 91 - lastHole : 0
+        const midiShift = typeToKey('Rewind')! - lastHole
 
         for (let i = 0; i < holes.length; i++) {
             const hole = holes[i]
             if (!hole.NOTE_ATTACK || !hole.OFF_TIME) continue
 
-            const midiKey = +hole.TRACKER_HOLE + shift
+            const midiKey = +hole.TRACKER_HOLE + midiShift
+            const trackerHole = +hole.TRACKER_HOLE + rewindShift
             // console.log('key=', midiKey)
 
             const noteAttack = +hole.NOTE_ATTACK.replace('px', '') - 10
@@ -80,7 +83,8 @@ export class RollCopy {
                     'P2HasType': { '@id': type as any },
                     'hasScope': { '@id': scope },
                     P43HasDimension: dimension,
-                    L43Annotates: annotates
+                    L43Annotates: annotates,
+                    trackerHole
                 })
             }
             else {
@@ -96,7 +100,8 @@ export class RollCopy {
                         from: pixelsToMillimeters(noteAttack, dpi),
                         to: pixelsToMillimeters(offset, dpi)
                     },
-                    hasPitch: midiKey
+                    hasPitch: midiKey,
+                    trackerHole
                 })
             }
         }
@@ -150,5 +155,20 @@ export class RollCopy {
         }
 
         return dataset
+    }
+
+    /**
+     * When working with roll copies, e. g. when doing a 
+     * collation, we sometimes want to modify the roll
+     * (e. g. stretch it) without harming the original.
+     */
+    clone() {
+        const clone = new RollCopy()
+        clone.conditionAssessments = [...this.conditionAssessments]
+        clone.events = [...this.events]
+        clone.measurement = { ...this.measurement } as MeasurementEvent
+        clone.physicalItem = { ...this.physicalItem }
+
+        return clone
     }
 }

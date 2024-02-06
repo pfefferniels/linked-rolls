@@ -42,6 +42,7 @@ export interface Note {
    * Pitch information as a MIDI key.
    */
   hasPitch: number;
+  trackerHole: number;
   P43HasDimension: EventSpan;
 }
 
@@ -93,6 +94,7 @@ export interface Expression {
         "@id": "ForzandoOff";
       };
   P43HasDimension: EventSpan;
+  trackerHole: number;
 }
 
 /**
@@ -282,4 +284,45 @@ export interface SustainPedalOffEvent {
       };
   performs: CollatedEvent;
   at: number;
+}
+
+/**
+ * Stretching Type
+ */
+export interface Stretching {
+  "@id"?: string;
+  "@context"?: ContextDefinition;
+  type: {
+    "@id": "Stretching";
+  };
+  factor: number;
+  P16UsedSpecificObject: PhysicalRollCopy;
+}
+
+/**
+ * Shifting Type
+ */
+export interface Shifting {
+  "@id"?: string;
+  "@context"?: ContextDefinition;
+  type: {
+    "@id": "Shifting";
+  };
+  vertical: number;
+  horizontal: number;
+  P16UsedSpecificObject: PhysicalRollCopy;
+}
+
+/**
+ * Cutout Type
+ */
+export interface Cutout {
+  "@id"?: string;
+  "@context"?: ContextDefinition;
+  type: {
+    "@id": "Selection";
+  };
+  P106IsComposedOf: {
+    "@id": string;
+  }[];
 }

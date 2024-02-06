@@ -20,6 +20,7 @@ PREFIX midild: <http://purl.org/midi-ld/midi#>
     // rdfs:comment  "IIIF region in string form." ;
   rollo:has_pitch xsd:decimal
     // rdfs:comment  "Pitch information as a MIDI key." ;
+  rollo:tracker_hole xsd:decimal ;
   crm:P43_has_dimension @<EventSpan> ;
 }
 
@@ -38,6 +39,7 @@ PREFIX midild: <http://purl.org/midi-ld/midi#>
     rollo:ForzandoOn
     rollo:ForzandoOff ] ;
   crm:P43_has_dimension @<EventSpan> ;
+  rollo:tracker_hole xsd:decimal ;
 }
 
 <MeasurementEvent> {
@@ -121,4 +123,22 @@ PREFIX midild: <http://purl.org/midi-ld/midi#>
   a [ midild:SustainPedalOffEvent rollo:EmulationEvent ]? ;
   rollo:performs @<CollatedEvent> ;
   rollo:at xsd:short ;
+}
+
+<Stretching> {
+  a [ rollo:Stretching ] ;
+  rollo:factor xsd:short ;
+  crm:P16_used_specific_object @<PhysicalRollCopy> ;
+}
+
+<Shifting> {
+  a [ rollo:Shifting ] ;
+  rollo:vertical xsd:short ;
+  rollo:horizontal xsd:short ;
+  crm:P16_used_specific_object @<PhysicalRollCopy> ;
+}
+
+<Cutout> {
+  a [ rollo:Selection ] ;
+  crm:P106_is_composed_of IRI+ ;
 }

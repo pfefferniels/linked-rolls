@@ -119,6 +119,14 @@ export const rolloSchema: Schema = {
             },
             {
               type: "TripleConstraint",
+              predicate: "https://linked-rolls.org/roll-o/tracker_hole",
+              valueExpr: {
+                type: "NodeConstraint",
+                datatype: "http://www.w3.org/2001/XMLSchema#decimal",
+              },
+            },
+            {
+              type: "TripleConstraint",
               predicate: "http://www.cidoc-crm.org/cidoc-crm/P43_has_dimension",
               valueExpr: "https://ldo.js.org/EventSpan",
             },
@@ -197,6 +205,14 @@ export const rolloSchema: Schema = {
               type: "TripleConstraint",
               predicate: "http://www.cidoc-crm.org/cidoc-crm/P43_has_dimension",
               valueExpr: "https://ldo.js.org/EventSpan",
+            },
+            {
+              type: "TripleConstraint",
+              predicate: "https://linked-rolls.org/roll-o/tracker_hole",
+              valueExpr: {
+                type: "NodeConstraint",
+                datatype: "http://www.w3.org/2001/XMLSchema#decimal",
+              },
             },
           ],
         },
@@ -706,6 +722,113 @@ export const rolloSchema: Schema = {
                 type: "NodeConstraint",
                 datatype: "http://www.w3.org/2001/XMLSchema#short",
               },
+            },
+          ],
+        },
+      },
+    },
+    {
+      id: "https://ldo.js.org/Stretching",
+      type: "ShapeDecl",
+      shapeExpr: {
+        type: "Shape",
+        expression: {
+          type: "EachOf",
+          expressions: [
+            {
+              type: "TripleConstraint",
+              predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+              valueExpr: {
+                type: "NodeConstraint",
+                values: ["https://linked-rolls.org/roll-o/Stretching"],
+              },
+            },
+            {
+              type: "TripleConstraint",
+              predicate: "https://linked-rolls.org/roll-o/factor",
+              valueExpr: {
+                type: "NodeConstraint",
+                datatype: "http://www.w3.org/2001/XMLSchema#short",
+              },
+            },
+            {
+              type: "TripleConstraint",
+              predicate:
+                "http://www.cidoc-crm.org/cidoc-crm/P16_used_specific_object",
+              valueExpr: "https://ldo.js.org/PhysicalRollCopy",
+            },
+          ],
+        },
+      },
+    },
+    {
+      id: "https://ldo.js.org/Shifting",
+      type: "ShapeDecl",
+      shapeExpr: {
+        type: "Shape",
+        expression: {
+          type: "EachOf",
+          expressions: [
+            {
+              type: "TripleConstraint",
+              predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+              valueExpr: {
+                type: "NodeConstraint",
+                values: ["https://linked-rolls.org/roll-o/Shifting"],
+              },
+            },
+            {
+              type: "TripleConstraint",
+              predicate: "https://linked-rolls.org/roll-o/vertical",
+              valueExpr: {
+                type: "NodeConstraint",
+                datatype: "http://www.w3.org/2001/XMLSchema#short",
+              },
+            },
+            {
+              type: "TripleConstraint",
+              predicate: "https://linked-rolls.org/roll-o/horizontal",
+              valueExpr: {
+                type: "NodeConstraint",
+                datatype: "http://www.w3.org/2001/XMLSchema#short",
+              },
+            },
+            {
+              type: "TripleConstraint",
+              predicate:
+                "http://www.cidoc-crm.org/cidoc-crm/P16_used_specific_object",
+              valueExpr: "https://ldo.js.org/PhysicalRollCopy",
+            },
+          ],
+        },
+      },
+    },
+    {
+      id: "https://ldo.js.org/Cutout",
+      type: "ShapeDecl",
+      shapeExpr: {
+        type: "Shape",
+        expression: {
+          type: "EachOf",
+          expressions: [
+            {
+              type: "TripleConstraint",
+              predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+              valueExpr: {
+                type: "NodeConstraint",
+                values: ["https://linked-rolls.org/roll-o/Selection"],
+              },
+            },
+            {
+              type: "TripleConstraint",
+              predicate:
+                "http://www.cidoc-crm.org/cidoc-crm/P106_is_composed_of",
+              valueExpr: {
+                type: "NodeConstraint",
+                nodeKind: "iri",
+              },
+              min: 1,
+              max: -1,
             },
           ],
         },
