@@ -1,7 +1,7 @@
-import { createLdoDataset, parseRdf } from "ldo";
-import { CollatedEvent, Expression, Note, Shifting, Stretching } from "./.ldo/rollo.typings";
+import { LdoDataset, createLdoDataset } from "ldo";
+import { CollatedEvent, Collation, Expression, Note, Shifting, Stretching } from "./.ldo/rollo.typings";
 import { RollCopy } from "./RollCopy";
-import { CollatedEventShapeType, ShiftingShapeType, StretchingShapeType } from "./.ldo/rollo.shapeTypes";
+import { CollatedEventShapeType, CollationShapeType, ShiftingShapeType, StretchingShapeType } from "./.ldo/rollo.shapeTypes";
 import rdf from '@rdfjs/data-model'
 import { v4 } from "uuid";
 import { typeToKey } from "./keyToType";
@@ -15,17 +15,11 @@ const inRange = (range: [number, number], search: number) => {
 }
 
 export class Collator {
-    rolls: RollCopy[]
-    collatedRolls: string[]
-    events: CollatedEvent[]
-    operations: Operation[]
-
-    constructor() {
-        this.rolls = []
-        this.collatedRolls = []
-        this.events = []
-        this.operations = []
-    }
+    rolls: RollCopy[] = []
+    collatedRolls: string[] = []
+    events: CollatedEvent[] = []
+    operations: Operation[] = []
+    baseURI: string = 'https://linked-rolls.org/'
 
     findCopy(itemUrl: string) {
         return this.rolls.find(copy => copy.physicalItem["@id"] === itemUrl)
@@ -38,7 +32,7 @@ export class Collator {
 
         if (!existingOperation) {
             this.operations.push({
-                '@id': v4(),
+                '@id': `${this.baseURI}#${v4()}`,
                 type: { '@id': 'Shifting' },
                 'P16UsedSpecificObject': copy.physicalItem,
                 horizontal,
@@ -58,7 +52,7 @@ export class Collator {
 
         if (!existingOperation) {
             this.operations.push({
-                '@id': v4(),
+                '@id': `${this.baseURI}#${v4()}`,
                 type: { '@id': 'Stretching' },
                 'P16UsedSpecificObject': copy.physicalItem,
                 factor
@@ -78,7 +72,7 @@ export class Collator {
 
     prepareFromRollCopy(rollCopy: RollCopy) {
         for (const event of rollCopy.events) {
-            const newId = v4()
+            const newId = `${this.baseURI}#${v4()}`
             this.events.push({
                 '@id': newId,
                 type: { '@id': 'CollatedEvent' },
@@ -159,7 +153,7 @@ export class Collator {
                 ? (event.wasCollatedFrom[0] as Note).hasPitch
                 : typeToKey((event.wasCollatedFrom[0] as Expression).P2HasType['@id']) || 0
             myInfo.push({
-                id: event["@id"] || v4(),
+                id: event["@id"] || `${this.baseURI}#${v4()}`,
                 onset: event.wasCollatedFrom.reduce((acc, current) => acc + current.P43HasDimension.from, 0) / event.wasCollatedFrom.length,
                 offset: event.wasCollatedFrom.reduce((acc, current) => acc + current.P43HasDimension.to, 0) / event.wasCollatedFrom.length,
                 pitch
@@ -172,7 +166,7 @@ export class Collator {
                 ? (e as Note).hasPitch
                 : typeToKey((e as Expression).P2HasType['@id']) || 0
             return {
-                id: e["@id"] || v4(),
+                id: e["@id"] || `${this.baseURI}#${v4()}`,
                 onset: e.P43HasDimension.from,
                 offset: e.P43HasDimension.to,
                 pitch
@@ -201,7 +195,7 @@ export class Collator {
                 }
 
                 this.events.push({
-                    '@id': v4(),
+                    '@id': `${this.baseURI}#${v4()}`,
                     'type': { '@id': 'CollatedEvent' },
                     'wasCollatedFrom': [correspEvent]
                 })
@@ -229,13 +223,13 @@ export class Collator {
 
     async collateAllRolls() {
         console.log(this.rolls)
-        for (let i=1; i<this.rolls.length; i++) {
+        for (let i = 1; i < this.rolls.length; i++) {
             this.collateWith(this.rolls[i])
         }
     }
 
-    asDataset(baseURI: string) {
-        const dataset = createLdoDataset()
+    asDataset() {
+        let dataset = createLdoDataset()
         dataset.startTransaction()
 
         for (const event of this.events) {
@@ -251,11 +245,25 @@ export class Collator {
             }
         }
 
+        const collationActivity: Collation = {
+            '@id': `${this.baseURI}#${v4()}`,
+            'collated': this.rolls.map(roll => ({
+                '@id': roll.physicalItem["@id"]!
+            })),
+            type: { '@id': 'C10Collation' }
+        }
+
+        dataset.usingType(CollationShapeType).fromJson(collationActivity)
+
+        for (const roll of this.rolls) {
+            dataset.addAll(roll.asDataset())
+        }
+
         return dataset
     }
 
-    async importFromTurtle(turtle: string) {
-        const dataset = await parseRdf(turtle)
+    async importFromDataset(dataset: LdoDataset) {
+        this.events = []
 
         const eventQuads = dataset.match(null, rdf.namedNode(RDF.type), rdf.namedNode(rolloContext.CollatedEvent as string))
         for (const quad of eventQuads) {
@@ -273,6 +281,20 @@ export class Collator {
         for (const quad of stretchingQuads) {
             const stretching = dataset.usingType(StretchingShapeType).fromSubject(quad.subject.value)
             this.operations.push(stretching)
+        }
+
+        this.rolls = []
+        const collationQuad = dataset.match(null, rdf.namedNode(RDF.type), rdf.namedNode(rolloContext.Stretching as string))
+        for (const quad of collationQuad) {
+            const collation = dataset.usingType(CollationShapeType).fromSubject(quad.subject.value)
+            if (!collation.collated) continue
+            for (const physicalItem of collation.collated) {
+                if (!physicalItem["@id"]) continue
+
+                const rollCopy = new RollCopy(physicalItem['@id'])
+                rollCopy.importFromDataset(dataset, physicalItem['@id'])
+                this.rolls.push(rollCopy)
+            }
         }
     }
 }

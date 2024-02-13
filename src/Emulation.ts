@@ -4,10 +4,13 @@
  * was taken from the midi2exp project (https://github.com/pianoroll/midi2exp)
  * and adapted to the different data representation.
  */
-import { createLdoDataset } from "ldo";
+import { createLdoDataset, parseRdf } from "ldo";
 import { CollatedEvent, Expression, Note, NoteOffEvent, NoteOnEvent, RelativePlacement, SustainPedalOffEvent, SustainPedalOnEvent, TempoAdjustment } from "./.ldo/rollo.typings";
 import { Assumption } from "./Editor";
 import { NoteOffEventShapeType, NoteOnEventShapeType, SustainPedalOffEventShapeType, SustainPedalOnEventShapeType } from "./.ldo/rollo.shapeTypes";
+import rdf from '@rdfjs/data-model'
+import { RDF } from "@inrupt/vocab-common-rdf";
+import { rolloContext } from "./.ldo/rollo.context";
 
 function resize<T>(arr: T[], newSize: number, defaultValue: T) {
     while (newSize > arr.length)
@@ -42,9 +45,11 @@ type EmulationOptions = {
     slow_step?: number
     fastC_step?: number
     fastD_step?: number
+    division: number
 }
 
 export class Emulation {
+    baseURI: string = 'https://linked-rolls.org/'
     midiEvents: MIDIEvent[] = []
 
     // sorted list of events with the negotiated assumptions already applied
@@ -69,6 +74,7 @@ export class Emulation {
         slow_decay_rate: 2380,
         fastC_decay_rate: 300,
         fastD_decay_rate: 400,
+        division: 54
     }) {
         options.slow_step = (options.welte_mf - options.welte_p) / options.slow_decay_rate
         options.fastC_step = (options.welte_mf - options.welte_p) / options.fastC_decay_rate
@@ -76,7 +82,8 @@ export class Emulation {
         this.options = options
     }
 
-    private negotiateEvents(collatedEvents: CollatedEvent[], assumptions: Assumption[]) {
+    private negotiateEvents(collatedEvents_: CollatedEvent[], assumptions: Assumption[]) {
+        const collatedEvents = [...collatedEvents_]
         for (const collatedEvent of collatedEvents) {
             if (collatedEvent.isNonMusical) return
             if (!collatedEvent.wasCollatedFrom || !collatedEvent.wasCollatedFrom.length) return
@@ -125,6 +132,12 @@ export class Emulation {
     private findRollTempo(assumptions: Assumption[]) {
         const adjustments = assumptions
             .filter(assumption => assumption.type?.["@id"] === 'TempoAdjustment') as TempoAdjustment[]
+        
+        if (adjustments.length === 0) {
+            this.startTempo = 80
+            this.endTempo = 80
+            return
+        }
 
         let meanStartTempo = 0
         let meanEndTempo = 0
@@ -140,8 +153,8 @@ export class Emulation {
         for (const event of this.negotiatedEvents) {
             if (!event.assumedPhysicalTime) {
                 event.assumedPhysicalTime = [
-                    this.rollTimeToPhysicalTime(event.P43HasDimension.from) || 0.1,
-                    this.rollTimeToPhysicalTime(event.P43HasDimension.to) || 0.1
+                    this.placeToTime(event.P43HasDimension.from) || 0.1,
+                    this.placeToTime(event.P43HasDimension.to) || 0.1
                 ]
             }
         }
@@ -211,6 +224,7 @@ export class Emulation {
         this.applyRollTempo()
         this.calculateVelocities('treble')
         this.calculateVelocities('bass')
+        this.convertEventsToMIDI()
         return this.midiEvents
     }
 
@@ -252,12 +266,15 @@ export class Emulation {
         for (const negotiatedEvent of this.negotiatedEvents) {
             if (negotiatedEvent.type?.["@id"] !== 'Expression') continue
 
+            if (scope === 'treble' && negotiatedEvent.trackerHole < this.options.division) continue 
+            else if (scope === 'bass' && negotiatedEvent.trackerHole >= this.options.division) continue 
+
             const event = negotiatedEvent as Expression & AssumedPhysicalTimeSpan
 
             const startMs = event.assumedPhysicalTime![0] * 1000
-            const endMs = event.assumedPhysicalTime![0] * 1000
+            const endMs = event.assumedPhysicalTime![1] * 1000
 
-            // console.log('encoutering expression from', startMs, 'to', endMs)
+            // console.log('encoutering expression', event.P2HasType["@id"], 'from', startMs, 'to', endMs)
 
             if (event.P2HasType['@id'] === 'MezzoforteOn') {
                 // update the mezzoforte start time
@@ -366,10 +383,16 @@ export class Emulation {
         } as NoteOffEvent)
     }
 
-    private rollTimeToPhysicalTime(rollTime: number) {
+    placeToTime(place: number) {
         if (!this.startTempo || !this.endTempo) return
 
-        else return rollTime / this.startTempo
+        return place / this.startTempo
+    }
+
+    timeToPlace(timeInS: number) {
+        if (!this.startTempo || !this.endTempo) return 
+
+        return timeInS * this.startTempo
     }
 
     findEventsPerforming(id: string) {
@@ -396,8 +419,20 @@ export class Emulation {
         return dataset
     }
 
-    importFromTurtle(turtle: string) {
-        return turtle
+    async importFromTurtle(turtle: string) {
+        const dataset = await parseRdf(turtle)
+
+        const noteOnQuads = dataset.match(null, rdf.namedNode(RDF.type), rdf.namedNode(rolloContext.NoteOnEvent as string))
+        for (const quad of noteOnQuads) {
+            const noteOnEvent = dataset.usingType(NoteOnEventShapeType).fromSubject(quad.subject.value)
+            this.midiEvents.push(noteOnEvent)
+        }
+
+        const noteOffQuads = dataset.match(null, rdf.namedNode(RDF.type), rdf.namedNode(rolloContext.NoteOffEvent as string))
+        for (const quad of noteOffQuads) {
+            const noteOffEvent = dataset.usingType(NoteOffEventShapeType).fromSubject(quad.subject.value)
+            this.midiEvents.push(noteOffEvent)
+        }
     }
 }
 

@@ -11,6 +11,7 @@ import {
   ConditionState,
   ConditionAssessment,
   CollatedEvent,
+  Collation,
   RelativePlacement,
   TempoAdjustment,
   NoteOnEvent,
@@ -106,6 +107,15 @@ export const ConditionAssessmentShapeType: ShapeType<ConditionAssessment> = {
 export const CollatedEventShapeType: ShapeType<CollatedEvent> = {
   schema: rolloSchema,
   shape: "https://ldo.js.org/CollatedEvent",
+  context: rolloContext,
+};
+
+/**
+ * Collation ShapeType
+ */
+export const CollationShapeType: ShapeType<Collation> = {
+  schema: rolloSchema,
+  shape: "https://ldo.js.org/Collation",
   context: rolloContext,
 };
 

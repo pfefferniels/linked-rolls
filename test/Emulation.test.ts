@@ -23,6 +23,8 @@ describe('Emulation', () => {
         const velocities = emulation.midiEvents
             .filter(e => e.type?.['@id'] === 'NoteOnEvent')
             .map(e => (e as any).velocity)
+        
+        console.log(velocities)
 
         expect(velocities.every(v => v >= 35 && v <= 90)).toBeTruthy()
     })

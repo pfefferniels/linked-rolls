@@ -1,16 +1,19 @@
 import { AtonParser } from "./aton/AtonParser";
-import { ConditionAssessmentShapeType, ExpressionShapeType, NoteShapeType } from "./.ldo/rollo.shapeTypes";
+import { ExpressionShapeType, MeasurementEventShapeType, NoteShapeType, PhysicalRollCopyShapeType } from "./.ldo/rollo.shapeTypes";
 import { ConditionAssessment, ConditionState, EventSpan, Expression, MeasurementEvent, Note, PhysicalRollCopy } from "./.ldo/rollo.typings";
-import { createLdoDataset } from "ldo";
-import rdf from "@rdfjs/data-model";
+import { LdoDataset, createLdoDataset } from "ldo";
 import { v4 } from "uuid";
 import { keyToType, typeToKey } from "./keyToType";
+import { rolloContext } from "./.ldo/rollo.context";
+import rdf from '@rdfjs/data-model'
+import { RDF } from "@inrupt/vocab-common-rdf";
 
 export class RollCopy {
     physicalItem: PhysicalRollCopy
     events: (Note | Expression)[]
     conditionAssessments: ConditionAssessment[]
     measurement?: MeasurementEvent
+    baseURI: string = 'https://linked-rolls.org/'
 
     constructor(attachToItem?: string) {
         this.physicalItem = {
@@ -58,6 +61,7 @@ export class RollCopy {
             const columnWidth = +hole.WIDTH_COL.replace('px', '') + 20;
 
             const dimension: EventSpan = {
+                '@id': `${this.baseURI}#${v4()}`,
                 type: { '@id': 'EventSpan' },
                 P91HasUnit: 'mm',
                 from: pixelsToMillimeters(noteAttack, dpi),
@@ -78,7 +82,7 @@ export class RollCopy {
                 const scope = midiKey <= 23 ? 'bass' : 'treble'
 
                 this.events.push({
-                    '@id': v4(),
+                    '@id': `${this.baseURI}#${v4()}`,
                     'type': { '@id': 'Expression' },
                     'P2HasType': { '@id': type as any },
                     'hasScope': { '@id': scope },
@@ -89,12 +93,13 @@ export class RollCopy {
             }
             else {
                 this.events.push({
-                    '@id': v4(),
+                    '@id': `${this.baseURI}#${v4()}`,
                     'type': { '@id': 'Note' },
                     L43Annotates: {
                         '@id': `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${noteAttack},${columnWidth},${height}/128,/0/default.jpg`
                     },
                     P43HasDimension: {
+                        '@id': `${this.baseURI}#${v4()}`,
                         type: { '@id': 'EventSpan' },
                         P91HasUnit: 'mm',
                         from: pixelsToMillimeters(noteAttack, dpi),
@@ -107,6 +112,7 @@ export class RollCopy {
         }
 
         this.measurement = {
+            '@id': `${this.baseURI}#${v4()}`,
             type: { '@id': 'D11DigitalMeasurementEvent' },
             P39Measured: this.physicalItem,
             L20HasCreated: this.events
@@ -125,36 +131,67 @@ export class RollCopy {
         })
     }
 
-    asDataset(baseURI: string) {
+    asDataset() {
+        console.log('before exporting:', this.measurement)
         const dataset = createLdoDataset()
         dataset.startTransaction()
         for (const event of this.events) {
             if (event.type?.["@id"] === 'Expression') {
-                const entity = dataset.usingType(ExpressionShapeType).fromSubject(rdf.namedNode(`${baseURI}#${v4()}`))
-                entity.L43Annotates = event.L43Annotates
-                entity.P43HasDimension = event.P43HasDimension
-                entity.P2HasType = (event as Expression).P2HasType
-                entity.hasScope = (event as Expression).hasScope
-                entity.type = event.type
+                dataset.usingType(ExpressionShapeType).fromJson(event as Expression)
             }
             else {
-                const entity = dataset.usingType(NoteShapeType).fromSubject(rdf.namedNode(`${baseURI}#${v4()}`))
-                entity.L43Annotates = event.L43Annotates
-                entity.P43HasDimension = event.P43HasDimension
-                entity.hasPitch = (event as Note).hasPitch
-                entity.type = event.type
+                dataset.usingType(NoteShapeType).fromJson(event as Note)
             }
         }
 
-        for (const assessment of this.conditionAssessments) {
-            const entity = dataset.usingType(ConditionAssessmentShapeType).fromSubject(rdf.namedNode(`${baseURI}#${v4}`))
-            entity.P14CarriedOutBy = assessment.P14CarriedOutBy
-            entity.P35HasIdentified = assessment.P35HasIdentified
-            entity.P4HasTimeSpan = assessment.P4HasTimeSpan
-            entity.type = assessment.type
+        dataset.usingType(PhysicalRollCopyShapeType).fromJson(this.physicalItem)
+        if (this.measurement) {
+            dataset.usingType(MeasurementEventShapeType).fromJson(this.measurement)
         }
 
         return dataset
+    }
+
+    async importFromDataset(dataset: LdoDataset, physicalItemId: string) {
+        this.events = []
+
+        const measurements = dataset.match(
+            null,
+            rdf.namedNode((rolloContext.P39Measured as any)['@id'] as string),
+            rdf.namedNode(physicalItemId))
+
+        for (const measurementMatch of measurements) {
+            this.measurement = dataset.usingType(MeasurementEventShapeType).fromSubject(measurementMatch.subject.value)
+        }
+
+        const links = this.measurement?.L20HasCreated
+        if (!links) return
+
+        for (const link of links) {
+            if (!link['@id']) continue
+
+            console.log('link id=', link['@id'])
+            const noteQuads = dataset.match(
+                rdf.namedNode(link["@id"]),
+                rdf.namedNode(RDF.type),
+                rdf.namedNode(rolloContext.Note as string))
+
+            for (const quad of noteQuads) {
+                const event = dataset.usingType(NoteShapeType).fromSubject(quad.subject.value)
+                this.events.push(event)
+            }
+
+            const expressionQuads = dataset.match(
+                rdf.namedNode(link["@id"]),
+                rdf.namedNode(RDF.type),
+                rdf.namedNode(rolloContext.Expression as string))
+            for (const quad of expressionQuads) {
+                const event = dataset.usingType(ExpressionShapeType).fromSubject(quad.subject.value)
+                this.events.push(event)
+            }
+        }
+
+        console.log('event size=', this.events)
     }
 
     /**

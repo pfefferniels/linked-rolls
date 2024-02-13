@@ -453,6 +453,36 @@ export const rolloSchema: Schema = {
       },
     },
     {
+      id: "https://ldo.js.org/Collation",
+      type: "ShapeDecl",
+      shapeExpr: {
+        type: "Shape",
+        expression: {
+          type: "EachOf",
+          expressions: [
+            {
+              type: "TripleConstraint",
+              predicate: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+              valueExpr: {
+                type: "NodeConstraint",
+                values: ["https://linked-rolls.org/roll-o/C10_Collation"],
+              },
+            },
+            {
+              type: "TripleConstraint",
+              predicate: "https://linked-rolls.org/roll-o/collated",
+              valueExpr: {
+                type: "NodeConstraint",
+                nodeKind: "iri",
+              },
+              min: 0,
+              max: -1,
+            },
+          ],
+        },
+      },
+    },
+    {
       id: "https://ldo.js.org/RelativePlacement",
       type: "ShapeDecl",
       shapeExpr: {

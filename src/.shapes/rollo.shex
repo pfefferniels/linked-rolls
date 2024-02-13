@@ -81,6 +81,11 @@ PREFIX midild: <http://purl.org/midi-ld/midi#>
   rollo:is_non_musical xsd:boolean ?;
 }
 
+<Collation> {
+  a [ rollo:C10_Collation ] ;
+  rollo:collated IRI* ;
+}
+
 <RelativePlacement> {
   a [rollo:RelativePlacement]? ; 
   rollo:placed @<CollatedEvent> ;

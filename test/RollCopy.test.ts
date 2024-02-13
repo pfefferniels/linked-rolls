@@ -4,6 +4,8 @@ import { RollCopy } from '../src/RollCopy';
 import { RDF } from '@inrupt/vocab-common-rdf'
 import rdf from '@rdfjs/data-model'
 import { rolloContext } from '../src/.ldo/rollo.context';
+import { datasetToString } from '@ldo/rdf-utils';
+import { parseRdf } from 'ldo';
 const path = require("path");
 
 describe('LinkedRoll class', () => {
@@ -12,7 +14,23 @@ describe('LinkedRoll class', () => {
         const contents = file.toString()
         const lr = new RollCopy()
         lr.readFromStanfordAton(contents)
-        expect(lr.asDataset('https://test.org').match(null, rdf.namedNode(`http://www.ics.forth.gr/isl/CRMdig/L43_annotates`), null).size).toBe(2406)
+        expect(lr.asDataset().match(null, rdf.namedNode(`http://www.ics.forth.gr/isl/CRMdig/L43_annotates`), null).size).toBe(2406)
+    })
+
+    test('it exports stuff', async () => {
+        const file = readFileSync(path.resolve(__dirname, "./fixtures/short_analysis.txt"));
+        const contents = file.toString()
+        const lr = new RollCopy('physical-copy')
+        lr.readFromStanfordAton(contents)
+        console.log(await datasetToString(lr.asDataset(), {}))
+    })
+
+    test('it imports stuff', async () => {
+        const file = readFileSync(path.resolve(__dirname, "./fixtures/rollcopy.ttl"));
+        const contents = file.toString()
+
+        const lr = new RollCopy()
+        lr.importFromDataset(await parseRdf(contents), 'physical-copy')
     })
 
     test('it assess conditions', async () => {
@@ -24,6 +42,6 @@ describe('LinkedRoll class', () => {
             P4HasTimeSpan: { 'P82AtSomeTimeWithin': '1970-now', type: { '@id': 'E52TimeSpan' } },
         }, 'https://orcid.org/me')
 
-        expect(lr.asDataset('https://test.org').match(null, rdf.namedNode(RDF.type), rdf.namedNode(rolloContext.E5ConditionState as string)).size).toBe(1)
+        expect(lr.asDataset().match(null, rdf.namedNode(RDF.type), rdf.namedNode(rolloContext.E5ConditionState as string)).size).toBe(1)
     })
 })

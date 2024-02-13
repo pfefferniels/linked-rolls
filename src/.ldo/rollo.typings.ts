@@ -181,6 +181,20 @@ export interface CollatedEvent {
 }
 
 /**
+ * Collation Type
+ */
+export interface Collation {
+  "@id"?: string;
+  "@context"?: ContextDefinition;
+  type: {
+    "@id": "C10Collation";
+  };
+  collated?: {
+    "@id": string;
+  }[];
+}
+
+/**
  * RelativePlacement Type
  */
 export interface RelativePlacement {

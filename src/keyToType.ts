@@ -2,8 +2,8 @@ const welte100Map = new Map<number, string>(
     [
         [14, 'MezzoforteOff'],
         [15, 'MezzoforteOn'],
-        [16, 'CrescendoOff'],
-        [17, 'CrescendoOn'],
+        [16, 'SlowCrescendoOff'],
+        [17, 'SlowCrescendoOn'],
         [18, 'ForzandoOff'],
         [19, 'ForzandoOn'],
         [20, 'SoftPedalOff'],
@@ -16,8 +16,8 @@ const welte100Map = new Map<number, string>(
         [107, 'SustainPedalOff'],
         [108, 'ForzandoOn'],
         [109, 'ForzandoOff'],
-        [110, 'CrescendoOn'],
-        [111, 'CrescendoOff'],
+        [110, 'SlowCrescendoOn'],
+        [111, 'SlowCrescendoOff'],
         [112, 'MezzoforteOn'],
         [113, 'MezzoforteOff']
     ]

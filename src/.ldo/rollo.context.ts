@@ -106,6 +106,12 @@ export const rolloContext: ContextDefinition = {
     "@id": "https://linked-rolls.org/roll-o/is_non_musical",
     "@type": "http://www.w3.org/2001/XMLSchema#boolean",
   },
+  C10Collation: "https://linked-rolls.org/roll-o/C10_Collation",
+  collated: {
+    "@id": "https://linked-rolls.org/roll-o/collated",
+    "@type": "@id",
+    "@container": "@set",
+  },
   RelativePlacement: "https://linked-rolls.org/roll-o/RelativePlacement",
   placed: {
     "@id": "https://linked-rolls.org/roll-o/placed",
