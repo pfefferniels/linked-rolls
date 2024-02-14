@@ -83,7 +83,7 @@ export class Emulation {
     }
 
     private negotiateEvents(collatedEvents_: CollatedEvent[], assumptions: Assumption[]) {
-        const collatedEvents = [...collatedEvents_]
+        const collatedEvents = structuredClone(collatedEvents_)
         for (const collatedEvent of collatedEvents) {
             if (collatedEvent.isNonMusical) return
             if (!collatedEvent.wasCollatedFrom || !collatedEvent.wasCollatedFrom.length) return
@@ -119,7 +119,7 @@ export class Emulation {
                 }
             }
 
-            const negotiated = { ...collatedEvent.wasCollatedFrom[0] } as NegotiatedEvent
+            const negotiated = collatedEvent.wasCollatedFrom[0] as NegotiatedEvent
             negotiated.P43HasDimension.from = mean[0]
             negotiated.P43HasDimension.to = mean[1]
             negotiated.fromCollatedEvent = collatedEvent
@@ -192,7 +192,7 @@ export class Emulation {
                 
                 // take velocity from the calculated velocity list
                 const pitch = (event as Note).hasPitch
-                if (pitch > 60) {
+                if (event.trackerHole >= this.options.division) {
                     this.insertNote(event, pitch,
                         this.trebleVelocities[+(event.assumedPhysicalTime![0] * 1000).toFixed()])
                 }
@@ -207,7 +207,7 @@ export class Emulation {
     emulateFromRoll(events: (Note | Expression)[]) {
         this.startTempo = 90
         this.endTempo = 90
-        this.negotiatedEvents = events
+        this.negotiatedEvents = structuredClone(events)
         this.applyTrackerBarExtension()
         this.applyRollTempo()
         this.applyTrackerBarExtension()
@@ -218,6 +218,7 @@ export class Emulation {
     }
 
     emulateFromCollatedRoll(collatedEvents: CollatedEvent[], assumptions: Assumption[] = []) {
+        this.negotiatedEvents = []
         this.negotiateEvents(collatedEvents, assumptions)
         this.findRollTempo(assumptions)
         this.applyTrackerBarExtension()
