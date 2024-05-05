@@ -4,26 +4,37 @@
  * was taken from the midi2exp project (https://github.com/pianoroll/midi2exp)
  * and adapted to the different data representation.
  */
-import { createLdoDataset, parseRdf } from "ldo";
-import { CollatedEvent, Expression, Note, NoteOffEvent, NoteOnEvent, RelativePlacement, SustainPedalOffEvent, SustainPedalOnEvent, TempoAdjustment } from "./.ldo/rollo.typings";
-import { Assumption } from "./Editor";
-import { NoteOffEventShapeType, NoteOnEventShapeType, SustainPedalOffEventShapeType, SustainPedalOnEventShapeType } from "./.ldo/rollo.shapeTypes";
-import rdf from '@rdfjs/data-model'
-import { RDF } from "@inrupt/vocab-common-rdf";
-import { rolloContext } from "./.ldo/rollo.context";
+import { AnyEvent } from "midifile-ts";
+import { Assumption, RelativePlacement, TempoAdjustment, CollatedEvent, Expression, Note } from "./types";
 
 function resize<T>(arr: T[], newSize: number, defaultValue: T) {
     while (newSize > arr.length)
         arr.push(defaultValue);
 }
 
-export type MIDIEvent =
+interface LinkedMIDIEvent<T> {
+    type: T
+    performs: (CollatedEvent | NegotiatedEvent)
+    at: number
+}
+
+interface NoteEvent<T> extends LinkedMIDIEvent<T> {
+    pitch: number;
+    velocity: number;
+}
+
+interface NoteOnEvent extends NoteEvent<'noteOn'> { }
+interface NoteOffEvent extends NoteEvent<'noteOff'> { }
+interface SustainPedalOnEvent extends LinkedMIDIEvent<'sustainPedalOn'> { }
+interface SustainPedalOffEvent extends LinkedMIDIEvent<'sustainPedalOff'> { }
+
+export type AnyLinkedMIDIEvent =
     NoteOnEvent |
     NoteOffEvent |
     SustainPedalOnEvent | SustainPedalOffEvent
 
 type FromCollatedEvent = {
-    fromCollatedEvent?: (CollatedEvent )
+    fromCollatedEvent?: (CollatedEvent)
 }
 
 type AssumedPhysicalTimeSpan = {
@@ -50,7 +61,7 @@ type EmulationOptions = {
 
 export class Emulation {
     baseURI: string = 'https://linked-rolls.org/'
-    midiEvents: MIDIEvent[] = []
+    midiEvents: AnyLinkedMIDIEvent[] = []
 
     // sorted list of events with the negotiated assumptions already applied
     negotiatedEvents: NegotiatedEvent[] = []
@@ -93,7 +104,7 @@ export class Emulation {
             if (!mean) continue
 
             const placements = assumptions.filter(assumption =>
-                assumption.type?.["@id"] === 'RelativePlacement' &&
+                assumption.type === 'relativePlacement' &&
                 (assumption as RelativePlacement).placed === collatedEvent) as RelativePlacement[]
 
             let wasShifted = false
@@ -103,7 +114,7 @@ export class Emulation {
                     if (!otherMean) continue
 
                     // check if the conditions are met and act only if not
-                    if (placement.withPlacementType['@id'] === 'P176StartsBeforeTheStartOf') {
+                    if (placement.withPlacementType === 'startsBeforeTheStartOf') {
                         if (otherMean[0] <= mean[0]) {
                             if (wasShifted) {
                                 // try to negotiate with another placement 
@@ -120,19 +131,19 @@ export class Emulation {
             }
 
             const negotiated = collatedEvent.wasCollatedFrom[0] as NegotiatedEvent
-            negotiated.P43HasDimension.from = mean[0]
-            negotiated.P43HasDimension.to = mean[1]
+            negotiated.hasDimension.from = mean[0]
+            negotiated.hasDimension.to = mean[1]
             negotiated.fromCollatedEvent = collatedEvent
             this.negotiatedEvents.push(negotiated)
         }
 
-        this.negotiatedEvents.sort((a, b) => a.P43HasDimension.from - b.P43HasDimension.from)
+        this.negotiatedEvents.sort((a, b) => a.hasDimension.from - b.hasDimension.from)
     }
 
     private findRollTempo(assumptions: Assumption[]) {
         const adjustments = assumptions
-            .filter(assumption => assumption.type?.["@id"] === 'TempoAdjustment') as TempoAdjustment[]
-        
+            .filter(assumption => assumption.type === 'tempoAdjustment') as TempoAdjustment[]
+
         if (adjustments.length === 0) {
             this.startTempo = 80
             this.endTempo = 80
@@ -153,8 +164,8 @@ export class Emulation {
         for (const event of this.negotiatedEvents) {
             if (!event.assumedPhysicalTime) {
                 event.assumedPhysicalTime = [
-                    this.placeToTime(event.P43HasDimension.from) || 0.1,
-                    this.placeToTime(event.P43HasDimension.to) || 0.1
+                    this.placeToTime(event.hasDimension.from) || 0.1,
+                    this.placeToTime(event.hasDimension.to) || 0.1
                 ]
             }
         }
@@ -163,33 +174,33 @@ export class Emulation {
     private applyTrackerBarExtension() {
         const correction = this.options.trackerBarDiameter * this.options.punchExtensionFraction + 0.5
         for (const event of this.negotiatedEvents) {
-            event.P43HasDimension.to += correction
+            event.hasDimension.to += correction
         }
     }
 
     private convertEventsToMIDI() {
         for (const event of this.negotiatedEvents) {
-            if (event.type?.["@id"] === 'Expression') {
+            if (event.type === 'expression') {
                 const expression = event as Expression
-                if (expression.P2HasType["@id"] === 'SustainPedalOn') {
+                if (expression.P2HasType === 'SustainPedalOn') {
                     this.midiEvents.push({
+                        type: 'sustainPedalOn',
                         performs: event.fromCollatedEvent || event,
                         at: event.assumedPhysicalTime![0],
-                        type: { '@id': 'SustainPedalOnEvent' }
-                    } as SustainPedalOnEvent)
-            
+                    })
+
                 }
-                else if (expression.P2HasType["@id"] === 'SustainPedalOff') {
+                else if (expression.P2HasType === 'SustainPedalOff') {
                     this.midiEvents.push({
+                        type: 'sustainPedalOff',
                         performs: event.fromCollatedEvent || event,
                         at: event.assumedPhysicalTime![0],
-                        type: { '@id': 'SustainPedalOffEvent' }
-                    } as SustainPedalOffEvent)
+                    })
                 }
             }
-            else if (event.type?.["@id"] === 'Note') {
+            else if (event.type === 'note') {
                 // TODO: check if there is a pitch correction
-                
+
                 // take velocity from the calculated velocity list
                 const pitch = (event as Note).hasPitch
                 if (event.trackerHole >= this.options.division) {
@@ -265,10 +276,10 @@ export class Emulation {
         // state of each expression.
 
         for (const negotiatedEvent of this.negotiatedEvents) {
-            if (negotiatedEvent.type?.["@id"] !== 'Expression') continue
+            if (negotiatedEvent.type !== 'expression') continue
 
-            if (scope === 'treble' && negotiatedEvent.trackerHole < this.options.division) continue 
-            else if (scope === 'bass' && negotiatedEvent.trackerHole >= this.options.division) continue 
+            if (scope === 'treble' && negotiatedEvent.trackerHole < this.options.division) continue
+            else if (scope === 'bass' && negotiatedEvent.trackerHole >= this.options.division) continue
 
             const event = negotiatedEvent as Expression & AssumedPhysicalTimeSpan
 
@@ -277,7 +288,7 @@ export class Emulation {
 
             // console.log('encoutering expression', event.P2HasType["@id"], 'from', startMs, 'to', endMs)
 
-            if (event.P2HasType['@id'] === 'MezzoforteOn') {
+            if (event.P2HasType === 'MezzoforteOn') {
                 // update the mezzoforte start time
                 // only if the mf valve is not on already
                 if (!valve_mf_on) {
@@ -285,14 +296,14 @@ export class Emulation {
                     valve_mf_starttime = startMs
                 }
             }
-            else if (event.P2HasType['@id'] === 'MezzoforteOff') {
+            else if (event.P2HasType === 'MezzoforteOff') {
                 if (valve_mf_on) {
                     // fill from the mezzoforte start time to here ...
                     isMF.fill(true, valve_mf_starttime, startMs)
                 }
                 valve_mf_on = false
             }
-            else if (event.P2HasType['@id'] === 'SlowCrescendoOn') {
+            else if (event.P2HasType === 'SlowCrescendoOn') {
                 // update the slow crescendo start time
                 // only if slow crescendo is not on already
                 if (!valve_slowc_on) {
@@ -300,18 +311,18 @@ export class Emulation {
                     valve_slowc_starttime = startMs;
                 }
             }
-            else if (event.P2HasType['@id'] === 'SlowCrescendoOff') {
+            else if (event.P2HasType === 'SlowCrescendoOff') {
                 if (valve_slowc_on) {
                     // fill from the mezzoforte start time to here ...
                     isSlowC.fill(true, valve_slowc_starttime, startMs)
                 }
                 valve_slowc_on = false;
             }
-            else if (event.P2HasType['@id'] === 'ForzandoOn') {
+            else if (event.P2HasType === 'ForzandoOn') {
                 // Forzando On/Off are a direct operations (length of perforation matters)
                 isFastC.fill(true, startMs, endMs)
             }
-            else if (event.P2HasType['@id'] === 'ForzandoOff') {
+            else if (event.P2HasType === 'ForzandoOff') {
                 // Forzando On/Off are a direct operations (length of perforation matters)
                 isFastD.fill(true, startMs, endMs)
             }
@@ -368,15 +379,15 @@ export class Emulation {
 
     private insertNote(event: NegotiatedEvent, pitch: number, velocity: number) {
         this.midiEvents.push({
-            type: { '@id': 'NoteOnEvent' },
+            type: 'noteOn',
             performs: event.fromCollatedEvent || event,
             velocity,
             at: event.assumedPhysicalTime![0],
             pitch
-        } as NoteOnEvent)
+        })
 
         this.midiEvents.push({
-            type: { '@id': 'NoteOffEvent' },
+            type: 'noteOff',
             performs: event.fromCollatedEvent || event,
             velocity: 127,
             at: event.assumedPhysicalTime![1],
@@ -391,49 +402,53 @@ export class Emulation {
     }
 
     timeToPlace(timeInS: number) {
-        if (!this.startTempo || !this.endTempo) return 
+        if (!this.startTempo || !this.endTempo) return
 
         return timeInS * this.startTempo
     }
 
     findEventsPerforming(id: string) {
-        return this.midiEvents.filter(event => event.performs["@id"] === id)
+        return this.midiEvents.filter(event => event.performs.id === id)
     }
 
-    asDataset() {
-        const dataset = createLdoDataset()
-        dataset.startTransaction()
+    asMIDI(): AnyEvent[][] {
+        const events: AnyEvent[] = []
+
+        let currentTime = 0
         for (const event of this.midiEvents) {
-            if (event.type?.["@id"] === 'NoteOnEvent') {
-                dataset.usingType(NoteOnEventShapeType).fromJson(event as NoteOnEvent)
+            const deltaTime = event.at - currentTime
+            
+            if (event.type === 'noteOn') {
+                events.push({
+                    type: 'channel',
+                    subtype: 'noteOn',
+                    noteNumber: event.pitch,
+                    velocity: event.velocity,
+                    deltaTime: deltaTime,
+                    channel: 0
+                })
             }
-            else if (event.type?.["@id"] === 'NoteOffEvent') {
-                dataset.usingType(NoteOffEventShapeType).fromJson(event as NoteOffEvent)
+            else if (event.type === 'noteOff') {
+                events.push({
+                    type: 'channel',
+                    subtype: 'noteOff',
+                    noteNumber: event.pitch,
+                    velocity: event.velocity,
+                    deltaTime,
+                    channel : 0
+                })
             }
-            else if (event.type?.["@id"] === 'SustainPedalOnEvent') {
-                dataset.usingType(SustainPedalOnEventShapeType).fromJson(event as SustainPedalOnEvent)
-            }
-            else if (event.type?.["@id"] === 'SustainPedalOffEvent') {
-                dataset.usingType(SustainPedalOffEventShapeType).fromJson(event as SustainPedalOffEvent)
-            }
-        }
-        return dataset
-    }
+            else if (event.type === 'sustainPedalOn') {
 
-    async importFromTurtle(turtle: string) {
-        const dataset = await parseRdf(turtle)
+            }
+            else if (event.type === 'sustainPedalOff') {
 
-        const noteOnQuads = dataset.match(null, rdf.namedNode(RDF.type), rdf.namedNode(rolloContext.NoteOnEvent as string))
-        for (const quad of noteOnQuads) {
-            const noteOnEvent = dataset.usingType(NoteOnEventShapeType).fromSubject(quad.subject.value)
-            this.midiEvents.push(noteOnEvent)
+            }
+
+            currentTime = event.at
         }
 
-        const noteOffQuads = dataset.match(null, rdf.namedNode(RDF.type), rdf.namedNode(rolloContext.NoteOffEvent as string))
-        for (const quad of noteOffQuads) {
-            const noteOffEvent = dataset.usingType(NoteOffEventShapeType).fromSubject(quad.subject.value)
-            this.midiEvents.push(noteOffEvent)
-        }
+        return [events]
     }
 }
 
@@ -442,9 +457,9 @@ const meanDimensionOf = (collatedEvent: CollatedEvent): [number, number] | undef
     if (!originalEvents) return
 
     const meanStart =
-        originalEvents.reduce((acc, cur) => acc + cur.P43HasDimension.from, 0) / originalEvents.length
+        originalEvents.reduce((acc, cur) => acc + cur.hasDimension.from, 0) / originalEvents.length
     const meanEnd =
-        originalEvents.reduce((acc, cur) => acc + cur.P43HasDimension.to, 0) / originalEvents.length
+        originalEvents.reduce((acc, cur) => acc + cur.hasDimension.to, 0) / originalEvents.length
 
     return [meanStart, meanEnd]
 }

@@ -1,32 +1,29 @@
 import { AtonParser } from "./aton/AtonParser";
-import { ExpressionShapeType, MeasurementEventShapeType, NoteShapeType, PhysicalRollCopyShapeType } from "./.ldo/rollo.shapeTypes";
-import { ConditionAssessment, ConditionState, EventSpan, Expression, MeasurementEvent, Note, PhysicalRollCopy } from "./.ldo/rollo.typings";
-import { LdoDataset, createLdoDataset } from "ldo";
 import { v4 } from "uuid";
 import { keyToType, typeToKey } from "./keyToType";
-import { rolloContext } from "./.ldo/rollo.context";
-import rdf from '@rdfjs/data-model'
-import { RDF } from "@inrupt/vocab-common-rdf";
+import { ConditionAssessment, ConditionState, EventSpan, Expression, MeasurementEvent, Note, PhysicalRollCopy, RollEvent, Shifting, Stretching } from "./types";
+
+export type Operation = Shifting | Stretching
 
 export class RollCopy {
     physicalItem: PhysicalRollCopy
     events: (Note | Expression)[]
     conditionAssessments: ConditionAssessment[]
     measurement?: MeasurementEvent
-    baseURI: string = 'https://linked-rolls.org/'
+    operations: (Shifting | Stretching)[]
 
-    constructor(attachToItem?: string) {
+    constructor() {
         this.physicalItem = {
-            '@id': attachToItem,
-            P2HasType: 'welte-red',
-            type: { '@id': 'F5Item' }
+            id: v4(),
+            hasType: 'welte-red',
         }
         this.events = []
         this.conditionAssessments = []
+        this.operations = []
     }
 
     setRollType(type: 'welte-red') {
-        this.physicalItem.P2HasType = `https://linked-rolls.org/skos/${type}`
+        this.physicalItem.hasType = `https://linked-rolls.org/skos/${type}`
     }
 
     readFromStanfordAton(atonString: string, adjustByRewind: boolean = true) {
@@ -61,16 +58,13 @@ export class RollCopy {
             const columnWidth = +hole.WIDTH_COL.replace('px', '') + 20;
 
             const dimension: EventSpan = {
-                '@id': `${this.baseURI}#${v4()}`,
-                type: { '@id': 'EventSpan' },
-                P91HasUnit: 'mm',
+                id: v4(),
+                hasUnit: 'mm',
                 from: pixelsToMillimeters(noteAttack, dpi),
                 to: pixelsToMillimeters(offset, dpi)
             }
 
-            const annotates = {
-                '@id': `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${noteAttack},${columnWidth},${height}/128,/0/default.jpg`
-            }
+            const annotates = `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${noteAttack},${columnWidth},${height}/128,/0/default.jpg`
 
             if (midiKey <= 23 || midiKey >= 104) {
                 const type = keyToType(midiKey)
@@ -82,116 +76,82 @@ export class RollCopy {
                 const scope = midiKey <= 23 ? 'bass' : 'treble'
 
                 this.events.push({
-                    '@id': `${this.baseURI}#${v4()}`,
-                    'type': { '@id': 'Expression' },
-                    'P2HasType': { '@id': type as any },
-                    'hasScope': { '@id': scope },
-                    P43HasDimension: dimension,
-                    L43Annotates: annotates,
+                    type: 'expression',
+                    id: v4(),
+                    P2HasType: type,
+                    hasScope: scope,
+                    hasDimension: dimension,
+                    annotates: annotates,
                     trackerHole
-                })
+                } as Expression)
             }
             else {
                 this.events.push({
-                    '@id': `${this.baseURI}#${v4()}`,
-                    'type': { '@id': 'Note' },
-                    L43Annotates: {
-                        '@id': `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${noteAttack},${columnWidth},${height}/128,/0/default.jpg`
-                    },
-                    P43HasDimension: {
-                        '@id': `${this.baseURI}#${v4()}`,
-                        type: { '@id': 'EventSpan' },
-                        P91HasUnit: 'mm',
+                    type: 'note',
+                    id: v4(),
+                    annotates: `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${noteAttack},${columnWidth},${height}/128,/0/default.jpg`,
+                    hasDimension: {
+                        id: v4(),
+                        hasUnit: 'mm',
                         from: pixelsToMillimeters(noteAttack, dpi),
                         to: pixelsToMillimeters(offset, dpi)
                     },
                     hasPitch: midiKey,
                     trackerHole
-                })
+                } as Note)
             }
         }
 
         this.measurement = {
-            '@id': `${this.baseURI}#${v4()}`,
-            type: { '@id': 'D11DigitalMeasurementEvent' },
-            P39Measured: this.physicalItem,
-            L20HasCreated: this.events
+            id: v4(),
+            measured: this.physicalItem,
+            hasCreated: this.events
         }
     }
 
-    assessCondition(state: Omit<ConditionState, 'P44iIsConditionOf'>, actor: string) {
+    assessCondition(state: Omit<ConditionState, 'isConditionOf'>, actor: string) {
         this.conditionAssessments.push({
-            P14CarriedOutBy: { '@id': actor },
-            type: { '@id': 'E14ConditionAssessment' },
-            P4HasTimeSpan: { P82AtSomeTimeWithin: 'now', 'type': { '@id': 'E52TimeSpan' } },
-            P35HasIdentified: {
+            id: v4(),
+            carriedOutBy: actor,
+            hasTimeSpan: { 'id': v4(), atSomeTimeWithin: 'now' },
+            hasIndentified: {
                 ...state,
-                P44iIsConditionOf: this.physicalItem
+                isConditionOf: this.physicalItem
             }
         })
     }
 
-    asDataset() {
-        console.log('before exporting:', this.measurement)
-        const dataset = createLdoDataset()
-        dataset.startTransaction()
-        for (const event of this.events) {
-            if (event.type?.["@id"] === 'Expression') {
-                dataset.usingType(ExpressionShapeType).fromJson(event as Expression)
-            }
-            else {
-                dataset.usingType(NoteShapeType).fromJson(event as Note)
+    applyOperations(ops: Operation[]) {
+        for (const operation of ops) {
+            for (const event of this.events) {
+                if (operation.type === 'stretching') {
+                    event.hasDimension.from *= (operation as Stretching).factor
+                    event.hasDimension.to *= (operation as Stretching).factor
+                }
+                else if (operation.type === 'shifting') {
+                    event.hasDimension.from += (operation as Shifting).horizontal
+                    event.hasDimension.to += (operation as Shifting).horizontal
+                    event.trackerHole += (operation as Shifting).vertical
+                }
             }
         }
-
-        dataset.usingType(PhysicalRollCopyShapeType).fromJson(this.physicalItem)
-        if (this.measurement) {
-            dataset.usingType(MeasurementEventShapeType).fromJson(this.measurement)
-        }
-
-        return dataset
+        this.operations.push(...ops)
     }
 
-    async importFromDataset(dataset: LdoDataset, physicalItemId: string) {
-        this.events = []
-
-        const measurements = dataset.match(
-            null,
-            rdf.namedNode((rolloContext.P39Measured as any)['@id'] as string),
-            rdf.namedNode(physicalItemId))
-
-        for (const measurementMatch of measurements) {
-            this.measurement = dataset.usingType(MeasurementEventShapeType).fromSubject(measurementMatch.subject.value)
-        }
-
-        const links = this.measurement?.L20HasCreated
-        if (!links) return
-
-        for (const link of links) {
-            if (!link['@id']) continue
-
-            console.log('link id=', link['@id'])
-            const noteQuads = dataset.match(
-                rdf.namedNode(link["@id"]),
-                rdf.namedNode(RDF.type),
-                rdf.namedNode(rolloContext.Note as string))
-
-            for (const quad of noteQuads) {
-                const event = dataset.usingType(NoteShapeType).fromSubject(quad.subject.value)
-                this.events.push(event)
-            }
-
-            const expressionQuads = dataset.match(
-                rdf.namedNode(link["@id"]),
-                rdf.namedNode(RDF.type),
-                rdf.namedNode(rolloContext.Expression as string))
-            for (const quad of expressionQuads) {
-                const event = dataset.usingType(ExpressionShapeType).fromSubject(quad.subject.value)
-                this.events.push(event)
+    undoOperations() {
+        for (const operation of this.operations) {
+            for (const event of this.events) {
+                if (operation.type === 'shifting') {
+                    event.hasDimension.from -= (operation as Shifting).horizontal
+                    event.hasDimension.to -= (operation as Shifting).horizontal
+                    event.trackerHole -= (operation as Shifting).vertical
+                }
+                else if (operation.type === 'stretching') {
+                    event.hasDimension.from /= (operation as Stretching).factor
+                    event.hasDimension.to /= (operation as Stretching).factor
+                }
             }
         }
-
-        console.log('event size=', this.events)
     }
 
     /**
