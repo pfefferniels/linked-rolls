@@ -6,4 +6,5 @@ export const asTurtle = (
     collatedEvents: CollatedEvent[],
     editorialAssumptions: Assumption[]) => {
     // TODO: implement with rdflib.js
+    console.log(sources, collatedEvents, editorialAssumptions)
 }

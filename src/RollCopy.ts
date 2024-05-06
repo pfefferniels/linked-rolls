@@ -1,7 +1,7 @@
 import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
 import { keyToType, typeToKey } from "./keyToType";
-import { ConditionAssessment, ConditionState, EventSpan, Expression, MeasurementEvent, Note, PhysicalRollCopy, RollEvent, Shifting, Stretching } from "./types";
+import { ConditionAssessment, ConditionState, EventSpan, Expression, MeasurementEvent, Note, PhysicalRollCopy, Shifting, Stretching } from "./types";
 
 export type Operation = Shifting | Stretching
 

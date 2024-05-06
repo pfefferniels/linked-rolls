@@ -1,4 +1,5 @@
-export { Collator } from './Collator'
 export { RollCopy } from './RollCopy'
 export { Emulation } from './Emulation'
-export { createCutout } from './createCutout'
+export { asXML } from './asXML'
+export { asTurtle } from './asTurtle'
+export { collateRolls } from './Collator'

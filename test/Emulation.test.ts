@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from "fs";
 import { RollCopy } from '../src/RollCopy';
-import { Collator } from '../src/Collator';
 import { Emulation } from '../src/Emulation';
 const path = require("path");
 

@@ -1,47 +1,44 @@
 import { describe, expect, test } from 'vitest'
 import { readFileSync } from "fs";
 import { RollCopy } from '../src/RollCopy';
-import { RDF } from '@inrupt/vocab-common-rdf'
-import rdf from '@rdfjs/data-model'
-import { rolloContext } from '../src/.ldo/rollo.context';
-import { datasetToString } from '@ldo/rdf-utils';
-import { parseRdf } from 'ldo';
+import { v4 } from 'uuid';
 const path = require("path");
 
 describe('LinkedRoll class', () => {
-    test('it imports ATON files correctly', async () => {
-        const file = readFileSync(path.resolve(__dirname, "./fixtures/faust.txt"));
-        const contents = file.toString()
-        const lr = new RollCopy()
-        lr.readFromStanfordAton(contents)
-        expect(lr.asDataset().match(null, rdf.namedNode(`http://www.ics.forth.gr/isl/CRMdig/L43_annotates`), null).size).toBe(2406)
+    const file = readFileSync(path.resolve(__dirname, "./fixtures/faust.txt"));
+    const contents = file.toString()
+    const rollCopy = new RollCopy()
+    rollCopy.readFromStanfordAton(contents)
+
+    test('imports ATON files correctly', async () => {
+        expect(rollCopy.events.length).toEqual(2406)
     })
 
-    test('it exports stuff', async () => {
-        const file = readFileSync(path.resolve(__dirname, "./fixtures/short_analysis.txt"));
-        const contents = file.toString()
-        const lr = new RollCopy('physical-copy')
-        lr.readFromStanfordAton(contents)
-        console.log(await datasetToString(lr.asDataset(), {}))
-    })
-
-    test('it imports stuff', async () => {
-        const file = readFileSync(path.resolve(__dirname, "./fixtures/rollcopy.ttl"));
-        const contents = file.toString()
-
-        const lr = new RollCopy()
-        lr.importFromDataset(await parseRdf(contents), 'physical-copy')
-    })
-
-    test('it assess conditions', async () => {
-        const lr = new RollCopy()
-
-        lr.assessCondition({
-            type: { '@id': 'E5ConditionState' },
-            P3HasNote: 'exposure to high humidity changed to paper',
-            P4HasTimeSpan: { 'P82AtSomeTimeWithin': '1970-now', type: { '@id': 'E52TimeSpan' } },
+    test('assess conditions', async () => {
+        rollCopy.assessCondition({
+            id: v4(),
+            hasNote: 'exposure to high humidity changed to paper',
+            hasTimeSpan: { id: v4(), atSomeTimeWithin: '1970-now' },
         }, 'https://orcid.org/me')
 
-        expect(lr.asDataset().match(null, rdf.namedNode(RDF.type), rdf.namedNode(rolloContext.E5ConditionState as string)).size).toBe(1)
+        expect(rollCopy.conditionAssessments.length).toEqual(1)
+    })
+
+    test ('applies operations', async () => {
+        rollCopy.applyOperations([
+            {
+                type: 'shifting',
+                id: v4(),
+                vertical: 0,
+                horizontal: 50
+            },
+            {
+                type: 'stretching',
+                id: v4(),
+                factor: 1.2
+            }
+        ])
+
+        expect(rollCopy.operations.length).toEqual(2)
     })
 })
