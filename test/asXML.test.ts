@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from "fs";
-import { RollCopy, collateRolls } from '../src';
+import { RollCopy, asXML, collateRolls } from '../src';
 import { v4 } from 'uuid';
 const path = require("path");
 
@@ -12,11 +12,11 @@ const fileToRollCopy = (filename: string) => {
     return lr
 }
 
-describe('Collator', () => {
+describe('asXML', () => {
     const copy1 = fileToRollCopy("./fixtures/traeumerei1_analysis.txt")
     const copy2 = fileToRollCopy("./fixtures/traeumerei2_analysis.txt")
 
-    it('collates it with another copy of the same roll', async () => {
+    it('exports xml', async () => {
         copy1.applyOperations([
             {
                 type: 'shifting',
@@ -32,5 +32,8 @@ describe('Collator', () => {
 
         const collatedEvents = collateRolls([copy1, copy2])
         expect(collatedEvents.length).toBeGreaterThan(1)
+
+        const xml = asXML([copy1, copy2], collatedEvents, [])
+        console.log(new XMLSerializer().serializeToString(xml))
     })
 })

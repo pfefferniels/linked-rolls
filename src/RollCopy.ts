@@ -15,7 +15,9 @@ export class RollCopy {
     constructor() {
         this.physicalItem = {
             id: v4(),
-            hasType: 'welte-red',
+            hasType: '',
+            catalogueNumber: '',
+            rollDate: ''
         }
         this.events = []
         this.conditionAssessments = []

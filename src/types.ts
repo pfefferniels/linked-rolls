@@ -53,6 +53,8 @@ export interface MeasurementEvent extends WithId {
  */
 export interface PhysicalRollCopy extends WithId {
     hasType: string;
+    catalogueNumber: string
+    rollDate: string
 }
 
 /**
