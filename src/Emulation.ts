@@ -4,7 +4,7 @@
  * was taken from the midi2exp project (https://github.com/pianoroll/midi2exp)
  * and adapted to the different data representation.
  */
-import { AnyEvent } from "midifile-ts";
+import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { Assumption, RelativePlacement, TempoAdjustment, CollatedEvent, Expression, Note } from "./types";
 
 function resize<T>(arr: T[], newSize: number, defaultValue: T) {
@@ -12,26 +12,26 @@ function resize<T>(arr: T[], newSize: number, defaultValue: T) {
         arr.push(defaultValue);
 }
 
-interface LinkedMIDIEvent<T> {
+interface PerformedRollEvent<T> {
     type: T
     performs: (CollatedEvent | NegotiatedEvent)
     at: number
 }
 
-interface NoteEvent<T> extends LinkedMIDIEvent<T> {
+interface PerformedNoteEvent<T> extends PerformedRollEvent<T> {
     pitch: number;
     velocity: number;
 }
 
-interface NoteOnEvent extends NoteEvent<'noteOn'> { }
-interface NoteOffEvent extends NoteEvent<'noteOff'> { }
-interface SustainPedalOnEvent extends LinkedMIDIEvent<'sustainPedalOn'> { }
-interface SustainPedalOffEvent extends LinkedMIDIEvent<'sustainPedalOff'> { }
+export interface PerformedNoteOnEvent extends PerformedNoteEvent<'noteOn'> { }
+export interface PerformedNoteOffEvent extends PerformedNoteEvent<'noteOff'> { }
+export interface PerformedSustainPedalOnEvent extends PerformedRollEvent<'sustainPedalOn'> { }
+export interface PerformedSustainPedalOffEvent extends PerformedRollEvent<'sustainPedalOff'> { }
 
-export type AnyLinkedMIDIEvent =
-    NoteOnEvent |
-    NoteOffEvent |
-    SustainPedalOnEvent | SustainPedalOffEvent
+export type AnyPerformedRollEvent =
+    PerformedNoteOnEvent |
+    PerformedNoteOffEvent |
+    PerformedSustainPedalOnEvent | PerformedSustainPedalOffEvent
 
 type FromCollatedEvent = {
     fromCollatedEvent?: (CollatedEvent)
@@ -60,8 +60,7 @@ type EmulationOptions = {
 }
 
 export class Emulation {
-    baseURI: string = 'https://linked-rolls.org/'
-    midiEvents: AnyLinkedMIDIEvent[] = []
+    midiEvents: AnyPerformedRollEvent[] = []
 
     // sorted list of events with the negotiated assumptions already applied
     negotiatedEvents: NegotiatedEvent[] = []
@@ -241,6 +240,8 @@ export class Emulation {
     }
 
     calculateVelocities(scope: 'treble' | 'bass') {
+        if (!this.negotiatedEvents.length) return
+
         const velocities = scope === 'treble' ? this.trebleVelocities : this.bassVelocities
 
         const isMF: boolean[] = [] // is MF hook on?
@@ -392,7 +393,7 @@ export class Emulation {
             velocity: 127,
             at: event.assumedPhysicalTime![1],
             pitch
-        } as NoteOffEvent)
+        } as PerformedNoteOffEvent)
     }
 
     placeToTime(place: number) {
@@ -411,20 +412,27 @@ export class Emulation {
         return this.midiEvents.filter(event => event.performs.id === id)
     }
 
-    asMIDI(): AnyEvent[][] {
+    asMIDI(): MidiFile {
         const events: AnyEvent[] = []
+        this.midiEvents.sort((a, b) => a.at - b.at)
 
         let currentTime = 0
+        events.push({
+            type: 'meta',
+            subtype: 'setTempo',
+            microsecondsPerBeat: 60000000 / (this.startTempo || 80),
+            deltaTime: 0
+        })
         for (const event of this.midiEvents) {
-            const deltaTime = event.at - currentTime
-            
+            const deltaTime = this.timeToPlace(event.at)! - this.timeToPlace(currentTime)!
+
             if (event.type === 'noteOn') {
                 events.push({
                     type: 'channel',
                     subtype: 'noteOn',
                     noteNumber: event.pitch,
-                    velocity: event.velocity,
-                    deltaTime: deltaTime,
+                    velocity: +event.velocity.toFixed(0),
+                    deltaTime: +deltaTime.toFixed(0),
                     channel: 0
                 })
             }
@@ -433,22 +441,43 @@ export class Emulation {
                     type: 'channel',
                     subtype: 'noteOff',
                     noteNumber: event.pitch,
-                    velocity: event.velocity,
-                    deltaTime,
-                    channel : 0
+                    velocity: +event.velocity.toFixed(0),
+                    deltaTime: +deltaTime.toFixed(0),
+                    channel: 0
                 })
             }
             else if (event.type === 'sustainPedalOn') {
-
+                events.push({
+                    type: 'channel',
+                    subtype: 'controller',
+                    controllerType: MIDIControlEvents.SUSTAIN,
+                    deltaTime: +deltaTime.toFixed(0),
+                    channel: 0,
+                    value: 127
+                })
             }
             else if (event.type === 'sustainPedalOff') {
-
+                events.push({
+                    type: 'channel',
+                    subtype: 'controller',
+                    controllerType: MIDIControlEvents.SUSTAIN,
+                    deltaTime: +deltaTime.toFixed(0),
+                    channel: 0,
+                    value: 0
+                })
             }
 
             currentTime = event.at
         }
 
-        return [events]
+        return {
+            header: {
+                ticksPerBeat: 600,
+                formatType: 0,
+                trackCount: 1
+            },
+            tracks: [events]
+        }
     }
 }
 
