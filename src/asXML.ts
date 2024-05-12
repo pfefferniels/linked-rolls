@@ -31,18 +31,19 @@ export const asXML = (
     sources: RollCopy[],
     collatedEvents: CollatedEvent[],
     editorialAssumptions: Assumption[]) => {
-    const result = document.implementation.createDocument(null, 'roll');
+    const doc = document.implementation.createDocument(null, 'roll');
+    const roll = doc.documentElement
 
-    const sourceDesc = result.createElementNS(namespace, 'sourceDesc')
+    const sourceDesc = doc.createElementNS(namespace, 'sourceDesc')
     for (const source of sources) {
-        const sourceEl = result.createElementNS(namespace, 'source')
+        const sourceEl = doc.createElementNS(namespace, 'source')
         sourceEl.setAttribute('xml:id', source.physicalItem.id)
         sourceEl.setAttribute('type', source.physicalItem.hasType)
 
         if (source.operations.length) {
-            const collationDesc = result.createElementNS(namespace, 'collation')
+            const collationDesc = doc.createElementNS(namespace, 'collation')
             for (const op of source.operations) {
-                const child = result.createElementNS(namespace, op.type)
+                const child = doc.createElementNS(namespace, op.type)
                 if (op.type === 'shifting') {
                     child.setAttribute('horizontal', op.horizontal.toString())
                     child.setAttribute('vertical', op.vertical.toString())
@@ -56,21 +57,39 @@ export const asXML = (
         }
         sourceDesc.appendChild(sourceEl)
     }
-    result.appendChild(sourceDesc)
+    roll.appendChild(sourceDesc)
 
-    const body = result.createElementNS(namespace, 'body')
+    const body = doc.createElementNS(namespace, 'body')
     for (const event of collatedEvents) {
         if (!event.wasCollatedFrom.length) continue
 
-        const type = event.wasCollatedFrom[0].type
+        const firstEvent = event.wasCollatedFrom[0]
+        const type = firstEvent.type
         const holeStart = event.wasCollatedFrom.reduce((acc, curr) => acc + curr.hasDimension.from, 0) / event.wasCollatedFrom.length
         const holeEnd = event.wasCollatedFrom.reduce((acc, curr) => acc + curr.hasDimension.to, 0) / event.wasCollatedFrom.length
         const holeUnit = event.wasCollatedFrom[0].hasDimension.hasUnit
 
-        const eventEl = result.createElementNS(namespace, type)
+        const eventEl = doc.createElementNS(namespace, type)
         eventEl.setAttribute('hole.start', holeStart.toString())
         eventEl.setAttribute('hole.end', holeEnd.toString())
         eventEl.setAttribute('hole.unit', holeUnit)
+        eventEl.setAttribute('trackerHole', firstEvent.trackerHole.toString())
+
+        if (type == 'note') {
+            eventEl.setAttribute('pitch', firstEvent.hasPitch.toString())
+        }
+        else if (type === 'expression') {
+            eventEl.setAttribute('scope', firstEvent.hasScope)
+            eventEl.setAttribute('type', firstEvent.P2HasType)
+        }
+
+        for (const collatedEvent of event.wasCollatedFrom) {
+            if (!collatedEvent.annotates) return
+
+            const facs = doc.createElementNS(namespace, 'facs')
+            facs.setAttribute('url', collatedEvent.annotates)
+            eventEl.appendChild(facs)
+        }
 
         body.appendChild(eventEl)
     }
@@ -79,16 +98,16 @@ export const asXML = (
         if (assumption.type === 'unification') {
             if (!assumption.unified.length) continue
 
-            const choice = result.createElementNS(namespace, 'choice')
-            const sic = result.createElementNS(namespace, 'sic')
+            const choice = doc.createElementNS(namespace, 'choice')
+            const sic = doc.createElementNS(namespace, 'sic')
             const affectedElements = assumption.unified
-                .map(event => result.querySelector(`*[*|id='${event.id}']`))
+                .map(event => roll.querySelector(`*[*|id='${event.id}']`))
                 .filter(element => element !== null)
             wrapAll(affectedElements as Element[], sic)
             choice.appendChild(sic)
             wrapAll([sic], choice)
 
-            const corr = result.createElementNS(namespace, 'corr')
+            const corr = doc.createElementNS(namespace, 'corr')
             const meanOnsets = assumption.unified.map(event => {
                 const sum = event.wasCollatedFrom.reduce((acc, curr) => acc + curr.hasDimension.from, 0)
                 return sum / event.wasCollatedFrom.length
@@ -102,7 +121,7 @@ export const asXML = (
             const beginning = Math.min(...meanOnsets)
             const end = Math.min(...meanOffsets)
 
-            const virtualHole = result.createElementNS(namespace, assumption.unified[0].wasCollatedFrom[0].type)
+            const virtualHole = doc.createElementNS(namespace, assumption.unified[0].wasCollatedFrom[0].type)
             virtualHole.setAttribute('hole.start', beginning.toString())
             virtualHole.setAttribute('hole.end', end.toString())
             virtualHole.setAttribute('hole.unit', assumption.unified[0].wasCollatedFrom[0].hasDimension.hasUnit)
@@ -111,7 +130,7 @@ export const asXML = (
             choice.appendChild(corr)
         }
     }
-    result.appendChild(body)
+    roll.appendChild(body)
 
-    return result
+    return roll
 }
