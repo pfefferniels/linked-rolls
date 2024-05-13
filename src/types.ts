@@ -102,10 +102,18 @@ interface EditorialAction<T> extends WithId {
     carriedOutBy: string
 }
 
+/**
+ * Unification corrects an error in the perforation of
+ * a roll copy where one event unintentionally was split in two.
+ */
 export interface Unification extends EditorialAction<'unification'> {
     unified: CollatedEvent[]
 }
 
+/**
+ * Unification corrects an error in the perforation of
+ * a roll copy where two events unintentionally became one.
+ */
 export interface Separation extends EditorialAction<'separation'> {
     separated: CollatedEvent
     into: CollatedEvent[]
