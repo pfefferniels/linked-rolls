@@ -40,6 +40,10 @@ export const asXML = (
         sourceEl.setAttribute('xml:id', source.physicalItem.id)
         sourceEl.setAttribute('type', source.physicalItem.hasType)
 
+        const rollDate = doc.createElementNS(namespace, 'rollDate')
+        rollDate.textContent = source.physicalItem.rollDate
+        sourceEl.appendChild(rollDate)
+
         if (source.operations.length) {
             const collationDesc = doc.createElementNS(namespace, 'collation')
             for (const op of source.operations) {
@@ -55,6 +59,9 @@ export const asXML = (
             }
             sourceEl.appendChild(collationDesc)
         }
+
+
+
         sourceDesc.appendChild(sourceEl)
     }
     roll.appendChild(sourceDesc)
