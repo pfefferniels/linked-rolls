@@ -1,3 +1,4 @@
+import { v4 } from 'uuid';
 import { RollCopy } from './RollCopy'
 import { Assumption, CollatedEvent } from './types'
 
@@ -113,8 +114,6 @@ export const asXML = (
                 .map(event => roll.querySelector(`*[*|id='${event.id}']`))
                 .filter(element => element !== null)
             wrapAll(affectedElements as Element[], sic)
-            choice.appendChild(sic)
-            wrapAll([sic], choice)
 
             const corr = doc.createElementNS(namespace, 'corr')
             const meanOnsets = assumption.unified.map(event => {
@@ -131,11 +130,14 @@ export const asXML = (
             const end = Math.min(...meanOffsets)
 
             const virtualHole = doc.createElementNS(namespace, assumption.unified[0].wasCollatedFrom[0].type)
+            virtualHole.setAttribute('id', v4())
             virtualHole.setAttribute('hole.start', beginning.toString())
             virtualHole.setAttribute('hole.end', end.toString())
             virtualHole.setAttribute('hole.unit', assumption.unified[0].wasCollatedFrom[0].hasDimension.hasUnit)
 
             corr.appendChild(virtualHole)
+
+            wrapAll([sic], choice)
             choice.appendChild(corr)
         }
         else if (assumption.type === 'lemma') {
