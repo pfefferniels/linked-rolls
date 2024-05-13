@@ -31,7 +31,7 @@ export const asXML = (
     sources: RollCopy[],
     collatedEvents: CollatedEvent[],
     editorialAssumptions: Assumption[]) => {
-    const doc = document.implementation.createDocument(null, 'roll');
+    const doc = document.implementation.createDocument(namespace, 'roll');
     const roll = doc.documentElement
 
     const sourceDesc = doc.createElementNS(namespace, 'sourceDesc')
@@ -70,6 +70,7 @@ export const asXML = (
         const holeUnit = event.wasCollatedFrom[0].hasDimension.hasUnit
 
         const eventEl = doc.createElementNS(namespace, type)
+        eventEl.setAttribute('id', event.id)
         eventEl.setAttribute('hole.start', holeStart.toString())
         eventEl.setAttribute('hole.end', holeEnd.toString())
         eventEl.setAttribute('hole.unit', holeUnit)
@@ -93,6 +94,7 @@ export const asXML = (
 
         body.appendChild(eventEl)
     }
+    roll.appendChild(body)
 
     for (const assumption of editorialAssumptions) {
         if (assumption.type === 'unification') {
@@ -129,8 +131,33 @@ export const asXML = (
             corr.appendChild(virtualHole)
             choice.appendChild(corr)
         }
+        else if (assumption.type === 'lemma') {
+            if (!assumption.over.length || !assumption.preferred.length) continue
+
+            const lemma = doc.createElementNS(namespace, 'lemma')
+            const preferredEls = assumption.preferred
+                .map(event => roll.querySelector(`*[*|id='${event.id}']`))
+                .filter(element => element !== null) as Element[]
+            if (!preferredEls.length) {
+                console.log('Could not find the specified elements', assumption.preferred.map(e => e.id).join(' '), 'in the XML document')
+                continue
+            }
+            wrapAll(preferredEls, lemma)
+
+            const rdg = doc.createElementNS(namespace, 'rdg')
+            const otherEls = assumption.over
+                .map(event => roll.querySelector(`*[*|id='${event.id}']`))
+                .filter(element => element !== null) as Element[]
+            if (!otherEls.length) {
+                console.log('Could not find the specified elements', assumption.over.map(e => e.id).join(' '), 'in the XML document')
+                continue
+            }
+            wrapAll(otherEls, rdg)
+
+            const app = doc.createElementNS(namespace, 'app')
+            wrapAll([lemma, rdg], app)
+        }
     }
-    roll.appendChild(body)
 
     return roll
 }
