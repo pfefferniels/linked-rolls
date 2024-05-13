@@ -109,6 +109,7 @@ export const asXML = (
             if (!assumption.unified.length) continue
 
             const choice = doc.createElementNS(namespace, 'choice')
+            choice.setAttribute('id', assumption.id)
             const sic = doc.createElementNS(namespace, 'sic')
             const affectedElements = assumption.unified
                 .map(event => roll.querySelector(`*[*|id='${event.id}']`))
@@ -188,6 +189,7 @@ export const asXML = (
             wrapAll(otherEls, rdg)
 
             const app = doc.createElementNS(namespace, 'app')
+            app.setAttribute('id', assumption.id)
             wrapAll([lemma, rdg], app)
         }
     }
