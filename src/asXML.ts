@@ -142,6 +142,18 @@ export const asXML = (
                 console.log('Could not find the specified elements', assumption.preferred.map(e => e.id).join(' '), 'in the XML document')
                 continue
             }
+
+            // Determine the sources
+            const lemmaSources = []
+            for (const event of assumption.preferred) {
+                for (const copyEvent of event.wasCollatedFrom) {
+                    const containingSource = sources.find(source => source.hasEvent(copyEvent))
+                    if (containingSource) {
+                        lemmaSources.push(`#${containingSource.id}`)
+                    }
+                }
+            }
+            lemma.setAttribute('source', lemmaSources.join(' '))
             wrapAll(preferredEls, lemma)
 
             const rdg = doc.createElementNS(namespace, 'rdg')
@@ -152,6 +164,18 @@ export const asXML = (
                 console.log('Could not find the specified elements', assumption.over.map(e => e.id).join(' '), 'in the XML document')
                 continue
             }
+
+            // Determine the sources
+            const otherSources = []
+            for (const event of assumption.over) {
+                for (const copyEvent of event.wasCollatedFrom) {
+                    const containingSource = sources.find(source => source.hasEvent(copyEvent))
+                    if (containingSource) {
+                        otherSources.push(`#${containingSource.id}`)
+                    }
+                }
+            }
+            rdg.setAttribute('source', otherSources.join(' '))
             wrapAll(otherEls, rdg)
 
             const app = doc.createElementNS(namespace, 'app')

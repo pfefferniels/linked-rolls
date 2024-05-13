@@ -171,4 +171,12 @@ export class RollCopy {
 
         return clone
     }
+
+    hasEvent(otherEvent: Note | Expression) {
+        return this.events.findIndex(e => e.id === otherEvent.id) !== -1
+    }
+
+    get id() {
+        return this.physicalItem.id
+    }
 }
