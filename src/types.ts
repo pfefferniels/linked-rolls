@@ -90,6 +90,10 @@ export interface CollatedEvent extends WithId {
     isNonMusical?: boolean;
 }
 
+export const isCollatedEvent = (e: any) => {
+    return 'wasCollatedFrom' in e
+}
+
 /**
  * Collation Type
  */
@@ -97,9 +101,13 @@ export interface Collation extends WithId {
     collated: string[]; // roll copies?
 }
 
+export type Certainty = 'high' | 'medium' | 'low' | 'unknown'
+
 interface EditorialAction<T> extends WithId {
     type: T
     carriedOutBy: string
+    certainty?: Certainty
+    note?: string
 }
 
 /**

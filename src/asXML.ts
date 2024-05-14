@@ -140,6 +140,16 @@ export const asXML = (
 
             wrapAll([sic], choice)
             choice.appendChild(corr)
+
+            if (assumption.certainty) {
+                corr.setAttribute('cert', assumption.certainty)
+            }
+
+            if (assumption.note) {
+                const noteEl = doc.createElementNS(namespace, 'note')
+                noteEl.textContent = assumption.note
+                choice.appendChild(noteEl)
+            }
         }
         else if (assumption.type === 'lemma') {
             if (!assumption.over.length || !assumption.preferred.length) continue
