@@ -6,6 +6,7 @@
  */
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { Assumption, RelativePlacement, TempoAdjustment, CollatedEvent, Expression, Note } from "./types";
+import { GottschewskiConversion } from "./PlaceTimeConversion";
 
 function resize<T>(arr: T[], newSize: number, defaultValue: T) {
     while (newSize > arr.length)
@@ -60,6 +61,7 @@ type EmulationOptions = {
 }
 
 export class Emulation {
+    placeTimeConversion = new GottschewskiConversion()
     midiEvents: AnyPerformedRollEvent[] = []
 
     // sorted list of events with the negotiated assumptions already applied
@@ -144,8 +146,8 @@ export class Emulation {
             .filter(assumption => assumption.type === 'tempoAdjustment') as TempoAdjustment[]
 
         if (adjustments.length === 0) {
-            this.startTempo = 80
-            this.endTempo = 80
+            this.startTempo = 104.331
+            this.endTempo = 104.331
             return
         }
 
@@ -163,8 +165,8 @@ export class Emulation {
         for (const event of this.negotiatedEvents) {
             if (!event.assumedPhysicalTime) {
                 event.assumedPhysicalTime = [
-                    this.placeToTime(event.hasDimension.from) || 0.1,
-                    this.placeToTime(event.hasDimension.to) || 0.1
+                    this.placeTimeConversion.placeToTime(event.hasDimension.from / 10) || 0.1,
+                    this.placeTimeConversion.placeToTime(event.hasDimension.to / 10) || 0.1
                 ]
             }
         }
@@ -215,8 +217,8 @@ export class Emulation {
     }
 
     emulateFromRoll(events: (Note | Expression)[]) {
-        this.startTempo = 90
-        this.endTempo = 90
+        this.startTempo = 104.331
+        this.endTempo = 104.331
         this.negotiatedEvents = structuredClone(events)
         this.applyTrackerBarExtension()
         this.applyRollTempo()
@@ -396,18 +398,6 @@ export class Emulation {
         } as PerformedNoteOffEvent)
     }
 
-    placeToTime(place: number) {
-        if (!this.startTempo || !this.endTempo) return
-
-        return place / this.startTempo
-    }
-
-    timeToPlace(timeInS: number) {
-        if (!this.startTempo || !this.endTempo) return
-
-        return timeInS * this.startTempo
-    }
-
     findEventsPerforming(id: string) {
         return this.midiEvents.filter(event => event.performs.id === id)
     }
@@ -420,11 +410,11 @@ export class Emulation {
         events.push({
             type: 'meta',
             subtype: 'setTempo',
-            microsecondsPerBeat: 60000000 / (this.startTempo || 80),
+            microsecondsPerBeat: 1000,
             deltaTime: 0
         })
         for (const event of this.midiEvents) {
-            const deltaTime = this.timeToPlace(event.at)! - this.timeToPlace(currentTime)!
+            const deltaTimeMs = (event.at - currentTime) * 1000
 
             if (event.type === 'noteOn') {
                 events.push({
@@ -432,7 +422,7 @@ export class Emulation {
                     subtype: 'noteOn',
                     noteNumber: event.pitch,
                     velocity: +event.velocity.toFixed(0),
-                    deltaTime: +deltaTime.toFixed(0),
+                    deltaTime: deltaTimeMs,
                     channel: 0
                 })
             }
@@ -442,7 +432,7 @@ export class Emulation {
                     subtype: 'noteOff',
                     noteNumber: event.pitch,
                     velocity: +event.velocity.toFixed(0),
-                    deltaTime: +deltaTime.toFixed(0),
+                    deltaTime: deltaTimeMs,
                     channel: 0
                 })
             }
@@ -451,7 +441,7 @@ export class Emulation {
                     type: 'channel',
                     subtype: 'controller',
                     controllerType: MIDIControlEvents.SUSTAIN,
-                    deltaTime: +deltaTime.toFixed(0),
+                    deltaTime: deltaTimeMs,
                     channel: 0,
                     value: 127
                 })
@@ -461,7 +451,7 @@ export class Emulation {
                     type: 'channel',
                     subtype: 'controller',
                     controllerType: MIDIControlEvents.SUSTAIN,
-                    deltaTime: +deltaTime.toFixed(0),
+                    deltaTime: deltaTimeMs,
                     channel: 0,
                     value: 0
                 })
@@ -472,7 +462,7 @@ export class Emulation {
 
         return {
             header: {
-                ticksPerBeat: 600,
+                ticksPerBeat: 1,
                 formatType: 0,
                 trackCount: 1
             },
