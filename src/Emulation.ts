@@ -132,10 +132,63 @@ export class Emulation {
             }
 
             const negotiated = collatedEvent.wasCollatedFrom[0] as NegotiatedEvent
+            negotiated.id = collatedEvent.id
             negotiated.hasDimension.from = mean[0]
             negotiated.hasDimension.to = mean[1]
             negotiated.fromCollatedEvent = collatedEvent
             this.negotiatedEvents.push(negotiated)
+        }
+
+        for (const assumption of assumptions) {
+            if (assumption.type === 'separation') {
+                if (!assumption.into.length) continue
+
+                const index = this.negotiatedEvents.findIndex(e => e.id === assumption.separated.id)
+                if (index === -1) {
+                    console.log('Ignoring assumption', assumption, 'since the separated element was not found')
+                    continue
+                }
+                this.negotiatedEvents.push(...assumption.into.map(e => e.wasCollatedFrom[0]))
+            }
+            if (assumption.type === 'unification') {
+                if (assumption.unified.length < 2) continue
+
+                const meanOnsets = assumption.unified.map(event => {
+                    const sum = event.wasCollatedFrom.reduce((acc, curr) => acc + curr.hasDimension.from, 0)
+                    return sum / event.wasCollatedFrom.length
+                })
+
+                const meanOffsets = assumption.unified.map(event => {
+                    const sum = event.wasCollatedFrom.reduce((acc, curr) => acc + curr.hasDimension.to, 0)
+                    return sum / event.wasCollatedFrom.length
+                })
+
+                const beginning = Math.min(...meanOnsets)
+                const end = Math.min(...meanOffsets)
+
+                const firstEvent = this.negotiatedEvents.find(e => e.id === assumption.unified[0].id)
+                if (!firstEvent) {
+                    console.log('The first event of', assumption.unified, 'was not found in the event list, ignoring it.')
+                    continue
+                }
+
+                firstEvent.hasDimension.from = beginning
+                firstEvent.hasDimension.to = end
+
+                // remove all remaining events
+                for (let i = 1; i < assumption.unified.length; i++) {
+                    const index = this.negotiatedEvents.findIndex(e => e.id === assumption.unified[i].id)
+                    this.negotiatedEvents.splice(index, 1)
+                }
+            }
+            else if (assumption.type === 'lemma') {
+                if (!assumption.over.length) continue
+
+                for (const eventToNeglect of assumption.over) {
+                    const index = this.negotiatedEvents.findIndex(e => e.id === eventToNeglect.id)
+                    this.negotiatedEvents.splice(index, 1)
+                }
+            }
         }
 
         this.negotiatedEvents.sort((a, b) => a.hasDimension.from - b.hasDimension.from)
