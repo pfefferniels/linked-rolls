@@ -471,6 +471,12 @@ export class Emulation {
 
             if (event.type === 'noteOn') {
                 events.push({
+                    type: 'meta',
+                    subtype: 'text',
+                    deltaTime: deltaTimeMs,
+                    text: event.performs.id
+                })
+                events.push({
                     type: 'channel',
                     subtype: 'noteOn',
                     noteNumber: event.pitch,
@@ -490,6 +496,12 @@ export class Emulation {
                 })
             }
             else if (event.type === 'sustainPedalOn') {
+                events.push({
+                    type: 'meta',
+                    subtype: 'text',
+                    deltaTime: deltaTimeMs,
+                    text: event.performs.id
+                })
                 events.push({
                     type: 'channel',
                     subtype: 'controller',
