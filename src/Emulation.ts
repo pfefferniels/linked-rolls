@@ -97,7 +97,6 @@ export class Emulation {
     private negotiateEvents(collatedEvents_: CollatedEvent[], assumptions: Assumption[]) {
         const collatedEvents = structuredClone(collatedEvents_)
         for (const collatedEvent of collatedEvents) {
-            if (collatedEvent.isNonMusical) return
             if (!collatedEvent.wasCollatedFrom || !collatedEvent.wasCollatedFrom.length) return
 
             // try to negotiate the assumptions
@@ -148,7 +147,10 @@ export class Emulation {
                     console.log('Ignoring assumption', assumption, 'since the separated element was not found')
                     continue
                 }
-                this.negotiatedEvents.push(...assumption.into.map(e => e.wasCollatedFrom[0]))
+                this.negotiatedEvents.push(...assumption.into
+                    .map(e => e.wasCollatedFrom[0])
+                    .filter(e => e.type === 'note' || e.type === 'expression') // only notes and expression are considered when emulating
+                )
             }
             if (assumption.type === 'unification') {
                 if (assumption.unified.length < 2) continue
@@ -217,9 +219,10 @@ export class Emulation {
     private applyRollTempo() {
         for (const event of this.negotiatedEvents) {
             if (!event.assumedPhysicalTime) {
+                // convert from mm to cm and then to time
                 event.assumedPhysicalTime = [
-                    this.placeTimeConversion.placeToTime(event.hasDimension.from / 10) || 0.1,
-                    this.placeTimeConversion.placeToTime(event.hasDimension.to / 10) || 0.1
+                    this.placeTimeConversion.placeToTime(event.hasDimension.from / 10),
+                    this.placeTimeConversion.placeToTime(event.hasDimension.to / 10)
                 ]
             }
         }
@@ -463,13 +466,14 @@ export class Emulation {
         events.push({
             type: 'meta',
             subtype: 'setTempo',
-            microsecondsPerBeat: 1000,
+            microsecondsPerBeat: 1000000,
             deltaTime: 0
         })
         for (const event of this.midiEvents) {
             const deltaTimeMs = (event.at - currentTime) * 1000
 
             if (event.type === 'noteOn') {
+                console.log('dealing with note on', event.pitch, event.at, deltaTimeMs)
                 events.push({
                     type: 'meta',
                     subtype: 'text',
@@ -481,7 +485,7 @@ export class Emulation {
                     subtype: 'noteOn',
                     noteNumber: event.pitch,
                     velocity: +event.velocity.toFixed(0),
-                    deltaTime: deltaTimeMs,
+                    deltaTime: 0,
                     channel: 0
                 })
             }
@@ -506,7 +510,7 @@ export class Emulation {
                     type: 'channel',
                     subtype: 'controller',
                     controllerType: MIDIControlEvents.SUSTAIN,
-                    deltaTime: deltaTimeMs,
+                    deltaTime: 0,
                     channel: 0,
                     value: 127
                 })
@@ -527,7 +531,7 @@ export class Emulation {
 
         return {
             header: {
-                ticksPerBeat: 1,
+                ticksPerBeat: 1000,
                 formatType: 0,
                 trackCount: 1
             },

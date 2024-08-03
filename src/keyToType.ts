@@ -27,8 +27,17 @@ export const keyToType = (key: number) => {
     return welte100Map.get(key)
 }
 
-export const typeToKey = (type: string) => {
-    for (const entry of welte100Map.entries()) {
-        if (entry[1] === type) return entry[0]
+export const typeToKey = (type: string, scope?: 'bass' | 'treble') => {
+    const entries = Array.from(welte100Map.entries())
+
+    // search the list in reverse, so starting with the treble
+    if (scope === 'treble') {
+        const match = entries.slice().reverse().find(([_, t]) => t === type)
+        if (match) return match[0]
+    }
+    // if no scope is given or it is bass, search it in normal order
+    else {
+        const match = entries.find(([_, t]) => t === type)
+        if (match) return match[0]
     }
 }

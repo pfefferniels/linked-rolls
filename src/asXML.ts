@@ -1,10 +1,21 @@
 import { v4 } from 'uuid';
 import { RollCopy } from './RollCopy'
-import { Assumption, CollatedEvent } from './types'
+import { AnyRollEvent, Assumption, CollatedEvent } from './types'
 
 const namespace = 'https://linked-rolls.org/rollo'
 
+const determineSource = (sources: RollCopy[], event: AnyRollEvent) => {
+    const containingSource = sources.find(source => source.hasEvent(event))
+    if (!containingSource) return
+    return `#${containingSource.id}`
+}
+
 const wrapAll = (nodes: Element[], wrapper: Element) => {
+    if (!nodes.length) {
+        console.log('nodes cannot be empty when wrapping')
+        return wrapper
+    }
+
     // Cache the current parent and previous sibling of the first node.
     const parent = nodes[0].parentNode;
     if (!parent) return
@@ -28,11 +39,12 @@ const wrapAll = (nodes: Element[], wrapper: Element) => {
     return wrapper;
 }
 
-const eventAsXML = (event: CollatedEvent, doc: Document) => {
+const eventAsXML = (event: CollatedEvent, doc: Document, sources: RollCopy[]) => {
     if (!event.wasCollatedFrom.length) return
 
     const firstEvent = event.wasCollatedFrom[0]
     const type = firstEvent.type
+
     const holeStart = event.wasCollatedFrom.reduce((acc, curr) => acc + curr.hasDimension.from, 0) / event.wasCollatedFrom.length
     const holeEnd = event.wasCollatedFrom.reduce((acc, curr) => acc + curr.hasDimension.to, 0) / event.wasCollatedFrom.length
     const holeUnit = event.wasCollatedFrom[0].hasDimension.hasUnit
@@ -52,11 +64,14 @@ const eventAsXML = (event: CollatedEvent, doc: Document) => {
         eventEl.setAttribute('type', firstEvent.P2HasType)
     }
 
-    for (const collatedEvent of event.wasCollatedFrom) {
-        if (!collatedEvent.annotates) continue
+    for (const originalEvent of event.wasCollatedFrom) {
+        if (!originalEvent.annotates) continue
 
         const facs = doc.createElementNS(namespace, 'facs')
-        facs.setAttribute('url', collatedEvent.annotates)
+        facs.setAttribute('url', originalEvent.annotates)
+        const source = determineSource(sources, originalEvent)
+        if (source) facs.setAttribute('source', source)
+
         eventEl.appendChild(facs)
     }
 
@@ -80,6 +95,13 @@ export const asXML = (
         rollDate.textContent = source.physicalItem.rollDate
         sourceEl.appendChild(rollDate)
 
+        for (const editing of source.editings) {
+            const editEl = doc.createElementNS(namespace, 'manualEdit')
+            editEl.setAttribute('who', editing.carriedOutBy)
+            editEl.setAttribute('when', editing.hasTimeSpan.atSomeTimeWithin)
+            sourceEl.appendChild(editEl)
+        }
+
         if (source.operations.length) {
             const collationDesc = doc.createElementNS(namespace, 'collation')
             for (const op of source.operations) {
@@ -95,16 +117,13 @@ export const asXML = (
             }
             sourceEl.appendChild(collationDesc)
         }
-
-
-
         sourceDesc.appendChild(sourceEl)
     }
     roll.appendChild(sourceDesc)
 
     const body = doc.createElementNS(namespace, 'body')
     for (const event of collatedEvents) {
-        const eventEl = eventAsXML(event, doc)
+        const eventEl = eventAsXML(event, doc, sources)
         if (eventEl) {
             body.appendChild(eventEl)
         }
@@ -132,7 +151,7 @@ export const asXML = (
 
             const corr = doc.createElementNS(namespace, 'corr')
             for (const event of assumption.into) {
-                const eventEl = eventAsXML(event, doc)
+                const eventEl = eventAsXML(event, doc, sources)
                 if (!eventEl) continue
                 corr.appendChild(eventEl)
             }
@@ -174,7 +193,7 @@ export const asXML = (
             const beginning = Math.min(...meanOnsets)
             const end = Math.min(...meanOffsets)
 
-            const virtualHole = eventAsXML(assumption.unified[0], doc)
+            const virtualHole = eventAsXML(assumption.unified[0], doc, sources)
             if (!virtualHole) {
                 console.log('Failed creating a virtual hole for event based on the first unified event', assumption.unified[0])
                 continue
@@ -200,29 +219,29 @@ export const asXML = (
             }
         }
         else if (assumption.type === 'lemma') {
-            if (!assumption.over.length || !assumption.preferred.length) continue
+            if (!assumption.over.length) continue
 
             const lemma = doc.createElementNS(namespace, 'lemma')
             const preferredEls = assumption.preferred
                 .map(event => roll.querySelector(`*[*|id='${event.id}']`))
                 .filter(element => element !== null) as Element[]
-            if (!preferredEls.length) {
-                console.log('Could not find the specified elements', assumption.preferred.map(e => e.id).join(' '), 'in the XML document')
-                continue
-            }
+            // if (!preferredEls.length) {
+            //     console.log('Could not find the specified elements', assumption.preferred.map(e => e.id).join(' '), 'in the XML document')
+            //     continue
+            // }
 
             // Determine the sources
-            const lemmaSources = []
+            const lemmaSources: Set<string> = new Set()
             for (const event of assumption.preferred) {
                 for (const copyEvent of event.wasCollatedFrom) {
-                    const containingSource = sources.find(source => source.hasEvent(copyEvent))
-                    if (containingSource) {
-                        lemmaSources.push(`#${containingSource.id}`)
-                    }
+                    const sourceLink = determineSource(sources, copyEvent)
+                    if (!sourceLink) continue
+
+                    lemmaSources.add(sourceLink)
                 }
             }
-            lemma.setAttribute('source', lemmaSources.join(' '))
-            wrapAll(preferredEls, lemma)
+            lemma.setAttribute('source', Array.from(lemmaSources).join(' '))
+            if (preferredEls.length) wrapAll(preferredEls, lemma)
 
             const rdg = doc.createElementNS(namespace, 'rdg')
             const otherEls = assumption.over
@@ -248,7 +267,14 @@ export const asXML = (
 
             const app = doc.createElementNS(namespace, 'app')
             app.setAttribute('id', assumption.id)
-            wrapAll([lemma, rdg], app)
+
+            if (preferredEls.length) {
+                wrapAll([lemma, rdg], app)
+            }
+            else {
+                wrapAll([rdg], app)
+                app.appendChild(lemma)
+            }
         }
     }
 

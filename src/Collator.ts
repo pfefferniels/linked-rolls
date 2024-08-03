@@ -1,7 +1,7 @@
 import { RollCopy } from "./RollCopy";
 import { v4 } from "uuid";
 import { typeToKey } from "./keyToType";
-import { CollatedEvent, Expression, Note, Shifting, Stretching } from "./types";
+import { AnyRollEvent, CollatedEvent, Shifting, Stretching } from "./types";
 
 export type Operation = Shifting | Stretching
 
@@ -9,7 +9,18 @@ const inRange = (range: [number, number], search: number) => {
     return search > range[0] && search < range[1]
 }
 
-const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: (Note | Expression)[], tolerance = 5) => {
+const determinePitch = (firstEvent: AnyRollEvent) => {
+    if (firstEvent.type === 'note') {
+        return firstEvent.hasPitch
+    }
+    else if (firstEvent.type === 'expression') {
+        return typeToKey(firstEvent.P2HasType, firstEvent.hasScope) || 0
+    }
+
+    return firstEvent.trackerHole
+}
+
+const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRollEvent[], tolerance = 5) => {
     type EventInfo = {
         onset: number
         offset: number
@@ -21,11 +32,7 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: (Note 
     for (const event of collatedEvents) {
         if (!collatedEvents.length) continue
 
-        const firstEvent = event.wasCollatedFrom[0]
-
-        const pitch = firstEvent.type === 'note'
-            ? firstEvent.hasPitch
-            : typeToKey((firstEvent as Expression).P2HasType) || 0
+        const pitch = determinePitch(event.wasCollatedFrom[0])
 
         myInfo.push({
             id: event.id,
@@ -38,9 +45,8 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: (Note 
     myInfo.sort((a, b) => a.onset - b.onset)
 
     const otherInfo: EventInfo[] = otherEvents.map(e => {
-        const pitch = e.type === 'note'
-            ? (e as Note).hasPitch
-            : typeToKey((e as Expression).P2HasType) || 0
+        const pitch = determinePitch(e)
+
         return {
             id: e.id,
             onset: e.hasDimension.from,
@@ -96,7 +102,7 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: (Note 
 
 export const collateRolls = (rolls: RollCopy[]) => {
     const collatedEvents: CollatedEvent[] = rolls[0].events.map(event => ({
-        id: event.id, 
+        id: event.id,
         wasCollatedFrom: [event]
     }))
 

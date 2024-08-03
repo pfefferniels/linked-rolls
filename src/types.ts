@@ -13,6 +13,18 @@ export interface EventSpan extends WithId {
 
 export interface RollEvent<T> extends WithId {
     type: T
+
+    /**
+     * Every roll event can be optionally 
+     * assigned to a responsible hand
+     */
+    hand?: string
+
+    /**
+     * That assignement can have a certainty
+     */
+    cert?: Certainty
+
     /**
      * IIIF region in string form.
      */
@@ -28,24 +40,57 @@ export interface Note extends RollEvent<'note'> {
     hasPitch: number;
 }
 
-/**x
- * Expression Type
- */
-export interface Expression extends RollEvent<'expression'> {
-    hasScope: 'bass' | 'treble',
-    P2HasType:
+export type ExpressionScope = 'bass' | 'treble';
+
+export type ExpressionType =
     'SustainPedalOn' | 'SustainPedalOff' |
     'MezzoforteOff' | 'MezzoforteOn' |
     'SlowCrescendoOn' | 'SlowCrescendoOff' |
     'ForzandoOn' | 'ForzandoOff'
+
+/**x
+ * Expression Type
+ */
+export interface Expression extends RollEvent<'expression'> {
+    hasScope: ExpressionScope
+    P2HasType: ExpressionType
 }
+
+/**
+ * This denotes perforations that are covered by an editor.
+ * It has no properties since the position on the roll is 
+ * given be the RollEvent interface already. The covered 
+ * perforation is not considered to be part of the original
+ * note or expression hole anymore.
+ */
+export interface Cover extends RollEvent<'cover'> {
+}
+
+/**
+ * For handwritten insertions like e. g. the
+ * perforation date in the end of a roll.
+ */
+export interface HandwrittenText extends RollEvent<'handwrittenText'> {
+    text: string
+}
+
+/**
+ * This type can be used to indicate stamps like "Controlliert" and others. 
+ */
+export interface Stamp extends RollEvent<'stamp'> {
+    text: string
+}
+
+export type AnyRollEvent = Note | Expression | HandwrittenText | Stamp | Cover
 
 /**
  * MeasurementEvent Type
  */
 export interface MeasurementEvent extends WithId {
-    hasCreated: (Expression | Note)[];
+    hasCreated: AnyRollEvent[];
     measured: PhysicalRollCopy;
+    usedSoftware: string
+    hasTimeSpan: TimeSpan
 }
 
 /**
@@ -55,6 +100,15 @@ export interface PhysicalRollCopy extends WithId {
     hasType: string;
     catalogueNumber: string
     rollDate: string
+}
+
+/**
+ * This type is modelled on E11 Modification
+ */
+export interface ManualEditing extends WithId {
+    hasModified: PhysicalRollCopy
+    carriedOutBy: string
+    hasTimeSpan: TimeSpan
 }
 
 /**
@@ -86,8 +140,7 @@ export interface ConditionAssessment extends WithId {
  * CollatedEvent Type
  */
 export interface CollatedEvent extends WithId {
-    wasCollatedFrom: (Note | Expression)[]
-    isNonMusical?: boolean;
+    wasCollatedFrom: AnyRollEvent[]
 }
 
 export const isCollatedEvent = (e: any) => {

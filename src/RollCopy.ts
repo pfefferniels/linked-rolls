@@ -1,15 +1,16 @@
 import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
 import { keyToType, typeToKey } from "./keyToType";
-import { ConditionAssessment, ConditionState, EventSpan, Expression, MeasurementEvent, Note, PhysicalRollCopy, Shifting, Stretching } from "./types";
+import { AnyRollEvent, ConditionAssessment, ConditionState, EventSpan, Expression, ManualEditing, MeasurementEvent, Note, PhysicalRollCopy, Shifting, Stretching } from "./types";
 
 export type Operation = Shifting | Stretching
 
 export class RollCopy {
     physicalItem: PhysicalRollCopy
-    events: (Note | Expression)[]
-    conditionAssessments: ConditionAssessment[]
+    events: AnyRollEvent[]
     measurement?: MeasurementEvent
+    conditionAssessments: ConditionAssessment[]
+    editings: ManualEditing[]
     operations: (Shifting | Stretching)[]
 
     constructor() {
@@ -22,6 +23,7 @@ export class RollCopy {
         this.events = []
         this.conditionAssessments = []
         this.operations = []
+        this.editings = []
     }
 
     setRollType(type: 'welte-red') {
@@ -37,6 +39,7 @@ export class RollCopy {
         const json = parser.parse(atonString)
         const holes = json.ROLLINFO.HOLES.HOLE
         const druid = json.ROLLINFO.DRUID
+        const date = json.ROLLINFO.ANALYSIS_DATE
         const dpi = parseFloat(json.ROLLINFO.LENGTH_DPI.replace('ppi'))
 
         this.setRollType(json.ROLLINFO.ROLL_TYPE)
@@ -107,7 +110,12 @@ export class RollCopy {
         this.measurement = {
             id: v4(),
             measured: this.physicalItem,
-            hasCreated: this.events
+            hasCreated: this.events,
+            usedSoftware: 'https://github.com/pianoroll/roll-image-parser',
+            hasTimeSpan: {
+                id: v4(),
+                atSomeTimeWithin: date
+            }
         }
     }
 
@@ -138,6 +146,10 @@ export class RollCopy {
             }
         }
         this.operations.push(...ops)
+    }
+
+    addManualEditing(editing: ManualEditing) {
+        this.editings.push(editing)
     }
 
     undoOperations() {
@@ -172,7 +184,7 @@ export class RollCopy {
         return clone
     }
 
-    hasEvent(otherEvent: Note | Expression) {
+    hasEvent(otherEvent: AnyRollEvent) {
         return this.events.findIndex(e => e.id === otherEvent.id) !== -1
     }
 
