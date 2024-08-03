@@ -22,9 +22,17 @@ describe('Emulation', () => {
         const velocities = emulation.midiEvents
             .filter(e => e.type?.['@id'] === 'NoteOnEvent')
             .map(e => (e as any).velocity)
-        
+
         console.log(velocities)
 
         expect(velocities.every(v => v >= 35 && v <= 90)).toBeTruthy()
+    })
+
+    it('correctly converts between place and date', () => {
+        const emulation = new Emulation()
+        const place = 12
+        const time = emulation.placeTimeConversion.placeToTime(place)
+        const newPlace = emulation.placeTimeConversion.timeToPlace(time)
+        expect(place).toEqual(Math.round(newPlace))
     })
 })
