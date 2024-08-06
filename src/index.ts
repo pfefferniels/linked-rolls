@@ -5,9 +5,16 @@ export { importXML } from './importXML'
 export { asTurtle } from './asTurtle'
 export { collateRolls } from './Collator'
 export { isCollatedEvent } from './types'
-export type { Certainty, Shifting, Stretching, Assumption } from './types'
+export type { RollEdition } from './importXML'
+export type {
+    Certainty,
+    Shifting,
+    Stretching,
+    Assumption
+} from './types'
 export type {
     PerformedNoteOnEvent,
     PerformedNoteOffEvent,
     PerformedSustainPedalOnEvent,
-    PerformedSustainPedalOffEvent } from './Emulation'
+    PerformedSustainPedalOffEvent
+} from './Emulation'

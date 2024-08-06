@@ -1,7 +1,7 @@
 import { RollCopy } from "./RollCopy";
 import { v4 } from "uuid";
 import { typeToKey } from "./keyToType";
-import { AnyRollEvent, CollatedEvent, Shifting, Stretching } from "./types";
+import { AnyRollEvent, Assumption, CollatedEvent, Shifting, Stretching } from "./types";
 
 export type Operation = Shifting | Stretching
 
@@ -72,8 +72,8 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRol
             console.log('no candidates found for', info.onset, ':', myInfo.filter(i => i.pitch === info.pitch), 'does not fit.')
             const correspEvent = otherEvents.find(e => e.id === info.id)
             if (!correspEvent) {
-                console.log('This is not supposed to happen')
-                continue
+                // this is not supposed to happen
+                throw new Error('No corresponding event found for info ID')
             }
 
             collatedEvents.push({
@@ -91,24 +91,29 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRol
         const me = otherEvents.find(e => e.id === info.id)
 
         if (!me) {
-            console.log('This is not supposed to happen')
-            continue
+            // this is not supposed to happen
+            throw new Error('No corresponding event found for info ID')
         }
+
 
         collatedEvents.find(e => e.id === bestEvent.id)?.wasCollatedFrom?.push(me)
     }
 }
 
 
-export const collateRolls = (rolls: RollCopy[]) => {
-    const collatedEvents: CollatedEvent[] = rolls[0].events.map(event => ({
+/**
+ * Collates multiple roll copies. 
+ */
+export const collateRolls = (rolls: RollCopy[], assumptions: Assumption[]) => {
+    const collatedEvents: CollatedEvent[] = rolls[0].withAppliedAssumptions(assumptions).map(event => ({
         id: event.id,
         wasCollatedFrom: [event]
     }))
 
     for (let i = 1; i < rolls.length; i++) {
-        reduceEvents(collatedEvents, rolls[i].events)
+        reduceEvents(collatedEvents, rolls[i].withAppliedAssumptions(assumptions))
     }
 
     return collatedEvents
 }
+

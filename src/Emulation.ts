@@ -7,6 +7,7 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { Assumption, RelativePlacement, TempoAdjustment, CollatedEvent, Expression, Note } from "./types";
 import { GottschewskiConversion } from "./PlaceTimeConversion";
+import { RollCopy } from "./RollCopy";
 
 function resize<T>(arr: T[], newSize: number, defaultValue: T) {
     while (newSize > arr.length)
@@ -94,7 +95,11 @@ export class Emulation {
         this.options = options
     }
 
-    private negotiateEvents(collatedEvents_: CollatedEvent[], assumptions: Assumption[]) {
+    private negotiateEvents(
+        collatedEvents_: CollatedEvent[],
+        assumptions: Assumption[],
+        preferredSource: RollCopy
+    ) {
         const collatedEvents = structuredClone(collatedEvents_)
         for (const collatedEvent of collatedEvents) {
             if (!collatedEvent.wasCollatedFrom || !collatedEvent.wasCollatedFrom.length) return
@@ -139,56 +144,20 @@ export class Emulation {
         }
 
         for (const assumption of assumptions) {
-            if (assumption.type === 'separation') {
-                if (!assumption.into.length) continue
+            if (assumption.type === 'relation') {
+                if (!assumption.relates.length) continue
 
-                const index = this.negotiatedEvents.findIndex(e => e.id === assumption.separated.id)
-                if (index === -1) {
-                    console.log('Ignoring assumption', assumption, 'since the separated element was not found')
-                    continue
-                }
-                this.negotiatedEvents.push(...assumption.into
-                    .map(e => e.wasCollatedFrom[0])
-                    .filter(e => e.type === 'note' || e.type === 'expression') // only notes and expression are considered when emulating
-                )
-            }
-            if (assumption.type === 'unification') {
-                if (assumption.unified.length < 2) continue
+                for (const reading of assumption.relates) {
+                    for (const collatedEvent of reading.contains) {
+                        const preferredCopyEvent = collatedEvent.wasCollatedFrom.find(e => preferredSource.hasEvent(e))
 
-                const meanOnsets = assumption.unified.map(event => {
-                    const sum = event.wasCollatedFrom.reduce((acc, curr) => acc + curr.hasDimension.from, 0)
-                    return sum / event.wasCollatedFrom.length
-                })
-
-                const meanOffsets = assumption.unified.map(event => {
-                    const sum = event.wasCollatedFrom.reduce((acc, curr) => acc + curr.hasDimension.to, 0)
-                    return sum / event.wasCollatedFrom.length
-                })
-
-                const beginning = Math.min(...meanOnsets)
-                const end = Math.min(...meanOffsets)
-
-                const firstEvent = this.negotiatedEvents.find(e => e.id === assumption.unified[0].id)
-                if (!firstEvent) {
-                    console.log('The first event of', assumption.unified, 'was not found in the event list, ignoring it.')
-                    continue
-                }
-
-                firstEvent.hasDimension.from = beginning
-                firstEvent.hasDimension.to = end
-
-                // remove all remaining events
-                for (let i = 1; i < assumption.unified.length; i++) {
-                    const index = this.negotiatedEvents.findIndex(e => e.id === assumption.unified[i].id)
-                    this.negotiatedEvents.splice(index, 1)
-                }
-            }
-            else if (assumption.type === 'lemma') {
-                if (!assumption.over.length) continue
-
-                for (const eventToNeglect of assumption.over) {
-                    const index = this.negotiatedEvents.findIndex(e => e.id === eventToNeglect.id)
-                    this.negotiatedEvents.splice(index, 1)
+                        // this event was collated only from sources unrelated
+                        // to the preferred one => ignore it.
+                        if (!preferredCopyEvent) {
+                            const index = this.negotiatedEvents.findIndex(e => e.id === collatedEvent.id)
+                            this.negotiatedEvents.splice(index, 1)
+                        }
+                    }
                 }
             }
         }
@@ -285,9 +254,13 @@ export class Emulation {
         return this.midiEvents
     }
 
-    emulateFromCollatedRoll(collatedEvents: CollatedEvent[], assumptions: Assumption[] = []) {
+    emulateFromCollatedRoll(
+        collatedEvents: CollatedEvent[],
+        assumptions: Assumption[] = [],
+        preferredSource: RollCopy
+    ) {
         this.negotiatedEvents = []
-        this.negotiateEvents(collatedEvents, assumptions)
+        this.negotiateEvents(collatedEvents, assumptions, preferredSource)
         this.findRollTempo(assumptions)
         this.applyTrackerBarExtension()
         this.applyRollTempo()

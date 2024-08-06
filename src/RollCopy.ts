@@ -1,7 +1,7 @@
 import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
 import { keyToType, typeToKey } from "./keyToType";
-import { AnyRollEvent, ConditionAssessment, ConditionState, EventSpan, Expression, ManualEditing, MeasurementEvent, Note, PhysicalRollCopy, Shifting, Stretching } from "./types";
+import { AnyRollEvent, Assumption, ConditionAssessment, ConditionState, EventSpan, Expression, ManualEditing, MeasurementEvent, Note, PhysicalRollCopy, Shifting, Stretching } from "./types";
 
 export type Operation = Shifting | Stretching
 
@@ -124,7 +124,7 @@ export class RollCopy {
             id: v4(),
             carriedOutBy: actor,
             hasTimeSpan: { 'id': v4(), atSomeTimeWithin: 'now' },
-            hasIndentified: {
+            hasIdentified: {
                 ...state,
                 isConditionOf: this.physicalItem
             }
@@ -180,8 +180,59 @@ export class RollCopy {
         clone.events = [...this.events]
         clone.measurement = { ...this.measurement } as MeasurementEvent
         clone.physicalItem = { ...this.physicalItem }
+        clone.editings = { ...this.editings }
 
         return clone
+    }
+
+    /**
+     * This applies the given pre-collation assumptions 
+     * referring to events on this roll copy.
+     */
+    withAppliedAssumptions(assumptions: Assumption[]): AnyRollEvent[] {
+        const modifiedEvents = structuredClone(this.events)
+
+        for (const assumption of assumptions) {
+            if (assumption.type === 'separation') {
+                if (!assumption.into.length) continue
+
+                const index = modifiedEvents.findIndex(e => e.id === assumption.separated.id)
+                if (index === -1) {
+                    console.log('Ignoring assumption', assumption, 'since the separated element was not found')
+                    continue
+                }
+
+                modifiedEvents.splice(index, 1)
+                modifiedEvents.push(...assumption.into)
+            }
+            if (assumption.type === 'unification') {
+                if (assumption.unified.length < 2) continue
+
+                const onsets = assumption.unified.map(event => event.hasDimension.from)
+                const offsets = assumption.unified.map(event => event.hasDimension.to)
+
+                const beginning = Math.min(...onsets)
+                const end = Math.max(...offsets)
+
+                const firstEvent = modifiedEvents.find(e => e.id === assumption.unified[0].id)
+                if (!firstEvent) {
+                    console.log('The first event of', assumption.unified, 'was not found in the event list, ignoring it.')
+                    continue
+                }
+
+                firstEvent.hasDimension.from = beginning
+                firstEvent.hasDimension.to = end
+                firstEvent.annotates = undefined
+
+                // remove all remaining events
+                for (let i = 1; i < assumption.unified.length; i++) {
+                    const index = modifiedEvents.findIndex(e => e.id === assumption.unified[i].id)
+                    modifiedEvents.splice(index, 1)
+                }
+            }
+        }
+
+        return modifiedEvents
     }
 
     hasEvent(otherEvent: AnyRollEvent) {
@@ -190,5 +241,9 @@ export class RollCopy {
 
     get id() {
         return this.physicalItem.id
+    }
+
+    set id(newId: string) {
+        this.physicalItem.id = newId
     }
 }

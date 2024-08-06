@@ -15,17 +15,6 @@ export interface RollEvent<T> extends WithId {
     type: T
 
     /**
-     * Every roll event can be optionally 
-     * assigned to a responsible hand
-     */
-    hand?: string
-
-    /**
-     * That assignement can have a certainty
-     */
-    cert?: Certainty
-
-    /**
      * IIIF region in string form.
      */
     annotates?: string
@@ -133,7 +122,7 @@ export interface ConditionState extends WithId {
 export interface ConditionAssessment extends WithId {
     carriedOutBy: string
     hasTimeSpan: TimeSpan
-    hasIndentified: ConditionState;
+    hasIdentified: ConditionState;
 }
 
 /**
@@ -168,7 +157,7 @@ interface EditorialAction<T> extends WithId {
  * a roll copy where one event unintentionally was split in two.
  */
 export interface Unification extends EditorialAction<'unification'> {
-    unified: CollatedEvent[]
+    unified: AnyRollEvent[]
 }
 
 /**
@@ -176,13 +165,25 @@ export interface Unification extends EditorialAction<'unification'> {
  * a roll copy where two events unintentionally became one.
  */
 export interface Separation extends EditorialAction<'separation'> {
-    separated: CollatedEvent
-    into: CollatedEvent[]
+    separated: AnyRollEvent
+    into: AnyRollEvent[]
 }
 
-export interface Lemma extends EditorialAction<'lemma'> {
-    preferred: CollatedEvent[]
-    over: CollatedEvent[]
+/**
+ * Assigns a hand ("Bearbeitungsschicht") to one or many
+ * roll events with a given certainty. 
+ */
+export interface HandAssignment extends EditorialAction<'handAssignment'> {
+    assignedTo: AnyRollEvent[]
+    hand: ManualEditing
+}
+
+export interface Reading {
+    contains: CollatedEvent[]
+}
+
+export interface Relation extends EditorialAction<'relation'> {
+    relates: Reading[]
 }
 
 export interface RelativePlacement extends EditorialAction<'relativePlacement'> {
@@ -202,7 +203,7 @@ export interface TempoAdjustment extends EditorialAction<'tempoAdjustment'> {
     endsWith: number;
 }
 
-export type Assumption = Unification | Separation | Lemma | RelativePlacement | Annotation | TempoAdjustment
+export type Assumption = Unification | Separation | Relation | RelativePlacement | Annotation | HandAssignment | TempoAdjustment
 
 export interface Operation<T> extends WithId {
     type: T
