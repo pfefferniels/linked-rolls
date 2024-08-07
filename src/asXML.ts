@@ -216,7 +216,7 @@ export const asXML = (
             }
 
             if (assumption.note) {
-                const noteEl = doc.createElementNS(namespace, 'note')
+                const noteEl = doc.createElementNS(namespace, 'comment')
                 noteEl.textContent = assumption.note
                 choice.appendChild(noteEl)
             }
@@ -299,7 +299,7 @@ export const asXML = (
             }
 
             if (assumption.note) {
-                const noteEl = doc.createElementNS(namespace, 'note')
+                const noteEl = doc.createElementNS(namespace, 'comment')
                 noteEl.textContent = assumption.note
                 choice.appendChild(noteEl)
             }
@@ -350,7 +350,7 @@ export const asXML = (
             rdg.setAttribute('resp', assumption.carriedOutBy)
 
             if (assumption.note) {
-                const note = doc.createElementNS(namespace, 'note')
+                const note = doc.createElementNS(namespace, 'comment')
                 note.textContent = assumption.note
                 rdg.appendChild(note)
             }
