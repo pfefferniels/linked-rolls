@@ -239,6 +239,10 @@ export class RollCopy {
         return this.events.findIndex(e => e.id === otherEvent.id) !== -1
     }
 
+    hasEventId(id: string) {
+        return this.events.findIndex(e => e.id === id) !== -1
+    }
+
     get id() {
         return this.physicalItem.id
     }

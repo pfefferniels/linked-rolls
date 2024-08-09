@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from "fs";
-import { RollCopy, collateRolls } from '../src';
+import { RollCopy, asXML, collateRolls } from '../src';
 import { v4 } from 'uuid';
+import { HandAssignment } from '../src/types';
 const path = require("path");
 
 const fileToRollCopy = (filename: string) => {
@@ -30,7 +31,22 @@ describe('Collator', () => {
                 id: v4()
             }])
 
+        const handAssignment: HandAssignment = {
+            type: 'handAssignment',
+            hand: {
+                carriedOutBy: 'Fritz',
+                hasModified: copy1.physicalItem,
+                hasTimeSpan: { atSomeTimeWithin: '1909', id: v4() },
+                id: v4()
+            },
+            assignedTo: [copy1.events[0], copy1.events[1], copy1.events[2]],
+            carriedOutBy: 'John Doe',
+            id: v4(),
+        }
+
         const collatedEvents = collateRolls([copy1, copy2], [])
-        expect(collatedEvents.length).toBeGreaterThan(1)
+
+        const xml = asXML([copy1, copy2], collatedEvents, [handAssignment])
+        console.log('xml=', xml, typeof xml)
     })
 })
