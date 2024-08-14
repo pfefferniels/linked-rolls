@@ -47,16 +47,6 @@ export interface BodyNode extends Typed<'body'>, WithId {
     children: (CollatedEventNode | AppNode | ChoiceNode)[]
 }
 
-export interface NoteNode extends Typed<'note'>, WithId, Note {
-    parent: CollatedEventNode
-    children: undefined
-}
-
-export interface ExpressionNode extends Typed<'expression'>, WithId, Expression {
-    parent: CollatedEventNode
-    children: undefined
-}
-
 type AsNode<T> = {
     parent: CollatedEventNode
     children: undefined
