@@ -1,12 +1,22 @@
-import { AnyElement } from "./transformers/Node"
+import { AnyNode } from "./transformers/Node"
 
-export const asJSON = (current: AnyElement) => {
+const objectAsAttributeMap = (obj: object, map: Map<string, string | number>, name = '') => {
+    for (const [key, value] of Object.entries(obj)) {
+        if (typeof value === 'object') {
+            objectAsAttributeMap(value, map, `${name}${key}.`)
+        }
+        else {
+            map.set(`${name}${key}`, value)
+        }
+    }
+}
+
+export const asJSON = (current: AnyNode) => {
     const attrs = { ...current } as any
     delete attrs.type
     delete attrs.children
     delete attrs.parent
     delete attrs.xmlId
-    attrs['xml:id'] = current.xmlId
 
     const json: any = {
         ':@': attrs
@@ -18,6 +28,13 @@ export const asJSON = (current: AnyElement) => {
     for (const key of Object.keys(attrs)) {
         if (Array.isArray(attrs[key])) {
             attrs[`@_${key}`] = attrs[key].join(' ')
+        }
+        else if (typeof attrs[key] === 'object') {
+            const localAttrs = new Map<string, string | number>()
+            objectAsAttributeMap(attrs[key], localAttrs)
+            for (const [key, value] of localAttrs) {
+                attrs[`@_${key}`] = value
+            }
         }
         else {
             attrs[`@_${key}`] = attrs[key]
