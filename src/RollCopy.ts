@@ -8,7 +8,7 @@ export type Operation = Shifting | Stretching
 export class RollCopy {
     physicalItem: PhysicalRollCopy
     events: AnyRollEvent[]
-    measurement?: MeasurementEvent
+    measurements: MeasurementEvent[]
     conditionAssessments: ConditionAssessment[]
     editings: ManualEditing[]
     operations: (Shifting | Stretching)[]
@@ -24,6 +24,7 @@ export class RollCopy {
         this.conditionAssessments = []
         this.operations = []
         this.editings = []
+        this.measurements = []
     }
 
     setRollType(type: 'welte-red') {
@@ -39,6 +40,9 @@ export class RollCopy {
         const json = parser.parse(atonString)
         const holes = json.ROLLINFO.HOLES.HOLE
         const druid = json.ROLLINFO.DRUID
+        const holeSeparation = parseFloat(json.ROLLINFO.HOLE_SEPARATION.replace('px'))
+        const hardMarginBass = parseFloat(json.ROLLINFO.HARD_MARGIN_BASS.replace('px'))
+        const hardMarginTreble = parseFloat(json.ROLLINFO.HARD_MARGIN_TREBLE.replace('px'))
         const date = json.ROLLINFO.ANALYSIS_DATE
         const dpi = parseFloat(json.ROLLINFO.LENGTH_DPI.replace('ppi'))
 
@@ -63,7 +67,6 @@ export class RollCopy {
             const columnWidth = +hole.WIDTH_COL.replace('px', '') + 20;
 
             const dimension: EventSpan = {
-                id: v4(),
                 hasUnit: 'mm',
                 from: pixelsToMillimeters(noteAttack, dpi),
                 to: pixelsToMillimeters(offset, dpi)
@@ -85,9 +88,15 @@ export class RollCopy {
                     id: v4(),
                     P2HasType: type,
                     hasScope: scope,
-                    hasDimension: dimension,
+                    hasDimension: {
+                        id: v4(),
+                        horizontal: dimension,
+                        vertical: {
+                            from: trackerHole,
+                            hasUnit: 'track'
+                        }
+                    },
                     annotates: annotates,
-                    trackerHole
                 } as Expression)
             }
             else {
@@ -97,26 +106,43 @@ export class RollCopy {
                     annotates: `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${noteAttack},${columnWidth},${height}/128,/0/default.jpg`,
                     hasDimension: {
                         id: v4(),
-                        hasUnit: 'mm',
-                        from: pixelsToMillimeters(noteAttack, dpi),
-                        to: pixelsToMillimeters(offset, dpi)
+                        horizontal: {
+                            hasUnit: 'mm',
+                            from: pixelsToMillimeters(noteAttack, dpi),
+                            to: pixelsToMillimeters(offset, dpi)
+                        },
+                        vertical: {
+                            hasUnit: 'track',
+                            from: trackerHole
+                        }
                     },
                     hasPitch: midiKey,
-                    trackerHole
                 } as Note)
             }
         }
 
-        this.measurement = {
+        this.measurements.push({
             id: v4(),
             measured: this.physicalItem,
-            hasCreated: this.events,
+            hasCreated: {
+                info: {
+                    druid,
+                    iiifLink: `https://stacks.stanford.edu/image/iiif/${druid}%2F${druid}_0001/`,
+                    dpi,
+                    holeSeparation,
+                    margins: {
+                        treble: hardMarginTreble,
+                        bass: hardMarginBass
+                    }
+                },
+                events: this.events
+            },
             usedSoftware: 'https://github.com/pianoroll/roll-image-parser',
             hasTimeSpan: {
                 id: v4(),
                 atSomeTimeWithin: date
             }
-        }
+        })
     }
 
     assessCondition(state: Omit<ConditionState, 'isConditionOf'>, actor: string) {
@@ -135,13 +161,22 @@ export class RollCopy {
         for (const operation of ops) {
             for (const event of this.events) {
                 if (operation.type === 'stretching') {
-                    event.hasDimension.from *= (operation as Stretching).factor
-                    event.hasDimension.to *= (operation as Stretching).factor
+                    event.hasDimension.horizontal.from *= (operation as Stretching).factor
+                    if (event.hasDimension.horizontal.to) {
+                        event.hasDimension.horizontal.to *= (operation as Stretching).factor
+                    }
                 }
                 else if (operation.type === 'shifting') {
-                    event.hasDimension.from += (operation as Shifting).horizontal
-                    event.hasDimension.to += (operation as Shifting).horizontal
-                    event.trackerHole += (operation as Shifting).vertical
+                    const shifting = (operation as Shifting)
+                    event.hasDimension.horizontal.from += shifting.horizontal
+                    if (event.hasDimension.horizontal.to) {
+                        event.hasDimension.horizontal.to += shifting.horizontal
+                    }
+
+                    event.hasDimension.vertical.from += shifting.vertical
+                    if (event.hasDimension.vertical.to) {
+                        event.hasDimension.vertical.to += shifting.vertical
+                    }
                 }
             }
         }
@@ -156,13 +191,26 @@ export class RollCopy {
         for (const operation of this.operations) {
             for (const event of this.events) {
                 if (operation.type === 'shifting') {
-                    event.hasDimension.from -= (operation as Shifting).horizontal
-                    event.hasDimension.to -= (operation as Shifting).horizontal
-                    event.trackerHole -= (operation as Shifting).vertical
+                    const shifting = (operation as Shifting)
+                    event.hasDimension.horizontal.from -= shifting.horizontal
+
+                    if (event.hasDimension.horizontal.to) {
+                        event.hasDimension.horizontal.to -= shifting.horizontal
+                    }
+
+                    event.hasDimension.vertical.from -= shifting.vertical
+                    if (event.hasDimension.vertical.to) {
+                        event.hasDimension.vertical.from -= shifting.vertical
+                    }
                 }
                 else if (operation.type === 'stretching') {
-                    event.hasDimension.from /= (operation as Stretching).factor
-                    event.hasDimension.to /= (operation as Stretching).factor
+                    const stretching = (operation as Stretching)
+
+                    event.hasDimension.horizontal.from /= stretching.factor
+
+                    if (event.hasDimension.horizontal.to) {
+                        event.hasDimension.horizontal.to /= stretching.factor
+                    }
                 }
             }
         }
@@ -176,11 +224,11 @@ export class RollCopy {
      */
     clone() {
         const clone = new RollCopy()
-        clone.conditionAssessments = [...this.conditionAssessments]
-        clone.events = [...this.events]
-        clone.measurement = { ...this.measurement } as MeasurementEvent
-        clone.physicalItem = { ...this.physicalItem }
-        clone.editings = { ...this.editings }
+        clone.conditionAssessments = structuredClone(this.conditionAssessments)
+        clone.events = structuredClone(this.events)
+        clone.measurements = structuredClone(this.measurements)
+        clone.physicalItem = structuredClone(this.physicalItem)
+        clone.editings = structuredClone(this.editings)
 
         return clone
     }
@@ -208,8 +256,8 @@ export class RollCopy {
             if (assumption.type === 'unification') {
                 if (assumption.unified.length < 2) continue
 
-                const onsets = assumption.unified.map(event => event.hasDimension.from)
-                const offsets = assumption.unified.map(event => event.hasDimension.to)
+                const onsets = assumption.unified.map(event => event.hasDimension.horizontal.from)
+                const offsets = assumption.unified.map(event => event.hasDimension.horizontal.to!)
 
                 const beginning = Math.min(...onsets)
                 const end = Math.max(...offsets)
@@ -220,8 +268,8 @@ export class RollCopy {
                     continue
                 }
 
-                firstEvent.hasDimension.from = beginning
-                firstEvent.hasDimension.to = end
+                firstEvent.hasDimension.horizontal.from = beginning
+                firstEvent.hasDimension.horizontal.to = end
                 firstEvent.annotates = undefined
 
                 // remove all remaining events

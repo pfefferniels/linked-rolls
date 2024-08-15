@@ -10,7 +10,7 @@ export class SortNodes extends Transformer<undefined> {
 
             if (!placeA || !placeB) return 0
 
-            return placeA.hasDimension.from - placeB.hasDimension.from
+            return placeA.hasDimension.horizontal.from - placeB.hasDimension.horizontal.from
         })
     }
 }

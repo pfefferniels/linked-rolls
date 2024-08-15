@@ -20,11 +20,16 @@ export const importXML = (doc: Document): RollEdition => {
                 type: 'note',
                 hasDimension: {
                     id: v4(),
-                    from: +note.getAttribute('hole.start')!,
-                    to: +note.getAttribute('hole.end')!,
-                    hasUnit: note.getAttribute('hole.unit')! as 'mm',
+                    horizontal: {
+                        from: +note.getAttribute('hole.start')!,
+                        to: +note.getAttribute('hole.end')!,
+                        hasUnit: note.getAttribute('hole.unit')! as 'mm',
+                    },
+                    vertical: {
+                        from: +note.getAttribute('trackerHole')!,
+                        hasUnit: 'track'
+                    }
                 },
-                trackerHole: +note.getAttribute('trackerHole')!,
                 hasPitch: +note.getAttribute('pitch')!
             }]
         })
@@ -41,11 +46,16 @@ export const importXML = (doc: Document): RollEdition => {
                 P2HasType: expression.getAttribute('type') as ExpressionType,
                 hasDimension: {
                     id: v4(),
-                    from: +expression.getAttribute('hole.start')!,
-                    to: +expression.getAttribute('hole.end')!,
-                    hasUnit: expression.getAttribute('hole.unit')! as 'mm',
+                    horizontal: {
+                        from: +expression.getAttribute('hole.start')!,
+                        to: +expression.getAttribute('hole.end')!,
+                        hasUnit: expression.getAttribute('hole.unit')! as 'mm',
+                    },
+                    vertical: {
+                        from: +expression.getAttribute('trackerHole')!,
+                        hasUnit: 'track'
+                    }
                 },
-                trackerHole: +expression.getAttribute('trackerHole')!,
             }]
         })
     }
@@ -56,7 +66,7 @@ export const importXML = (doc: Document): RollEdition => {
     const sourcEls = doc.querySelectorAll('source')
     for (const sourceEl of sourcEls) {
         const id = sourceEl.getAttribute('xml:id')
-        if (!id) continue 
+        if (!id) continue
 
         const newCopy = new RollCopy()
         newCopy.id = id

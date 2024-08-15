@@ -1,16 +1,21 @@
 import { v4 } from "uuid";
 import { Separation } from "../types";
 import { Transformer } from "./Transformer";
-import { AnyEventNode, BodyNode, ChoiceNode, CollatedEventNode, CorrNode, find, RdgNode, SicNode } from "./Node";
-import { rollEventAsNode } from "./CollatedEventTransformer";
+import { AnyRollEventNode, BodyNode, ChoiceNode, CollatedEventNode, CorrNode, find, RdgNode, SicNode } from "./Node";
+import { rollEventAsNode } from "./InsertCollatedEvent";
 
 export class SeparationTransformer extends Transformer<Separation> {
     apply(assumption: Separation) {
         const collatedEvents: CollatedEventNode[] = []
         for (const part of assumption.into) {
-            const node = find(this.body, part.id) as AnyEventNode | undefined
+            const node = find(this.body, part.id) as AnyRollEventNode | undefined
             if (!node) {
                 console.log('A part of the splitted event could not be found', part)
+                continue
+            }
+
+            if (node.parent.type !== 'collatedEvent') {
+                console.log('This transformer should not be applied after collated events are dissolved')
                 continue
             }
             collatedEvents.push(node.parent)
@@ -72,5 +77,7 @@ export class SeparationTransformer extends Transformer<Separation> {
         sic.children.push(newCollatedEvent)
 
         choice.children = [sic, corr]
+
+        // const tmpAssumption: Relation = { … }
     }
 }

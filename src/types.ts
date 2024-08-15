@@ -2,13 +2,15 @@ interface WithId {
     'id': string
 }
 
-/**
- * EventSpan Type
- */
-export interface EventSpan extends WithId {
+export interface EventSpan {
     from: number;
-    to: number;
-    hasUnit: 'mm'
+    to?: number;
+    hasUnit: 'mm' | 'track'
+}
+
+export interface EventDimension extends WithId {
+    horizontal: EventSpan 
+    vertical: EventSpan
 }
 
 export interface RollEvent<T> extends WithId {
@@ -18,8 +20,8 @@ export interface RollEvent<T> extends WithId {
      * IIIF region in string form.
      */
     annotates?: string
-    hasDimension: EventSpan
-    trackerHole: number
+
+    hasDimension: EventDimension
 }
 
 /**
@@ -72,11 +74,22 @@ export interface Stamp extends RollEvent<'stamp'> {
 
 export type AnyRollEvent = Note | Expression | HandwrittenText | Stamp | Cover
 
+export interface MeasurementInfo {
+    dpi: number
+    druid: string
+    iiifLink: string // should link to info.json file
+    holeSeparation: number
+    margins: { bass: number, treble: number }
+}
+
 /**
  * MeasurementEvent Type
  */
 export interface MeasurementEvent extends WithId {
-    hasCreated: AnyRollEvent[];
+    hasCreated: {
+        info: MeasurementInfo,
+        events: AnyRollEvent[]
+    };
     measured: PhysicalRollCopy;
     usedSoftware: string
     hasTimeSpan: TimeSpan
@@ -98,6 +111,7 @@ export interface ManualEditing extends WithId {
     hasModified: PhysicalRollCopy
     carriedOutBy: string
     hasTimeSpan: TimeSpan
+    note?: string
 }
 
 /**
@@ -134,6 +148,10 @@ export interface CollatedEvent extends WithId {
 
 export const isCollatedEvent = (e: any) => {
     return 'wasCollatedFrom' in e
+}
+
+export const isRollEvent = (e: any) => {
+    return 'hasDimension' in e
 }
 
 /**
@@ -178,7 +196,7 @@ export interface HandAssignment extends EditorialAction<'handAssignment'> {
     hand: ManualEditing
 }
 
-export interface Reading {
+export interface Reading extends WithId {
     contains: CollatedEvent[]
 }
 

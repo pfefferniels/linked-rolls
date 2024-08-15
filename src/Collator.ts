@@ -17,7 +17,7 @@ const determinePitch = (firstEvent: AnyRollEvent) => {
         return typeToKey(firstEvent.P2HasType, firstEvent.hasScope) || 0
     }
 
-    return firstEvent.trackerHole
+    return firstEvent.hasDimension.vertical.from
 }
 
 const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRollEvent[], tolerance = 5) => {
@@ -36,8 +36,8 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRol
 
         myInfo.push({
             id: event.id,
-            onset: event.wasCollatedFrom.reduce((acc, current) => acc + current.hasDimension.from, 0) / event.wasCollatedFrom.length,
-            offset: event.wasCollatedFrom.reduce((acc, current) => acc + current.hasDimension.to, 0) / event.wasCollatedFrom.length,
+            onset: event.wasCollatedFrom.reduce((acc, current) => acc + current.hasDimension.horizontal.from, 0) / event.wasCollatedFrom.length,
+            offset: event.wasCollatedFrom.reduce((acc, current) => acc + current.hasDimension.horizontal.to!, 0) / event.wasCollatedFrom.length,
             pitch
         })
     }
@@ -49,8 +49,8 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRol
 
         return {
             id: e.id,
-            onset: e.hasDimension.from,
-            offset: e.hasDimension.to,
+            onset: e.hasDimension.horizontal.from,
+            offset: e.hasDimension.horizontal.to!,
             pitch
         }
     })
@@ -117,3 +117,64 @@ export const collateRolls = (rolls: RollCopy[], assumptions: Assumption[]) => {
     return collatedEvents
 }
 
+/**
+ * Insert readings
+ */
+export const insertReadings = (sources: RollCopy[], events: CollatedEvent[], assumptions: Assumption[]) => {
+    for (const event of events) {
+        const allSources = sources.map(s => s.id).sort()
+        const eventSources = Array.from(sourcesOf(sources, event)).sort()
+
+        if (!allSources.every((source, index) => source === eventSources[index])) {
+            // there isn't an event for every source => make
+            // sure that it will be wrapped in a reading
+            assumptions.push({
+                type: 'relation',
+                relates: [
+                    {
+                        id: v4(),
+                        contains: [],
+                    },
+                    {
+                        id: v4(),
+                        contains: [event]
+                    }],
+                carriedOutBy: '#collation-tool',
+                id: v4()
+            })
+        }
+    }
+}
+
+export const sourceOf = (sources: RollCopy[], eventId: string) => {
+    const containingSource = sources.find(source => source.hasEventId(eventId))
+    if (!containingSource) return
+    return containingSource.id
+}
+
+export const sourcesOf = (sources: RollCopy[], event_: CollatedEvent | CollatedEvent[] | string[]) => {
+    const result: Set<string> = new Set()
+
+    if (Array.isArray(event_) && event_.every(e => typeof e === 'string')) {
+        for (const id of event_) {
+            const sourceLink = sourceOf(sources, id)
+            if (!sourceLink) continue
+
+            result.add(sourceLink)
+        }
+        return result
+    }
+
+    const events = Array.isArray(event_) ? event_ : [event_]
+
+    for (const event of events) {
+        for (const copyEvent of event.wasCollatedFrom) {
+            const sourceLink = sourceOf(sources, copyEvent.id)
+            if (!sourceLink) continue
+
+            result.add(sourceLink)
+        }
+    }
+
+    return result
+}

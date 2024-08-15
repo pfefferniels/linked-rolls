@@ -137,8 +137,8 @@ export class Emulation {
 
             const negotiated = collatedEvent.wasCollatedFrom[0] as NegotiatedEvent
             negotiated.id = collatedEvent.id
-            negotiated.hasDimension.from = mean[0]
-            negotiated.hasDimension.to = mean[1]
+            negotiated.hasDimension.horizontal.from = mean[0]
+            negotiated.hasDimension.horizontal.to = mean[1]
             negotiated.fromCollatedEvent = collatedEvent
             this.negotiatedEvents.push(negotiated)
         }
@@ -162,7 +162,7 @@ export class Emulation {
             }
         }
 
-        this.negotiatedEvents.sort((a, b) => a.hasDimension.from - b.hasDimension.from)
+        this.negotiatedEvents.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
     }
 
     private findRollTempo(assumptions: Assumption[]) {
@@ -190,8 +190,8 @@ export class Emulation {
             if (!event.assumedPhysicalTime) {
                 // convert from mm to cm and then to time
                 event.assumedPhysicalTime = [
-                    this.placeTimeConversion.placeToTime(event.hasDimension.from / 10),
-                    this.placeTimeConversion.placeToTime(event.hasDimension.to / 10)
+                    this.placeTimeConversion.placeToTime(event.hasDimension.horizontal.from / 10),
+                    this.placeTimeConversion.placeToTime(event.hasDimension.horizontal.to! / 10)
                 ]
             }
         }
@@ -200,7 +200,9 @@ export class Emulation {
     private applyTrackerBarExtension() {
         const correction = this.options.trackerBarDiameter * this.options.punchExtensionFraction + 0.5
         for (const event of this.negotiatedEvents) {
-            event.hasDimension.to += correction
+            if (event.hasDimension.horizontal.to) {
+                event.hasDimension.horizontal.to += correction
+            }
         }
     }
 
@@ -229,7 +231,7 @@ export class Emulation {
 
                 // take velocity from the calculated velocity list
                 const pitch = (event as Note).hasPitch
-                if (event.trackerHole >= this.options.division) {
+                if (event.hasDimension.vertical.from >= this.options.division) {
                     this.insertNote(event, pitch,
                         this.trebleVelocities[+(event.assumedPhysicalTime![0] * 1000).toFixed()])
                 }
@@ -310,8 +312,8 @@ export class Emulation {
         for (const negotiatedEvent of this.negotiatedEvents) {
             if (negotiatedEvent.type !== 'expression') continue
 
-            if (scope === 'treble' && negotiatedEvent.trackerHole < this.options.division) continue
-            else if (scope === 'bass' && negotiatedEvent.trackerHole >= this.options.division) continue
+            if (scope === 'treble' && negotiatedEvent.hasDimension.vertical.from < this.options.division) continue
+            else if (scope === 'bass' && negotiatedEvent.hasDimension.vertical.from >= this.options.division) continue
 
             const event = negotiatedEvent as Expression & AssumedPhysicalTimeSpan
 
@@ -518,9 +520,9 @@ const meanDimensionOf = (collatedEvent: CollatedEvent): [number, number] | undef
     if (!originalEvents) return
 
     const meanStart =
-        originalEvents.reduce((acc, cur) => acc + cur.hasDimension.from, 0) / originalEvents.length
+        originalEvents.reduce((acc, cur) => acc + cur.hasDimension.horizontal.from, 0) / originalEvents.length
     const meanEnd =
-        originalEvents.reduce((acc, cur) => acc + cur.hasDimension.to, 0) / originalEvents.length
+        originalEvents.reduce((acc, cur) => acc + cur.hasDimension.horizontal.to!, 0) / originalEvents.length
 
     return [meanStart, meanEnd]
 }

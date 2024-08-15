@@ -4,7 +4,8 @@ export { asXML } from './asXML'
 export { importXML } from './importXML'
 export { asTurtle } from './asTurtle'
 export { collateRolls } from './Collator'
-export { isCollatedEvent } from './types'
+export { combineRelations } from './combineRelations'
+export { isCollatedEvent, isRollEvent } from './types'
 export type { RollEdition } from './importXML'
 export type {
     Certainty,

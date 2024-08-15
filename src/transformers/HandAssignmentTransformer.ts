@@ -21,6 +21,10 @@ export class HandAssignmentTransformer extends Transformer<HandAssignment> {
                 continue
             }
 
+            if (affectedNode.parent.type !== 'collatedEvent') {
+                console.log(`This transformer must not be applied after collated events were unpacked`)
+                continue
+            }
             const collatedEvent: CollatedEventNode = affectedNode.parent
 
             const rdgNode = findAncestor(affectedNode, 'rdg') as RdgNode | undefined
