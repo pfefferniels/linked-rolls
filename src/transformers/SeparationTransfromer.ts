@@ -37,7 +37,7 @@ export class SeparationTransformer extends Transformer<Separation> {
             type: 'choice',
             parent: parentNode,
             children: [],
-            xmlId: v4()
+            xmlId: assumption.id
         }
 
         const corr: CorrNode = {

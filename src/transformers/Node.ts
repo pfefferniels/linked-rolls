@@ -56,7 +56,7 @@ export interface CollatedEventNode extends Typed<'collatedEvent'>, WithId {
 
 export interface BodyNode extends Typed<'body'>, WithId {
     parent: undefined
-    children: (AnyEventNode | AppNode | ChoiceNode)[]
+    children: (AnyEventNode | AppNode | ChoiceNode | AnnotNode)[]
 }
 
 export interface FacsNode extends Typed<'facs'>, WithId {
@@ -77,7 +77,7 @@ export type AnyEventNode = CollatedEventNode | AnyRollEventNode
 
 export interface RdgNode extends Typed<'rdg'>, WithId {
     parent: AppNode,
-    children: (ChoiceNode | AnyEventNode)[]
+    children: (ChoiceNode | AnyEventNode | AnnotNode)[]
 
     source: string[]
     hand?: string[]
@@ -87,12 +87,12 @@ export interface RdgNode extends Typed<'rdg'>, WithId {
 
 export interface AppNode extends Typed<'app'>, WithId {
     parent: BodyNode
-    children: RdgNode[]
+    children: (RdgNode | AnnotNode)[]
 }
 
 export interface ChoiceNode extends Typed<'choice'>, WithId {
     parent: BodyNode | RdgNode
-    children: (SicNode | CorrNode)[]
+    children: (SicNode | CorrNode | AnnotNode)[]
 }
 
 export interface SicNode extends Typed<'sic'>, WithId {
@@ -105,6 +105,13 @@ export interface CorrNode extends Typed<'corr'>, WithId {
     children: AnyEventNode[]
 }
 
+export interface AnnotNode extends Typed<'annot'>, WithId {
+    parent: AnyBodyNode
+    children: undefined
+    target?: string
+    text: string
+}
+
 export type AnyBodyNode =
     | AppNode
     | RdgNode
@@ -114,7 +121,7 @@ export type AnyBodyNode =
     | SicNode
     | CorrNode
     | FacsNode
-
+    | AnnotNode
 
 export interface HeaderNode extends Typed<'header'>, WithId {
     parent: undefined 

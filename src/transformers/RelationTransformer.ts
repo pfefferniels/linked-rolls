@@ -12,7 +12,7 @@ export class RelationTransformer extends Transformer<Relation> {
         const app: AppNode = {
             parent: this.body,
             children: [],
-            xmlId: v4(),
+            xmlId: relation.id,
             type: 'app'
         }
 

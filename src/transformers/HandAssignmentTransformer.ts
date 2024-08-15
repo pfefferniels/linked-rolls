@@ -59,7 +59,7 @@ export class HandAssignmentTransformer extends Transformer<HandAssignment> {
 
                 const newRdg: RdgNode = {
                     type: 'rdg',
-                    xmlId: v4(),
+                    xmlId: assumption.id,
                     children: [],
                     parent: appNode,
                     source: [affectedSource]

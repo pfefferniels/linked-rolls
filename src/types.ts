@@ -212,7 +212,6 @@ export interface RelativePlacement extends EditorialAction<'relativePlacement'> 
 
 export interface Annotation extends EditorialAction<'annotation'> {
     annotated: CollatedEvent[]
-    with: string
 }
 
 export interface TempoAdjustment extends EditorialAction<'tempoAdjustment'> {

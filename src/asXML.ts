@@ -10,6 +10,7 @@ import { XMLBuilder } from 'fast-xml-parser';
 import { SortNodes } from './transformers/SortNodes';
 import { RelationTransformer } from './transformers/RelationTransformer';
 import { UnpackCollatedEvents } from './transformers/UnpackCollatedEvents';
+import { InsertAnnots } from './transformers/InsertAnnots';
 
 export const namespace = 'https://linked-rolls.org/rollo'
 
@@ -156,6 +157,7 @@ export const asXML = (
         insertEvent.apply(event)
     }
 
+    const insertAnnots = new InsertAnnots(sources, body, assumptions)
     for (const assumption of assumptions) {
         if (assumption.type === 'handAssignment') {
             const insertHandAssignments = new HandAssignmentTransformer(sources, body, assumptions)
@@ -169,6 +171,8 @@ export const asXML = (
             const insertRelation = new RelationTransformer(sources, body, assumptions)
             insertRelation.apply(assumption)
         }
+
+        insertAnnots.apply(assumption)
     }
 
     const unpack = new UnpackCollatedEvents(sources, body, assumptions)
