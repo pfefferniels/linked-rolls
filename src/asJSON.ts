@@ -23,11 +23,12 @@ export const asJSON = (current: AnyNode) => {
         ':@': attrs
     }
 
-    if ('text' in current) {
-        json['#text'] = current.text
-    }
-
     const children: any[] = []
+    if ('text' in current) {
+        children.push({
+            '#text': current.text
+        })
+    }
     json[current.type] = children
 
     for (const key of Object.keys(attrs)) {
