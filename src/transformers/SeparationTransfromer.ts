@@ -47,29 +47,36 @@ export class SeparationTransformer extends Transformer<Separation> {
             children: collatedEvents
         }
 
-        for (const collatedEvent of collatedEvents) {
+        collatedEvents.forEach((collatedEvent, i) => {
             // replace the original parent with the corr node
             collatedEvent.parent = corr
 
             const index = parentNode.children.findIndex(e => e.xmlId === collatedEvent.xmlId)
-            if (index !== -1) {
+            if (index === -1) return
+
+            if (i === 0) {
                 // replace the actual collated event with the choice
-                // in which it is wrapped now.
+                // in which it is wrapped now (only once)
                 parentNode.children.splice(index, 1, choice)
             }
-        }
+            else {
+                // remove the collated event from its parent, since 
+                // it now lives within corr
+                parentNode.children.splice(index, 1)
+            }
+        })
 
         const sic: SicNode = {
             type: 'sic',
             xmlId: v4(),
-            parent: choice, 
+            parent: choice,
             children: []
         }
 
         const newCollatedEvent: CollatedEventNode = {
             type: 'collatedEvent',
             xmlId: v4(),
-            parent: sic, 
+            parent: sic,
             children: []
         }
 
@@ -77,7 +84,5 @@ export class SeparationTransformer extends Transformer<Separation> {
         sic.children.push(newCollatedEvent)
 
         choice.children = [sic, corr]
-
-        // const tmpAssumption: Relation = { … }
     }
 }

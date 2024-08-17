@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from "fs";
 import { RollCopy, asXML, collateRolls } from '../src';
 import { v4 } from 'uuid';
-import { HandAssignment, Relation } from '../src/types';
+import { HandAssignment, Relation, Separation } from '../src/types';
 const path = require("path");
 
 const fileToRollCopy = (filename: string) => {
@@ -13,7 +13,7 @@ const fileToRollCopy = (filename: string) => {
     return lr
 }
 
-describe('Collator', () => {
+describe('Transformations', () => {
     const copy1 = fileToRollCopy("./fixtures/traeumerei1_analysis.txt")
     const copy2 = fileToRollCopy("./fixtures/traeumerei2_analysis.txt")
 
@@ -116,5 +116,61 @@ describe('Collator', () => {
         const xml = asXML([copy1, copy2], collatedEvents, [handAssignment, rel]) as string
         expect(Array.from(xml.matchAll(/hand\=\"fritz"/g)).length).toBe(1)
         expect(Array.from(xml.matchAll(/xml\:id\=\"distinct\-reading\"/g)).length).toBe(1)
+    })
+
+    it('Wraps separations in <choice>', () => {
+        const re = copy1.events[2]
+
+        const separation: Separation = {
+            type: 'separation',
+            separated: re,
+            into: [
+                {
+                    id: 'new-expr1',
+                    type: 'expression',
+                    P2HasType: 'ForzandoOff',
+                    hasScope: 'bass',
+                    hasDimension: {
+                        id: v4(),
+                        horizontal: {
+                            from: 22,
+                            to: 23,
+                            hasUnit: 'mm'
+                        },
+                        vertical: {
+                            from: 5,
+                            hasUnit: 'track'
+                        }
+                    }
+                },
+                {
+                    id: 'new-expr2',
+                    type: 'expression',
+                    P2HasType: 'ForzandoOff',
+                    hasScope: 'bass',
+                    hasDimension: {
+                        id: v4(),
+                        horizontal: {
+                            from: 24,
+                            to: 25,
+                            hasUnit: 'mm'
+                        },
+                        vertical: {
+                            from: 5,
+                            hasUnit: 'track'
+                        }
+                    }
+                },
+            ],
+            carriedOutBy: 'John Doe',
+            id: 'my-separation'
+        }
+
+        const collatedEvents = collateRolls([copy1], [separation])
+        const xml = asXML([copy1], collatedEvents, [separation]) as string
+
+        expect(Array.from(xml.matchAll(/<choice/g)).length).toBe(1)
+        expect(Array.from(xml.matchAll(/<sic/g)).length).toBe(1)
+        expect(Array.from(xml.matchAll(/<corr/g)).length).toBe(1)
     })
 })
