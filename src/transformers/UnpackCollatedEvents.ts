@@ -9,7 +9,8 @@ export class UnpackCollatedEvents extends Transformer<undefined> {
         for (const collatedEvent of nodes) {
             const index = collatedEvent.parent.children.findIndex(e => e.xmlId === collatedEvent.xmlId)
             if (index === -1) {
-                throw new Error("Parent does not contain child")
+                throw new Error(`Parent (${collatedEvent.parent.type}) does not contain child
+                    (Total amount of children: ${collatedEvent.parent.children.length})`)
             }
 
             const rollEvents = collatedEvent.children
@@ -18,24 +19,30 @@ export class UnpackCollatedEvents extends Transformer<undefined> {
                 collatedEvent.parent.children.splice(index, 1)
                 continue
             }
-        
+
             const from = rollEvents.reduce((acc, curr) => acc + curr.hasDimension.horizontal.from, 0) / rollEvents.length
             const to = rollEvents.reduce((acc, curr) => acc + curr.hasDimension.horizontal.to!, 0) / rollEvents.length
-        
+
             const allFacs: FacsNode[] = rollEvents
                 .filter(event => event.annotates !== undefined)
                 .map(event => {
-                return {
-                    source: this.sourceOf(event.id) || 'unknown source',
-                    url: event.annotates!,
-                    parent: event,
-                    children: undefined,
-                    type: 'facs',
-                    xmlId: v4()
-                }
-            })
-        
-            const virtual = structuredClone(rollEvents[0])
+                    return {
+                        source: this.sourceOf(event.id) || 'unknown source',
+                        url: event.annotates!,
+                        parent: event,
+                        children: undefined,
+                        type: 'facs',
+                        xmlId: v4()
+                    }
+                })
+
+            // deep-cloning rollEvent[0] is very expensive
+            // since through its parent node it will copy
+            // the whole tree. Therefore deleting parent first.
+            const tmp: any = { ...rollEvents[0] }
+            delete tmp.parent
+            const virtual = structuredClone(tmp)
+
             virtual.xmlId = collatedEvent.xmlId
             virtual.hasDimension.horizontal.from = from
             virtual.hasDimension.horizontal.to = to
