@@ -9,8 +9,8 @@ import { SeparationTransformer } from './transformers/SeparationTransfromer';
 import { XMLBuilder } from 'fast-xml-parser';
 import { SortNodes } from './transformers/SortNodes';
 import { RelationTransformer } from './transformers/RelationTransformer';
-import { UnpackCollatedEvents } from './transformers/UnpackCollatedEvents';
 import { InsertAnnots } from './transformers/InsertAnnots';
+import { UnpackCollatedEvents } from './transformers/UnpackCollatedEvents';
 
 export const namespace = 'https://linked-rolls.org/rollo'
 
@@ -152,28 +152,30 @@ export const asXML = (
         children: []
     }
 
+    // transformations have to be applied in a certain order
+    // (mostly, top-down, mainly to reduce their complexity).
+    // Do not change it.
+
     const insertEvent = new InsertCollatedEvent(sources, body, assumptions)
     for (const event of collatedEvents) {
         insertEvent.apply(event)
     }
 
     const insertAnnots = new InsertAnnots(sources, body, assumptions)
-    for (const assumption of assumptions) {
-        if (assumption.type === 'handAssignment') {
-            const insertHandAssignments = new HandAssignmentTransformer(sources, body, assumptions)
-            insertHandAssignments.apply(assumption)
-        }
-        else if (assumption.type === 'separation') {
-            const insertSeparation = new SeparationTransformer(sources, body, assumptions)
-            insertSeparation.apply(assumption)
-        }
-        else if (assumption.type === 'relation') {
-            const insertRelation = new RelationTransformer(sources, body, assumptions)
-            insertRelation.apply(assumption)
-        }
 
-        insertAnnots.apply(assumption)
-    }
+    const relations = assumptions.filter(a => a.type === 'relation')
+    const insertRelation = new RelationTransformer(sources, body, assumptions)
+    relations.forEach(r => insertRelation.apply(r))
+
+    const handAssignments = assumptions.filter(a => a.type === 'handAssignment')
+    const insertHandAssignments = new HandAssignmentTransformer(sources, body, assumptions)
+    handAssignments.forEach(h => insertHandAssignments.apply(h))
+
+    const separations = assumptions.filter(a => a.type === 'separation')
+    const insertSeparation = new SeparationTransformer(sources, body, assumptions)
+    separations.forEach(s => insertSeparation.apply(s))
+
+    assumptions.forEach(a => insertAnnots.apply(a))
 
     const unpack = new UnpackCollatedEvents(sources, body, assumptions)
     unpack.apply()
