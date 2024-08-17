@@ -3,12 +3,14 @@ import { AnyRollEventNode, BodyNode, CollatedEventNode, RdgNode } from "./Node";
 import { Transformer } from "./Transformer";
 
 export const rollEventAsNode = (event: AnyRollEvent, parent: CollatedEventNode): AnyRollEventNode => {
-    return {
+    const result: any = {
         ...event,
         xmlId: event.id,
         parent,
         children: undefined
     }
+    delete result.id 
+    return result
 }
 
 export class InsertCollatedEvent extends Transformer<CollatedEvent> {
