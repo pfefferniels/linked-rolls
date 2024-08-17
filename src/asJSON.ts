@@ -16,7 +16,10 @@ export const asJSON = (current: AnyNode) => {
     delete attrs.type
     delete attrs.children
     delete attrs.parent
-    if (attrs.xmlId) delete attrs.xmlId
+    if (attrs.xmlId) {
+        attrs['xml:id'] = attrs.xmlId
+        delete attrs.xmlId
+    }
     if (attrs.text) delete attrs.text
 
     const json: any = {
