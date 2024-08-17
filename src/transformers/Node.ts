@@ -49,6 +49,18 @@ export const filter = (root: AnyBodyNode, predicate: (el: AnyBodyNode) => boolea
     return acc
 }
 
+type Defined<T> = T extends undefined ? never : T
+type ParentOf<T extends AnyBodyNode> = T extends { parent: infer K } ? Defined<K> : never
+
+export const wrap = <T extends AnyBodyNode>(els: T[], inside: ParentOf<T>) => {
+    if (!inside.children) {
+        throw new Error('Cannot wrap inside an element that does not allow children by type')
+    }
+
+    els.forEach(el => el.parent = inside);
+    (inside.children as T[]) = els
+}
+
 export interface CollatedEventNode extends Typed<'collatedEvent'>, WithId {
     parent: RdgNode | SicNode | CorrNode | BodyNode
     children: AnyRollEventNode[]
@@ -72,6 +84,14 @@ type AsNode<T> = {
 } & T & WithId
 
 export type AnyRollEventNode = AsNode<AnyRollEvent>
+
+export const isRollEventNode = (e: AnyBodyNode) => {
+    return e.type === 'note'
+        || e.type === 'expression'
+        || e.type === 'handwrittenText'
+        || e.type === 'cover'
+        || e.type === 'stamp'
+}
 
 export type AnyEventNode = CollatedEventNode | AnyRollEventNode
 
@@ -124,7 +144,7 @@ export type AnyBodyNode =
     | AnnotNode
 
 export interface HeaderNode extends Typed<'header'>, WithId {
-    parent: undefined 
+    parent: undefined
     children: (SourceDescNode | EditionStmtNode)[]
 }
 
@@ -150,20 +170,20 @@ export interface SourceNode extends Typed<'source'>, WithId {
 }
 
 export type AnyOperationNode = (Shifting | Stretching) & {
-    parent: CollationDescNode 
+    parent: CollationDescNode
     children: undefined
 }
 
 export interface CollationDescNode extends Typed<'collationDesc'> {
-    parent: SourceNode 
+    parent: SourceNode
     children: AnyOperationNode[]
 }
 
 export interface ShiftingNode extends Typed<'shifting'> {
-    parent: CollationDescNode 
-    children: undefined 
-    horizontal: number 
-    vertical: number 
+    parent: CollationDescNode
+    children: undefined
+    horizontal: number
+    vertical: number
 }
 
 export interface HandNoteNode extends Typed<'handNote'>, WithId {
@@ -175,7 +195,7 @@ export interface HandNoteNode extends Typed<'handNote'>, WithId {
 }
 
 export interface SoftwareNode extends Typed<'application'>, WithId {
-    name: string 
+    name: string
     version?: string
     url?: string
     resp?: string
