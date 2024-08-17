@@ -1,6 +1,6 @@
 import { v4 } from 'uuid';
 import { RollCopy } from './RollCopy'
-import { Assumption, CollatedEvent, ExpressionScope, ExpressionType } from './types'
+import { Assumption, CollatedEvent, ExpressionScope, ExpressionType, Reading } from './types'
 
 export type RollEdition = {
     sources: RollCopy[],
@@ -8,57 +8,61 @@ export type RollEdition = {
     assumptions: Assumption[]
 }
 
+const noteAsCollatedEvent = (note: Element): CollatedEvent => {
+    return {
+        id: note.getAttribute('xml:id')!,
+        wasCollatedFrom: [{
+            id: v4(),
+            type: 'note',
+            hasDimension: {
+                id: v4(),
+                horizontal: {
+                    from: +note.getAttribute('horizontal.start')!,
+                    to: +note.getAttribute('horizontal.end')!,
+                    hasUnit: note.getAttribute('hole.unit')! as 'mm',
+                },
+                vertical: {
+                    from: +note.getAttribute('trackerHole')!,
+                    hasUnit: 'track'
+                }
+            },
+            hasPitch: +note.getAttribute('pitch')!
+        }]
+    }
+}
+
+const expressionAsCollatedEvent = (expression: Element): CollatedEvent => {
+    return {
+        id: expression.getAttribute('xml:id')!,
+        wasCollatedFrom: [{
+            id: v4(),
+            type: 'expression',
+            hasScope: expression.getAttribute('scope') as ExpressionScope,
+            P2HasType: expression.getAttribute('type') as ExpressionType,
+            hasDimension: {
+                id: v4(),
+                horizontal: {
+                    from: +expression.getAttribute('horizontal.start')!,
+                    to: +expression.getAttribute('horizontal.end')!,
+                    hasUnit: expression.getAttribute('horizontal.hasUnit')! as 'mm',
+                },
+                vertical: {
+                    from: +expression.getAttribute('vertical.from')!,
+                    hasUnit: expression.getAttribute('vertical.hasUnit')! as 'mm'
+                }
+            },
+        }]
+    }
+}
+
 export const importXML = (doc: Document): RollEdition => {
     const collatedEvents: CollatedEvent[] = []
 
     const notes = doc.querySelectorAll('note')
-    for (const note of notes) {
-        collatedEvents.push({
-            id: note.getAttribute('id')!,
-            wasCollatedFrom: [{
-                id: v4(),
-                type: 'note',
-                hasDimension: {
-                    id: v4(),
-                    horizontal: {
-                        from: +note.getAttribute('hole.start')!,
-                        to: +note.getAttribute('hole.end')!,
-                        hasUnit: note.getAttribute('hole.unit')! as 'mm',
-                    },
-                    vertical: {
-                        from: +note.getAttribute('trackerHole')!,
-                        hasUnit: 'track'
-                    }
-                },
-                hasPitch: +note.getAttribute('pitch')!
-            }]
-        })
-    }
-
     const expressions = doc.querySelectorAll('expression')
-    for (const expression of expressions) {
-        collatedEvents.push({
-            id: expression.getAttribute('id')!,
-            wasCollatedFrom: [{
-                id: v4(),
-                type: 'expression',
-                hasScope: expression.getAttribute('scope') as ExpressionScope,
-                P2HasType: expression.getAttribute('type') as ExpressionType,
-                hasDimension: {
-                    id: v4(),
-                    horizontal: {
-                        from: +expression.getAttribute('hole.start')!,
-                        to: +expression.getAttribute('hole.end')!,
-                        hasUnit: expression.getAttribute('hole.unit')! as 'mm',
-                    },
-                    vertical: {
-                        from: +expression.getAttribute('trackerHole')!,
-                        hasUnit: 'track'
-                    }
-                },
-            }]
-        })
-    }
+
+    collatedEvents.push(...Array.from(notes).map(noteAsCollatedEvent))
+    collatedEvents.push(...Array.from(expressions).map(expressionAsCollatedEvent))
 
     const assumptions: Assumption[] = []
 
@@ -71,7 +75,7 @@ export const importXML = (doc: Document): RollEdition => {
         const newCopy = new RollCopy()
         newCopy.id = id
 
-        const alignments = sourceEl.querySelector('collation')
+        const alignments = sourceEl.querySelector('collationDesc')
         if (alignments) {
             for (const operation of alignments.children) {
                 if (operation.localName === 'stretching') {
@@ -109,13 +113,50 @@ export const importXML = (doc: Document): RollEdition => {
 
         newCopy.events = collatedEvents
             .filter(e => {
-                console.log(e)
-                // TODO 
-                return true
+                // console.log(e)
+                const docEl = Array.from(doc.querySelectorAll('note,expression')).find(event => {
+                    event.getAttribute('xml:id') === e.id
+                })
+                if (!docEl) return true
+
+                const rdg = docEl.closest('rdg')
+                if (!rdg) return true
+
+                const sources = rdg.getAttribute('source')
+                if (!sources) return true
+
+                const sourcesArr = sources.split(' ')
+                return sourcesArr.includes(newCopy.id)
             })
             .map(e => {
                 return e.wasCollatedFrom[0]
             })
+    }
+
+    const apps = doc.querySelectorAll('app')
+    for (const appEl of apps) {
+        const readings: Reading[] = []
+        const readingEls = appEl.querySelectorAll('rdg')
+        for (const readingEl of readingEls) {
+            const notes = readingEl.querySelectorAll('note')
+            const expressions = readingEl.querySelectorAll('expression')
+    
+            const contains = []
+            contains.push(...Array.from(notes).map(noteAsCollatedEvent))
+            contains.push(...Array.from(expressions).map(expressionAsCollatedEvent))
+        
+            readings.push({
+                id: v4(),
+                contains
+            })
+        }
+
+        assumptions.push({
+            type: 'relation',
+            relates: readings,
+            id: appEl.getAttribute('xml:id')!,
+            carriedOutBy: '',
+        })
     }
 
     return {
