@@ -91,7 +91,7 @@ export class Emulation {
     }) {
         options.slow_step = (options.welte_mf - options.welte_p) / options.slow_decay_rate
         options.fastC_step = (options.welte_mf - options.welte_p) / options.fastC_decay_rate
-        options.fastD_step = (options.welte_f - options.welte_p) / options.fastD_decay_rate
+        options.fastD_step = -(options.welte_f - options.welte_p) / options.fastD_decay_rate
         this.options = options
     }
 
