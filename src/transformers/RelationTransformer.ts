@@ -1,19 +1,19 @@
-import { v4 } from "uuid";
 import { Relation } from "../types";
 import { AppNode, ChoiceNode, CollatedEventNode, find, findAncestor, RdgNode } from "./Node";
 import { Transformer } from "./Transformer";
 import { determineSources } from "../asXML";
+import { v4 } from "uuid";
 
 export class RelationTransformer extends Transformer<Relation> {
     apply(relation: Relation) {
-        console.log('dealing with relation', relation)
         const readings = relation.relates
 
         const app: AppNode = {
             parent: this.body,
             children: [],
             xmlId: relation.id,
-            type: 'app'
+            type: 'app',
+            resp: [relation.carriedOutBy]
         }
 
         const allSources = this.sources.map(s => s.id).sort()
@@ -36,15 +36,6 @@ export class RelationTransformer extends Transformer<Relation> {
                     }) as (ChoiceNode | CollatedEventNode)[]
 
             if (events.length === 0) {
-                // => they get an empty reading 
-                const emptyRdg: RdgNode = {
-                    parent: app,
-                    children: [],
-                    xmlId: v4(),
-                    type: 'rdg',
-                    source: missing
-                }
-                app.children.push(emptyRdg)
                 continue
             }
 
@@ -59,21 +50,35 @@ export class RelationTransformer extends Transformer<Relation> {
             }
 
             events.forEach((event, i) => {
-                event.parent = rdg
-                const index = this.body.children.findIndex(e => e.xmlId === event.xmlId)
+                const parent = event.parent
+                const index = parent.children.findIndex(e => e.xmlId === event.xmlId)
 
                 // replace first event node with app node and
                 // remove all remaining events
                 if (i === 0) {
-                    this.body.children.splice(index, 1, app)
+                    parent.children.splice(index, 1, app)
                 }
                 else {
-                    this.body.children.splice(index, 1)
+                    parent.children.splice(index, 1)
                 }
+
+                event.parent = rdg
             })
 
             finishedSources.push(...source)
             app.children.push(rdg)
+        }
+
+        // empty reading for the missing sources
+        if (missing.length > 0) {
+            const emptyRdg: RdgNode = {
+                parent: app,
+                children: [],
+                xmlId: v4(),
+                type: 'rdg',
+                source: missing
+            }
+            app.children.push(emptyRdg)
         }
     }
 }

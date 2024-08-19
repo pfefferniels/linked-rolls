@@ -27,7 +27,7 @@ export class UnpackCollatedEvents extends Transformer<undefined> {
                 .filter(event => event.annotates !== undefined)
                 .map(event => {
                     return {
-                        source: this.sourceOf(event.id) || 'unknown source',
+                        source: this.sourceOf(event.xmlId) || 'unknown source',
                         url: event.annotates!,
                         parent: event,
                         children: undefined,
@@ -44,10 +44,11 @@ export class UnpackCollatedEvents extends Transformer<undefined> {
             const virtual = structuredClone(tmp)
 
             virtual.xmlId = collatedEvent.xmlId
-            virtual.hasDimension.horizontal.from = from
-            virtual.hasDimension.horizontal.to = to
+            virtual.hasDimension.horizontal.from = from.toFixed(2)
+            virtual.hasDimension.horizontal.to = to.toFixed(2)
             virtual.children = allFacs
             delete virtual.annotates
+            delete virtual.id
 
             // replace the current node with the virtual one
             collatedEvent.parent.children.splice(index, 1, virtual)

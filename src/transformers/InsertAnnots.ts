@@ -11,7 +11,9 @@ export class InsertAnnots extends Transformer<Assumption> {
                 type: 'annot',
                 children: undefined, 
                 parent: this.body,
-                target: assumption.annotated.join(' '),
+                target: assumption.annotated
+                    .map(event => event.id)
+                    .join(' '),
                 xmlId: assumption.id, 
                 text: assumption.note
             })

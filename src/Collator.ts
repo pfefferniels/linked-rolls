@@ -106,7 +106,7 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRol
  */
 export const collateRolls = (rolls: RollCopy[], assumptions: Assumption[]) => {
     const collatedEvents: CollatedEvent[] = rolls[0].withAppliedAssumptions(assumptions).map(event => ({
-        id: event.id,
+        id: v4(),
         wasCollatedFrom: [event]
     }))
 
@@ -177,4 +177,8 @@ export const sourcesOf = (sources: RollCopy[], event_: CollatedEvent | CollatedE
     }
 
     return result
+}
+
+export interface CollationResult {
+    collatedEvents: CollatedEvent[]
 }

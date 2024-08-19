@@ -50,7 +50,7 @@ export const filter = (root: AnyBodyNode, predicate: (el: AnyBodyNode) => boolea
 }
 
 type Defined<T> = T extends undefined ? never : T
-type ParentOf<T extends AnyBodyNode> = T extends { parent: infer K } ? Defined<K> : never
+export type ParentOf<T extends AnyBodyNode> = T extends { parent: infer K } ? Defined<K> : never
 
 export const wrap = <T extends AnyBodyNode>(els: T[], inside: ParentOf<T>) => {
     if (!inside.children) {
@@ -108,6 +108,7 @@ export interface RdgNode extends Typed<'rdg'>, WithId {
 export interface AppNode extends Typed<'app'>, WithId {
     parent: BodyNode
     children: (RdgNode | AnnotNode)[]
+    resp?: string[]
 }
 
 export interface ChoiceNode extends Typed<'choice'>, WithId {

@@ -1,8 +1,7 @@
-import { v4 } from "uuid";
 import { Separation } from "../types";
 import { Transformer } from "./Transformer";
 import { AnyRollEventNode, BodyNode, ChoiceNode, CollatedEventNode, CorrNode, find, RdgNode, SicNode } from "./Node";
-import { rollEventAsNode } from "./InsertCollatedEvent";
+import { v4 } from "uuid";
 
 export class SeparationTransformer extends Transformer<Separation> {
     apply(assumption: Separation) {
@@ -80,7 +79,7 @@ export class SeparationTransformer extends Transformer<Separation> {
             children: []
         }
 
-        newCollatedEvent.children.push(rollEventAsNode(assumption.separated, newCollatedEvent))
+        newCollatedEvent.children.push(this.rollEventAsNode(assumption.separated, newCollatedEvent))
         sic.children.push(newCollatedEvent)
 
         choice.children = [sic, corr]

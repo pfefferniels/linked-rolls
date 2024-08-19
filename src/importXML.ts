@@ -1,6 +1,6 @@
-import { v4 } from 'uuid';
 import { RollCopy } from './RollCopy'
 import { Assumption, CollatedEvent, ExpressionScope, ExpressionType, Reading } from './types'
+import { v4 } from 'uuid'
 
 export type RollEdition = {
     sources: RollCopy[],
@@ -61,28 +61,29 @@ export const importXML = (doc: Document): RollEdition => {
     const notes = doc.querySelectorAll('note')
     const expressions = doc.querySelectorAll('expression')
 
-    collatedEvents.push(...Array.from(notes).map(noteAsCollatedEvent))
-    collatedEvents.push(...Array.from(expressions).map(expressionAsCollatedEvent))
+    collatedEvents.push(...Array.from(notes).map((n => noteAsCollatedEvent(n))))
+    collatedEvents.push(...Array.from(expressions).map(e => expressionAsCollatedEvent(e)))
 
     const assumptions: Assumption[] = []
 
     const sources: RollCopy[] = []
     const sourcEls = doc.querySelectorAll('source')
     for (const sourceEl of sourcEls) {
-        const id = sourceEl.getAttribute('xml:id')
-        if (!id) continue
+        const sourceXmlId = sourceEl.getAttribute('xml:id')
+        if (!sourceXmlId) continue
 
         const newCopy = new RollCopy()
-        newCopy.id = id
+        newCopy.id = sourceXmlId
 
         const alignments = sourceEl.querySelector('collationDesc')
         if (alignments) {
             for (const operation of alignments.children) {
+                const xmlId = operation.getAttribute('xml:id')
                 if (operation.localName === 'stretching') {
                     newCopy.operations.push({
                         type: 'stretching',
                         factor: +(operation.getAttribute('factor') || 1),
-                        id: operation.getAttribute('xml:id') || v4()
+                        id: xmlId || v4()
                     })
                 }
                 else if (operation.localName === 'shifting') {
@@ -90,7 +91,7 @@ export const importXML = (doc: Document): RollEdition => {
                         type: 'shifting',
                         horizontal: +(operation.getAttribute('horizontal') || 0),
                         vertical: +(operation.getAttribute('vertical') || 0),
-                        id: operation.getAttribute('xml:id') || v4()
+                        id: xmlId || v4()
                     })
                 }
             }
@@ -98,8 +99,9 @@ export const importXML = (doc: Document): RollEdition => {
 
         const edits = sourceEl.querySelectorAll('manualEdit')
         for (const edit of edits) {
+            const xmlId = edit.getAttribute('xml:id')
             newCopy.addManualEditing({
-                id: edit.getAttribute('xml:id') || v4(),
+                id: xmlId || v4(),
                 carriedOutBy: edit.getAttribute('who') || 'unknown',
                 hasTimeSpan: {
                     id: v4(),
@@ -142,8 +144,8 @@ export const importXML = (doc: Document): RollEdition => {
             const expressions = readingEl.querySelectorAll('expression')
     
             const contains = []
-            contains.push(...Array.from(notes).map(noteAsCollatedEvent))
-            contains.push(...Array.from(expressions).map(expressionAsCollatedEvent))
+            contains.push(...Array.from(notes).map(n => noteAsCollatedEvent(n)))
+            contains.push(...Array.from(expressions).map(n => expressionAsCollatedEvent(n)))
         
             readings.push({
                 id: v4(),
@@ -151,11 +153,12 @@ export const importXML = (doc: Document): RollEdition => {
             })
         }
 
+        const appXmlId = appEl.getAttribute('xml:id')
         assumptions.push({
             type: 'relation',
             relates: readings,
-            id: appEl.getAttribute('xml:id')!,
-            carriedOutBy: '',
+            id: appXmlId || v4(),
+            carriedOutBy: appEl.getAttribute('resp') || 'unknown',
         })
     }
 

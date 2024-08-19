@@ -1,17 +1,6 @@
-import { AnyRollEvent, CollatedEvent } from "../types";
-import { AnyRollEventNode, BodyNode, CollatedEventNode, RdgNode } from "./Node";
+import { CollatedEvent } from "../types";
+import { BodyNode, CollatedEventNode, RdgNode } from "./Node";
 import { Transformer } from "./Transformer";
-
-export const rollEventAsNode = (event: AnyRollEvent, parent: CollatedEventNode): AnyRollEventNode => {
-    const result: any = {
-        ...event,
-        xmlId: event.id,
-        parent,
-        children: undefined
-    }
-    delete result.id 
-    return result
-}
 
 export class InsertCollatedEvent extends Transformer<CollatedEvent> {
     apply(event: CollatedEvent) {
@@ -26,7 +15,7 @@ export class InsertCollatedEvent extends Transformer<CollatedEvent> {
             xmlId: event.id
         }
         eventNode.children = event.wasCollatedFrom.map(rollEvent =>
-            rollEventAsNode(rollEvent, eventNode)
+            this.rollEventAsNode(rollEvent, eventNode)
         )
 
         return eventNode
