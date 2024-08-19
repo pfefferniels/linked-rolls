@@ -1,4 +1,3 @@
-import { v4 } from 'uuid';
 import { RollCopy } from './RollCopy'
 import { AnyRollEvent, Assumption, CollatedEvent } from './types'
 import { HandAssignmentTransformer } from './transformers/HandAssignmentTransformer';
@@ -11,6 +10,8 @@ import { SortNodes } from './transformers/SortNodes';
 import { RelationTransformer } from './transformers/RelationTransformer';
 import { InsertAnnots } from './transformers/InsertAnnots';
 import { UnpackCollatedEvents } from './transformers/UnpackCollatedEvents';
+import { UnificationTransformer } from './transformers/UnificationTransformer';
+import { v4 } from 'uuid';
 
 export const namespace = 'https://linked-rolls.org/rollo'
 
@@ -145,6 +146,7 @@ export const asXML = (
     sources: RollCopy[],
     collatedEvents: CollatedEvent[],
     assumptions: Assumption[]) => {
+
     const body: BodyNode = {
         type: 'body',
         parent: undefined,
@@ -174,6 +176,10 @@ export const asXML = (
     const separations = assumptions.filter(a => a.type === 'separation')
     const insertSeparation = new SeparationTransformer(sources, body, assumptions)
     separations.forEach(s => insertSeparation.apply(s))
+
+    const unifications = assumptions.filter(a => a.type === 'unification')
+    const insertUnifications = new UnificationTransformer(sources, body, assumptions)
+    unifications.forEach(s => insertUnifications.apply(s))
 
     assumptions.forEach(a => insertAnnots.apply(a))
 
