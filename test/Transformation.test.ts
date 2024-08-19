@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from "fs";
 import { RollCopy, asXML, collateRolls } from '../src';
 import { v4 } from 'uuid';
-import { HandAssignment, Relation, Separation } from '../src/types';
+import { HandAssignment, Relation, Separation, Unification } from '../src/types';
 const path = require("path");
 
 const fileToRollCopy = (filename: string) => {
@@ -173,4 +173,26 @@ describe('Transformations', () => {
         expect(Array.from(xml.matchAll(/<sic/g)).length).toBe(1)
         expect(Array.from(xml.matchAll(/<corr/g)).length).toBe(1)
     })
+
+    it('Wraps unification in <choice>', () => {
+        const re1 = copy1.events[2]
+        const re2 = copy1.events[3]
+
+        const unification: Unification = {
+            type: 'unification',
+            unified: [re1, re2],
+            carriedOutBy: 'John Doe',
+            id: 'my-unification'
+        }
+
+        const collatedEvents = collateRolls([copy1], [unification])
+        const xml = asXML([copy1], collatedEvents, [unification]) as string
+
+        expect(Array.from(xml.matchAll(/<choice/g)).length).toBe(1)
+        expect(Array.from(xml.matchAll(/<sic/g)).length).toBe(1)
+        expect(Array.from(xml.matchAll(/<corr/g)).length).toBe(1)
+    })
+
 })
+
+
