@@ -7,28 +7,18 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "vitest",
-    "build:ldo": "ldo build --input src/.shapes --output src/.ldo"
+    "test": "vitest"
   },
   "devDependencies": {
-    "@ldo/cli": "^0.0.1-alpha.17",
-    "@types/jsonld": "^1.5.13",
-    "@types/rdfjs__data-model": "^2.0.7",
-    "@types/shexj": "^2.1.7",
     "typescript": "^5.6.0-dev.20240809",
     "vite": "^5.0.8",
     "vitest": "^1.2.0"
   },
   "dependencies": {
-    "@inrupt/vocab-common-rdf": "^1.0.5",
-    "@ldo/ldo": "^0.0.1-alpha.17",
-    "@ldo/rdf-utils": "^0.0.1-alpha.17",
-    "@rdfjs/data-model": "^2.0.1",
-    "@types/uuid": "^9.0.7",
+    "@types/uuid": "^10.0.0",
     "aton": "^0.0.4",
     "fast-xml-parser": "^4.4.1",
-    "ldo": "^1.0.3",
     "midifile-ts": "^1.5.1",
-    "uuid": "^9.0.1"
+    "uuid": "^10.0.0"
   }
 }
