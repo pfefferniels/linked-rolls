@@ -104,7 +104,7 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRol
 /**
  * Collates multiple roll copies. 
  */
-export const collateRolls = (rolls: RollCopy[], assumptions: Assumption[]) => {
+export const collateRolls = (rolls: RollCopy[], assumptions: Assumption[]): CollationResult => {
     const collatedEvents: CollatedEvent[] = rolls[0].withAppliedAssumptions(assumptions).map(event => ({
         id: v4(),
         wasCollatedFrom: [event]
@@ -114,7 +114,9 @@ export const collateRolls = (rolls: RollCopy[], assumptions: Assumption[]) => {
         reduceEvents(collatedEvents, rolls[i].withAppliedAssumptions(assumptions))
     }
 
-    return collatedEvents
+    return {
+        events: collatedEvents
+    }
 }
 
 /**
@@ -180,5 +182,5 @@ export const sourcesOf = (sources: RollCopy[], event_: CollatedEvent | CollatedE
 }
 
 export interface CollationResult {
-    collatedEvents: CollatedEvent[]
+    events: CollatedEvent[]
 }

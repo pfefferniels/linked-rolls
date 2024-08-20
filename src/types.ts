@@ -9,7 +9,7 @@ export interface EventSpan {
 }
 
 export interface EventDimension extends WithId {
-    horizontal: EventSpan 
+    horizontal: EventSpan
     vertical: EventSpan
 }
 
@@ -80,6 +80,8 @@ export interface MeasurementInfo {
     iiifLink: string // should link to info.json file
     holeSeparation: number
     margins: { bass: number, treble: number }
+    rollWidth: number
+    averagePunchDiameter: number
 }
 
 /**

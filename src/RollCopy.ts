@@ -38,6 +38,7 @@ export class RollCopy {
 
         const parser = new AtonParser()
         const json = parser.parse(atonString)
+
         const holes = json.ROLLINFO.HOLES.HOLE
         const druid = json.ROLLINFO.DRUID
         const holeSeparation = parseFloat(json.ROLLINFO.HOLE_SEPARATION.replace('px'))
@@ -45,6 +46,8 @@ export class RollCopy {
         const hardMarginTreble = parseFloat(json.ROLLINFO.HARD_MARGIN_TREBLE.replace('px'))
         const date = json.ROLLINFO.ANALYSIS_DATE
         const dpi = parseFloat(json.ROLLINFO.LENGTH_DPI.replace('ppi'))
+        const rollWidth = parseFloat(json.ROLLINFO.ROLL_WIDTH.replace('px')) / dpi * 25.4
+        let averagePunchDiameter = -1
 
         this.setRollType(json.ROLLINFO.ROLL_TYPE)
 
@@ -52,8 +55,17 @@ export class RollCopy {
         const rewindShift = adjustByRewind ? 91 - lastHole : 0
         const midiShift = typeToKey('Rewind')! - lastHole
 
+        let circularPunches = 0
         for (let i = 0; i < holes.length; i++) {
             const hole = holes[i]
+
+            const circularity = +hole.CIRCULARITY.replace('px', '')
+            if (circularity > 0.95) {
+                const perimeterInMM = pixelsToMillimeters(+hole.PERIMETER.replace('px', ''), dpi)
+                averagePunchDiameter += perimeterInMM
+                circularPunches += 1
+            }
+
             if (!hole.NOTE_ATTACK || !hole.OFF_TIME) continue
 
             const midiKey = +hole.TRACKER_HOLE + midiShift
@@ -121,6 +133,9 @@ export class RollCopy {
             }
         }
 
+        averagePunchDiameter /= circularPunches
+        averagePunchDiameter /= Math.PI
+
         this.measurements.push({
             id: v4(),
             measured: this.physicalItem,
@@ -133,7 +148,10 @@ export class RollCopy {
                     margins: {
                         treble: hardMarginTreble,
                         bass: hardMarginBass
-                    }
+                    },
+                    rollWidth,
+                    averagePunchDiameter,
+                    // punchPattern: 'regular' | ''
                 },
                 events: this.events
             },

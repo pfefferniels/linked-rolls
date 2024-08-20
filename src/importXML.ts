@@ -1,12 +1,7 @@
+import { Edition } from './Edition'
 import { RollCopy } from './RollCopy'
 import { Assumption, CollatedEvent, ExpressionScope, ExpressionType, Reading } from './types'
 import { v4 } from 'uuid'
-
-export type RollEdition = {
-    sources: RollCopy[],
-    collatedEvents: CollatedEvent[],
-    assumptions: Assumption[]
-}
 
 const noteAsCollatedEvent = (note: Element): CollatedEvent => {
     return {
@@ -55,7 +50,8 @@ const expressionAsCollatedEvent = (expression: Element): CollatedEvent => {
     }
 }
 
-export const importXML = (doc: Document): RollEdition => {
+export const importXML = (doc: Document): Edition => {
+    const edition = new Edition()
     const collatedEvents: CollatedEvent[] = []
 
     const notes = doc.querySelectorAll('note')
@@ -162,10 +158,10 @@ export const importXML = (doc: Document): RollEdition => {
         })
     }
 
-    return {
-        collatedEvents,
-        assumptions,
-        sources
-    }
+    edition.collationResult.events = collatedEvents
+    edition.assumptions = assumptions
+    edition.copies = sources
+    
+    return edition
 }
 

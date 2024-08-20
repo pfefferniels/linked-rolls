@@ -8,6 +8,7 @@ import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { Assumption, RelativePlacement, TempoAdjustment, CollatedEvent, Expression, Note } from "./types";
 import { GottschewskiConversion } from "./PlaceTimeConversion";
 import { RollCopy } from "./RollCopy";
+import { Edition } from "./Edition";
 
 function resize<T>(arr: T[], newSize: number, defaultValue: T) {
     while (newSize > arr.length)
@@ -45,7 +46,7 @@ type AssumedPhysicalTimeSpan = {
 
 type NegotiatedEvent = (Note | Expression) & FromCollatedEvent & AssumedPhysicalTimeSpan
 
-type EmulationOptions = {
+export type EmulationOptions = {
     welte_p: number
     welte_f: number
     welte_mf: number
@@ -256,11 +257,13 @@ export class Emulation {
         return this.midiEvents
     }
 
-    emulateFromCollatedRoll(
-        collatedEvents: CollatedEvent[],
-        assumptions: Assumption[] = [],
+    emulateFromEdition(
+        edition: Edition,
         preferredSource: RollCopy
     ) {
+        const { collationResult, assumptions } = edition
+        const collatedEvents = collationResult.events
+
         this.negotiatedEvents = []
         this.negotiateEvents(collatedEvents, assumptions, preferredSource)
         this.findRollTempo(assumptions)

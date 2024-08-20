@@ -6,7 +6,7 @@ export { asTurtle } from './asTurtle'
 export { collateRolls } from './Collator'
 export { combineRelations } from './combineRelations'
 export { isCollatedEvent, isRollEvent } from './types'
-export type { RollEdition } from './importXML'
+
 export type {
     Certainty,
     Shifting,
@@ -19,3 +19,4 @@ export type {
     PerformedSustainPedalOnEvent,
     PerformedSustainPedalOffEvent
 } from './Emulation'
+export { Edition } from './Edition'
