@@ -69,8 +69,9 @@ export const importXML = (doc: Document): Edition => {
         if (!sourceXmlId) continue
 
         const newCopy = new RollCopy()
+        sources.push(newCopy)
         newCopy.id = sourceXmlId
-
+        
         const alignments = sourceEl.querySelector('collationDesc')
         if (alignments) {
             for (const operation of alignments.children) {
@@ -111,9 +112,8 @@ export const importXML = (doc: Document): Edition => {
 
         newCopy.events = collatedEvents
             .filter(e => {
-                // console.log(e)
-                const docEl = Array.from(doc.querySelectorAll('note,expression')).find(event => {
-                    event.getAttribute('xml:id') === e.id
+                const docEl = Array.from(doc.querySelectorAll('note, expression')).find(event => {
+                    return event.getAttribute('xml:id') === e.id
                 })
                 if (!docEl) return true
 
