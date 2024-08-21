@@ -12,12 +12,12 @@ const noteAsCollatedEvent = (note: Element): CollatedEvent => {
             hasDimension: {
                 id: v4(),
                 horizontal: {
-                    from: +note.getAttribute('horizontal.start')!,
-                    to: +note.getAttribute('horizontal.end')!,
-                    hasUnit: note.getAttribute('hole.unit')! as 'mm',
+                    from: parseFloat(note.getAttribute('horizontal.from')!),
+                    to: parseFloat(note.getAttribute('horizontal.to')!),
+                    hasUnit: note.getAttribute('horizontal.hasUnit')! as 'mm',
                 },
                 vertical: {
-                    from: +note.getAttribute('trackerHole')!,
+                    from: +note.getAttribute('vertical.from')!,
                     hasUnit: 'track'
                 }
             },
@@ -32,18 +32,18 @@ const expressionAsCollatedEvent = (expression: Element): CollatedEvent => {
         wasCollatedFrom: [{
             id: v4(),
             type: 'expression',
-            hasScope: expression.getAttribute('scope') as ExpressionScope,
-            P2HasType: expression.getAttribute('type') as ExpressionType,
+            hasScope: expression.getAttribute('hasScope') as ExpressionScope,
+            P2HasType: expression.getAttribute('P2HasType') as ExpressionType,
             hasDimension: {
                 id: v4(),
                 horizontal: {
-                    from: +expression.getAttribute('horizontal.start')!,
-                    to: +expression.getAttribute('horizontal.end')!,
+                    from: parseFloat(expression.getAttribute('horizontal.from')!),
+                    to: parseFloat(expression.getAttribute('horizontal.to')!),
                     hasUnit: expression.getAttribute('horizontal.hasUnit')! as 'mm',
                 },
                 vertical: {
                     from: +expression.getAttribute('vertical.from')!,
-                    hasUnit: expression.getAttribute('vertical.hasUnit')! as 'mm'
+                    hasUnit: expression.getAttribute('vertical.hasUnit')! as 'track'
                 }
             },
         }]
