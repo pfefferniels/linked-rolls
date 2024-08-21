@@ -137,12 +137,14 @@ export const importXML = (doc: Document): Edition => {
         const readings: Reading[] = []
         const readingEls = appEl.querySelectorAll('rdg')
         for (const readingEl of readingEls) {
-            const notes = readingEl.querySelectorAll('note')
-            const expressions = readingEl.querySelectorAll('expression')
+            const notes = readingEl.querySelectorAll('note, expression')
     
             const contains = []
-            contains.push(...Array.from(notes).map(n => noteAsCollatedEvent(n)))
-            contains.push(...Array.from(expressions).map(n => expressionAsCollatedEvent(n)))
+            for (const note of notes) {
+                const ce = collatedEvents.find(ce => ce.id === note.getAttribute('xml:id'))
+                if (!ce) continue 
+                contains.push(ce)
+            }
         
             readings.push({
                 id: v4(),
