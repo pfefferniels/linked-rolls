@@ -94,7 +94,7 @@ export const importXML = (doc: Document): Edition => {
             }
         }
 
-        const edits = sourceEl.querySelectorAll('manualEdit')
+        const edits = sourceEl.querySelectorAll('handNote')
         for (const edit of edits) {
             const xmlId = edit.getAttribute('xml:id')
             newCopy.addManualEditing({
@@ -104,7 +104,8 @@ export const importXML = (doc: Document): Edition => {
                     id: v4(),
                     atSomeTimeWithin: edit.getAttribute('when') || 'unknown'
                 },
-                hasModified: newCopy.physicalItem
+                hasModified: newCopy.physicalItem,
+                note: edit.textContent || undefined
             })
         }
 
