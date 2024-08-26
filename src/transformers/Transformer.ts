@@ -1,17 +1,15 @@
 import { v4 } from "uuid";
 import { RollCopy } from "../RollCopy";
-import { AnyRollEvent, Assumption, CollatedEvent } from "../types";
-import { AnyRollEventNode, AppNode, BodyNode, CollatedEventNode, filter, find, findAncestor, isRollEventNode, RdgNode, wrap } from "./Node";
+import { AnyRollEvent, CollatedEvent } from "../types";
+import { AnyRollEventNode, AppNode, BodyNode, ChoiceNode, CollatedEventNode, filter, find, findAncestor, isRollEventNode, RdgNode, wrap } from "./Node";
 
 export abstract class Transformer<T> {
     sources: RollCopy[];
     body: BodyNode;
-    assumptions: Assumption[];
 
-    constructor(sources: RollCopy[], body: BodyNode, assumptions: Assumption[]) {
+    constructor(sources: RollCopy[], body: BodyNode) {
         this.sources = sources;
         this.body = body;
-        this.assumptions = assumptions;
     }
 
     abstract apply(obj: T): void;
@@ -23,10 +21,10 @@ export abstract class Transformer<T> {
             parent,
             children: undefined
         }
-        delete result.id 
+        delete result.id
         return result
     }
-    
+
     /**
      * Takes out a roll event of its collated context and 
      * creates a new collated event for it. 
@@ -109,6 +107,7 @@ export abstract class Transformer<T> {
         const byReading = this.sortByExistingReading(events)
 
         for (const [readingId, eventsWithHand] of byReading) {
+            console.log('delaing with', readingId, eventsWithHand)
             if (readingId === null) {
                 // case 1: the events do not belong to any reading yet.
                 // Take them out of their collated context and 
@@ -128,10 +127,33 @@ export abstract class Transformer<T> {
                     source: []
                 }
 
-                const newCollatedEvents = eventsWithHand
-                    .map(e => this.extractEventFromCollation(e))
+                const toBeWrapped = eventsWithHand
+                    .map(e => {
+                        // typically we are dealing with events wrapped 
+                        // inside a collated event. However, we might 
+                        // also encounter a conjecture ...
+                        const choice = findAncestor(e, 'choice') as ChoiceNode | undefined
+                        if (choice) {
+                            // in which case we have to take it out of 
+                            // its original context (probably <body>) so that
+                            // it can be wrapped inside the reading.
+                            const index = choice.parent.children.findIndex(otherEvent => otherEvent.xmlId === choice.xmlId)
+                            if (index) {
+                                choice.parent.children.splice(index, 1)
+                            }
+
+                            return choice
+                        }
+
+                        return this.extractEventFromCollation(e)
+                    })
                     .filter(e => e !== undefined)
-                wrap(newCollatedEvents, newRdg)
+                    .filter((e, i, arr) => {
+                        return i === arr.indexOf(e)
+                    })
+
+
+                wrap(toBeWrapped, newRdg)
                 wrap([newRdg], app)
 
                 this.body.children.push(app)

@@ -1,4 +1,5 @@
-import { AnyRollEvent, Certainty, Shifting, Stretching } from "../types";
+import { AnyRollEvent } from "../types";
+import { Certainty, Shift, Stretch } from "../EditorialActions";
 
 export interface Typed<T> {
     type: T
@@ -170,7 +171,7 @@ export interface SourceNode extends Typed<'source'>, WithId {
     children: (HandNoteNode | MeasurementDescNode | CollationDescNode)[]
 }
 
-export type AnyOperationNode = (Shifting | Stretching) & {
+export type AnyOperationNode = (Shift | Stretch) & {
     parent: CollationDescNode
     children: undefined
 }

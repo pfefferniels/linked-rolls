@@ -1,9 +1,9 @@
-import { Assumption } from "../types";
+import { AnyEditorialAction } from "../EditorialActions";
 import { AppNode, ChoiceNode, find, RdgNode } from "./Node";
 import { Transformer } from "./Transformer";
 
-export class InsertAnnots extends Transformer<Assumption> {
-    apply(assumption: Assumption) {
+export class InsertAnnots extends Transformer<AnyEditorialAction> {
+    apply(assumption: AnyEditorialAction) {
         if (!assumption.note) return
 
         if (assumption.type === 'annotation') {

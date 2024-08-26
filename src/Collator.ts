@@ -1,9 +1,8 @@
 import { RollCopy } from "./RollCopy";
 import { v4 } from "uuid";
 import { typeToKey } from "./keyToType";
-import { AnyRollEvent, Assumption, CollatedEvent, Shifting, Stretching } from "./types";
-
-export type Operation = Shifting | Stretching
+import { AnyRollEvent, CollatedEvent } from "./types";
+import { AnyEditorialAction } from "./EditorialActions";
 
 const inRange = (range: [number, number], search: number) => {
     return search > range[0] && search < range[1]
@@ -104,14 +103,14 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRol
 /**
  * Collates multiple roll copies. 
  */
-export const collateRolls = (rolls: RollCopy[], assumptions: Assumption[]): CollationResult => {
-    const collatedEvents: CollatedEvent[] = rolls[0].withAppliedAssumptions(assumptions).map(event => ({
+export const collateRolls = (rolls: RollCopy[]): CollationResult => {
+    const collatedEvents: CollatedEvent[] = rolls[0].events.map(event => ({
         id: v4(),
         wasCollatedFrom: [event]
     }))
 
     for (let i = 1; i < rolls.length; i++) {
-        reduceEvents(collatedEvents, rolls[i].withAppliedAssumptions(assumptions))
+        reduceEvents(collatedEvents, rolls[i].events)
     }
 
     return {
@@ -122,7 +121,7 @@ export const collateRolls = (rolls: RollCopy[], assumptions: Assumption[]): Coll
 /**
  * Insert readings
  */
-export const insertReadings = (sources: RollCopy[], events: CollatedEvent[], assumptions: Assumption[]) => {
+export const insertReadings = (sources: RollCopy[], events: CollatedEvent[], assumptions: AnyEditorialAction[]) => {
     for (const event of events) {
         const allSources = sources.map(s => s.id).sort()
         const eventSources = Array.from(sourcesOf(sources, event)).sort()

@@ -1,4 +1,4 @@
-import { Relation } from "../types";
+import { Relation } from "../EditorialActions";
 import { AppNode, ChoiceNode, CollatedEventNode, find, findAncestor, RdgNode } from "./Node";
 import { Transformer } from "./Transformer";
 import { determineSources } from "../asXML";
@@ -6,6 +6,7 @@ import { v4 } from "uuid";
 
 export class RelationTransformer extends Transformer<Relation> {
     apply(relation: Relation) {
+        console.log('delaing with relation', relation)
         const readings = relation.relates
 
         const app: AppNode = {
@@ -24,7 +25,8 @@ export class RelationTransformer extends Transformer<Relation> {
         const missing = allSources.filter(source => eventSources.indexOf(source) === -1);
 
         const finishedSources: string[] = []
-        for (const reading of readings) {
+        let anchored = false
+        readings.forEach((reading) => {
             const events =
                 reading.contains
                     .map(e => find(this.body, e.id))
@@ -35,8 +37,10 @@ export class RelationTransformer extends Transformer<Relation> {
                         return e
                     }) as (ChoiceNode | CollatedEventNode)[]
 
+                    console.log('events=', events)
+
             if (events.length === 0) {
-                continue
+                return
             }
 
             // wrap events in a rdg
@@ -49,14 +53,15 @@ export class RelationTransformer extends Transformer<Relation> {
                 source
             }
 
-            events.forEach((event, i) => {
+            events.forEach((event) => {
                 const parent = event.parent
                 const index = parent.children.findIndex(e => e.xmlId === event.xmlId)
 
                 // replace first event node with app node and
                 // remove all remaining events
-                if (i === 0) {
+                if (!anchored) {
                     parent.children.splice(index, 1, app)
+                    anchored = true
                 }
                 else {
                     parent.children.splice(index, 1)
@@ -67,7 +72,7 @@ export class RelationTransformer extends Transformer<Relation> {
 
             finishedSources.push(...source)
             app.children.push(rdg)
-        }
+        })
 
         // empty reading for the missing sources
         if (missing.length > 0) {
@@ -80,5 +85,7 @@ export class RelationTransformer extends Transformer<Relation> {
             }
             app.children.push(emptyRdg)
         }
+
+        console.log('inserted', app)
     }
 }

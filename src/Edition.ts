@@ -1,19 +1,24 @@
 import { collateRolls, CollationResult, insertReadings } from "./Collator";
+import { Annotation, AnyEditorialAction, Relation, TempoAdjustment } from "./EditorialActions";
 import { RollCopy } from "./RollCopy";
-import { Assumption } from "./types";
 
 export class Edition {
     collationResult: CollationResult
     copies: RollCopy[]
-    assumptions: Assumption[]
     editors: string[]
+
+    relations: Relation[]
+    annotations: Annotation[]
+    tempoAdjustment?: TempoAdjustment
 
     constructor() {
         this.collationResult = {
             events: []
         }
         this.copies = []
-        this.assumptions = []
+        this.relations = []
+        this.annotations = []
+        this.tempoAdjustment
         this.editors = []
     }
 
@@ -23,21 +28,46 @@ export class Edition {
 
     collateCopies(assumptionForMismatch: boolean) {
         this.collationResult = collateRolls(
-            this.copies,
-            this.assumptions
+            this.copies
         )
 
         if (assumptionForMismatch) {
-            insertReadings(this.copies, this.collationResult.events, this.assumptions)
+            insertReadings(this.copies, this.collationResult.events, this.relations)
         }
     }
 
-    shallowClone() {
-        const clone = new Edition()
-        clone.collationResult = this.collationResult
-        clone.copies = this.copies
-        clone.assumptions = this.assumptions
-        clone.editors = this.editors
-        return clone
+    shallowClone(): Edition {
+        return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+    }
+
+    addEditorialAction(action: AnyEditorialAction) {
+        this.copies.forEach(copy => {
+            copy.applyActions([action])
+        })
+
+        if (action.type === 'annotation') {
+            this.annotations.push(action)
+        }
+        else if (action.type === 'relation') {
+            this.relations.push(action)
+        }
+        else if (action.type === 'tempoAdjustment') {
+            this.tempoAdjustment = this.tempoAdjustment
+        }
+    }
+
+    removeEditorialAction(action: AnyEditorialAction) {
+        // TODO
+        console.log(action)
+    }
+
+    get actions() {
+        const result: AnyEditorialAction[] = [
+            ...this.relations,
+            ...this.annotations,
+        ]
+        if (this.tempoAdjustment) result.push(this.tempoAdjustment)
+
+        return result
     }
 }

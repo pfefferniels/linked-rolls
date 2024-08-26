@@ -1,10 +1,6 @@
-import { RollCopy } from "./RollCopy";
-import { CollatedEvent, Assumption } from "./types";
+import { Edition } from "./Edition";
 
-export const asTurtle = (
-    sources: RollCopy[],
-    collatedEvents: CollatedEvent[],
-    editorialAssumptions: Assumption[]) => {
+export const asTurtle = (edition: Edition) => {
     // TODO: implement with rdflib.js
-    console.log(sources, collatedEvents, editorialAssumptions)
+    console.log(edition)
 }

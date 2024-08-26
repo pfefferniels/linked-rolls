@@ -1,17 +1,17 @@
 import { RollCopy } from './RollCopy'
-import { AnyRollEvent, Assumption, CollatedEvent } from './types'
+import { AnyRollEvent, CollatedEvent } from './types'
 import { HandAssignmentTransformer } from './transformers/HandAssignmentTransformer';
 import { asJSON } from './asJSON';
 import { AnyOperationNode, BodyNode, CollationDescNode, EditionStmtNode, EditorNode, HeaderNode, MeasurementDescNode, MeasurementNode, SoftwareNode, SourceDescNode, SourceNode } from './transformers/Node';
 import { InsertCollatedEvent } from './transformers/InsertCollatedEvent';
-import { SeparationTransformer } from './transformers/SeparationTransfromer';
 import { XMLBuilder } from 'fast-xml-parser';
 import { SortNodes } from './transformers/SortNodes';
 import { RelationTransformer } from './transformers/RelationTransformer';
 import { InsertAnnots } from './transformers/InsertAnnots';
 import { UnpackCollatedEvents } from './transformers/UnpackCollatedEvents';
-import { UnificationTransformer } from './transformers/UnificationTransformer';
 import { v4 } from 'uuid';
+import { ConjectureTransformer } from './transformers/ConjectureTransformer';
+import { Edition } from './Edition';
 
 export const namespace = 'https://linked-rolls.org/rollo'
 
@@ -120,32 +120,38 @@ const makeHeader = (sources: RollCopy[]) => {
             measurementDesc.children.push(measurementNode)
         }
 
-        if (source.operations.length > 0) {
-            const collationDesc: CollationDescNode = {
-                parent: sourceNode,
-                children: [],
-                type: 'collationDesc'
-            }
+        const collationDesc: CollationDescNode = {
+            parent: sourceNode,
+            children: [],
+            type: 'collationDesc'
+        }
+        sourceNode.children.push(collationDesc)
 
-            for (const op of source.operations) {
-                const opNode: AnyOperationNode = {
-                    ...op,
-                    parent: collationDesc,
-                    children: undefined
-                }
-                collationDesc.children.push(opNode)
+        if (source.shift) {
+            const opNode: AnyOperationNode = {
+                ...source.shift,
+                parent: collationDesc,
+                children: undefined
             }
-            sourceNode.children.push(collationDesc)
+            collationDesc.children.push(opNode)
+        }
+        
+        if (source.stretch) {
+            const opNode: AnyOperationNode = {
+                ...source.stretch,
+                parent: collationDesc,
+                children: undefined
+            }
+            collationDesc.children.push(opNode)
         }
     }
 
     return header
 }
 
-export const asXML = (
-    sources: RollCopy[],
-    collatedEvents: CollatedEvent[],
-    assumptions: Assumption[]) => {
+export const asXML = (edition: Edition) => {
+    const sources = edition.copies 
+    const collatedEvents = edition.collationResult.events 
 
     const body: BodyNode = {
         type: 'body',
@@ -158,35 +164,34 @@ export const asXML = (
     // (mostly, top-down, mainly to reduce their complexity).
     // Do not change it.
 
-    const insertEvent = new InsertCollatedEvent(sources, body, assumptions)
+    const insertEvent = new InsertCollatedEvent(sources, body)
     for (const event of collatedEvents) {
         insertEvent.apply(event)
     }
 
-    const insertAnnots = new InsertAnnots(sources, body, assumptions)
+    const insertAnnots = new InsertAnnots(sources, body)
 
-    const relations = assumptions.filter(a => a.type === 'relation')
-    const insertRelation = new RelationTransformer(sources, body, assumptions)
+    const relations = edition.relations
+    const insertRelation = new RelationTransformer(sources, body)
     relations.forEach(r => insertRelation.apply(r))
 
-    const handAssignments = assumptions.filter(a => a.type === 'handAssignment')
-    const insertHandAssignments = new HandAssignmentTransformer(sources, body, assumptions)
+    const conjectures = edition.copies.map(copy => copy.conjectures).flat()
+    const insertConjectures = new ConjectureTransformer(sources, body)
+    conjectures.forEach(c => insertConjectures.apply(c))
+
+    const handAssignments = edition.copies.map(copy => copy.handAssignments).flat()
+    const insertHandAssignments = new HandAssignmentTransformer(sources, body)
     handAssignments.forEach(h => insertHandAssignments.apply(h))
 
-    const separations = assumptions.filter(a => a.type === 'separation')
-    const insertSeparation = new SeparationTransformer(sources, body, assumptions)
-    separations.forEach(s => insertSeparation.apply(s))
+    const allActions = [...edition.actions, ...edition.copies.map(copy => copy.actions).flat()]
+    allActions
+        .filter(a => a !== undefined)
+        .forEach(a => insertAnnots.apply(a))
 
-    const unifications = assumptions.filter(a => a.type === 'unification')
-    const insertUnifications = new UnificationTransformer(sources, body, assumptions)
-    unifications.forEach(s => insertUnifications.apply(s))
-
-    assumptions.forEach(a => insertAnnots.apply(a))
-
-    const unpack = new UnpackCollatedEvents(sources, body, assumptions)
+    const unpack = new UnpackCollatedEvents(sources, body)
     unpack.apply()
 
-    const sorter = new SortNodes(sources, body, assumptions)
+    const sorter = new SortNodes(sources, body)
     sorter.apply()
 
     const bodyJson = asJSON(body)

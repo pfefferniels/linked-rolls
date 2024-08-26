@@ -5,7 +5,8 @@
  * and adapted to the different data representation.
  */
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
-import { Assumption, RelativePlacement, TempoAdjustment, CollatedEvent, Expression, Note } from "./types";
+import { CollatedEvent, Expression, Note } from "./types";
+import { AnyEditorialAction, RelativePlacement, TempoAdjustment } from "./EditorialActions";
 import { GottschewskiConversion } from "./PlaceTimeConversion";
 import { RollCopy } from "./RollCopy";
 import { Edition } from "./Edition";
@@ -98,7 +99,7 @@ export class Emulation {
 
     private negotiateEvents(
         collatedEvents_: CollatedEvent[],
-        assumptions: Assumption[],
+        assumptions: AnyEditorialAction[],
         preferredSource: RollCopy
     ) {
         const collatedEvents = structuredClone(collatedEvents_)
@@ -166,24 +167,15 @@ export class Emulation {
         this.negotiatedEvents.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
     }
 
-    private findRollTempo(assumptions: Assumption[]) {
-        const adjustments = assumptions
-            .filter(assumption => assumption.type === 'tempoAdjustment') as TempoAdjustment[]
-
-        if (adjustments.length === 0) {
+    private findRollTempo(adjustment?: TempoAdjustment) {
+        if (!adjustment) {
             this.startTempo = 104.331
             this.endTempo = 104.331
             return
         }
 
-        let meanStartTempo = 0
-        let meanEndTempo = 0
-        for (const adjustment of adjustments) {
-            meanStartTempo += adjustment.startsWith
-            meanEndTempo += adjustment.endsWith
-        }
-        this.startTempo = meanStartTempo / adjustments.length
-        this.endTempo = meanEndTempo / adjustments.length
+        this.startTempo = adjustment.startsWith
+        this.endTempo = adjustment.endsWith
     }
 
     private applyRollTempo() {
@@ -261,12 +253,12 @@ export class Emulation {
         edition: Edition,
         preferredSource: RollCopy
     ) {
-        const { collationResult, assumptions } = edition
+        const { collationResult, relations, tempoAdjustment } = edition
         const collatedEvents = collationResult.events
 
         this.negotiatedEvents = []
-        this.negotiateEvents(collatedEvents, assumptions, preferredSource)
-        this.findRollTempo(assumptions)
+        this.negotiateEvents(collatedEvents, relations, preferredSource)
+        this.findRollTempo(tempoAdjustment)
         this.applyTrackerBarExtension()
         this.applyRollTempo()
         this.calculateVelocities('treble')

@@ -1,17 +1,59 @@
 import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
 import { keyToType, typeToKey } from "./keyToType";
-import { AnyRollEvent, Assumption, ConditionAssessment, ConditionState, EventSpan, Expression, ManualEditing, MeasurementEvent, Note, PhysicalRollCopy, Shifting, Stretching } from "./types";
+import { AnyRollEvent, ConditionAssessment, ConditionState, EventSpan, Expression, ManualEditing, MeasurementEvent, Note, PhysicalRollCopy } from "./types";
+import { AnyEditorialAction, Conjecture, HandAssignment, Shift, Stretch } from "./EditorialActions";
 
-export type Operation = Shifting | Stretching
+const applyShift = (shift: Shift, to: AnyRollEvent[]) => {
+    for (const event of to) {
+        event.hasDimension.horizontal.from += shift.horizontal
+        if (event.hasDimension.horizontal.to) {
+            event.hasDimension.horizontal.to += shift.horizontal
+        }
+
+        event.hasDimension.vertical.from += shift.vertical
+        if (event.hasDimension.vertical.to) {
+            event.hasDimension.vertical.to += shift.vertical
+        }
+    }
+}
+
+const applyStretch = (stretch: Stretch, to: AnyRollEvent[]) => {
+    for (const event of to) {
+        event.hasDimension.horizontal.from *= stretch.factor
+        if (event.hasDimension.horizontal.to) {
+            event.hasDimension.horizontal.to *= stretch.factor
+        }
+    }
+}
+
+const applyConjecture = (conjecture: Conjecture, to: AnyRollEvent[]) => {
+    if (!conjecture.with.length || !conjecture.replaced.length) return
+
+    for (const toDelete of conjecture.replaced) {
+        const index = to.findIndex(e => e.id === toDelete.id)
+        if (index === -1) {
+            continue
+        }
+
+        to.splice(index, 1)
+    }
+
+    to.push(...conjecture.with)
+}
 
 export class RollCopy {
     physicalItem: PhysicalRollCopy
-    events: AnyRollEvent[]
+    private originalEvents: AnyRollEvent[]
+    private modifiedEvents: AnyRollEvent[]
     measurements: MeasurementEvent[]
     conditionAssessments: ConditionAssessment[]
     editings: ManualEditing[]
-    operations: (Shifting | Stretching)[]
+
+    stretch?: Stretch
+    shift?: Shift
+    conjectures: Conjecture[]
+    handAssignments: HandAssignment[]
 
     constructor() {
         this.physicalItem = {
@@ -20,11 +62,13 @@ export class RollCopy {
             catalogueNumber: '',
             rollDate: ''
         }
-        this.events = []
+        this.originalEvents = []
         this.conditionAssessments = []
-        this.operations = []
+        this.conjectures = []
         this.editings = []
         this.measurements = []
+        this.modifiedEvents = []
+        this.handAssignments = []
     }
 
     setRollType(type: 'welte-red') {
@@ -95,7 +139,7 @@ export class RollCopy {
 
                 const scope = midiKey <= 23 ? 'bass' : 'treble'
 
-                this.events.push({
+                this.originalEvents.push({
                     type: 'expression',
                     id: v4(),
                     P2HasType: type,
@@ -112,7 +156,7 @@ export class RollCopy {
                 } as Expression)
             }
             else {
-                this.events.push({
+                this.originalEvents.push({
                     type: 'note',
                     id: v4(),
                     annotates: `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${noteAttack},${columnWidth},${height}/128,/0/default.jpg`,
@@ -153,7 +197,7 @@ export class RollCopy {
                     averagePunchDiameter,
                     // punchPattern: 'regular' | ''
                 },
-                events: this.events
+                events: this.originalEvents
             },
             usedSoftware: 'https://github.com/pianoroll/roll-image-parser',
             hasTimeSpan: {
@@ -161,6 +205,8 @@ export class RollCopy {
                 atSomeTimeWithin: date
             }
         })
+
+        this.calculateModifiedEvents()
     }
 
     assessCondition(state: Omit<ConditionState, 'isConditionOf'>, actor: string) {
@@ -175,138 +221,85 @@ export class RollCopy {
         })
     }
 
-    applyOperations(ops: Operation[]) {
-        for (const operation of ops) {
-            for (const event of this.events) {
-                if (operation.type === 'stretching') {
-                    event.hasDimension.horizontal.from *= (operation as Stretching).factor
-                    if (event.hasDimension.horizontal.to) {
-                        event.hasDimension.horizontal.to *= (operation as Stretching).factor
-                    }
-                }
-                else if (operation.type === 'shifting') {
-                    const shifting = (operation as Shifting)
-                    event.hasDimension.horizontal.from += shifting.horizontal
-                    if (event.hasDimension.horizontal.to) {
-                        event.hasDimension.horizontal.to += shifting.horizontal
-                    }
-
-                    event.hasDimension.vertical.from += shifting.vertical
-                    if (event.hasDimension.vertical.to) {
-                        event.hasDimension.vertical.to += shifting.vertical
-                    }
-                }
-            }
-        }
-        this.operations.push(...ops)
-    }
-
     addManualEditing(editing: ManualEditing) {
         this.editings.push(editing)
     }
 
-    undoOperations() {
-        for (const operation of this.operations) {
-            for (const event of this.events) {
-                if (operation.type === 'shifting') {
-                    const shifting = (operation as Shifting)
-                    event.hasDimension.horizontal.from -= shifting.horizontal
-
-                    if (event.hasDimension.horizontal.to) {
-                        event.hasDimension.horizontal.to -= shifting.horizontal
-                    }
-
-                    event.hasDimension.vertical.from -= shifting.vertical
-                    if (event.hasDimension.vertical.to) {
-                        event.hasDimension.vertical.from -= shifting.vertical
-                    }
-                }
-                else if (operation.type === 'stretching') {
-                    const stretching = (operation as Stretching)
-
-                    event.hasDimension.horizontal.from /= stretching.factor
-
-                    if (event.hasDimension.horizontal.to) {
-                        event.hasDimension.horizontal.to /= stretching.factor
-                    }
-                }
+    applyActions(actions: AnyEditorialAction[]) {
+        let didChange = false
+        for (const action of actions) {
+            if (action.type === 'stretch' && action.copy === this.id) {
+                this.stretch = action
+                didChange = true
             }
-        }
-        this.operations = []
-    }
-
-    /**
-     * When working with roll copies, e. g. when doing a 
-     * collation, we sometimes want to modify the roll
-     * (e. g. stretch it) without harming the original.
-     */
-    clone() {
-        const clone = new RollCopy()
-        clone.conditionAssessments = structuredClone(this.conditionAssessments)
-        clone.events = structuredClone(this.events)
-        clone.measurements = structuredClone(this.measurements)
-        clone.physicalItem = structuredClone(this.physicalItem)
-        clone.editings = structuredClone(this.editings)
-
-        return clone
-    }
-
-    /**
-     * This applies the given pre-collation assumptions 
-     * referring to events on this roll copy.
-     */
-    withAppliedAssumptions(assumptions: Assumption[]): AnyRollEvent[] {
-        const modifiedEvents = structuredClone(this.events)
-
-        for (const assumption of assumptions) {
-            if (assumption.type === 'separation') {
-                if (!assumption.into.length) continue
-
-                const index = modifiedEvents.findIndex(e => e.id === assumption.separated.id)
-                if (index === -1) {
-                    console.log('Ignoring assumption', assumption, 'since the separated element was not found')
-                    continue
-                }
-
-                modifiedEvents.splice(index, 1)
-                modifiedEvents.push(...assumption.into)
+            else if (action.type === 'shift' && action.copy === this.id) {
+                this.shift = action
+                didChange = true
             }
-            if (assumption.type === 'unification') {
-                if (assumption.unified.length < 2) continue
-
-                const onsets = assumption.unified.map(event => event.hasDimension.horizontal.from)
-                const offsets = assumption.unified.map(event => event.hasDimension.horizontal.to!)
-
-                const beginning = Math.min(...onsets)
-                const end = Math.max(...offsets)
-
-                const firstEvent = modifiedEvents.find(e => e.id === assumption.unified[0].id)
-                if (!firstEvent) {
-                    console.log('The first event of', assumption.unified, 'was not found in the event list, ignoring it.')
-                    continue
-                }
-
-                firstEvent.hasDimension.horizontal.from = beginning
-                firstEvent.hasDimension.horizontal.to = end
-                firstEvent.annotates = undefined
-
-                // remove all remaining events
-                for (let i = 1; i < assumption.unified.length; i++) {
-                    const index = modifiedEvents.findIndex(e => e.id === assumption.unified[i].id)
-                    modifiedEvents.splice(index, 1)
-                }
+            else if (action.type === 'conjecture' && action.replaced.every(e => this.hasEventId(e.id))) {
+                this.conjectures.push(action)
+                didChange = true
+            }
+            else if (action.type === 'handAssignment' && action.assignedTo.every(e => this.hasEventId(e.id))) {
+                this.handAssignments.push(action)
+                didChange = true
             }
         }
 
-        return modifiedEvents
+        if (didChange) {
+            this.calculateModifiedEvents()
+        }
+    }
+
+    /**
+     * @note This is expensive. Use with care.
+     */
+    private calculateModifiedEvents() {
+        this.modifiedEvents = structuredClone(this.originalEvents)
+
+        if (this.stretch) applyStretch(this.stretch, this.modifiedEvents)
+        if (this.shift) applyShift(this.shift, this.modifiedEvents)
+
+        for (const conjecture of this.conjectures) {
+            applyConjecture(conjecture, this.modifiedEvents)
+        }
+
+        this.modifiedEvents.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
+    }
+
+    get events() {
+        return this.modifiedEvents
+    }
+
+    set events(newEvents: AnyRollEvent[]) {
+        this.originalEvents = newEvents
+        this.calculateModifiedEvents()
+    }
+
+    insertEvent(event: AnyRollEvent) {
+        this.originalEvents.push(event)
+        this.originalEvents.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
+        this.calculateModifiedEvents()
+    }
+
+    removeEvent(eventId: string) {
+        const index = this.originalEvents.findIndex(e => e.id === eventId)
+        if (index === -1) return
+        this.originalEvents.splice(index, 1)
+        this.calculateModifiedEvents()
+    }
+
+    shallowClone(): RollCopy {
+        return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     }
 
     hasEvent(otherEvent: AnyRollEvent) {
-        return this.events.findIndex(e => e.id === otherEvent.id) !== -1
+        return this.hasEventId(otherEvent.id)
     }
 
     hasEventId(id: string) {
         return this.events.findIndex(e => e.id === id) !== -1
+            || this.originalEvents.findIndex(e => e.id === id) !== -1
     }
 
     get id() {
@@ -315,5 +308,22 @@ export class RollCopy {
 
     set id(newId: string) {
         this.physicalItem.id = newId
+    }
+
+    removeEditorialAction(action: AnyEditorialAction) {
+        // TODO
+        console.log(action)
+    }
+
+    get actions() {
+        const result: AnyEditorialAction[] = [
+            ...this.handAssignments,
+            ...this.conjectures,
+        ]
+
+        if (this.stretch) result.push(this.stretch)
+        if (this.shift) result.push(this.shift)
+
+        return result
     }
 }

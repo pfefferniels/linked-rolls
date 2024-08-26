@@ -9,14 +9,18 @@ export { isCollatedEvent, isRollEvent } from './types'
 
 export type {
     Certainty,
-    Shifting,
-    Stretching,
-    Assumption
-} from './types'
+    Shift,
+    Stretch,
+    AnyEditorialAction
+} from './EditorialActions'
+
 export type {
     PerformedNoteOnEvent,
     PerformedNoteOffEvent,
     PerformedSustainPedalOnEvent,
     PerformedSustainPedalOffEvent
 } from './Emulation'
+
 export { Edition } from './Edition'
+
+export { keyToType } from './keyToType'

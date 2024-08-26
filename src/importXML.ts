@@ -1,6 +1,7 @@
 import { Edition } from './Edition'
 import { RollCopy } from './RollCopy'
-import { Assumption, CollatedEvent, ExpressionScope, ExpressionType, Reading } from './types'
+import { CollatedEvent, ExpressionScope, ExpressionType } from './types'
+import { AnyEditorialAction, Reading } from "./EditorialActions"
 import { v4 } from 'uuid'
 
 const noteAsCollatedEvent = (note: Element): CollatedEvent => {
@@ -60,7 +61,7 @@ export const importXML = (doc: Document): Edition => {
     collatedEvents.push(...Array.from(notes).map((n => noteAsCollatedEvent(n))))
     collatedEvents.push(...Array.from(expressions).map(e => expressionAsCollatedEvent(e)))
 
-    const assumptions: Assumption[] = []
+    const assumptions: AnyEditorialAction[] = []
 
     const sources: RollCopy[] = []
     const sourcEls = doc.querySelectorAll('source')
@@ -76,19 +77,25 @@ export const importXML = (doc: Document): Edition => {
         if (alignments) {
             for (const operation of alignments.children) {
                 const xmlId = operation.getAttribute('xml:id')
+                const resp = operation.getAttribute('resp')
+
                 if (operation.localName === 'stretching') {
-                    newCopy.operations.push({
-                        type: 'stretching',
+                    assumptions.push({
+                        type: 'stretch',
                         factor: +(operation.getAttribute('factor') || 1),
-                        id: xmlId || v4()
+                        id: xmlId || v4(),
+                        carriedOutBy: resp || 'unknown',
+                        copy: newCopy.id
                     })
                 }
                 else if (operation.localName === 'shifting') {
-                    newCopy.operations.push({
-                        type: 'shifting',
+                    assumptions.push({
+                        type: 'shift',
                         horizontal: +(operation.getAttribute('horizontal') || 0),
                         vertical: +(operation.getAttribute('vertical') || 0),
-                        id: xmlId || v4()
+                        id: xmlId || v4(),
+                        copy: newCopy.id,
+                        carriedOutBy: resp || 'unknown'
                     })
                 }
             }
@@ -162,8 +169,12 @@ export const importXML = (doc: Document): Edition => {
     }
 
     edition.collationResult.events = collatedEvents
-    edition.assumptions = assumptions
+    assumptions.forEach(edition.addEditorialAction)
     edition.copies = sources
+
+    edition.copies.forEach(copy => {
+        copy.applyActions(assumptions)
+    })
     
     return edition
 }

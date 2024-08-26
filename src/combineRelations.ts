@@ -1,11 +1,11 @@
 import { sourcesOf } from "./Collator"
 import { RollCopy } from "./RollCopy"
-import { Relation, Assumption, Reading } from "./types"
+import { Relation, Reading, AnyEditorialAction } from "./EditorialActions"
 
 export const combineRelations = (
     sources: RollCopy[],
     selected: Relation[],
-    assumptions: Assumption[]
+    assumptions: AnyEditorialAction[]
 ) => {
     if (selected.length <= 1) return 
 
