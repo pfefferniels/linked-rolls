@@ -9,8 +9,11 @@ const asJsonLdEntity = (obj: object) => {
     const result: any = {}
 
     for (const [key, value] of Object.entries(obj)) {
-        if (key === 'contains' || key === 'events') {
+        if (['contains', 'events', 'replaced', 'with', 'assignedTo', 'annotated'].includes(key)) {
             result[key] = asIDArray(value)
+        }
+        else if (['hand'].includes(key)) {
+            result[key] = value.id || '[unknown]'
         }
         else if (key === 'type') {
             result['@type'] = value
@@ -18,11 +21,11 @@ const asJsonLdEntity = (obj: object) => {
         else if (key === 'id') {
             result['@id'] = value
         }
-        else if (typeof value === 'object') {
-            result[key] = asJsonLdEntity(value)
-        }
         else if (Array.isArray(value)) {
             result[key] = value.map(v => asJsonLdEntity(v))
+        }
+        else if (typeof value === 'object') {
+            result[key] = asJsonLdEntity(value)
         }
         else {
             result[key] = value
@@ -34,7 +37,7 @@ const asJsonLdEntity = (obj: object) => {
 
 export const asJsonLd = (edition: Edition) => {
     const result: any = {
-        '@context': 'https://aepg.org/rollo.jsonld',
+        '@context': 'https://aepg.org/rollo/1.0/edition.jsonld',
 
         copies: edition.copies.map(copy => ({
             '@type': 'RollCopy',
