@@ -35,7 +35,6 @@ describe('Transformations', () => {
             type: 'handAssignment',
             hand: {
                 carriedOutBy: 'Fritz',
-                hasModified: copy1.physicalItem,
                 hasTimeSpan: { atSomeTimeWithin: '1909', id: v4() },
                 id: v4()
             },
@@ -73,7 +72,6 @@ describe('Transformations', () => {
             type: 'handAssignment',
             hand: {
                 carriedOutBy: 'Fritz',
-                hasModified: copy1.physicalItem,
                 hasTimeSpan: { atSomeTimeWithin: '1909', id: v4() },
                 id: 'fritz'
             },

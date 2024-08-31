@@ -111,7 +111,6 @@ export const importXML = (doc: Document): Edition => {
                     id: v4(),
                     atSomeTimeWithin: edit.getAttribute('when') || 'unknown'
                 },
-                hasModified: newCopy.physicalItem,
                 note: edit.textContent || undefined
             })
         }

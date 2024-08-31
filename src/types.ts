@@ -110,7 +110,6 @@ export interface PhysicalRollCopy extends WithId {
  * This type is modelled on E11 Modification
  */
 export interface ManualEditing extends WithId {
-    hasModified: PhysicalRollCopy
     carriedOutBy: string
     hasTimeSpan: TimeSpan
     note?: string
