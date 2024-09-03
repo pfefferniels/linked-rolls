@@ -2,28 +2,56 @@ import { collateRolls, CollationResult, insertReadings } from "./Collator";
 import { Annotation, AnyEditorialAction, Relation, TempoAdjustment } from "./EditorialActions";
 import { RollCopy } from "./RollCopy";
 
+interface PublicationEvent {
+    publisher: string
+    publicationDate: string
+}
+
+interface RecordingEvent {
+    tookPlaceAt: string 
+    date: string
+}
+
+interface Roll {
+    catalogueNumber: string 
+    recordingEvent: RecordingEvent
+}
+
 export class Edition {
+    publicationEvent: PublicationEvent
+    title: string 
+    license: string
+    roll: Roll
+
     collationResult: CollationResult
     copies: RollCopy[]
-    editors: string[]
 
     relations: Relation[]
     annotations: Annotation[]
     tempoAdjustment?: TempoAdjustment
 
     constructor() {
+        this.publicationEvent = {
+            publicationDate: Date.now().toString(),
+            publisher: 'John Doe'
+        }
+        this.title = '? (Digital Edition)'
+        this.license = 'Creative Commons 3.0'
+        this.roll = {
+            catalogueNumber: 'WM ...',
+            recordingEvent: {
+                date: 'Recording date', 
+                tookPlaceAt: 'e.g. Leipzig, Freiburg, St. Petersburg, ...'
+            }
+        }
+
+        this.copies = []
+
         this.collationResult = {
             events: []
         }
-        this.copies = []
         this.relations = []
         this.annotations = []
-        this.tempoAdjustment
-        this.editors = []
-    }
-
-    addEditor(name: string) {
-        this.editors.push(name)
     }
 
     collateCopies(assumptionForMismatch: boolean) {

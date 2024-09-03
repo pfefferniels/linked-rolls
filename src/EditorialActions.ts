@@ -1,4 +1,4 @@
-import { WithId, AnyRollEvent, ManualEditing, CollatedEvent } from "./types";
+import { WithId, AnyRollEvent, CollatedEvent, Hand } from "./types";
 
 export type Certainty = 'high' | 'medium' | 'low' | 'unknown';
 
@@ -19,8 +19,8 @@ export interface Conjecture extends EditorialAction<'conjecture'> {
  * roll events with a given certainty.
  */
 export interface HandAssignment extends EditorialAction<'handAssignment'> {
-    assignedTo: AnyRollEvent[];
-    hand: ManualEditing;
+    hand: Hand;
+    target: AnyRollEvent[];
 }
 
 export interface Reading extends WithId {
@@ -54,7 +54,6 @@ export interface TempoAdjustment extends EditorialAction<'tempoAdjustment'> {
  * stretching.
  */
 export interface Stretch extends EditorialAction<'stretch'> {
-    copy: string
     factor: number;
 }
 
@@ -62,7 +61,6 @@ export interface Stretch extends EditorialAction<'stretch'> {
  * Shift a copy so that it can be collated with others.
  */
 export interface Shift extends EditorialAction<'shift'> {
-    copy: string
     vertical: number;
     horizontal: number;
 }

@@ -11,7 +11,6 @@ const noteAsCollatedEvent = (note: Element): CollatedEvent => {
             id: v4(),
             type: 'note',
             hasDimension: {
-                id: v4(),
                 horizontal: {
                     from: parseFloat(note.getAttribute('horizontal.from')!),
                     to: parseFloat(note.getAttribute('horizontal.to')!),
@@ -36,7 +35,6 @@ const expressionAsCollatedEvent = (expression: Element): CollatedEvent => {
             hasScope: expression.getAttribute('hasScope') as ExpressionScope,
             P2HasType: expression.getAttribute('P2HasType') as ExpressionType,
             hasDimension: {
-                id: v4(),
                 horizontal: {
                     from: parseFloat(expression.getAttribute('horizontal.from')!),
                     to: parseFloat(expression.getAttribute('horizontal.to')!),
@@ -85,7 +83,6 @@ export const importXML = (doc: Document): Edition => {
                         factor: +(operation.getAttribute('factor') || 1),
                         id: xmlId || v4(),
                         carriedOutBy: resp || 'unknown',
-                        copy: newCopy.id
                     })
                 }
                 else if (operation.localName === 'shifting') {
@@ -94,7 +91,6 @@ export const importXML = (doc: Document): Edition => {
                         horizontal: +(operation.getAttribute('horizontal') || 0),
                         vertical: +(operation.getAttribute('vertical') || 0),
                         id: xmlId || v4(),
-                        copy: newCopy.id,
                         carriedOutBy: resp || 'unknown'
                     })
                 }
@@ -104,13 +100,10 @@ export const importXML = (doc: Document): Edition => {
         const edits = sourceEl.querySelectorAll('handNote')
         for (const edit of edits) {
             const xmlId = edit.getAttribute('xml:id')
-            newCopy.addManualEditing({
+            newCopy.addHand({
                 id: xmlId || v4(),
                 carriedOutBy: edit.getAttribute('who') || 'unknown',
-                hasTimeSpan: {
-                    id: v4(),
-                    atSomeTimeWithin: edit.getAttribute('when') || 'unknown'
-                },
+                date:  edit.getAttribute('when') || 'unknown',
                 note: edit.textContent || undefined
             })
         }

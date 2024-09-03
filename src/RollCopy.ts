@@ -1,7 +1,7 @@
 import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
 import { keyToType, typeToKey } from "./keyToType";
-import { AnyRollEvent, ConditionAssessment, ConditionState, EventSpan, Expression, ManualEditing, MeasurementEvent, Note, PhysicalRollCopy } from "./types";
+import { AnyRollEvent, ConditionState, EventSpan, Expression, Hand, MeasurementEvent, Note } from "./types";
 import { AnyEditorialAction, Conjecture, HandAssignment, Shift, Stretch } from "./EditorialActions";
 
 const applyShift = (shift: Shift, to: AnyRollEvent[]) => {
@@ -42,37 +42,44 @@ const applyConjecture = (conjecture: Conjecture, to: AnyRollEvent[]) => {
     to.push(...conjecture.with)
 }
 
+interface ProductionEvent {
+    company: string
+    system: string
+    paper: string
+    date: string
+}
+
 export class RollCopy {
-    physicalItem: PhysicalRollCopy
-    private originalEvents: AnyRollEvent[]
-    private modifiedEvents: AnyRollEvent[]
-    measurements: MeasurementEvent[]
-    conditionAssessments: ConditionAssessment[]
-    editings: ManualEditing[]
+    id: string 
+
+    productionEvent: ProductionEvent
+    conditions: ConditionState[]
+
+    measurement?: MeasurementEvent
+    scan?: string // P138 has representation => IIIF Image Link (considered to be an E38 Image)
 
     stretch?: Stretch
     shift?: Shift
+
+    hands: Hand[]
+    additions: HandAssignment[]
     conjectures: Conjecture[]
-    handAssignments: HandAssignment[]
+
+    private modifiedEvents: AnyRollEvent[]
 
     constructor() {
-        this.physicalItem = {
-            id: v4(),
-            hasType: '',
-            catalogueNumber: '',
-            rollDate: ''
+        this.id = v4()
+        this.productionEvent = {
+            date: 'Date of production (i.e., the roll\'s punching date)',
+            paper: 'e.g. "red paper, lined"',
+            company: "e.g. Welte &amp; Söhne",
+            system: "e.g. T-100"
         }
-        this.originalEvents = []
-        this.conditionAssessments = []
-        this.conjectures = []
-        this.editings = []
-        this.measurements = []
+        this.conditions = []
         this.modifiedEvents = []
-        this.handAssignments = []
-    }
-
-    setRollType(type: 'welte-red') {
-        this.physicalItem.hasType = `https://linked-rolls.org/skos/${type}`
+        this.hands = []
+        this.additions = []
+        this.conjectures = []
     }
 
     readFromStanfordAton(atonString: string, adjustByRewind: boolean = true) {
@@ -91,15 +98,15 @@ export class RollCopy {
         const date = json.ROLLINFO.ANALYSIS_DATE
         const dpi = parseFloat(json.ROLLINFO.LENGTH_DPI.replace('ppi'))
         const rollWidth = parseFloat(json.ROLLINFO.ROLL_WIDTH.replace('px')) / dpi * 25.4
+        const rollHeight = parseFloat(json.ROLLINFO.IMAGE_LENGTH.replace('px')) / dpi * 25.4
         let averagePunchDiameter = -1
-
-        this.setRollType(json.ROLLINFO.ROLL_TYPE)
 
         const lastHole = +holes[holes.length - 1].TRACKER_HOLE
         const rewindShift = adjustByRewind ? 91 - lastHole : 0
         const midiShift = typeToKey('Rewind')! - lastHole
 
         let circularPunches = 0
+        const events = []
         for (let i = 0; i < holes.length; i++) {
             const hole = holes[i]
 
@@ -139,7 +146,7 @@ export class RollCopy {
 
                 const scope = midiKey <= 23 ? 'bass' : 'treble'
 
-                this.originalEvents.push({
+                events.push({
                     type: 'expression',
                     id: v4(),
                     P2HasType: type,
@@ -156,7 +163,7 @@ export class RollCopy {
                 } as Expression)
             }
             else {
-                this.originalEvents.push({
+                events.push({
                     type: 'note',
                     id: v4(),
                     annotates: `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${noteAttack},${columnWidth},${height}/128,/0/default.jpg`,
@@ -180,59 +187,52 @@ export class RollCopy {
         averagePunchDiameter /= circularPunches
         averagePunchDiameter /= Math.PI
 
-        this.measurements.push({
+        this.measurement = {
             id: v4(),
-            measured: this.physicalItem,
-            hasCreated: {
-                info: {
-                    druid,
-                    iiifLink: `https://stacks.stanford.edu/image/iiif/${druid}%2F${druid}_0001/`,
-                    dpi,
-                    holeSeparation,
-                    margins: {
-                        treble: hardMarginTreble,
-                        bass: hardMarginBass
-                    },
-                    rollWidth,
-                    averagePunchDiameter,
-                    // punchPattern: 'regular' | ''
-                },
-                events: this.originalEvents
+            dimensions: {
+                width: rollWidth,
+                height: rollHeight,
+                unit: 'mm'
             },
-            usedSoftware: 'https://github.com/pianoroll/roll-image-parser',
-            hasTimeSpan: {
-                id: v4(),
-                atSomeTimeWithin: date
-            }
-        })
+            punchDiameter: {
+                value: averagePunchDiameter,
+                unit: 'mm'
+            },
+            holeSeparation: {
+                value: holeSeparation,
+                unit: 'px'
+            },
+            margins: {
+                treble: hardMarginTreble,
+                bass: hardMarginBass,
+                unit: 'px'
+            },
+            events,
+            executions: [
+                {
+                    software: 'https://github.com/pianoroll/roll-image-parser',
+                    date
+                }
+            ]
+        }
+
+        this.scan = `https://stacks.stanford.edu/image/iiif/${druid}%2F${druid}_0001/`
 
         this.calculateModifiedEvents()
     }
 
-    assessCondition(state: Omit<ConditionState, 'isConditionOf'>, actor: string) {
-        this.conditionAssessments.push({
-            id: v4(),
-            carriedOutBy: actor,
-            hasTimeSpan: { 'id': v4(), atSomeTimeWithin: 'now' },
-            hasIdentified: {
-                ...state,
-                isConditionOf: this.physicalItem
-            }
-        })
-    }
-
-    addManualEditing(editing: ManualEditing) {
-        this.editings.push(editing)
+    addHand(hand: Hand) {
+        this.hands.push(hand)
     }
 
     applyActions(actions: AnyEditorialAction[]) {
         let didChange = false
         for (const action of actions) {
-            if (action.type === 'stretch' && action.copy === this.id) {
+            if (action.type === 'stretch') {
                 this.stretch = action
                 didChange = true
             }
-            else if (action.type === 'shift' && action.copy === this.id) {
+            else if (action.type === 'shift') {
                 this.shift = action
                 didChange = true
             }
@@ -240,8 +240,8 @@ export class RollCopy {
                 this.conjectures.push(action)
                 didChange = true
             }
-            else if (action.type === 'handAssignment' && action.assignedTo.every(e => this.hasEventId(e.id))) {
-                this.handAssignments.push(action)
+            else if (action.type === 'handAssignment' && action.target.every(e => this.hasEventId(e.id))) {
+                this.additions.push(action)
                 didChange = true
             }
         }
@@ -255,7 +255,9 @@ export class RollCopy {
      * @note This is expensive. Use with care.
      */
     private calculateModifiedEvents() {
-        this.modifiedEvents = structuredClone(this.originalEvents)
+        if (!this.measurement) return 
+
+        this.modifiedEvents = structuredClone(this.measurement.events)
 
         if (this.stretch) applyStretch(this.stretch, this.modifiedEvents)
         if (this.shift) applyShift(this.shift, this.modifiedEvents)
@@ -272,20 +274,29 @@ export class RollCopy {
     }
 
     set events(newEvents: AnyRollEvent[]) {
-        this.originalEvents = newEvents
+        if (!this.measurement) return 
+        this.measurement.events = newEvents
         this.calculateModifiedEvents()
     }
 
     insertEvent(event: AnyRollEvent) {
-        this.originalEvents.push(event)
-        this.originalEvents.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
+        if (!this.measurement) return 
+        
+        this.measurement.events.push(event)
+        this.measurement.events.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
+
+        // TODO: make sure that roll-desk is registered as a
+        // Software Execution, which is part of the measurement.
+
         this.calculateModifiedEvents()
     }
 
     removeEvent(eventId: string) {
-        const index = this.originalEvents.findIndex(e => e.id === eventId)
+        if (!this.measurement) return 
+
+        const index = this.measurement.events.findIndex(e => e.id === eventId)
         if (index === -1) return
-        this.originalEvents.splice(index, 1)
+        this.measurement.events.splice(index, 1)
         this.calculateModifiedEvents()
     }
 
@@ -299,15 +310,7 @@ export class RollCopy {
 
     hasEventId(id: string) {
         return this.events.findIndex(e => e.id === id) !== -1
-            || this.originalEvents.findIndex(e => e.id === id) !== -1
-    }
-
-    get id() {
-        return this.physicalItem.id
-    }
-
-    set id(newId: string) {
-        this.physicalItem.id = newId
+            || this.measurement?.events.findIndex(e => e.id === id) !== -1
     }
 
     removeEditorialAction(action: AnyEditorialAction) {
@@ -317,7 +320,7 @@ export class RollCopy {
 
     get actions() {
         const result: AnyEditorialAction[] = [
-            ...this.handAssignments,
+            ...this.additions,
             ...this.conjectures,
         ]
 

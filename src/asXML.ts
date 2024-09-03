@@ -78,11 +78,11 @@ const makeHeader = (sources: RollCopy[]) => {
         }
         sourceDesc.children.push(sourceNode)
 
-        for (const hand of source.editings) {
+        for (const hand of source.hands) {
             sourceNode.children.push({
                 type: 'handNote',
                 who: hand.carriedOutBy,
-                when: hand.hasTimeSpan.atSomeTimeWithin,
+                when: hand.date,
                 text: hand.note,
                 xmlId: hand.id,
                 parent: sourceNode,
@@ -99,24 +99,26 @@ const makeHeader = (sources: RollCopy[]) => {
 
         sourceNode.children.push(measurementDesc)
 
-        for (const measurement of source.measurements) {
+        if (source.measurement) {
             const measurementNode: MeasurementNode = {
                 type: 'measurement',
                 parent: measurementDesc,
                 children: [],
-                when: measurement.hasTimeSpan.atSomeTimeWithin,
-                xmlId: measurement.id
+                when: source.measurement.executions.at(0)?.date || 'unknown',
+                xmlId: source.measurement.id
             }
 
-            const software: SoftwareNode = {
-                children: undefined,
-                type: 'application',
-                name: measurement.usedSoftware,
-                // url, version
-                parent: measurementNode,
-                xmlId: v4()
+            for (const exec of source.measurement.executions) {
+                const software: SoftwareNode = {
+                    children: undefined,
+                    type: 'application',
+                    name: exec.software,
+                    // url, version, date
+                    parent: measurementNode,
+                    xmlId: v4()
+                }
+                measurementNode.children.push(software)
             }
-            measurementNode.children = [software]
             measurementDesc.children.push(measurementNode)
         }
 
@@ -135,7 +137,7 @@ const makeHeader = (sources: RollCopy[]) => {
             }
             collationDesc.children.push(opNode)
         }
-        
+
         if (source.stretch) {
             const opNode: AnyOperationNode = {
                 ...source.stretch,
@@ -150,8 +152,8 @@ const makeHeader = (sources: RollCopy[]) => {
 }
 
 export const asXML = (edition: Edition) => {
-    const sources = edition.copies 
-    const collatedEvents = edition.collationResult.events 
+    const sources = edition.copies
+    const collatedEvents = edition.collationResult.events
 
     const body: BodyNode = {
         type: 'body',
@@ -179,7 +181,7 @@ export const asXML = (edition: Edition) => {
     const insertConjectures = new ConjectureTransformer(sources, body)
     conjectures.forEach(c => insertConjectures.apply(c))
 
-    const handAssignments = edition.copies.map(copy => copy.handAssignments).flat()
+    const handAssignments = edition.copies.map(copy => copy.additions).flat()
     const insertHandAssignments = new HandAssignmentTransformer(sources, body)
     handAssignments.forEach(h => insertHandAssignments.apply(h))
 

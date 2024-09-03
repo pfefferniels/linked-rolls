@@ -8,7 +8,7 @@ export interface EventSpan {
     hasUnit: 'mm' | 'track'
 }
 
-export interface EventDimension extends WithId {
+export interface EventDimension {
     horizontal: EventSpan
     vertical: EventSpan
 }
@@ -63,81 +63,82 @@ export interface Cover extends RollEvent<'cover'> {
  */
 export interface HandwrittenText extends RollEvent<'handwrittenText'> {
     text: string
+    rotation?: number 
 }
 
 /**
- * This type can be used to indicate stamps like "Controlliert" and others. 
+ * This type can be used to indicate stamps like e. g. the
+ * "controlliert" stamp in the beginning of rolls or the 
+ * date at the end of (later) Welte rolls.
  */
 export interface Stamp extends RollEvent<'stamp'> {
     text: string
+    rotation?: number 
 }
 
-export type AnyRollEvent = Note | Expression | HandwrittenText | Stamp | Cover
-
-export interface MeasurementInfo {
-    dpi: number
-    druid: string
-    iiifLink: string // should link to info.json file
-    holeSeparation: number
-    margins: { bass: number, treble: number }
-    rollWidth: number
-    averagePunchDiameter: number
+export interface RollLabel extends RollEvent<'rollLabel'> {
+    text: string 
+    signed: boolean
 }
 
-/**
- * MeasurementEvent Type
- */
+export type AnyRollEvent = Note | Expression | HandwrittenText | Stamp | Cover | RollLabel
+
+interface SoftwareExecution {
+    software: string
+    date: string
+}
+
 export interface MeasurementEvent extends WithId {
-    hasCreated: {
-        info: MeasurementInfo,
-        events: AnyRollEvent[]
-    };
-    measured: PhysicalRollCopy;
-    usedSoftware: string
-    hasTimeSpan: TimeSpan
-}
+    dimensions: {
+        width: number, 
+        height: number, 
+        unit: string
+    }
 
-/**
- * PhysicalRollCopy Type
- */
-export interface PhysicalRollCopy extends WithId {
-    hasType: string;
-    catalogueNumber: string
-    rollDate: string
+    punchDiameter: {
+        value: number 
+        unit: string
+    }
+
+    holeSeparation: {
+        value: number 
+        unit: string
+    }
+
+    margins: {
+        treble: number 
+        bass: number 
+        unit: string
+    }
+
+    events: AnyRollEvent[]
+    executions: SoftwareExecution[]
 }
 
 /**
  * This type is modelled on E11 Modification
  */
-export interface ManualEditing extends WithId {
+export interface Hand extends WithId {
     carriedOutBy: string
-    hasTimeSpan: TimeSpan
+    date: string
     note?: string
 }
 
 /**
- * TimeSpan Type
- */
-export interface TimeSpan extends WithId {
-    atSomeTimeWithin: string;
-}
-
-/**
- * ConditionState Type
+ * Describes the physical condition of a roll 
+ * in a certain time period or time point. It
+ * also documents the responsible person who 
+ * assessed the roll's condition.
  */
 export interface ConditionState extends WithId {
-    hasNote: string;
-    hasTimeSpan: TimeSpan;
-    isConditionOf: PhysicalRollCopy;
+    note: string;
+    date: string;
+    assessment: ConditionAssessment
 }
 
-/**
- * ConditionAssessment Type
- */
 export interface ConditionAssessment extends WithId {
     carriedOutBy: string
-    hasTimeSpan: TimeSpan
-    hasIdentified: ConditionState;
+    date: string
 }
 
 /**
@@ -154,12 +155,3 @@ export const isCollatedEvent = (e: any) => {
 export const isRollEvent = (e: any) => {
     return 'hasDimension' in e
 }
-
-/**
- * Collation Type
- */
-// export interface Collation extends WithId {
-//     collated: string[]; // roll copies?
-// }
-
-
