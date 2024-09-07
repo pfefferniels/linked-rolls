@@ -50,7 +50,7 @@ interface ProductionEvent {
 }
 
 export class RollCopy {
-    id: string 
+    id: string
 
     productionEvent: ProductionEvent
     conditions: ConditionState[]
@@ -255,7 +255,7 @@ export class RollCopy {
      * @note This is expensive. Use with care.
      */
     private calculateModifiedEvents() {
-        if (!this.measurement) return 
+        if (!this.measurement) return
 
         this.modifiedEvents = structuredClone(this.measurement.events)
 
@@ -274,14 +274,14 @@ export class RollCopy {
     }
 
     set events(newEvents: AnyRollEvent[]) {
-        if (!this.measurement) return 
+        if (!this.measurement) return
         this.measurement.events = newEvents
         this.calculateModifiedEvents()
     }
 
     insertEvent(event: AnyRollEvent) {
-        if (!this.measurement) return 
-        
+        if (!this.measurement) return
+
         this.measurement.events.push(event)
         this.measurement.events.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
 
@@ -291,8 +291,18 @@ export class RollCopy {
         this.calculateModifiedEvents()
     }
 
+    insertEvents(events: AnyRollEvent[]) {
+        if (!this.measurement) return
+
+        if (!this.measurement.events) this.measurement.events = []
+        this.measurement.events.push(...events)
+        this.measurement.events.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
+
+        this.calculateModifiedEvents()
+    }
+
     removeEvent(eventId: string) {
-        if (!this.measurement) return 
+        if (!this.measurement) return
 
         const index = this.measurement.events.findIndex(e => e.id === eventId)
         if (index === -1) return

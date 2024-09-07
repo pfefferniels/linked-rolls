@@ -9,7 +9,7 @@ const asJsonLdEntity = (obj: object) => {
     const result: any = {}
 
     for (const [key, value] of Object.entries(obj)) {
-        if (['contains', 'wasCollatedFrom', 'replaced', 'with', 'assignedTo', 'annotated'].includes(key)) {
+        if (['contains', 'wasCollatedFrom', 'replaced', 'assignedTo', 'annotated'].includes(key)) {
             result[key] = asIDArray(value)
         }
         else if (['hand'].includes(key)) {
@@ -50,17 +50,18 @@ export const asJsonLd = (edition: Edition) => {
             productionEvent: asJsonLdEntity(copy.productionEvent),
             scan: copy.scan,
             conditions: copy.conditions.map(asJsonLdEntity),
-            measurement: copy.measurement ? asJsonLdEntity(copy.measurement) : undefined,
             hands: copy.hands.map(asJsonLdEntity),
             additions: copy.additions.map(asJsonLdEntity),
             conjectures: copy.conjectures.map(asJsonLdEntity),
+            stretch: copy.stretch ? asJsonLdEntity(copy.stretch) : undefined,
+            shift: copy.shift ? asJsonLdEntity(copy.shift) : undefined,
+            measurement: copy.measurement ? asJsonLdEntity(copy.measurement) : undefined,
         })).flat(),
+        groups: edition.relations.map(asJsonLdEntity),
         events: edition.collationResult.events.map(e => ({
             type: 'collatedEvent',
             ...e
         })).map(asJsonLdEntity),
-        groups: edition.relations.map(asJsonLdEntity),
-        // annotations: edition.annotations.map(asJsonLdEntity),
     }
 
     return result
