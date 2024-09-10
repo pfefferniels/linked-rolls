@@ -9,7 +9,7 @@ const asJsonLdEntity = (obj: object) => {
     const result: any = {}
 
     for (const [key, value] of Object.entries(obj)) {
-        if (['contains', 'wasCollatedFrom', 'replaced', 'assignedTo', 'annotated'].includes(key)) {
+        if (['contains', 'wasCollatedFrom', 'replaced', 'target', 'annotated'].includes(key)) {
             result[key] = asIDArray(value)
         }
         else if (['hand'].includes(key)) {
@@ -37,7 +37,7 @@ const asJsonLdEntity = (obj: object) => {
 
 export const asJsonLd = (edition: Edition) => {
     const result: any = {
-        '@context': 'https://aepg.org/rollo/1.0/edition.jsonld',
+        '@context': 'https://measured-rolls.org/rollo/1.0/edition.jsonld',
         '@type': "Edition",
 
         title: edition.title,
@@ -48,6 +48,7 @@ export const asJsonLd = (edition: Edition) => {
         copies: edition.copies.map(copy => ({
             '@type': 'RollCopy',
             productionEvent: asJsonLdEntity(copy.productionEvent),
+            location: copy.location,
             scan: copy.scan,
             conditions: copy.conditions.map(asJsonLdEntity),
             hands: copy.hands.map(asJsonLdEntity),

@@ -38,7 +38,7 @@ const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
             result['type'] = value;
         } else if (key === '@id') {
             result['id'] = value;
-        } else if (['contains', 'wasCollatedFrom', 'replaced', 'assignedTo', 'annotated'].includes(key)) {
+        } else if (['contains', 'wasCollatedFrom', 'replaced', 'target', 'annotated'].includes(key)) {
             if (Array.isArray(value)) {
                 result[key] = fromIDArray(value, entitiesWithId);
             }
@@ -96,9 +96,7 @@ export const importJsonLd = (json: any): Edition => {
 
     edition.collationResult = {
         events: json.events.map((event: any) => {
-            const result: CollatedEvent = {
-                ...fromJsonLdEntity(event, entitiesWithId)
-            }
+            const result: CollatedEvent = fromJsonLdEntity(event, entitiesWithId)
 
             if (Array.isArray(event.wasCollatedFrom)) {
                 result.wasCollatedFrom = event.wasCollatedFrom
