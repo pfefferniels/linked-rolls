@@ -1,7 +1,7 @@
 import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
 import { keyToType, typeToKey } from "./keyToType";
-import { AnyRollEvent, ConditionState, EventSpan, Expression, Hand, MeasurementEvent, Note } from "./types";
+import { AnyRollEvent, ConditionState, EventSpan, Expression, Hand, MeasurementEvent, Note, SoftwareExecution } from "./types";
 import { AnyEditorialAction, Conjecture, HandAssignment, Shift, Stretch } from "./EditorialActions";
 
 const applyShift = (shift: Shift, to: AnyRollEvent[]) => {
@@ -54,6 +54,7 @@ export class RollCopy {
 
     productionEvent: ProductionEvent
     conditions: ConditionState[]
+    location: string
 
     measurement?: MeasurementEvent
     scan?: string // P138 has representation => IIIF Image Link (considered to be an E38 Image)
@@ -70,11 +71,12 @@ export class RollCopy {
     constructor() {
         this.id = v4()
         this.productionEvent = {
-            date: 'Date of production (i.e., the roll\'s punching date)',
-            paper: 'e.g. "red paper, lined"',
-            company: "e.g. Welte &amp; Söhne",
-            system: "e.g. T-100"
+            date: '',
+            paper: '',
+            company: '',
+            system: ''
         }
+        this.location = ''
         this.conditions = []
         this.modifiedEvents = []
         this.hands = []
@@ -259,12 +261,12 @@ export class RollCopy {
 
         this.modifiedEvents = structuredClone(this.measurement.events)
 
-        if (this.stretch) applyStretch(this.stretch, this.modifiedEvents)
-        if (this.shift) applyShift(this.shift, this.modifiedEvents)
-
         for (const conjecture of this.conjectures) {
             applyConjecture(conjecture, this.modifiedEvents)
         }
+
+        if (this.stretch) applyStretch(this.stretch, this.modifiedEvents)
+        if (this.shift) applyShift(this.shift, this.modifiedEvents)
 
         this.modifiedEvents.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
     }
@@ -279,24 +281,29 @@ export class RollCopy {
         this.calculateModifiedEvents()
     }
 
-    insertEvent(event: AnyRollEvent) {
+    insertEvent(event: AnyRollEvent, softwareExec?: SoftwareExecution) {
         if (!this.measurement) return
 
         this.measurement.events.push(event)
         this.measurement.events.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
 
-        // TODO: make sure that roll-desk is registered as a
-        // Software Execution, which is part of the measurement.
+        if (softwareExec && !this.measurement.executions.includes(softwareExec)) {
+            this.measurement.executions.push(softwareExec)
+        }
 
         this.calculateModifiedEvents()
     }
 
-    insertEvents(events: AnyRollEvent[]) {
+    insertEvents(events: AnyRollEvent[], softwareExec?: SoftwareExecution) {
         if (!this.measurement) return
 
         if (!this.measurement.events) this.measurement.events = []
         this.measurement.events.push(...events)
         this.measurement.events.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
+
+        if (softwareExec && !this.measurement.executions.includes(softwareExec)) {
+            this.measurement.executions.push(softwareExec)
+        }
 
         this.calculateModifiedEvents()
     }

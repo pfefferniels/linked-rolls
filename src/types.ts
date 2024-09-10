@@ -83,7 +83,7 @@ export interface RollLabel extends RollEvent<'rollLabel'> {
 
 export type AnyRollEvent = Note | Expression | HandwrittenText | Stamp | Cover | RollLabel
 
-interface SoftwareExecution {
+export interface SoftwareExecution {
     software: string
     date: string
 }
