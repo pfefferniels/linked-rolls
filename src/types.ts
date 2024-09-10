@@ -35,6 +35,7 @@ export type ExpressionScope = 'bass' | 'treble';
 
 export type ExpressionType =
     'SustainPedalOn' | 'SustainPedalOff' |
+    'SoftPedalOn' | 'SoftPedalOff' |
     'MezzoforteOff' | 'MezzoforteOn' |
     'SlowCrescendoOn' | 'SlowCrescendoOff' |
     'ForzandoOn' | 'ForzandoOff'

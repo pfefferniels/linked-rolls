@@ -5,7 +5,7 @@
  * and adapted to the different data representation.
  */
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
-import { CollatedEvent, Expression, Note } from "./types";
+import { CollatedEvent, Expression, ExpressionType, Note } from "./types";
 import { AnyEditorialAction, RelativePlacement, TempoAdjustment } from "./EditorialActions";
 import { GottschewskiConversion } from "./PlaceTimeConversion";
 import { RollCopy } from "./RollCopy";
@@ -31,11 +31,14 @@ export interface PerformedNoteOnEvent extends PerformedNoteEvent<'noteOn'> { }
 export interface PerformedNoteOffEvent extends PerformedNoteEvent<'noteOff'> { }
 export interface PerformedSustainPedalOnEvent extends PerformedRollEvent<'sustainPedalOn'> { }
 export interface PerformedSustainPedalOffEvent extends PerformedRollEvent<'sustainPedalOff'> { }
+export interface PerformedSoftPedalOnEvent extends PerformedRollEvent<'softPedalOn'> { }
+export interface PerformedSoftPedalOffEvent extends PerformedRollEvent<'softPedalOff'> { }
 
 export type AnyPerformedRollEvent =
     PerformedNoteOnEvent |
     PerformedNoteOffEvent |
-    PerformedSustainPedalOnEvent | PerformedSustainPedalOffEvent
+    PerformedSustainPedalOnEvent | PerformedSustainPedalOffEvent |
+    PerformedSoftPedalOnEvent | PerformedSoftPedalOffEvent
 
 type FromCollatedEvent = {
     fromCollatedEvent?: (CollatedEvent)
@@ -203,17 +206,17 @@ export class Emulation {
         for (const event of this.negotiatedEvents) {
             if (event.type === 'expression') {
                 const expression = event as Expression
-                if (expression.P2HasType === 'SustainPedalOn') {
-                    this.midiEvents.push({
-                        type: 'sustainPedalOn',
-                        performs: event.fromCollatedEvent || event,
-                        at: event.assumedPhysicalTime![0],
-                    })
 
-                }
-                else if (expression.P2HasType === 'SustainPedalOff') {
+                const map = new Map<ExpressionType, string>([
+                    ['SustainPedalOn', 'sustainPedalOn'],
+                    ['SustainPedalOff', 'sustainPedalOff'],
+                    ['SoftPedalOn', 'softPedalOn'],
+                    ['SoftPedalOff', 'softPedalOff']
+                ])
+
+                if (map.has(expression.P2HasType)) {
                     this.midiEvents.push({
-                        type: 'sustainPedalOff',
+                        type: map.get(expression.P2HasType)! as 'sustainPedalOn' | 'sustainPedalOff' | 'softPedalOn' | 'softPedalOff',
                         performs: event.fromCollatedEvent || event,
                         at: event.assumedPhysicalTime![0],
                     })
@@ -495,7 +498,32 @@ export class Emulation {
                     value: 0
                 })
             }
-
+            else if (event.type === 'softPedalOn') {
+                events.push({
+                    type: 'meta',
+                    subtype: 'text',
+                    deltaTime: deltaTimeMs,
+                    text: event.performs.id
+                })
+                events.push({
+                    type: 'channel',
+                    subtype: 'controller',
+                    controllerType: MIDIControlEvents.SOFT_PEDAL,
+                    deltaTime: 0,
+                    channel: 0,
+                    value: 127
+                })
+            }
+            else if (event.type === 'softPedalOff') {
+                events.push({
+                    type: 'channel',
+                    subtype: 'controller',
+                    controllerType: MIDIControlEvents.SOFT_PEDAL,
+                    deltaTime: deltaTimeMs,
+                    channel: 0,
+                    value: 0
+                })
+            }
             currentTime = event.at
         }
 
