@@ -1,3 +1,4 @@
+import { v4 } from "uuid";
 import { Edition } from "./Edition";
 import { RollCopy } from "./RollCopy";
 import { AnyRollEvent, CollatedEvent } from "./types";
@@ -68,6 +69,8 @@ export const importJsonLd = (json: any): Edition => {
 
     edition.copies = (json.copies || []).map((copy: any) => {
         const newCopy = new RollCopy()
+        
+        newCopy.id = copy['@id'] || v4()
 
         newCopy.productionEvent = fromJsonLdEntity(copy.productionEvent, entitiesWithId)
         newCopy.scan = copy.scan
