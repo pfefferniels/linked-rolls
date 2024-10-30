@@ -47,6 +47,7 @@ export const asJsonLd = (edition: Edition) => {
 
         copies: edition.copies.map(copy => ({
             '@type': 'RollCopy',
+            '@id': copy.id,
             productionEvent: asJsonLdEntity(copy.productionEvent),
             location: copy.location,
             scan: copy.scan,
