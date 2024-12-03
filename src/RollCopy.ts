@@ -1,7 +1,7 @@
 import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
 import { keyToType, typeToKey } from "./keyToType";
-import { AnyRollEvent, ConditionState, EventSpan, Expression, Hand, MeasurementEvent, Note, SoftwareExecution } from "./types";
+import { AnyRollEvent, ConditionState, EventSpan, Expression, ExpressionType, Hand, MeasurementEvent, Note, SoftwareExecution } from "./types";
 import { AnyEditorialAction, Conjecture, HandAssignment, Shift, Stretch } from "./EditorialActions";
 
 const applyShift = (shift: Shift, to: AnyRollEvent[]) => {
@@ -84,7 +84,7 @@ export class RollCopy {
         this.conjectures = []
     }
 
-    readFromStanfordAton(atonString: string, adjustByRewind: boolean = true) {
+    readFromStanfordAton(atonString: string, adjustByRewind: boolean = true, shift = 0) {
         function pixelsToMillimeters(pixels: number, dpi: number): number {
             return pixels / dpi * 25.4;
         }
@@ -104,8 +104,8 @@ export class RollCopy {
         let averagePunchDiameter = -1
 
         const lastHole = +holes[holes.length - 1].TRACKER_HOLE
-        const rewindShift = adjustByRewind ? 91 - lastHole : 0
-        const midiShift = typeToKey('Rewind')! - lastHole
+        const rewindShift = adjustByRewind ? 91 - lastHole : shift
+        const midiShift = adjustByRewind ? typeToKey('Rewind')! - lastHole : shift
 
         let circularPunches = 0
         const events = []
@@ -314,6 +314,26 @@ export class RollCopy {
         const index = this.measurement.events.findIndex(e => e.id === eventId)
         if (index === -1) return
         this.measurement.events.splice(index, 1)
+        this.calculateModifiedEvents()
+    }
+
+    shiftEventsVertically(ids: string[], amount: number) {
+        if (!this.measurement) return
+
+        const originalEvents = this.measurement.events.filter(event => ids.includes(event.id))
+        for (const event of originalEvents) {
+            event.hasDimension.vertical.from += amount;
+            if (event.type === 'expression') {
+                const prevKey = typeToKey(event.P2HasType)
+                if (!prevKey) continue
+
+                const shifted = keyToType(prevKey + amount)
+                if (!shifted) continue
+
+                event.P2HasType = shifted as ExpressionType
+            }
+        }
+
         this.calculateModifiedEvents()
     }
 
