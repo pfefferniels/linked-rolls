@@ -149,10 +149,10 @@ export interface CollatedEvent extends WithId {
     wasCollatedFrom: AnyRollEvent[]
 }
 
-export const isCollatedEvent = (e: any) => {
+export const isCollatedEvent = (e: any): e is CollatedEvent => {
     return 'wasCollatedFrom' in e
 }
 
-export const isRollEvent = (e: any) => {
+export const isRollEvent = (e: any): e is AnyRollEvent => {
     return 'hasDimension' in e
 }
