@@ -1,4 +1,8 @@
-const welte100Map = new Map<number, string>(
+import { ExpressionType } from "./types"
+
+type TechnicalType = 'MotorOff' | 'MotorOn' | 'Rewind' | 'ElectricCutoff'; 
+
+const welte100Map = new Map<number, ExpressionType | TechnicalType>(
     [
         [14, 'MezzoforteOff'],
         [15, 'MezzoforteOn'],
