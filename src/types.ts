@@ -22,6 +22,14 @@ export interface RollEvent<T> extends WithId {
     annotates?: string
 
     hasDimension: EventDimension
+
+    /**
+     * Describes whether the event takes place 
+     * on the verso or recto side of the roll.
+     * Since the same perforation is present on both
+     * sides, this property is left optional for now.
+     */
+    side?: 'verso' | 'recto'
 }
 
 /**
