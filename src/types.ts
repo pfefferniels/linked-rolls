@@ -58,12 +58,15 @@ export interface Expression extends RollEvent<'expression'> {
 
 /**
  * This denotes perforations that are covered by an editor.
- * It has no properties since the position on the roll is 
- * given be the RollEvent interface already. The covered 
- * perforation is not considered to be part of the original
- * note or expression hole anymore.
+ * The covered perforation is not considered to be part
+ * of the original note or expression hole anymore.
  */
 export interface Cover extends RollEvent<'cover'> {
+    /**
+     * This property can be used to indicate e.g. the 
+     * color or material of the cover.
+     */
+    note?: string
 }
 
 /**
