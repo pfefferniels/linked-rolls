@@ -1,12 +1,6 @@
-/**
- * The original code of the calculateVelocities() method,
- * written by Kitty Shi and Craig Stuart Sapp,
- * was taken from the midi2exp project (https://github.com/pianoroll/midi2exp)
- * and adapted to the different data representation.
- */
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { CollatedEvent, Expression, ExpressionType, Note } from "./types";
-import { AnyEditorialAction, RelativePlacement, TempoAdjustment } from "./EditorialActions";
+import { TempoAdjustment } from "./EditorialActions";
 import { GottschewskiConversion } from "./PlaceTimeConversion";
 import { RollCopy } from "./RollCopy";
 import { Edition } from "./Edition";
@@ -100,45 +94,30 @@ export class Emulation {
         this.options = options
     }
 
+    /**
+     * This can be used to create something like a "Leithandschrift". 
+     * @todo: Still needs implementation of incorporating corrections 
+     * from versions that are likely deduced from the preferred source.
+     */
     private negotiateEvents(
         collatedEvents_: CollatedEvent[],
-        assumptions: AnyEditorialAction[],
-        preferredSource: RollCopy
+        preferredSource: RollCopy,
     ) {
         const collatedEvents = structuredClone(collatedEvents_)
         for (const collatedEvent of collatedEvents) {
             if (!collatedEvent.wasCollatedFrom || !collatedEvent.wasCollatedFrom.length) return
 
-            // try to negotiate the assumptions
+            // try to negotiate the mean onset and offset
+            // TODO: this should be controllable by parameter
             const mean = meanDimensionOf(collatedEvent)
             if (!mean) continue
 
-            const placements = assumptions.filter(assumption =>
-                assumption.type === 'relativePlacement' &&
-                (assumption as RelativePlacement).placed === collatedEvent) as RelativePlacement[]
-
-            let wasShifted = false
-            for (const placement of placements) {
-                for (const relativeTo of placement.relativeTo) {
-                    const otherMean = meanDimensionOf(relativeTo)
-                    if (!otherMean) continue
-
-                    // check if the conditions are met and act only if not
-                    if (placement.withPlacementType === 'startsBeforeTheStartOf') {
-                        if (otherMean[0] <= mean[0]) {
-                            if (wasShifted) {
-                                // try to negotiate with another placement 
-                                // that has been applied already
-                                mean[0] = mean[0] + (otherMean[0] - 1) / 2
-                            }
-                            else {
-                                mean[0] = otherMean[0] - 1
-                                wasShifted = true
-                            }
-                        }
-                    }
-                }
+            // drop events that are not from the preferred source
+            if (!collatedEvent.wasCollatedFrom.some(event => preferredSource.hasEvent(event))) {
+                continue
             }
+
+            // TODO: incorporate corrections from other sources
 
             const negotiated = collatedEvent.wasCollatedFrom[0] as NegotiatedEvent
             negotiated.id = collatedEvent.id
@@ -148,17 +127,8 @@ export class Emulation {
             this.negotiatedEvents.push(negotiated)
         }
 
-        this.dropUnrelatedEvents(preferredSource)
-        this.negotiatedEvents.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
-    }
 
-    private dropUnrelatedEvents(preferredSource: RollCopy) {
-        for (const event of this.negotiatedEvents) {
-            if (!preferredSource.hasEvent(event)) {
-                const index = this.negotiatedEvents.findIndex(e => e.id === event.id)
-                this.negotiatedEvents.splice(index, 1)
-            }
-        }
+        this.negotiatedEvents.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
     }
 
     private findRollTempo(adjustment?: TempoAdjustment) {
@@ -251,11 +221,11 @@ export class Emulation {
         edition: Edition,
         preferredSource: RollCopy
     ) {
-        const { collationResult, editGroups: relations, tempoAdjustment } = edition
+        const { collationResult, tempoAdjustment } = edition
         const collatedEvents = collationResult.events
 
         this.negotiatedEvents = []
-        this.negotiateEvents(collatedEvents, relations, preferredSource)
+        this.negotiateEvents(collatedEvents, preferredSource)
         this.findRollTempo(tempoAdjustment)
         this.applyTrackerBarExtension()
         this.applyRollTempo()
@@ -265,6 +235,12 @@ export class Emulation {
         return this.midiEvents
     }
 
+    /**
+     * The original code of the calculateVelocities() method,
+     * written by Kitty Shi and Craig Stuart Sapp,
+     * was taken from the midi2exp project (https://github.com/pianoroll/midi2exp)
+     * and adapted to the different data representation.
+     */
     calculateVelocities(scope: 'treble' | 'bass') {
         if (!this.negotiatedEvents.length) return
 
