@@ -1,0 +1,10 @@
+PREFIX :    <http://linked-rolls.org/>
+PREFIX schema:    <http://schema.org/>
+PREFIX xsd:    <http://www.w3.org/2001/XMLSchema#>
+PREFIX crm:    <http://erlangen-crm.org/current/>
+
+:Edition IRI  {
+  crm:P102_has_title     xsd:string    ;
+  crm:P104_is_subject_to IRI           ;
+}
+
