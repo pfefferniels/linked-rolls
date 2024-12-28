@@ -23,12 +23,10 @@ export interface HandAssignment extends EditorialAction<'handAssignment'> {
     target: AnyRollEvent[];
 }
 
-export interface Reading extends WithId {
+export interface EditGroup extends EditorialAction<'editGroup'> {
     contains: CollatedEvent[];
-}
-
-export interface Relation extends EditorialAction<'relation'> {
-    relates: Reading[];
+    action?: 'insert' | 'delete';
+    follows?: EditGroup;
 }
 
 export interface RelativePlacement extends EditorialAction<'relativePlacement'> {
@@ -67,7 +65,7 @@ export interface Shift extends EditorialAction<'shift'> {
 
 export type AnyEditorialAction =
     Conjecture |
-    Relation |
+    EditGroup |
     Annotation |
     HandAssignment |
     TempoAdjustment |

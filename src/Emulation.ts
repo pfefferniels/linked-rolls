@@ -148,26 +148,17 @@ export class Emulation {
             this.negotiatedEvents.push(negotiated)
         }
 
-        for (const assumption of assumptions) {
-            if (assumption.type === 'relation') {
-                if (!assumption.relates.length) continue
+        this.dropUnrelatedEvents(preferredSource)
+        this.negotiatedEvents.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
+    }
 
-                for (const reading of assumption.relates) {
-                    for (const collatedEvent of reading.contains) {
-                        const preferredCopyEvent = collatedEvent.wasCollatedFrom.find(e => preferredSource.hasEvent(e))
-
-                        // this event was collated only from sources unrelated
-                        // to the preferred one => ignore it.
-                        if (!preferredCopyEvent) {
-                            const index = this.negotiatedEvents.findIndex(e => e.id === collatedEvent.id)
-                            this.negotiatedEvents.splice(index, 1)
-                        }
-                    }
-                }
+    private dropUnrelatedEvents(preferredSource: RollCopy) {
+        for (const event of this.negotiatedEvents) {
+            if (!preferredSource.hasEvent(event)) {
+                const index = this.negotiatedEvents.findIndex(e => e.id === event.id)
+                this.negotiatedEvents.splice(index, 1)
             }
         }
-
-        this.negotiatedEvents.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
     }
 
     private findRollTempo(adjustment?: TempoAdjustment) {
@@ -228,11 +219,15 @@ export class Emulation {
                 // take velocity from the calculated velocity list
                 const pitch = (event as Note).hasPitch
                 if (event.hasDimension.vertical.from >= this.options.division) {
-                    this.insertNote(event, pitch,
+                    this.insertNote(
+                        event,
+                        pitch,
                         this.trebleVelocities[+(event.assumedPhysicalTime![0] * 1000).toFixed()])
                 }
                 else {
-                    this.insertNote(event, pitch,
+                    this.insertNote(
+                        event,
+                        pitch,
                         this.bassVelocities[+(event.assumedPhysicalTime![0] * 1000).toFixed()])
                 }
             }
@@ -256,7 +251,7 @@ export class Emulation {
         edition: Edition,
         preferredSource: RollCopy
     ) {
-        const { collationResult, relations, tempoAdjustment } = edition
+        const { collationResult, editGroups: relations, tempoAdjustment } = edition
         const collatedEvents = collationResult.events
 
         this.negotiatedEvents = []
@@ -490,6 +485,12 @@ export class Emulation {
             }
             else if (event.type === 'sustainPedalOff') {
                 events.push({
+                    type: 'meta',
+                    subtype: 'text',
+                    deltaTime: deltaTimeMs,
+                    text: event.performs.id
+                })
+                events.push({
                     type: 'channel',
                     subtype: 'controller',
                     controllerType: MIDIControlEvents.SUSTAIN,
@@ -515,6 +516,12 @@ export class Emulation {
                 })
             }
             else if (event.type === 'softPedalOff') {
+                events.push({
+                    type: 'meta',
+                    subtype: 'text',
+                    deltaTime: deltaTimeMs,
+                    text: event.performs.id
+                })
                 events.push({
                     type: 'channel',
                     subtype: 'controller',

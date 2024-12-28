@@ -1,5 +1,5 @@
 import { collateRolls, CollationResult, insertReadings } from "./Collator";
-import { Annotation, AnyEditorialAction, Relation, TempoAdjustment } from "./EditorialActions";
+import { Annotation, AnyEditorialAction, EditGroup, TempoAdjustment } from "./EditorialActions";
 import { RollCopy } from "./RollCopy";
 
 interface PublicationEvent {
@@ -26,7 +26,7 @@ export class Edition {
     collationResult: CollationResult
     copies: RollCopy[]
 
-    relations: Relation[]
+    editGroups: EditGroup[]
     annotations: Annotation[]
     tempoAdjustment?: TempoAdjustment
 
@@ -50,7 +50,7 @@ export class Edition {
         this.collationResult = {
             events: []
         }
-        this.relations = []
+        this.editGroups = []
         this.annotations = []
     }
 
@@ -60,7 +60,7 @@ export class Edition {
         )
 
         if (assumptionForMismatch) {
-            insertReadings(this.copies, this.collationResult.events, this.relations)
+            insertReadings(this.copies, this.collationResult.events, this.editGroups)
         }
     }
 
@@ -76,8 +76,8 @@ export class Edition {
         if (action.type === 'annotation') {
             this.annotations.push(action)
         }
-        else if (action.type === 'relation') {
-            this.relations.push(action)
+        else if (action.type === 'editGroup') {
+            this.editGroups.push(action)
         }
         else if (action.type === 'tempoAdjustment') {
             this.tempoAdjustment = this.tempoAdjustment
@@ -91,7 +91,7 @@ export class Edition {
 
     get actions() {
         const result: AnyEditorialAction[] = [
-            ...this.relations,
+            ...this.editGroups,
             ...this.annotations,
         ]
         if (this.tempoAdjustment) result.push(this.tempoAdjustment)

@@ -127,19 +127,11 @@ export const insertReadings = (sources: RollCopy[], events: CollatedEvent[], ass
         const eventSources = Array.from(sourcesOf(sources, event)).sort()
 
         if (!allSources.every((source, index) => source === eventSources[index])) {
-            // there isn't an event for every source => make
-            // sure that it will be wrapped in a reading
+            // Not all sources contain the event. Create 
+            // a reading.
             assumptions.push({
-                type: 'relation',
-                relates: [
-                    {
-                        id: v4(),
-                        contains: [],
-                    },
-                    {
-                        id: v4(),
-                        contains: [event]
-                    }],
+                type: 'editGroup',
+                contains: [event],
                 carriedOutBy: '#collation-tool',
                 id: v4()
             })

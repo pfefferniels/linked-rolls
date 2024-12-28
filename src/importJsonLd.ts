@@ -95,7 +95,7 @@ export const importJsonLd = (json: any): Edition => {
         return newCopy
     })
 
-    edition.relations = (json.groups || []).map((r: any) => fromJsonLdEntity(r, entitiesWithId))
+    edition.editGroups = (json.groups || []).map((r: any) => fromJsonLdEntity(r, entitiesWithId))
 
     edition.collationResult = {
         events: json.events.map((event: any) => {

@@ -59,7 +59,7 @@ export const asJsonLd = (edition: Edition) => {
             shift: copy.shift ? asJsonLdEntity(copy.shift) : undefined,
             measurement: copy.measurement ? asJsonLdEntity(copy.measurement) : undefined,
         })).flat(),
-        groups: edition.relations.map(asJsonLdEntity),
+        groups: edition.editGroups.map(asJsonLdEntity),
         events: edition.collationResult.events.map(e => ({
             type: 'collatedEvent',
             ...e
