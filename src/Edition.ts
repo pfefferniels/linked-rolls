@@ -66,15 +66,10 @@ export class Edition {
         this.annotations = []
     }
 
-    collateCopies(/*assumptionForMismatch: boolean*/) {
+    collateCopies() {
         this.collationResult = collateRolls(
             this.copies
         )
-
-        // if (assumptionForMismatch) {
-        //     this.stages.find(stage => stage.created.witnesses)
-        //     insertEdits(this.copies, this.collationResult.events, this.editGroups)
-        // }
     }
 
     shallowClone(): Edition {
