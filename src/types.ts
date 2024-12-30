@@ -2,6 +2,8 @@ export interface WithId {
     'id': string
 }
 
+export interface PreliminaryRoll extends WithId {}
+
 export interface EventSpan {
     from: number;
     to?: number;

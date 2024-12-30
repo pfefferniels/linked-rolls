@@ -51,6 +51,7 @@ interface ProductionEvent {
 
 export class RollCopy {
     id: string
+    siglum: string // P149 is identified by (Conceptual Object Apellation)
 
     productionEvent: ProductionEvent
     conditions: ConditionState[]
@@ -70,6 +71,7 @@ export class RollCopy {
 
     constructor() {
         this.id = v4()
+        this.siglum = '[no siglum]'
         this.productionEvent = {
             date: '',
             paper: '',

@@ -1,6 +1,8 @@
-import { collateRolls, CollationResult, insertReadings } from "./Collator";
-import { Annotation, AnyEditorialAction, EditGroup, TempoAdjustment } from "./EditorialActions";
+import { collateRolls, CollationResult } from "./Collator";
+import { Annotation, AnyEditorialAction, TempoAdjustment } from "./EditorialActions";
 import { RollCopy } from "./RollCopy";
+import { StageCreation } from "./Stage";
+import { PreliminaryRoll } from "./types";
 
 interface PublicationEvent {
     publisher: string
@@ -8,25 +10,31 @@ interface PublicationEvent {
 }
 
 interface RecordingEvent {
-    tookPlaceAt: string 
+    recorded: { // R20 recorded => F31 Performance
+        pianist: string;    // should point to GND
+        playing: string;    // should point to GND
+    }
+    tookPlaceAt: string
     date: string
+    created?: PreliminaryRoll
 }
 
+// F21 Recording Work
 interface Roll {
-    catalogueNumber: string 
+    catalogueNumber: string     // has inventory-no (of a certain type)
     recordingEvent: RecordingEvent
 }
 
 export class Edition {
     publicationEvent: PublicationEvent
-    title: string 
+    title: string
     license: string
     roll: Roll
 
     collationResult: CollationResult
     copies: RollCopy[]
 
-    editGroups: EditGroup[]
+    stages: StageCreation[]
     annotations: Annotation[]
     tempoAdjustment?: TempoAdjustment
 
@@ -40,7 +48,11 @@ export class Edition {
         this.roll = {
             catalogueNumber: 'WM ...',
             recordingEvent: {
-                date: 'Recording date', 
+                recorded: {
+                    pianist: 'e.g. Alfred Grünfeld',
+                    playing: 'e.g. Schumann, Träumerei'
+                },
+                date: 'Recording date',
                 tookPlaceAt: 'e.g. Leipzig, Freiburg, St. Petersburg, ...'
             }
         }
@@ -50,18 +62,19 @@ export class Edition {
         this.collationResult = {
             events: []
         }
-        this.editGroups = []
+        this.stages = []
         this.annotations = []
     }
 
-    collateCopies(assumptionForMismatch: boolean) {
+    collateCopies(/*assumptionForMismatch: boolean*/) {
         this.collationResult = collateRolls(
             this.copies
         )
 
-        if (assumptionForMismatch) {
-            insertReadings(this.copies, this.collationResult.events, this.editGroups)
-        }
+        // if (assumptionForMismatch) {
+        //     this.stages.find(stage => stage.created.witnesses)
+        //     insertEdits(this.copies, this.collationResult.events, this.editGroups)
+        // }
     }
 
     shallowClone(): Edition {
@@ -76,9 +89,6 @@ export class Edition {
         if (action.type === 'annotation') {
             this.annotations.push(action)
         }
-        else if (action.type === 'editGroup') {
-            this.editGroups.push(action)
-        }
         else if (action.type === 'tempoAdjustment') {
             this.tempoAdjustment = this.tempoAdjustment
         }
@@ -91,8 +101,8 @@ export class Edition {
 
     get actions() {
         const result: AnyEditorialAction[] = [
-            ...this.editGroups,
             ...this.annotations,
+            ...this.stages.map(stage => stage.actions).flat()
         ]
         if (this.tempoAdjustment) result.push(this.tempoAdjustment)
 

@@ -9,7 +9,7 @@ const asJsonLdEntity = (obj: object) => {
     const result: any = {}
 
     for (const [key, value] of Object.entries(obj)) {
-        if (['contains', 'wasCollatedFrom', 'replaced', 'target', 'annotated'].includes(key)) {
+        if (['contains', 'wasCollatedFrom', 'replaced', 'target', 'annotated', 'witnesses'].includes(key)) {
             result[key] = asIDArray(value)
         }
         else if (['hand'].includes(key)) {
@@ -48,6 +48,7 @@ export const asJsonLd = (edition: Edition) => {
         copies: edition.copies.map(copy => ({
             '@type': 'RollCopy',
             '@id': copy.id,
+            siglum: copy.siglum,
             productionEvent: asJsonLdEntity(copy.productionEvent),
             location: copy.location,
             scan: copy.scan,
@@ -59,7 +60,7 @@ export const asJsonLd = (edition: Edition) => {
             shift: copy.shift ? asJsonLdEntity(copy.shift) : undefined,
             measurement: copy.measurement ? asJsonLdEntity(copy.measurement) : undefined,
         })).flat(),
-        groups: edition.editGroups.map(asJsonLdEntity),
+        stages: edition.stages.map(asJsonLdEntity),
         events: edition.collationResult.events.map(e => ({
             type: 'collatedEvent',
             ...e

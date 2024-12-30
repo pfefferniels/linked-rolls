@@ -119,9 +119,9 @@ export const collateRolls = (rolls: RollCopy[]): CollationResult => {
 }
 
 /**
- * Insert readings
+ * Insert readings for every event that is not present in all sources.
  */
-export const insertReadings = (sources: RollCopy[], events: CollatedEvent[], assumptions: AnyEditorialAction[]) => {
+export const insertEdits = (sources: RollCopy[], events: CollatedEvent[], assumptions: AnyEditorialAction[]) => {
     for (const event of events) {
         const allSources = sources.map(s => s.id).sort()
         const eventSources = Array.from(sourcesOf(sources, event)).sort()
@@ -130,7 +130,7 @@ export const insertReadings = (sources: RollCopy[], events: CollatedEvent[], ass
             // Not all sources contain the event. Create 
             // a reading.
             assumptions.push({
-                type: 'editGroup',
+                type: 'edit',
                 contains: [event],
                 carriedOutBy: '#collation-tool',
                 id: v4()

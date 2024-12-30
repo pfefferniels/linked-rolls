@@ -1,8 +1,9 @@
-import { WithId, AnyRollEvent, CollatedEvent, Hand } from "./types";
+import { RollCopy } from "./RollCopy";
+import { WithId, AnyRollEvent, CollatedEvent, Hand, PreliminaryRoll } from "./types";
 
 export type Certainty = 'high' | 'medium' | 'low' | 'unknown';
 
-interface EditorialAction<T> extends WithId {
+export interface EditorialAction<T> extends WithId {
     type: T;
     carriedOutBy: string;
     certainty?: Certainty;
@@ -23,10 +24,21 @@ export interface HandAssignment extends EditorialAction<'handAssignment'> {
     target: AnyRollEvent[];
 }
 
-export interface EditGroup extends EditorialAction<'editGroup'> {
+// rollo:Object Usage, sub class of E13 Attribute Assignment
+// with assigned attribute of type = P16 used specific object
+export interface ObjectUsage extends EditorialAction<'objectUsage'> {
+    original: PreliminaryRoll | Stage // P141 assigned
+}
+
+export interface Stage {
+    siglum: string; // P149 is identified by (Conceptual Object Apellation)
+    witnesses: RollCopy[]; // R7i has example
+}
+
+export interface Edit extends EditorialAction<'edit'> {
     contains: CollatedEvent[];
     action?: 'insert' | 'delete';
-    follows?: EditGroup;
+    follows?: Edit;
 }
 
 export interface RelativePlacement extends EditorialAction<'relativePlacement'> {
@@ -65,10 +77,12 @@ export interface Shift extends EditorialAction<'shift'> {
 
 export type AnyEditorialAction =
     Conjecture |
-    EditGroup |
+    Edit |
     Annotation |
     HandAssignment |
     TempoAdjustment |
     RelativePlacement |
     Stretch |
-    Shift;
+    Shift | 
+    ObjectUsage;
+
