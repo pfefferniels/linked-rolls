@@ -103,23 +103,23 @@ export interface SoftwareExecution {
 }
 
 export interface MeasurementEvent extends WithId {
-    dimensions: {
+    dimensions?: {
         width: number, 
         height: number, 
         unit: string
     }
 
-    punchDiameter: {
+    punchDiameter?: {
         value: number 
         unit: string
     }
 
-    holeSeparation: {
+    holeSeparation?: {
         value: number 
         unit: string
     }
 
-    margins: {
+    margins?: {
         treble: number 
         bass: number 
         unit: string

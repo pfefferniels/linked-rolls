@@ -3,6 +3,9 @@ import { v4 } from "uuid";
 import { keyToType, typeToKey } from "./keyToType";
 import { AnyRollEvent, ConditionState, EventSpan, Expression, ExpressionType, Hand, MeasurementEvent, Note, SoftwareExecution } from "./types";
 import { AnyEditorialAction, Conjecture, HandAssignment, Shift, Stretch } from "./EditorialActions";
+import { read } from "midifile-ts";
+import { asSpans } from "./asMIDISpans";
+import { GottschewskiConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 
 const applyShift = (shift: Shift, to: AnyRollEvent[]) => {
     for (const event of to) {
@@ -223,6 +226,120 @@ export class RollCopy {
         this.scan = `https://stacks.stanford.edu/image/iiif/${druid}%2F${druid}_0001/`
 
         this.calculateModifiedEvents()
+    }
+
+    readFromRawMIDI(
+        midiBuffer: ArrayBuffer,
+        conversion: PlaceTimeConversion = new GottschewskiConversion()
+    ) {
+        const midi = read(midiBuffer)
+        const events: AnyRollEvent[] = []
+
+        const spans = asSpans(midi)
+        for (const span of spans) {
+            const left = conversion.timeToPlace(span.onsetMs / 1000) * 10
+            const right = conversion.timeToPlace(span.offsetMs / 1000) * 10
+
+            const horizontalDimension: EventSpan = {
+                from: left,
+                to: right,
+                hasUnit: 'mm'
+            }
+
+            if (span.type === 'note') {
+                const midiShift = 13
+                const trackerHole = span.pitch - midiShift
+
+                if (trackerHole <= 10 || trackerHole >= 91) {
+                    const scope = trackerHole <= 10 ? 'bass' : 'treble'
+
+                    // for whatever reasons, the expression tracks
+                    // of the Spencer Chase's MIDI rolls are off
+                    // by two on the bass-side.
+                    const bassCorrection = -2
+                    const type = (scope === 'bass' ? keyToType(trackerHole + midiShift + bassCorrection) : keyToType(trackerHole + midiShift)) as ExpressionType
+
+                    events.push({
+                        type: 'expression',
+                        P2HasType: type,
+                        hasScope: trackerHole <= 10 ? 'bass' : 'treble',
+                        hasDimension: {
+                            horizontal: horizontalDimension,
+                            vertical: {
+                                from: scope === 'bass' ? trackerHole + bassCorrection : trackerHole,
+                                hasUnit: 'track'
+                            }
+                        },
+                        id: v4()
+                    })
+                }
+                else {
+                    events.push({
+                        type: 'note',
+                        id: v4(),
+                        hasDimension: {
+                            horizontal: horizontalDimension,
+                            vertical: {
+                                from: trackerHole,
+                                hasUnit: 'track'
+                            }
+                        },
+                        hasPitch: span.pitch
+                    })
+                }
+            }
+            else if (span.type === 'sustain') {
+                events.push(
+                    {
+                        type: 'expression',
+                        hasDimension: {
+                            horizontal: {
+                                from: left,
+                                to: left + 5,
+                                hasUnit: 'mm'
+                            },
+                            vertical: {
+                                from: typeToKey('SustainPedalOn')!,
+                                hasUnit: 'track'
+                            }
+                        },
+                        P2HasType: 'SustainPedalOn',
+                        hasScope: 'treble',
+                        id: v4()
+                    },
+                    {
+                        type: 'expression',
+                        hasDimension: {
+                            horizontal: {
+                                from: right,
+                                to: right + 5,
+                                hasUnit: 'mm'
+                            },
+                            vertical: {
+                                from: typeToKey('SustainPedalOff')!,
+                                hasUnit: 'track'
+                            }
+                        },
+                        P2HasType: 'SustainPedalOff',
+                        hasScope: 'treble',
+                        id: v4()
+                    },
+                )
+            }
+        }
+
+        this.measurement = {
+            id: v4(),
+            events,
+            executions: [
+                {
+                    software: '',
+                    date: 'unknown'
+                },
+            ]
+        }
+
+        this.calculateModifiedEvents();
     }
 
     addHand(hand: Hand) {
