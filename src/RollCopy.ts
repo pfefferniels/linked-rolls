@@ -130,11 +130,11 @@ export class RollCopy {
             const trackerHole = +hole.TRACKER_HOLE + rewindShift
             // console.log('key=', midiKey)
 
-            const noteAttack = +hole.NOTE_ATTACK.replace('px', '') - 10
+            const noteAttack = +hole.NOTE_ATTACK.replace('px', '')
             const offset = +hole.OFF_TIME.replace('px', '')
-            const height = offset - noteAttack + 20
-            const column = +hole.ORIGIN_COL.replace('px', '') - 10;
-            const columnWidth = +hole.WIDTH_COL.replace('px', '') + 20;
+            const height = +hole.WIDTH_ROW.replace('px', '')
+            const column = +hole.ORIGIN_COL.replace('px', '')
+            const columnWidth = +hole.WIDTH_COL.replace('px', '')
 
             const dimension: EventSpan = {
                 hasUnit: 'mm',
@@ -142,7 +142,7 @@ export class RollCopy {
                 to: pixelsToMillimeters(offset, dpi)
             }
 
-            const annotates = `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${noteAttack},${columnWidth},${height}/128,/0/default.jpg`
+            const annotates = `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column - 10},${noteAttack - 10},${columnWidth + 20},${height + 20}/128,/0/default.jpg`
 
             if (midiKey <= 23 || midiKey >= 104) {
                 const type = keyToType(midiKey)
@@ -173,7 +173,7 @@ export class RollCopy {
                 events.push({
                     type: 'note',
                     id: v4(),
-                    annotates: `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${noteAttack},${columnWidth},${height}/128,/0/default.jpg`,
+                    annotates: `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column - 10},${noteAttack - 10},${columnWidth + 20},${height + 20}/128,/0/default.jpg`,
                     hasDimension: {
                         id: v4(),
                         horizontal: {
