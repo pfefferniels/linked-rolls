@@ -438,7 +438,7 @@ export class Emulation {
                     type: 'channel',
                     subtype: 'noteOff',
                     noteNumber: event.pitch,
-                    velocity: +event.velocity.toFixed(0),
+                    velocity: 127,
                     deltaTime: deltaTimeMs,
                     channel: 0
                 })
