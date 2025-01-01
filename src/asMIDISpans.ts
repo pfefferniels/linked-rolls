@@ -59,7 +59,7 @@ export interface SoftSpan extends Span<'soft'> { }
 
 export type AnySpan = NoteSpan | SustainSpan | SoftSpan
 
-export const asSpans = (file: MidiFile, readLinks = false) => {
+export const asSpans = (file: MidiFile, readLinks = false): AnySpan[] => {
     const resultingSpans = [];
 
     type Tempo = { atTick: number; microsecondsPerBeat: number; };
