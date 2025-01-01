@@ -42,7 +42,7 @@ type AssumedPhysicalTimeSpan = {
     assumedPhysicalTime?: [number, number]
 }
 
-type NegotiatedEvent = (Note | Expression) & FromCollatedEvent & AssumedPhysicalTimeSpan
+export type NegotiatedEvent = (Note | Expression) & FromCollatedEvent & AssumedPhysicalTimeSpan
 
 export type EmulationOptions = {
     welte_p: number
@@ -142,13 +142,16 @@ export class Emulation {
         this.endTempo = adjustment.endsWith
     }
 
-    private applyRollTempo() {
+    private assignPhysicalTime(skipToFirstNote = true) {
+        if (this.negotiatedEvents.length === 0) return 
+
+        const first = skipToFirstNote ? this.negotiatedEvents[0].hasDimension.horizontal.from : 0
         for (const event of this.negotiatedEvents) {
             if (!event.assumedPhysicalTime) {
                 // convert from mm to cm and then to time
                 event.assumedPhysicalTime = [
-                    this.placeTimeConversion.placeToTime(event.hasDimension.horizontal.from / 10),
-                    this.placeTimeConversion.placeToTime(event.hasDimension.horizontal.to! / 10)
+                    this.placeTimeConversion.placeToTime((event.hasDimension.horizontal.from - first) / 10),
+                    this.placeTimeConversion.placeToTime((event.hasDimension.horizontal.to! - first) / 10)
                 ]
             }
         }
@@ -184,8 +187,6 @@ export class Emulation {
                 }
             }
             else if (event.type === 'note') {
-                // TODO: check if there is a pitch correction
-
                 // take velocity from the calculated velocity list
                 const pitch = (event as Note).hasPitch
                 if (event.hasDimension.vertical.from >= this.options.division) {
@@ -202,6 +203,8 @@ export class Emulation {
                 }
             }
         }
+
+        this.midiEvents.sort((a, b) => a.at - b.at)
     }
 
     emulateFromRoll(events: (Note | Expression)[]) {
@@ -209,7 +212,7 @@ export class Emulation {
         this.endTempo = 104.331
         this.negotiatedEvents = structuredClone(events)
         this.applyTrackerBarExtension()
-        this.applyRollTempo()
+        this.assignPhysicalTime()
         this.applyTrackerBarExtension()
         this.calculateVelocities('treble')
         this.calculateVelocities('bass')
@@ -228,7 +231,7 @@ export class Emulation {
         this.negotiateEvents(collatedEvents, preferredSource)
         this.findRollTempo(tempoAdjustment)
         this.applyTrackerBarExtension()
-        this.applyRollTempo()
+        this.assignPhysicalTime()
         this.calculateVelocities('treble')
         this.calculateVelocities('bass')
         this.convertEventsToMIDI()
@@ -257,8 +260,6 @@ export class Emulation {
             return
         }
         lastOnsetMs *= 1000
-
-        console.log('last onset=', lastOnsetMs)
 
         // set all of the times to piano by default
         resize(velocities, lastOnsetMs, this.options.welte_p)
@@ -470,7 +471,7 @@ export class Emulation {
                     type: 'channel',
                     subtype: 'controller',
                     controllerType: MIDIControlEvents.SUSTAIN,
-                    deltaTime: deltaTimeMs,
+                    deltaTime: 0,
                     channel: 0,
                     value: 0
                 })
@@ -502,7 +503,7 @@ export class Emulation {
                     type: 'channel',
                     subtype: 'controller',
                     controllerType: MIDIControlEvents.SOFT_PEDAL,
-                    deltaTime: deltaTimeMs,
+                    deltaTime: 0,
                     channel: 0,
                     value: 0
                 })
