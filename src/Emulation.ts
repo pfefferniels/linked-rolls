@@ -1,7 +1,7 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { CollatedEvent, Expression, ExpressionType, Note } from "./types";
 import { TempoAdjustment } from "./EditorialActions";
-import { KinematicConversion } from "./PlaceTimeConversion";
+import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 import { RollCopy } from "./RollCopy";
 import { Edition } from "./Edition";
 
@@ -61,7 +61,7 @@ export type EmulationOptions = {
 }
 
 export class Emulation {
-    placeTimeConversion = new KinematicConversion()
+    placeTimeConversion: PlaceTimeConversion = new KinematicConversion()
     midiEvents: AnyPerformedRollEvent[] = []
 
     // sorted list of events with the negotiated assumptions already applied
