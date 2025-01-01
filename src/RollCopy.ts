@@ -5,7 +5,7 @@ import { AnyRollEvent, ConditionState, EventSpan, Expression, ExpressionType, Ha
 import { AnyEditorialAction, Conjecture, HandAssignment, Shift, Stretch } from "./EditorialActions";
 import { read } from "midifile-ts";
 import { asSpans } from "./asMIDISpans";
-import { GottschewskiConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
+import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 
 const applyShift = (shift: Shift, to: AnyRollEvent[]) => {
     for (const event of to) {
@@ -228,14 +228,15 @@ export class RollCopy {
         this.calculateModifiedEvents()
     }
 
-    readFromRawMIDI(
+    readFromSpencerMIDI(
         midiBuffer: ArrayBuffer,
-        conversion: PlaceTimeConversion = new GottschewskiConversion()
+        conversion: PlaceTimeConversion = new KinematicConversion()
     ) {
         const midi = read(midiBuffer)
         const events: AnyRollEvent[] = []
 
         const spans = asSpans(midi)
+
         for (const span of spans) {
             const left = conversion.timeToPlace(span.onsetMs / 1000) * 10
             const right = conversion.timeToPlace(span.offsetMs / 1000) * 10
