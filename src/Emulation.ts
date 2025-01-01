@@ -142,7 +142,7 @@ export class Emulation {
         this.endTempo = adjustment.endsWith
     }
 
-    private assignPhysicalTime(skipToFirstNote = true) {
+    private assignPhysicalTime(skipToFirstNote = false) {
         if (this.negotiatedEvents.length === 0) return 
 
         const first = skipToFirstNote ? this.negotiatedEvents[0].hasDimension.horizontal.from : 0
