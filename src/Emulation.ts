@@ -222,7 +222,8 @@ export class Emulation {
 
     emulateFromEdition(
         edition: Edition,
-        preferredSource: RollCopy
+        preferredSource: RollCopy,
+        skipToFirstNote: boolean = false
     ) {
         const { collationResult, tempoAdjustment } = edition
         const collatedEvents = collationResult.events
@@ -231,7 +232,7 @@ export class Emulation {
         this.negotiateEvents(collatedEvents, preferredSource)
         this.findRollTempo(tempoAdjustment)
         this.applyTrackerBarExtension()
-        this.assignPhysicalTime()
+        this.assignPhysicalTime(skipToFirstNote)
         this.calculateVelocities('treble')
         this.calculateVelocities('bass')
         this.convertEventsToMIDI()
