@@ -2,7 +2,6 @@ import { RollCopy } from "./RollCopy";
 import { v4 } from "uuid";
 import { typeToKey } from "./keyToType";
 import { AnyRollEvent, CollatedEvent } from "./types";
-import { AnyEditorialAction } from "./EditorialActions";
 
 const inRange = (range: [number, number], search: number) => {
     return search > range[0] && search < range[1]
@@ -118,27 +117,6 @@ export const collateRolls = (rolls: RollCopy[]): CollationResult => {
     }
 }
 
-/**
- * Insert readings for every event that is not present in all sources.
- */
-export const insertEdits = (sources: RollCopy[], events: CollatedEvent[], assumptions: AnyEditorialAction[]) => {
-    for (const event of events) {
-        const allSources = sources.map(s => s.id).sort()
-        const eventSources = Array.from(sourcesOf(sources, event)).sort()
-
-        if (!allSources.every((source, index) => source === eventSources[index])) {
-            // Not all sources contain the event. Create 
-            // a reading.
-            assumptions.push({
-                type: 'edit',
-                contains: [event],
-                carriedOutBy: '#collation-tool',
-                id: v4()
-            })
-        }
-    }
-}
-
 export const sourceOf = (sources: RollCopy[], eventId: string) => {
     const containingSource = sources.find(source => source.hasEventId(eventId))
     if (!containingSource) return
@@ -172,6 +150,10 @@ export const sourcesOf = (sources: RollCopy[], event_: CollatedEvent | CollatedE
     return result
 }
 
+/**
+ * @todo: rename this Collation. It should include information
+ * about which tolerance parameters etc. were being used
+ */
 export interface CollationResult {
     events: CollatedEvent[]
 }
