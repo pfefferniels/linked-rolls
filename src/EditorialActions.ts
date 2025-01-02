@@ -1,16 +1,22 @@
 import { RollCopy } from "./RollCopy";
 import { WithId, AnyRollEvent, CollatedEvent, Hand, PreliminaryRoll } from "./types";
 
-export type Certainty = 'high' | 'medium' | 'low' | 'unknown';
-
-export interface EditorialAction<T> extends WithId {
+/**
+ * Is an I2 Belief and I4 Proposition Set
+ * @todo rename to EditorialAssumption, as not to suggest that it
+ * should be a temporal event. It comes to live through argumentation,
+ * and that's the temporal event.
+ */
+export interface EditorialAssumption<T> extends WithId {
     type: T;
-    carriedOutBy: string;
-    certainty?: Certainty;
-    note?: string;
+    certainty: 'true' | 'likely' | 'unlikely' | 'false', // held to be
+    argumentation: { // was concluded by => Argumentation
+        actor: string // P14 carried out by
+        premises: string[] // has note
+    }
 }
 
-export interface Conjecture extends EditorialAction<'conjecture'> {
+export interface Conjecture extends EditorialAssumption<'conjecture'> {
     replaced: AnyRollEvent[];
     with: AnyRollEvent[];
 }
@@ -19,14 +25,14 @@ export interface Conjecture extends EditorialAction<'conjecture'> {
  * Assigns a hand ("Bearbeitungsschicht") to one or many
  * roll events with a given certainty.
  */
-export interface HandAssignment extends EditorialAction<'handAssignment'> {
+export interface HandAssignment extends EditorialAssumption<'handAssignment'> {
     hand: Hand;
     target: AnyRollEvent[];
 }
 
 // rollo:Object Usage, sub class of E13 Attribute Assignment
 // with assigned attribute of type = P16 used specific object
-export interface ObjectUsage extends EditorialAction<'objectUsage'> {
+export interface ObjectUsage extends EditorialAssumption<'objectUsage'> {
     original: PreliminaryRoll | Stage // P141 assigned
 }
 
@@ -35,23 +41,23 @@ export interface Stage {
     witnesses: RollCopy[]; // R7i has example
 }
 
-export interface Edit extends EditorialAction<'edit'> {
+export interface Edit extends EditorialAssumption<'edit'> {
     contains: CollatedEvent[];
     action?: 'insert' | 'delete';
     follows?: Edit;
 }
 
-export interface RelativePlacement extends EditorialAction<'relativePlacement'> {
+export interface RelativePlacement extends EditorialAssumption<'relativePlacement'> {
     placed: CollatedEvent;
     relativeTo: CollatedEvent[];
     withPlacementType: 'startsBeforeTheStartOf' | 'startsBeforeTheEndOf';
 }
 
-export interface Annotation extends EditorialAction<'annotation'> {
+export interface Annotation extends EditorialAssumption<'annotation'> {
     annotated: CollatedEvent[];
 }
 
-export interface TempoAdjustment extends EditorialAction<'tempoAdjustment'> {
+export interface TempoAdjustment extends EditorialAssumption<'tempoAdjustment'> {
     adjusts: string;
     startsWith: number;
     endsWith: number;
@@ -63,14 +69,14 @@ export interface TempoAdjustment extends EditorialAction<'tempoAdjustment'> {
  * the roll condition, its physical properties, and the assumed
  * stretching.
  */
-export interface Stretch extends EditorialAction<'stretch'> {
+export interface Stretch extends EditorialAssumption<'stretch'> {
     factor: number;
 }
 
 /**
  * Shift a copy so that it can be collated with others.
  */
-export interface Shift extends EditorialAction<'shift'> {
+export interface Shift extends EditorialAssumption<'shift'> {
     vertical: number;
     horizontal: number;
 }
@@ -83,6 +89,6 @@ export type AnyEditorialAction =
     TempoAdjustment |
     RelativePlacement |
     Stretch |
-    Shift | 
+    Shift |
     ObjectUsage;
 
