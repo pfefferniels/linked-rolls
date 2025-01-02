@@ -1,6 +1,8 @@
 import { RollCopy } from "./RollCopy";
 import { WithId, AnyRollEvent, CollatedEvent, Hand, PreliminaryRoll } from "./types";
 
+export type Certainty = 'true' | 'likely' | 'unlikely' | 'false';
+
 /**
  * Is an I2 Belief and I4 Proposition Set
  * @todo rename to EditorialAssumption, as not to suggest that it
@@ -9,7 +11,7 @@ import { WithId, AnyRollEvent, CollatedEvent, Hand, PreliminaryRoll } from "./ty
  */
 export interface EditorialAssumption<T> extends WithId {
     type: T;
-    certainty: 'true' | 'likely' | 'unlikely' | 'false', // held to be
+    certainty: Certainty, // held to be
     argumentation: { // was concluded by => Argumentation
         actor: string // P14 carried out by
         premises: string[] // has note
