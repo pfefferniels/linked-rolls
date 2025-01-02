@@ -1,7 +1,8 @@
 import { v4 } from "uuid";
 import { Edition } from "./Edition";
 import { RollCopy } from "./RollCopy";
-import { AnyRollEvent, CollatedEvent } from "./types";
+import { CollatedEvent } from "./types";
+import { AnyRollEvent } from "./RollEvent";
 
 type IdMap = Map<string, object>
 

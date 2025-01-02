@@ -1,6 +1,7 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
-import { CollatedEvent, Expression, ExpressionType, Note } from "./types";
-import { TempoAdjustment } from "./EditorialActions";
+import { CollatedEvent } from "./types";
+import { Expression, ExpressionType, Note } from "./RollEvent";
+import { TempoAdjustment } from "./EditorialAssumption";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 import { RollCopy } from "./RollCopy";
 import { Edition } from "./Edition";

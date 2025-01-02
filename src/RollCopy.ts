@@ -1,8 +1,9 @@
 import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
 import { keyToType, typeToKey } from "./keyToType";
-import { AnyRollEvent, ConditionState, EventSpan, Expression, ExpressionType, Hand, MeasurementEvent, Note, SoftwareExecution } from "./types";
-import { AnyEditorialAction, Conjecture, HandAssignment, Shift, Stretch } from "./EditorialActions";
+import { ConditionState, Hand, MeasurementEvent, SoftwareExecution } from "./types";
+import { AnyRollEvent, EventSpan, Expression, ExpressionType, Note } from "./RollEvent";
+import { AnyEditorialAssumption, Conjecture, HandAssignment, Shift, Stretch } from "./EditorialAssumption";
 import { read } from "midifile-ts";
 import { asSpans } from "./asMIDISpans";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
@@ -347,7 +348,7 @@ export class RollCopy {
         this.hands.push(hand)
     }
 
-    applyActions(actions: AnyEditorialAction[]) {
+    applyActions(actions: AnyEditorialAssumption[]) {
         let didChange = false
         for (const action of actions) {
             if (action.type === 'stretch') {
@@ -470,13 +471,13 @@ export class RollCopy {
             || this.measurement?.events.findIndex(e => e.id === id) !== -1
     }
 
-    removeEditorialAction(action: AnyEditorialAction) {
+    removeEditorialAction(action: AnyEditorialAssumption) {
         // TODO
         console.log(action)
     }
 
     get actions() {
-        const result: AnyEditorialAction[] = [
+        const result: AnyEditorialAssumption[] = [
             ...this.additions,
             ...this.conjectures,
         ]

@@ -9,8 +9,10 @@ export type {
     Certainty,
     Shift,
     Stretch,
-    AnyEditorialAction
-} from './EditorialActions'
+    Edit,
+    Stage,
+    AnyEditorialAssumption
+} from './EditorialAssumption'
 
 export type {
     PerformedNoteOnEvent,
@@ -22,3 +24,5 @@ export type {
 export { Edition } from './Edition'
 
 export { keyToType } from './keyToType'
+
+export { PlaceTimeConversion } from './PlaceTimeConversion'

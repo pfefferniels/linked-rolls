@@ -1,7 +1,8 @@
 import { RollCopy } from "./RollCopy";
 import { v4 } from "uuid";
 import { typeToKey } from "./keyToType";
-import { AnyRollEvent, CollatedEvent } from "./types";
+import { CollatedEvent } from "./types";
+import { AnyRollEvent } from "./RollEvent";
 
 const inRange = (range: [number, number], search: number) => {
     return search > range[0] && search < range[1]

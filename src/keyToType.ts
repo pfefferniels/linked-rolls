@@ -1,4 +1,4 @@
-import { ExpressionType } from "./types"
+import { ExpressionType } from "./RollEvent";
 
 type TechnicalType = 'MotorOff' | 'MotorOn' | 'Rewind' | 'ElectricCutoff'; 
 

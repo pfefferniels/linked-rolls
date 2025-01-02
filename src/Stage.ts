@@ -1,6 +1,6 @@
 import { v4 } from "uuid";
 import { CollationResult } from "./Collator";
-import { Edit, ObjectUsage, Stage } from "./EditorialActions";
+import { Edit, ObjectUsage, Stage } from "./EditorialAssumption";
 
 /**
  * Stage Assumption = F28 Expression Creation

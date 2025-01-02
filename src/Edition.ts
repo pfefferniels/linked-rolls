@@ -1,5 +1,5 @@
 import { collateRolls, CollationResult } from "./Collator";
-import { Annotation, AnyEditorialAction, TempoAdjustment } from "./EditorialActions";
+import { Annotation, AnyEditorialAssumption, TempoAdjustment } from "./EditorialAssumption";
 import { RollCopy } from "./RollCopy";
 import { StageCreation } from "./Stage";
 import { PreliminaryRoll } from "./types";
@@ -76,7 +76,7 @@ export class Edition {
         return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
     }
 
-    addEditorialAction(action: AnyEditorialAction) {
+    addEditorialAction(action: AnyEditorialAssumption) {
         this.copies.forEach(copy => {
             copy.applyActions([action])
         })
@@ -89,13 +89,13 @@ export class Edition {
         }
     }
 
-    removeEditorialAction(action: AnyEditorialAction) {
+    removeEditorialAction(action: AnyEditorialAssumption) {
         // TODO
         console.log(action)
     }
 
     get actions() {
-        const result: AnyEditorialAction[] = [
+        const result: AnyEditorialAssumption[] = [
             ...this.annotations,
             ...this.stages.map(stage => stage.actions).flat()
         ]
