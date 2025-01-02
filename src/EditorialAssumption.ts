@@ -1,5 +1,6 @@
 import { RollCopy } from "./RollCopy";
-import { WithId, AnyRollEvent, CollatedEvent, Hand, PreliminaryRoll } from "./types";
+import { WithId, CollatedEvent, Hand, PreliminaryRoll } from "./types";
+import { AnyRollEvent } from "./RollEvent";
 
 export type Certainty = 'true' | 'likely' | 'unlikely' | 'false';
 
@@ -83,7 +84,7 @@ export interface Shift extends EditorialAssumption<'shift'> {
     horizontal: number;
 }
 
-export type AnyEditorialAction =
+export type AnyEditorialAssumption =
     Conjecture |
     Edit |
     Annotation |
