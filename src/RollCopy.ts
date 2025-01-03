@@ -1,9 +1,10 @@
 import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
 import { keyToType, typeToKey } from "./keyToType";
-import { ConditionState, Hand, MeasurementEvent, SoftwareExecution } from "./types";
+import { RollMeasurement } from "./Measurement";
+import { ConditionState } from "./Condition";
 import { AnyRollEvent, EventSpan, Expression, ExpressionType, Note } from "./RollEvent";
-import { AnyEditorialAssumption, Conjecture, HandAssignment, Shift, Stretch } from "./EditorialAssumption";
+import { AnyEditorialAssumption, Conjecture, Hand, HandAssignment, Shift, Stretch } from "./EditorialAssumption";
 import { read } from "midifile-ts";
 import { asSpans } from "./asMIDISpans";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
@@ -61,7 +62,8 @@ export class RollCopy {
     conditions: ConditionState[]
     location: string
 
-    measurement?: MeasurementEvent
+    measurements: RollMeasurement[]
+    private events: AnyRollEvent[]
     scan?: string // P138 has representation => IIIF Image Link (considered to be an E38 Image)
 
     stretch?: Stretch
@@ -88,8 +90,13 @@ export class RollCopy {
         this.hands = []
         this.additions = []
         this.conjectures = []
+        this.measurements = []
+        this.events = []
     }
 
+    /**
+     * Note: this overwrites any existing measurements and events.
+     */
     readFromStanfordAton(atonString: string, adjustByRewind: boolean = true, shift = 0) {
         function pixelsToMillimeters(pixels: number, dpi: number): number {
             return pixels / dpi * 25.4;
@@ -112,6 +119,30 @@ export class RollCopy {
         const lastHole = +holes[holes.length - 1].TRACKER_HOLE
         const rewindShift = adjustByRewind ? 91 - lastHole : shift
         const midiShift = adjustByRewind ? typeToKey('Rewind')! - lastHole : shift
+
+        const measurement: RollMeasurement = {
+            id: v4(),
+            dimensions: {
+                width: rollWidth,
+                height: rollHeight,
+                unit: 'mm'
+            },
+            punchDiameter: {
+                value: averagePunchDiameter,
+                unit: 'mm'
+            },
+            holeSeparation: {
+                value: holeSeparation,
+                unit: 'px'
+            },
+            margins: {
+                treble: hardMarginTreble,
+                bass: hardMarginBass,
+                unit: 'px'
+            },
+            software: 'https://github.com/pianoroll/roll-image-parser',
+            date
+        }
 
         let circularPunches = 0
         const events = []
@@ -168,6 +199,7 @@ export class RollCopy {
                         }
                     },
                     annotates: annotates,
+                    measurement
                 } as Expression)
             }
             else {
@@ -188,6 +220,7 @@ export class RollCopy {
                         }
                     },
                     hasPitch: midiKey,
+                    measurement
                 } as Note)
             }
         }
@@ -195,46 +228,32 @@ export class RollCopy {
         averagePunchDiameter /= circularPunches
         averagePunchDiameter /= Math.PI
 
-        this.measurement = {
-            id: v4(),
-            dimensions: {
-                width: rollWidth,
-                height: rollHeight,
-                unit: 'mm'
-            },
-            punchDiameter: {
-                value: averagePunchDiameter,
-                unit: 'mm'
-            },
-            holeSeparation: {
-                value: holeSeparation,
-                unit: 'px'
-            },
-            margins: {
-                treble: hardMarginTreble,
-                bass: hardMarginBass,
-                unit: 'px'
-            },
-            events,
-            executions: [
-                {
-                    software: 'https://github.com/pianoroll/roll-image-parser',
-                    date
-                }
-            ]
-        }
-
         this.scan = `https://stacks.stanford.edu/image/iiif/${druid}%2F${druid}_0001/`
+        this.events = events
+        this.measurements = [measurement]
 
         this.calculateModifiedEvents()
     }
 
+    /**
+     * Spencer Chase's rolls seem to be scanned at a roll speed of 
+     * 83 (=8.3 feet per minute).
+     * 
+     * @param midiBuffer 
+     * @param conversion 
+     */
     readFromSpencerMIDI(
         midiBuffer: ArrayBuffer,
-        conversion: PlaceTimeConversion = new KinematicConversion()
+        conversion: PlaceTimeConversion = new KinematicConversion(8.3)
     ) {
         const midi = read(midiBuffer)
         const events: AnyRollEvent[] = []
+
+        const measurement: RollMeasurement = {
+            date: 'unknown',
+            id: v4(),
+            software: 'unknown'
+        }
 
         const spans = asSpans(midi)
 
@@ -272,7 +291,8 @@ export class RollCopy {
                                 hasUnit: 'track'
                             }
                         },
-                        id: v4()
+                        id: v4(),
+                        measurement
                     })
                 }
                 else {
@@ -286,7 +306,8 @@ export class RollCopy {
                                 hasUnit: 'track'
                             }
                         },
-                        hasPitch: span.pitch
+                        hasPitch: span.pitch,
+                        measurement
                     })
                 }
             }
@@ -307,7 +328,8 @@ export class RollCopy {
                         },
                         P2HasType: 'SustainPedalOn',
                         hasScope: 'treble',
-                        id: v4()
+                        id: v4(),
+                        measurement
                     },
                     {
                         type: 'expression',
@@ -324,22 +346,15 @@ export class RollCopy {
                         },
                         P2HasType: 'SustainPedalOff',
                         hasScope: 'treble',
-                        id: v4()
+                        id: v4(),
+                        measurement
                     },
                 )
             }
         }
 
-        this.measurement = {
-            id: v4(),
-            events,
-            executions: [
-                {
-                    software: '',
-                    date: 'unknown'
-                },
-            ]
-        }
+        this.events = events
+        this.measurements = [measurement]
 
         this.calculateModifiedEvents();
     }
@@ -378,9 +393,7 @@ export class RollCopy {
      * @note This is expensive. Use with care.
      */
     private calculateModifiedEvents() {
-        if (!this.measurement) return
-
-        this.modifiedEvents = structuredClone(this.measurement.events)
+        this.modifiedEvents = structuredClone(this.events)
 
         for (const conjecture of this.conjectures) {
             applyConjecture(conjecture, this.modifiedEvents)
@@ -392,57 +405,55 @@ export class RollCopy {
         this.modifiedEvents.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
     }
 
-    get events() {
+    getEvents() {
         return this.modifiedEvents
     }
 
-    set events(newEvents: AnyRollEvent[]) {
-        if (!this.measurement) return
-        this.measurement.events = newEvents
+    setEvents(newEvents: AnyRollEvent[]) {
+        this.events = newEvents
         this.calculateModifiedEvents()
     }
 
-    insertEvent(event: AnyRollEvent, softwareExec?: SoftwareExecution) {
-        if (!this.measurement) return
+    insertEvent(event: AnyRollEvent) {
+        this.events.push(event)
+        this.events.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
 
-        this.measurement.events.push(event)
-        this.measurement.events.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
-
-        if (softwareExec && !this.measurement.executions.includes(softwareExec)) {
-            this.measurement.executions.push(softwareExec)
+        if (!this.measurements.includes(event.measurement)) {
+            this.measurements.push(event.measurement)
         }
 
         this.calculateModifiedEvents()
     }
 
-    insertEvents(events: AnyRollEvent[], softwareExec?: SoftwareExecution) {
-        if (!this.measurement) return
+    /**
+     * This is a separate method, since recalculating the modified events 
+     * is expensive.
+     */
+    insertEvents(events: AnyRollEvent[]) {
+        this.events.push(...events)
+        this.events.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
 
-        if (!this.measurement.events) this.measurement.events = []
-        this.measurement.events.push(...events)
-        this.measurement.events.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
-
-        if (softwareExec && !this.measurement.executions.includes(softwareExec)) {
-            this.measurement.executions.push(softwareExec)
+        for (const event of events) {
+            if (!this.measurements.includes(event.measurement)) {
+                this.measurements.push(event.measurement)
+            }
         }
 
         this.calculateModifiedEvents()
     }
 
     removeEvent(eventId: string) {
-        if (!this.measurement) return
-
-        const index = this.measurement.events.findIndex(e => e.id === eventId)
+        const index = this.events.findIndex(e => e.id === eventId)
         if (index === -1) return
-        this.measurement.events.splice(index, 1)
+        this.events.splice(index, 1)
+
         this.calculateModifiedEvents()
     }
 
-    shiftEventsVertically(ids: string[], amount: number) {
-        if (!this.measurement) return
-
-        const originalEvents = this.measurement.events.filter(event => ids.includes(event.id))
+    shiftEventsVertically(ids: string[], amount: number, measurement: RollMeasurement) {
+        const originalEvents = this.events.filter(event => ids.includes(event.id))
         for (const event of originalEvents) {
+            event.measurement = measurement // replace the measurement
             event.hasDimension.vertical.from += amount;
             if (event.type === 'expression') {
                 const prevKey = typeToKey(event.P2HasType)
@@ -453,6 +464,10 @@ export class RollCopy {
 
                 event.P2HasType = shifted as ExpressionType
             }
+        }
+
+        if (!this.measurements.includes(measurement)) {
+            this.measurements.push(measurement)
         }
 
         this.calculateModifiedEvents()
@@ -467,13 +482,30 @@ export class RollCopy {
     }
 
     hasEventId(id: string) {
-        return this.events.findIndex(e => e.id === id) !== -1
-            || this.measurement?.events.findIndex(e => e.id === id) !== -1
+        return this.getEvents().findIndex(e => e.id === id) !== -1
+            || this.events.findIndex(e => e.id === id) !== -1
     }
 
-    removeEditorialAction(action: AnyEditorialAssumption) {
-        // TODO
-        console.log(action)
+    removeEditorialAction(assumption: AnyEditorialAssumption) {
+        if (assumption.type === 'handAssignment') {
+            const index = this.additions.indexOf(assumption)
+            if (index !== -1) this.additions.splice(index, 1)
+        }
+        else if (assumption.type === 'conjecture') {
+            const index = this.conjectures.indexOf(assumption)
+            if (index !== -1) this.conjectures.splice(index, 1)
+        }
+        else if (assumption.type === 'stretch') {
+            this.stretch = undefined
+        }
+        else if (assumption.type === 'shift') {
+            this.shift = undefined
+        }
+        else {
+            throw new Error('Unsupported assumption type provided')
+        }
+
+        this.calculateModifiedEvents()
     }
 
     get actions() {

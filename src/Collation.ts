@@ -1,8 +1,16 @@
 import { RollCopy } from "./RollCopy";
 import { v4 } from "uuid";
 import { typeToKey } from "./keyToType";
-import { CollatedEvent } from "./types";
 import { AnyRollEvent } from "./RollEvent";
+import { WithId } from "./WithId";
+
+export interface CollatedEvent extends WithId {
+    wasCollatedFrom: AnyRollEvent[]
+}
+
+export const isCollatedEvent = (e: any): e is CollatedEvent => {
+    return 'wasCollatedFrom' in e
+}
 
 const inRange = (range: [number, number], search: number) => {
     return search > range[0] && search < range[1]
@@ -103,17 +111,19 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRol
 /**
  * Collates multiple roll copies. 
  */
-export const collateRolls = (rolls: RollCopy[]): CollationResult => {
-    const collatedEvents: CollatedEvent[] = rolls[0].events.map(event => ({
+export const collateRolls = (rolls: RollCopy[], tolerance = 5): Collation => {
+    const collatedEvents: CollatedEvent[] = rolls[0].getEvents().map(event => ({
         id: v4(),
         wasCollatedFrom: [event]
     }))
 
     for (let i = 1; i < rolls.length; i++) {
-        reduceEvents(collatedEvents, rolls[i].events)
+        reduceEvents(collatedEvents, rolls[i].getEvents())
     }
 
     return {
+        measured: rolls,
+        tolerance,
         events: collatedEvents
     }
 }
@@ -152,9 +162,11 @@ export const sourcesOf = (sources: RollCopy[], event_: CollatedEvent | CollatedE
 }
 
 /**
- * @todo: rename this Collation. It should include information
- * about which tolerance parameters etc. were being used
+ * D10 Software Execution (not D11 Digital Measurement Event, 
+ * since it's independent from environmental factors).
  */
-export interface CollationResult {
-    events: CollatedEvent[]
+export interface Collation {
+    measured: RollCopy[] // L2 used as source
+    tolerance: number // L13 used parameters
+    events: CollatedEvent[] // L20 created
 }

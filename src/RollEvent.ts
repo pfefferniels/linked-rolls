@@ -1,5 +1,5 @@
-import { WithId } from "./types";
-
+import { RollMeasurement } from "./Measurement";
+import { WithId } from "./WithId";
 
 export interface EventSpan {
     from: number;
@@ -29,10 +29,9 @@ export interface RollEvent<T> extends WithId {
      * sides, this property is left optional for now.
      */
     side?: 'verso' | 'recto';
+
+    measurement: RollMeasurement // L20i was created by
 }
-/**
- * Note Type
- */
 
 export interface Note extends RollEvent<'note'> {
     hasPitch: number;
@@ -46,20 +45,17 @@ export type ExpressionType =
     'MezzoforteOff' | 'MezzoforteOn' |
     'SlowCrescendoOn' | 'SlowCrescendoOff' |
     'ForzandoOn' | 'ForzandoOff';
-/**x
- * Expression Type
- */
 
 export interface Expression extends RollEvent<'expression'> {
     hasScope: ExpressionScope;
     P2HasType: ExpressionType;
 }
+
 /**
  * This denotes perforations that are covered by an editor.
  * The covered perforation is not considered to be part
  * of the original note or expression hole anymore.
  */
-
 export interface Cover extends RollEvent<'cover'> {
     /**
      * This property can be used to indicate e.g. the
@@ -67,21 +63,21 @@ export interface Cover extends RollEvent<'cover'> {
      */
     note?: string;
 }
+
 /**
  * For handwritten insertions like e. g. the
  * perforation date in the end of a roll.
  */
-
 export interface HandwrittenText extends RollEvent<'handwrittenText'> {
     text: string;
     rotation?: number;
 }
+
 /**
  * This type can be used to indicate stamps like e. g. the
  * "controlliert" stamp in the beginning of rolls or the
  * date at the end of (later) Welte rolls.
  */
-
 export interface Stamp extends RollEvent<'stamp'> {
     text: string;
     rotation?: number;
@@ -93,3 +89,7 @@ export interface RollLabel extends RollEvent<'rollLabel'> {
 }
 
 export type AnyRollEvent = Note | Expression | HandwrittenText | Stamp | Cover | RollLabel;
+
+export const isRollEvent = (e: any): e is AnyRollEvent => {
+    return 'hasDimension' in e
+}

@@ -1,8 +1,10 @@
-import { collateRolls, CollationResult } from "./Collator";
+import { collateRolls, Collation } from "./Collation";
 import { Annotation, AnyEditorialAssumption, TempoAdjustment } from "./EditorialAssumption";
+import { WithId } from "./WithId";
 import { RollCopy } from "./RollCopy";
 import { StageCreation } from "./Stage";
-import { PreliminaryRoll } from "./types";
+
+export interface PreliminaryRoll extends WithId {}
 
 interface PublicationEvent {
     publisher: string
@@ -31,7 +33,7 @@ export class Edition {
     license: string
     roll: Roll
 
-    collationResult: CollationResult
+    collation: Collation
     copies: RollCopy[]
 
     stages: StageCreation[]
@@ -59,7 +61,9 @@ export class Edition {
 
         this.copies = []
 
-        this.collationResult = {
+        this.collation = {
+            measured: this.copies,
+            tolerance: 5,
             events: []
         }
         this.stages = []
@@ -67,7 +71,7 @@ export class Edition {
     }
 
     collateCopies() {
-        this.collationResult = collateRolls(
+        this.collation = collateRolls(
             this.copies
         )
     }

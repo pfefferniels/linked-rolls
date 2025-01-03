@@ -1,8 +1,8 @@
 import { v4 } from "uuid";
 import { Edition } from "./Edition";
 import { RollCopy } from "./RollCopy";
-import { CollatedEvent } from "./types";
 import { AnyRollEvent } from "./RollEvent";
+import { CollatedEvent } from "./Collation";
 
 type IdMap = Map<string, object>
 
@@ -81,10 +81,10 @@ export const importJsonLd = (json: any): Edition => {
         if (copy.stretch) newCopy.stretch = fromJsonLdEntity(copy.stretch, entitiesWithId)
         if (copy.shift) newCopy.shift = fromJsonLdEntity(copy.shift, entitiesWithId)
 
-        const events = copy.measurement.events
+        const events = copy.events
         if (Array.isArray(events)) {
             delete copy.measurement.events
-            newCopy.measurement = copy.measurement ? fromJsonLdEntity(copy.measurement, entitiesWithId) : undefined
+            newCopy.measurements = copy.measurements.map((m: any) => fromJsonLdEntity(m, entitiesWithId))
             newCopy.insertEvents(events.map((event: any) => fromJsonLdEntity(event, entitiesWithId)))
         }
 
@@ -98,7 +98,9 @@ export const importJsonLd = (json: any): Edition => {
 
     edition.stages = (json.stages || []).map((r: any) => fromJsonLdEntity(r, entitiesWithId))
 
-    edition.collationResult = {
+    edition.collation = {
+        measured: fromIDArray(json.measured, entitiesWithId),
+        tolerance: json.tolerance,
         events: json.events.map((event: any) => {
             const result: CollatedEvent = fromJsonLdEntity(event, entitiesWithId)
 
@@ -108,7 +110,7 @@ export const importJsonLd = (json: any): Edition => {
                         const containingRoll = edition.copies.find(copy => copy.hasEventId(rollEventId.id))
                         if (!containingRoll) return undefined
 
-                        return containingRoll.events.find(e => e.id === rollEventId.id)
+                        return containingRoll.getEvents().find(e => e.id === rollEventId.id)
                     })
                     .filter((e: AnyRollEvent | undefined) => e !== undefined)
             }

@@ -1,10 +1,10 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
-import { CollatedEvent } from "./types";
 import { Expression, ExpressionType, Note } from "./RollEvent";
 import { TempoAdjustment } from "./EditorialAssumption";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 import { RollCopy } from "./RollCopy";
 import { Edition } from "./Edition";
+import { CollatedEvent } from "./Collation";
 
 function resize<T>(arr: T[], newSize: number, defaultValue: T) {
     while (newSize > arr.length)
@@ -226,8 +226,8 @@ export class Emulation {
         preferredSource: RollCopy,
         skipToFirstNote: boolean = false
     ) {
-        const { collationResult, tempoAdjustment } = edition
-        const collatedEvents = collationResult.events
+        const { collation, tempoAdjustment } = edition
+        const collatedEvents = collation.events
 
         this.negotiatedEvents = []
         this.negotiateEvents(collatedEvents, preferredSource)

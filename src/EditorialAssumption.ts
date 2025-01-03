@@ -1,6 +1,8 @@
 import { RollCopy } from "./RollCopy";
-import { WithId, CollatedEvent, Hand, PreliminaryRoll } from "./types";
+import { WithId } from "./WithId";
 import { AnyRollEvent } from "./RollEvent";
+import { CollatedEvent } from "./Collation";
+import { PreliminaryRoll } from "./Edition";
 
 export type Certainty = 'true' | 'likely' | 'unlikely' | 'false';
 
@@ -19,9 +21,22 @@ export interface EditorialAssumption<T> extends WithId {
     }
 }
 
+export function isEditorialAssumption(obj: any): obj is AnyEditorialAssumption {
+    return obj && typeof obj === 'object' && 'type' in obj && 'certainty' in obj && 'argumentation' in obj;
+}
+
 export interface Conjecture extends EditorialAssumption<'conjecture'> {
     replaced: AnyRollEvent[];
     with: AnyRollEvent[];
+}
+
+/**
+ * This type is modelled on E11 Modification
+ */
+export interface Hand extends WithId {
+    carriedOutBy: string
+    date: string
+    note?: string
 }
 
 /**

@@ -1,5 +1,5 @@
 import { v4 } from "uuid";
-import { CollationResult } from "./Collator";
+import { Collation } from "./Collation";
 import { Edit, ObjectUsage, Stage } from "./EditorialAssumption";
 
 /**
@@ -20,7 +20,7 @@ export class StageCreation {
         return [...this.edits, this.basedOn]
     }
 
-    fillEdits(usingCollation: CollationResult) {
+    fillEdits(usingCollation: Collation) {
         if (!('witnesses' in this.basedOn.original)) return
 
         // inserts: collated events that contain events
@@ -42,9 +42,7 @@ export class StageCreation {
                     action: 'delete',
                     argumentation: {
                         actor: '#collation-tool',
-                        premises: [`
-                            The event is included in at least one of the witnesses of the assumed 
-                            ancestor, but not in any of the witnesses of the current stage.`]
+                        premises: []
                     }, 
                     certainty: 'true',
                     type: 'edit',
@@ -58,9 +56,7 @@ export class StageCreation {
                     action: 'insert',
                     argumentation: {
                         actor: '#collation-tool',
-                        premises: [`
-                            The event is included in at least one of the witnesses of the current 
-                            stage, but not in any of the witnesses of the assumed ancestor.`]
+                        premises: []
                     },
                     certainty: 'true',
                     type: 'edit',
