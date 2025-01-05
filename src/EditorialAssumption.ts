@@ -8,9 +8,6 @@ export type Certainty = 'true' | 'likely' | 'unlikely' | 'false';
 
 /**
  * Is an I2 Belief and I4 Proposition Set
- * @todo rename to EditorialAssumption, as not to suggest that it
- * should be a temporal event. It comes to live through argumentation,
- * and that's the temporal event.
  */
 export interface EditorialAssumption<T> extends WithId {
     type: T;
