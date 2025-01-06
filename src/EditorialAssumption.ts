@@ -34,6 +34,7 @@ export interface Hand extends WithId {
     carriedOutBy: string
     date: string
     note?: string
+    authorised?: boolean
 }
 
 /**
