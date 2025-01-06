@@ -63,10 +63,20 @@ export interface Edit extends EditorialAssumption<'edit'> {
     follows?: Edit;
 }
 
-export interface RelativePlacement extends EditorialAssumption<'relativePlacement'> {
-    placed: CollatedEvent;
-    relativeTo: CollatedEvent[];
-    withPlacementType: 'startsBeforeTheStartOf' | 'startsBeforeTheEndOf';
+type DimensionMarker = {
+    point: 'start' | 'end';
+    of: AnyRollEvent;
+}
+
+type PlacementType = 'after' | 'before' | 'with';
+
+export interface HorizontalPlacement extends EditorialAssumption<'horizontalPlacement'> {
+    placed: DimensionMarker;
+    placement: PlacementType;
+    relativeTo: DimensionMarker | {
+        number: string; 
+        unit: string 
+    };
 }
 
 export interface Annotation extends EditorialAssumption<'annotation'> {
@@ -103,7 +113,7 @@ export type AnyEditorialAssumption =
     Annotation |
     HandAssignment |
     TempoAdjustment |
-    RelativePlacement |
+    HorizontalPlacement |
     Stretch |
     Shift |
     ObjectUsage;
