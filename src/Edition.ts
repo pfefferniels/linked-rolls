@@ -62,7 +62,7 @@ export class Edition {
         this.copies = []
 
         this.collation = {
-            measured: this.copies,
+            measured: [],
             tolerance: 5,
             events: []
         }
