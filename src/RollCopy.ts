@@ -1,33 +1,33 @@
 import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
-import { keyToType, typeToKey } from "./keyToType";
 import { RollMeasurement } from "./Measurement";
 import { ConditionState } from "./Condition";
-import { AnyRollEvent, EventSpan, Expression, ExpressionType, Note } from "./RollEvent";
+import { AnyRollEvent, Expression, HorizontalSpan, Note } from "./RollEvent";
 import { AnyEditorialAssumption, Conjecture, Hand, HandAssignment, Shift, Stretch } from "./EditorialAssumption";
 import { read } from "midifile-ts";
 import { asSpans } from "./asMIDISpans";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
+import { WelteT100 } from "./TrackerBar";
 
 const applyShift = (shift: Shift, to: AnyRollEvent[]) => {
     for (const event of to) {
-        event.hasDimension.horizontal.from += shift.horizontal
-        if (event.hasDimension.horizontal.to) {
-            event.hasDimension.horizontal.to += shift.horizontal
+        event.horizontal.from += shift.horizontal
+        if (event.horizontal.to) {
+            event.horizontal.to += shift.horizontal
         }
 
-        event.hasDimension.vertical.from += shift.vertical
-        if (event.hasDimension.vertical.to) {
-            event.hasDimension.vertical.to += shift.vertical
+        event.vertical.from += shift.vertical
+        if (event.vertical.to) {
+            event.vertical.to += shift.vertical
         }
     }
 }
 
 const applyStretch = (stretch: Stretch, to: AnyRollEvent[]) => {
     for (const event of to) {
-        event.hasDimension.horizontal.from *= stretch.factor
-        if (event.hasDimension.horizontal.to) {
-            event.hasDimension.horizontal.to *= stretch.factor
+        event.horizontal.from *= stretch.factor
+        if (event.horizontal.to) {
+            event.horizontal.to *= stretch.factor
         }
     }
 }
@@ -118,7 +118,6 @@ export class RollCopy {
 
         const lastHole = +holes[holes.length - 1].TRACKER_HOLE
         const rewindShift = adjustByRewind ? 91 - lastHole : shift
-        const midiShift = adjustByRewind ? typeToKey('Rewind')! - lastHole : shift
 
         const measurement: RollMeasurement = {
             id: v4(),
@@ -158,9 +157,7 @@ export class RollCopy {
 
             if (!hole.NOTE_ATTACK || !hole.OFF_TIME) continue
 
-            const midiKey = +hole.TRACKER_HOLE + midiShift
             const trackerHole = +hole.TRACKER_HOLE + rewindShift
-            // console.log('key=', midiKey)
 
             const noteAttack = +hole.NOTE_ATTACK.replace('px', '')
             const offset = +hole.OFF_TIME.replace('px', '')
@@ -168,61 +165,20 @@ export class RollCopy {
             const column = +hole.ORIGIN_COL.replace('px', '')
             const columnWidth = +hole.WIDTH_COL.replace('px', '')
 
-            const dimension: EventSpan = {
-                hasUnit: 'mm',
-                from: pixelsToMillimeters(noteAttack, dpi),
-                to: pixelsToMillimeters(offset, dpi)
-            }
-
             const annotates = `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column - 10},${noteAttack - 10},${columnWidth + 20},${height + 20}/128,/0/default.jpg`
 
-            if (midiKey <= 23 || midiKey >= 104) {
-                const type = keyToType(midiKey)
-                if (!type) {
-                    console.log('unknown expression key', midiKey, 'encountered. Ignoring.')
-                    continue
-                }
-
-                const scope = midiKey <= 23 ? 'bass' : 'treble'
-
-                events.push({
-                    type: 'expression',
-                    id: v4(),
-                    P2HasType: type,
-                    hasScope: scope,
-                    hasDimension: {
-                        id: v4(),
-                        horizontal: dimension,
-                        vertical: {
-                            from: trackerHole,
-                            hasUnit: 'track'
-                        }
-                    },
-                    annotates: annotates,
-                    measurement
-                } as Expression)
+            const event: Note | Expression = {
+                ...(new WelteT100().meaningOf(trackerHole)),
+                annotates,
+                measurement,
+                horizontal: {
+                    unit: 'mm',
+                    from: pixelsToMillimeters(noteAttack, dpi),
+                    to: pixelsToMillimeters(offset, dpi)
+                },
+                id: v4()
             }
-            else {
-                events.push({
-                    type: 'note',
-                    id: v4(),
-                    annotates: `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column - 10},${noteAttack - 10},${columnWidth + 20},${height + 20}/128,/0/default.jpg`,
-                    hasDimension: {
-                        id: v4(),
-                        horizontal: {
-                            hasUnit: 'mm',
-                            from: pixelsToMillimeters(noteAttack, dpi),
-                            to: pixelsToMillimeters(offset, dpi)
-                        },
-                        vertical: {
-                            hasUnit: 'track',
-                            from: trackerHole
-                        }
-                    },
-                    hasPitch: midiKey,
-                    measurement
-                } as Note)
-            }
+            events.push(event)
         }
 
         averagePunchDiameter /= circularPunches
@@ -232,7 +188,7 @@ export class RollCopy {
         this.events = events
         this.measurements = [measurement]
 
-        this.calculateModifiedEvents()
+        this.constituteEvents()
     }
 
     /**
@@ -261,102 +217,40 @@ export class RollCopy {
             const left = conversion.timeToPlace(span.onsetMs / 1000) * 10
             const right = conversion.timeToPlace(span.offsetMs / 1000) * 10
 
-            const horizontalDimension: EventSpan = {
+            const horizontalDimension: HorizontalSpan = {
                 from: left,
                 to: right,
-                hasUnit: 'mm'
+                unit: 'mm'
             }
 
-            if (span.type === 'note') {
-                const midiShift = 13
-                const trackerHole = span.pitch - midiShift
+            if (span.type !== 'note') continue
 
-                if (trackerHole <= 10 || trackerHole >= 91) {
-                    const scope = trackerHole <= 10 ? 'bass' : 'treble'
 
-                    // for whatever reasons, the expression tracks
-                    // of the Spencer Chase's MIDI rolls are off
-                    // by two on the bass-side.
-                    const bassCorrection = -2
-                    const type = (scope === 'bass' ? keyToType(trackerHole + midiShift + bassCorrection) : keyToType(trackerHole + midiShift)) as ExpressionType
+            const midiShift = 13
+            let trackerHole = span.pitch - midiShift
 
-                    events.push({
-                        type: 'expression',
-                        P2HasType: type,
-                        hasScope: trackerHole <= 10 ? 'bass' : 'treble',
-                        hasDimension: {
-                            horizontal: horizontalDimension,
-                            vertical: {
-                                from: scope === 'bass' ? trackerHole + bassCorrection : trackerHole,
-                                hasUnit: 'track'
-                            }
-                        },
-                        id: v4(),
-                        measurement
-                    })
-                }
-                else {
-                    events.push({
-                        type: 'note',
-                        id: v4(),
-                        hasDimension: {
-                            horizontal: horizontalDimension,
-                            vertical: {
-                                from: trackerHole,
-                                hasUnit: 'track'
-                            }
-                        },
-                        hasPitch: span.pitch,
-                        measurement
-                    })
-                }
+            // for whatever reasons, the expression tracks
+            // of the Spencer Chase's MIDI rolls are off
+            // by two on the bass-side.
+            if (trackerHole < 10) {
+                trackerHole -= 2
             }
-            else if (span.type === 'sustain') {
-                events.push(
-                    {
-                        type: 'expression',
-                        hasDimension: {
-                            horizontal: {
-                                from: left,
-                                to: left + 5,
-                                hasUnit: 'mm'
-                            },
-                            vertical: {
-                                from: typeToKey('SustainPedalOn')!,
-                                hasUnit: 'track'
-                            }
-                        },
-                        P2HasType: 'SustainPedalOn',
-                        hasScope: 'treble',
-                        id: v4(),
-                        measurement
-                    },
-                    {
-                        type: 'expression',
-                        hasDimension: {
-                            horizontal: {
-                                from: right,
-                                to: right + 5,
-                                hasUnit: 'mm'
-                            },
-                            vertical: {
-                                from: typeToKey('SustainPedalOff')!,
-                                hasUnit: 'track'
-                            }
-                        },
-                        P2HasType: 'SustainPedalOff',
-                        hasScope: 'treble',
-                        id: v4(),
-                        measurement
-                    },
-                )
+
+
+            const event: Note | Expression = {
+                ...(new WelteT100().meaningOf(trackerHole)),
+                horizontal: horizontalDimension,
+                measurement,
+                id: v4()
             }
+            events.push(event)
         }
+
 
         this.events = events
         this.measurements = [measurement]
 
-        this.calculateModifiedEvents();
+        this.constituteEvents()
     }
 
     addHand(hand: Hand) {
@@ -385,15 +279,71 @@ export class RollCopy {
         }
 
         if (didChange) {
-            this.calculateModifiedEvents()
+            this.constituteEvents()
         }
     }
+
+    private applyCovers() {
+        const covers = this.modifiedEvents.filter(e => e.type === 'cover')
+        const notes = this.modifiedEvents.filter(e => e.type === 'note' || e.type === 'expression')
+        for (const cover of covers) {
+            // Find either note or expression that is covered
+            for (const event of notes) {
+                // first check if the cover vertically covers a wider area 
+                // than the note or expression
+                const coveredVertically = event.vertical.from >= cover.vertical.from &&
+                    event.vertical.from <= (cover.vertical.to || cover.vertical.from)
+
+                if (!coveredVertically) continue
+
+                // check if the cover partially covers the begin of the note or expression
+                if (event.horizontal.from >= cover.horizontal.from &&
+                    event.horizontal.from <= cover.horizontal.to) {
+                    // the note starts where the cover ends
+                    event.horizontal.from = cover.horizontal.to
+                }
+
+                // check if the cover partially covers the end of the note or expression
+                if (event.horizontal.to >= cover.horizontal.from &&
+                    event.horizontal.to <= cover.horizontal.to) {
+                    // the note ends where the cover starts
+                    event.horizontal.to = cover.horizontal.from
+                }
+            }
+        }
+    }
+
+    private removeUnauthorisedAdditions() {
+        for (const addition of this.additions) {
+            if (!addition.hand.authorised) {
+                for (const event of addition.target) {
+                    // remove that event from the modified events
+                    const index = this.modifiedEvents.findIndex(e => e.id === event.id)
+                    if (index !== -1) {
+                        this.modifiedEvents.splice(index, 1)
+                    }
+                }
+            }
+        }
+    }
+
 
     /**
      * @note This is expensive. Use with care.
      */
-    private calculateModifiedEvents() {
+    private constituteEvents() {
         this.modifiedEvents = structuredClone(this.events)
+
+        // remove all handwritten texts
+        this.modifiedEvents = this.modifiedEvents.filter(e => e.type !== 'handwrittenText')
+
+        // remove all unauthorized modifications
+        this.removeUnauthorisedAdditions()
+
+        // cut note and expression events by covers
+        // note: this should be done only after
+        // possibly unauthorized covers have been removed
+        this.applyCovers()
 
         for (const conjecture of this.conjectures) {
             applyConjecture(conjecture, this.modifiedEvents)
@@ -402,27 +352,31 @@ export class RollCopy {
         if (this.stretch) applyStretch(this.stretch, this.modifiedEvents)
         if (this.shift) applyShift(this.shift, this.modifiedEvents)
 
-        this.modifiedEvents.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
+        this.modifiedEvents.sort((a, b) => a.horizontal.from - b.horizontal.from)
     }
 
-    getEvents() {
+    getOriginalEvents() {
+        return this.events
+    }
+
+    getConstitutedEvents() {
         return this.modifiedEvents
     }
 
     setEvents(newEvents: AnyRollEvent[]) {
         this.events = newEvents
-        this.calculateModifiedEvents()
+        this.constituteEvents()
     }
 
     insertEvent(event: AnyRollEvent) {
         this.events.push(event)
-        this.events.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
+        this.events.sort((a, b) => a.horizontal.from - b.horizontal.from)
 
         if (!this.measurements.includes(event.measurement)) {
             this.measurements.push(event.measurement)
         }
 
-        this.calculateModifiedEvents()
+        this.constituteEvents()
     }
 
     /**
@@ -431,7 +385,7 @@ export class RollCopy {
      */
     insertEvents(events: AnyRollEvent[]) {
         this.events.push(...events)
-        this.events.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
+        this.events.sort((a, b) => a.horizontal.from - b.horizontal.from)
 
         for (const event of events) {
             if (!this.measurements.includes(event.measurement)) {
@@ -439,7 +393,7 @@ export class RollCopy {
             }
         }
 
-        this.calculateModifiedEvents()
+        this.constituteEvents()
     }
 
     removeEvent(eventId: string) {
@@ -447,22 +401,22 @@ export class RollCopy {
         if (index === -1) return
         this.events.splice(index, 1)
 
-        this.calculateModifiedEvents()
+        this.constituteEvents()
     }
 
     shiftEventsVertically(ids: string[], amount: number, measurement: RollMeasurement) {
         const originalEvents = this.events.filter(event => ids.includes(event.id))
         for (const event of originalEvents) {
             event.measurement = measurement // replace the measurement
-            event.hasDimension.vertical.from += amount;
-            if (event.type === 'expression') {
-                const prevKey = typeToKey(event.P2HasType)
-                if (!prevKey) continue
-
-                const shifted = keyToType(prevKey + amount)
-                if (!shifted) continue
-
-                event.P2HasType = shifted as ExpressionType
+            event.vertical.from += amount;
+            try {
+                const newEvent = new WelteT100().meaningOf(event.vertical.from)
+                for (const key in newEvent) {
+                    (event as any)[key] = (newEvent as any)[key]
+                }
+            }
+            catch (e) {
+                console.error(e)
             }
         }
 
@@ -470,7 +424,7 @@ export class RollCopy {
             this.measurements.push(measurement)
         }
 
-        this.calculateModifiedEvents()
+        this.constituteEvents()
     }
 
     shallowClone(): RollCopy {
@@ -482,7 +436,7 @@ export class RollCopy {
     }
 
     hasEventId(id: string) {
-        return this.getEvents().findIndex(e => e.id === id) !== -1
+        return this.getConstitutedEvents().findIndex(e => e.id === id) !== -1
             || this.events.findIndex(e => e.id === id) !== -1
     }
 
@@ -505,7 +459,7 @@ export class RollCopy {
             throw new Error('Unsupported assumption type provided')
         }
 
-        this.calculateModifiedEvents()
+        this.constituteEvents()
     }
 
     get actions() {

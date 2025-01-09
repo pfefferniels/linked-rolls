@@ -1,15 +1,16 @@
 import { RollMeasurement } from "./Measurement";
 import { WithId } from "./WithId";
 
-export interface EventSpan {
+export interface HorizontalSpan {
+    unit: 'mm';
     from: number;
-    to?: number;
-    hasUnit: 'mm' | 'track';
+    to: number;
 }
 
-export interface EventDimension {
-    horizontal: EventSpan;
-    vertical: EventSpan;
+export interface VerticalSpan {
+    unit: 'track';
+    from: number;
+    to?: number
 }
 
 export interface RollEvent<T> extends WithId {
@@ -20,7 +21,8 @@ export interface RollEvent<T> extends WithId {
      */
     annotates?: string;
 
-    hasDimension: EventDimension;
+    horizontal: HorizontalSpan;
+    vertical: VerticalSpan;
 
     /**
      * Describes whether the event takes place
@@ -34,22 +36,40 @@ export interface RollEvent<T> extends WithId {
 }
 
 export interface Note extends RollEvent<'note'> {
-    hasPitch: number;
+    pitch: number;
 }
 
 export type ExpressionScope = 'bass' | 'treble';
 
 export type ExpressionType =
-    'SustainPedalOn' | 'SustainPedalOff' |
-    'SoftPedalOn' | 'SoftPedalOff' |
-    'MezzoforteOff' | 'MezzoforteOn' |
-    'SlowCrescendoOn' | 'SlowCrescendoOff' |
-    'ForzandoOn' | 'ForzandoOff';
+    | 'SustainPedalOn'
+    | 'SustainPedalOff'
+    | 'SoftPedalOn'
+    | 'SoftPedalOff'
+    | 'MezzoforteOff'
+    | 'MezzoforteOn'
+    | 'SlowCrescendoOn'
+    | 'SlowCrescendoOff'
+    | 'ForzandoOn'
+    | 'ForzandoOff'
+    | 'MotorOff'
+    | 'MotorOn'
+    | 'Rewind'
+    | 'ElectricCutOff';
 
 export interface Expression extends RollEvent<'expression'> {
-    hasScope: ExpressionScope;
-    P2HasType: ExpressionType;
+    scope: ExpressionScope;
+    expressionType: ExpressionType;
 }
+
+export const isRollEvent = (e: any): e is AnyRollEvent => {
+    return 'horizontal' in e && 'vertical' in e
+}
+
+export interface Perforation extends RollEvent<'perforation'> {
+    accelerating?: boolean;
+}
+
 
 /**
  * This denotes perforations that are covered by an editor.
@@ -88,8 +108,11 @@ export interface RollLabel extends RollEvent<'rollLabel'> {
     signed: boolean;
 }
 
-export type AnyRollEvent = Note | Expression | HandwrittenText | Stamp | Cover | RollLabel;
+export type AnyRollEvent =
+    | Note
+    | Expression
+    | HandwrittenText
+    | Stamp
+    | Cover
+    | RollLabel;
 
-export const isRollEvent = (e: any): e is AnyRollEvent => {
-    return 'hasDimension' in e
-}

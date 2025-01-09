@@ -1,6 +1,7 @@
 import { v4 } from "uuid";
-import { Collation } from "./Collation";
+import { CollatedEvent, Collation } from "./Collation";
 import { Edit, ObjectUsage, Stage } from "./EditorialAssumption";
+import { RollCopy } from "./RollCopy";
 
 /**
  * Stage Assumption = F28 Expression Creation
@@ -43,7 +44,7 @@ export class StageCreation {
                     argumentation: {
                         actor: '#collation-tool',
                         premises: []
-                    }, 
+                    },
                     certainty: 'true',
                     type: 'edit',
                     id: v4(),
@@ -68,3 +69,11 @@ export class StageCreation {
     }
 }
 
+export const findWitnessesWithinStage = (collatedEvent: CollatedEvent, within: Stage): Set<RollCopy> => {
+    const witnessList = new Set<RollCopy>()
+    for (const event of collatedEvent.wasCollatedFrom) {
+        const witness = within.witnesses.find(witness => witness.hasEvent(event))
+        if (witness) witnessList.add(witness)
+    }
+    return witnessList
+}

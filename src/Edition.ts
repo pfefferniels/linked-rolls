@@ -16,7 +16,7 @@ interface RecordingEvent {
         pianist: string;    // should point to GND
         playing: string;    // should point to GND
     }
-    tookPlaceAt: string
+    tookPlaceAt: string // should point to geoplaces
     date: string
     created?: PreliminaryRoll
 }

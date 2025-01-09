@@ -110,7 +110,7 @@ export const importJsonLd = (json: any): Edition => {
                         const containingRoll = edition.copies.find(copy => copy.hasEventId(rollEventId.id))
                         if (!containingRoll) return undefined
 
-                        return containingRoll.getEvents().find(e => e.id === rollEventId.id)
+                        return containingRoll.getConstitutedEvents().find(e => e.id === rollEventId.id)
                     })
                     .filter((e: AnyRollEvent | undefined) => e !== undefined)
             }

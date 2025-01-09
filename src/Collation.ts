@@ -1,6 +1,5 @@
 import { RollCopy } from "./RollCopy";
 import { v4 } from "uuid";
-import { typeToKey } from "./keyToType";
 import { AnyRollEvent } from "./RollEvent";
 import { WithId } from "./WithId";
 
@@ -16,15 +15,12 @@ const inRange = (range: [number, number], search: number) => {
     return search > range[0] && search < range[1]
 }
 
-const determinePitch = (firstEvent: AnyRollEvent) => {
-    if (firstEvent.type === 'note') {
-        return firstEvent.hasPitch
-    }
-    else if (firstEvent.type === 'expression') {
-        return typeToKey(firstEvent.P2HasType, firstEvent.hasScope) || 0
+const determinePitch = (event: AnyRollEvent) => {
+    if (event.type === 'note') {
+        return event.pitch
     }
 
-    return firstEvent.hasDimension.vertical.from
+    return event.vertical.from
 }
 
 const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRollEvent[], tolerance = 5) => {
@@ -43,8 +39,8 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRol
 
         myInfo.push({
             id: event.id,
-            onset: event.wasCollatedFrom.reduce((acc, current) => acc + current.hasDimension.horizontal.from, 0) / event.wasCollatedFrom.length,
-            offset: event.wasCollatedFrom.reduce((acc, current) => acc + current.hasDimension.horizontal.to!, 0) / event.wasCollatedFrom.length,
+            onset: event.wasCollatedFrom.reduce((acc, current) => acc + current.horizontal.from, 0) / event.wasCollatedFrom.length,
+            offset: event.wasCollatedFrom.reduce((acc, current) => acc + current.horizontal.to, 0) / event.wasCollatedFrom.length,
             pitch
         })
     }
@@ -56,8 +52,8 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRol
 
         return {
             id: e.id,
-            onset: e.hasDimension.horizontal.from,
-            offset: e.hasDimension.horizontal.to!,
+            onset: e.horizontal.from,
+            offset: e.horizontal.to,
             pitch
         }
     })
@@ -112,13 +108,13 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRol
  * Collates multiple roll copies. 
  */
 export const collateRolls = (rolls: RollCopy[], tolerance = 5): Collation => {
-    const collatedEvents: CollatedEvent[] = rolls[0].getEvents().map(event => ({
+    const collatedEvents: CollatedEvent[] = rolls[0].getConstitutedEvents().map(event => ({
         id: v4(),
         wasCollatedFrom: [event]
     }))
 
     for (let i = 1; i < rolls.length; i++) {
-        reduceEvents(collatedEvents, rolls[i].getEvents())
+        reduceEvents(collatedEvents, rolls[i].getConstitutedEvents())
     }
 
     return {

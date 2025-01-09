@@ -122,14 +122,14 @@ export class Emulation {
 
             const negotiated = collatedEvent.wasCollatedFrom[0] as NegotiatedEvent
             negotiated.id = collatedEvent.id
-            negotiated.hasDimension.horizontal.from = mean[0]
-            negotiated.hasDimension.horizontal.to = mean[1]
+            negotiated.horizontal.from = mean[0]
+            negotiated.horizontal.to = mean[1]
             negotiated.fromCollatedEvent = collatedEvent
             this.negotiatedEvents.push(negotiated)
         }
 
 
-        this.negotiatedEvents.sort((a, b) => a.hasDimension.horizontal.from - b.hasDimension.horizontal.from)
+        this.negotiatedEvents.sort((a, b) => a.horizontal.from - b.horizontal.from)
     }
 
     private findRollTempo(adjustment?: TempoAdjustment) {
@@ -146,13 +146,13 @@ export class Emulation {
     private assignPhysicalTime(skipToFirstNote = false) {
         if (this.negotiatedEvents.length === 0) return 
 
-        const first = skipToFirstNote ? this.negotiatedEvents[0].hasDimension.horizontal.from : 0
+        const first = skipToFirstNote ? this.negotiatedEvents[0].horizontal.from : 0
         for (const event of this.negotiatedEvents) {
             if (!event.assumedPhysicalTime) {
                 // convert from mm to cm and then to time
                 event.assumedPhysicalTime = [
-                    this.placeTimeConversion.placeToTime((event.hasDimension.horizontal.from - first) / 10),
-                    this.placeTimeConversion.placeToTime((event.hasDimension.horizontal.to! - first) / 10)
+                    this.placeTimeConversion.placeToTime((event.horizontal.from - first) / 10),
+                    this.placeTimeConversion.placeToTime((event.horizontal.to - first) / 10)
                 ]
             }
         }
@@ -161,8 +161,8 @@ export class Emulation {
     private applyTrackerBarExtension() {
         const correction = this.options.trackerBarDiameter * this.options.punchExtensionFraction + 0.5
         for (const event of this.negotiatedEvents) {
-            if (event.hasDimension.horizontal.to) {
-                event.hasDimension.horizontal.to += correction
+            if (event.horizontal.to) {
+                event.horizontal.to += correction
             }
         }
     }
@@ -179,9 +179,9 @@ export class Emulation {
                     ['SoftPedalOff', 'softPedalOff']
                 ])
 
-                if (map.has(expression.P2HasType)) {
+                if (map.has(expression.expressionType)) {
                     this.midiEvents.push({
-                        type: map.get(expression.P2HasType)! as 'sustainPedalOn' | 'sustainPedalOff' | 'softPedalOn' | 'softPedalOff',
+                        type: map.get(expression.expressionType)! as 'sustainPedalOn' | 'sustainPedalOff' | 'softPedalOn' | 'softPedalOff',
                         performs: event.fromCollatedEvent || event,
                         at: event.assumedPhysicalTime![0],
                     })
@@ -189,8 +189,8 @@ export class Emulation {
             }
             else if (event.type === 'note') {
                 // take velocity from the calculated velocity list
-                const pitch = (event as Note).hasPitch
-                if (event.hasDimension.vertical.from >= this.options.division) {
+                const pitch = event.pitch
+                if (event.vertical.from >= this.options.division) {
                     this.insertNote(
                         event,
                         pitch,
@@ -284,17 +284,17 @@ export class Emulation {
         for (const negotiatedEvent of this.negotiatedEvents) {
             if (negotiatedEvent.type !== 'expression') continue
 
-            if (scope === 'treble' && negotiatedEvent.hasDimension.vertical.from < this.options.division) continue
-            else if (scope === 'bass' && negotiatedEvent.hasDimension.vertical.from >= this.options.division) continue
+            if (scope === 'treble' && negotiatedEvent.vertical.from < this.options.division) continue
+            else if (scope === 'bass' && negotiatedEvent.vertical.from >= this.options.division) continue
 
             const event = negotiatedEvent as Expression & AssumedPhysicalTimeSpan
 
             const startMs = event.assumedPhysicalTime![0] * 1000
             const endMs = event.assumedPhysicalTime![1] * 1000
 
-            // console.log('encoutering expression', event.P2HasType["@id"], 'from', startMs, 'to', endMs)
+            // console.log('encoutering expression', event.expressionType["@id"], 'from', startMs, 'to', endMs)
 
-            if (event.P2HasType === 'MezzoforteOn') {
+            if (event.expressionType === 'MezzoforteOn') {
                 // update the mezzoforte start time
                 // only if the mf valve is not on already
                 if (!valve_mf_on) {
@@ -302,14 +302,14 @@ export class Emulation {
                     valve_mf_starttime = startMs
                 }
             }
-            else if (event.P2HasType === 'MezzoforteOff') {
+            else if (event.expressionType === 'MezzoforteOff') {
                 if (valve_mf_on) {
                     // fill from the mezzoforte start time to here ...
                     isMF.fill(true, valve_mf_starttime, startMs)
                 }
                 valve_mf_on = false
             }
-            else if (event.P2HasType === 'SlowCrescendoOn') {
+            else if (event.expressionType === 'SlowCrescendoOn') {
                 // update the slow crescendo start time
                 // only if slow crescendo is not on already
                 if (!valve_slowc_on) {
@@ -317,18 +317,18 @@ export class Emulation {
                     valve_slowc_starttime = startMs;
                 }
             }
-            else if (event.P2HasType === 'SlowCrescendoOff') {
+            else if (event.expressionType === 'SlowCrescendoOff') {
                 if (valve_slowc_on) {
                     // fill from the mezzoforte start time to here ...
                     isSlowC.fill(true, valve_slowc_starttime, startMs)
                 }
                 valve_slowc_on = false;
             }
-            else if (event.P2HasType === 'ForzandoOn') {
+            else if (event.expressionType === 'ForzandoOn') {
                 // Forzando On/Off are a direct operations (length of perforation matters)
                 isFastC.fill(true, startMs, endMs)
             }
-            else if (event.P2HasType === 'ForzandoOff') {
+            else if (event.expressionType === 'ForzandoOff') {
                 // Forzando On/Off are a direct operations (length of perforation matters)
                 isFastD.fill(true, startMs, endMs)
             }
@@ -529,9 +529,9 @@ const meanDimensionOf = (collatedEvent: CollatedEvent): [number, number] | undef
     if (!originalEvents) return
 
     const meanStart =
-        originalEvents.reduce((acc, cur) => acc + cur.hasDimension.horizontal.from, 0) / originalEvents.length
+        originalEvents.reduce((acc, cur) => acc + cur.horizontal.from, 0) / originalEvents.length
     const meanEnd =
-        originalEvents.reduce((acc, cur) => acc + cur.hasDimension.horizontal.to!, 0) / originalEvents.length
+        originalEvents.reduce((acc, cur) => acc + cur.horizontal.to, 0) / originalEvents.length
 
     return [meanStart, meanEnd]
 }

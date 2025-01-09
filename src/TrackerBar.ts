@@ -1,37 +1,13 @@
-export interface Note {
-    type: 'note';
-    pitch: number;
-}
+import { Expression, ExpressionType, Note } from "./RollEvent"
 
-export type ExpressionScope = 'bass' | 'treble';
-
-export type ExpressionType =
-    | 'SustainPedalOn'
-    | 'SustainPedalOff'
-    | 'SoftPedalOn'
-    | 'SoftPedalOff'
-    | 'MezzoforteOff'
-    | 'MezzoforteOn'
-    | 'SlowCrescendoOn'
-    | 'SlowCrescendoOff'
-    | 'ForzandoOn'
-    | 'ForzandoOff'
-    | 'MotorOff'
-    | 'MotorOn'
-    | 'Rewind';
-
-export interface Expression {
-    type: 'expression';
-    scope: ExpressionScope;
-    expressionType: ExpressionType;
-}
 
 export abstract class TrackerBar {
-    abstract meaningOf(track: number): Note | Expression
+    abstract meaningOf(track: number): Partial<Note> | Partial<Expression>
 }
 
 export class WelteT100 {
-    meaningOf(track: number): Note | Expression {
+    meaningOf(track: number):
+        Pick<Note, 'type' | 'pitch' | 'vertical'> | Pick<Expression, 'type' | 'expressionType' | 'scope' | 'vertical'> {
         if (track <= 0 || track > 100) {
             throw new Error('Track out of range')
         }
@@ -49,7 +25,7 @@ export class WelteT100 {
             [9, 'MotorOff'],
             [10, 'MotorOn'],
             [91, 'Rewind'],
-            // 92 has no meaning
+            [92, 'ElectricCutOff'],
             [93, 'SustainPedalOn'],
             [94, 'SustainPedalOff'],
             [95, 'ForzandoOn'],
@@ -65,14 +41,22 @@ export class WelteT100 {
             return {
                 expressionType: expressionMap.get(track)!,
                 scope,
-                type: 'expression'
+                type: 'expression',
+                vertical: {
+                    from: track,
+                    unit: 'track'
+                }
             }
         }
 
         // C1-G4 = track 11-90 = 24-103 in MIDI keys
         return {
             pitch: track + 13,
-            type: 'note'
+            type: 'note',
+            vertical: {
+                from: track,
+                unit: 'track'
+            }
         }
     }
 }

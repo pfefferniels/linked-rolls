@@ -57,9 +57,10 @@ export interface Stage {
     witnesses: RollCopy[]; // R7i has example
 }
 
+// rollo:Edit, subclass of E17 Type Assignment
 export interface Edit extends EditorialAssumption<'edit'> {
-    contains: CollatedEvent[];
-    action?: 'insert' | 'delete';
+    contains: CollatedEvent[];  // P41 classified
+    action?: 'insert' | 'delete';   // P42 assigned
     follows?: Edit;
 }
 
@@ -70,11 +71,12 @@ type DimensionMarker = {
 
 type PlacementType = 'after' | 'before' | 'with';
 
+// rolo:Horizontal Placement, subclass of E13 Attribute Assignment
 export interface HorizontalPlacement extends EditorialAssumption<'horizontalPlacement'> {
     placed: DimensionMarker;
     placement: PlacementType;
     relativeTo: DimensionMarker | {
-        number: string; 
+        number: string;
         unit: string 
     };
 }
