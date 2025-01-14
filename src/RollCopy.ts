@@ -94,6 +94,24 @@ export class RollCopy {
         this.events = []
     }
 
+    asJSON() {
+        return {
+            id: this.id,
+            siglum: this.siglum,
+            productionEvent: this.productionEvent,
+            conditions: this.conditions,
+            location: this.location,
+            measurements: this.measurements,
+            events: this.events,
+            scan: this.scan,
+            stretch: this.stretch,
+            shift: this.shift,
+            hands: this.hands,
+            additions: this.additions,
+            conjectures: this.conjectures
+        }
+    }
+
     /**
      * Note: this overwrites any existing measurements and events.
      */

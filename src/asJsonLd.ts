@@ -8,12 +8,21 @@ const asIDArray = (arr: WithId[]) => {
 const asJsonLdEntity = (obj: object) => {
     const result: any = {}
 
+    if ('asJSON' in obj && typeof obj['asJSON'] === 'function') {
+        return asJsonLdEntity(obj['asJSON']())
+    }
+
     for (const [key, value] of Object.entries(obj)) {
         if (typeof value === 'function' || typeof value === 'undefined') {
             // ignore
         }
-        else if (['contains', 'wasCollatedFrom', 'replaced', 'target', 'annotated', 'witnesses', 'measurement', 'measured'].includes(key)) {
-            result[key] = asIDArray(value)
+        else if (['premises', 'contains', 'wasCollatedFrom', 'replaced', 'target', 'annotated', 'witnesses', 'measurement', 'measured'].includes(key)) {
+            if (!Array.isArray(value)) {
+                console.error(`Expected array for key ${key}, got ${value}`)
+            }
+            else {
+                result[key] = asIDArray(value)
+            }
         }
         else if (['hand'].includes(key)) {
             result[key] = value.id || '[unknown]'
