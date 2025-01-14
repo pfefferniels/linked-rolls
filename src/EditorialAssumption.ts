@@ -14,7 +14,8 @@ export interface EditorialAssumption<T> extends WithId {
     certainty: Certainty, // held to be
     argumentation: { // was concluded by => Argumentation
         actor: string // P14 carried out by
-        premises: string[] // has note
+        premises: (AnyEditorialAssumption | string)[] // used as premise
+        note?: string // has note (for free-style argumentation)
     }
 }
 
