@@ -43,7 +43,9 @@ export class StageCreation {
                     action: 'delete',
                     argumentation: {
                         actor: '#collation-tool',
-                        premises: []
+                        premises: [this.basedOn],
+                        adoptedBeliefs: [],
+                        observations: [],
                     },
                     certainty: 'true',
                     type: 'edit',
@@ -57,7 +59,9 @@ export class StageCreation {
                     action: 'insert',
                     argumentation: {
                         actor: '#collation-tool',
-                        premises: []
+                        premises: [],
+                        adoptedBeliefs: [],
+                        observations: [],
                     },
                     certainty: 'true',
                     type: 'edit',

@@ -4,19 +4,28 @@ import { AnyRollEvent } from "./RollEvent";
 import { CollatedEvent } from "./Collation";
 import { PreliminaryRoll } from "./Edition";
 
-export type Certainty = 'true' | 'likely' | 'unlikely' | 'false';
+export type Certainty = 'true' | 'likely' | 'possible' | 'unlikely' | 'false';
 
 /**
- * Is an I2 Belief and I4 Proposition Set
+ * Argumentations, simplified in the form of
+ * multiple instantation of Inference Making, Belief Adoption and Observation.
+ * This is a shortcut for explicit P9 consists of.
+ */
+export type Argumentation = {
+    actor: string // P14 carried out by
+    premises: AnyEditorialAssumption[] // (consists of) -> Inference Making -> used as premise
+    adoptedBeliefs: string[] // (consists of) -> Belief Adoption -> adopted belief
+    observations: string[] // (consists of) -> Observation -> has note
+    note?: string // why do the premises, adopted beliefs, or observations lead to the conclusion
+}
+
+/**
+ * An editorial assumpton is an I2 Belief and I4 Proposition Set
  */
 export interface EditorialAssumption<T> extends WithId {
     type: T;
     certainty: Certainty, // held to be
-    argumentation: { // was concluded by => Argumentation
-        actor: string // P14 carried out by
-        premises: (AnyEditorialAssumption | string)[] // used as premise
-        note?: string // has note (for free-style argumentation)
-    }
+    argumentation: Argumentation // was concluded by => Argumentation
 }
 
 export function isEditorialAssumption(obj: any): obj is AnyEditorialAssumption {
