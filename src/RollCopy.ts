@@ -296,7 +296,7 @@ export class RollCopy {
             }
         }
 
-        if (didChange) {
+        if (didChange || this.modifiedEvents.length === 0) {
             this.constituteEvents()
         }
     }

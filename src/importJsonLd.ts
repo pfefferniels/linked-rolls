@@ -1,9 +1,8 @@
 import { v4 } from "uuid";
 import { Edition } from "./Edition";
 import { RollCopy } from "./RollCopy";
-import { AnyRollEvent } from "./RollEvent";
-import { CollatedEvent } from "./Collation";
 import { StageCreation } from "./Stage";
+import { AnyRollEvent } from "./RollEvent";
 
 type IdMap = Map<string, object>
 
@@ -34,27 +33,56 @@ const fromIDArray = (arr: string[], entities: IdMap): any[] => {
 }
 
 const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
-    const result: any = json;
+    let result: any = json;
 
     for (const [key, value] of Object.entries(json)) {
         if (key === '@type') {
-            result['type'] = value;
+            if (value === 'Edition') {
+                result = new Edition();
+            }
+            else if (value === 'RollCopy') {
+                result = new RollCopy();
+            }
+            else if (value === 'StageCreation') {
+                result = new StageCreation({ siglum: '', witnesses: [] }, {
+                    type: 'objectUsage',
+                    argumentation: {
+                        actor: '#collation-tool',
+                        premises: [],
+                        adoptedBeliefs: [],
+                        observations: [],
+                    },
+                    certainty: 'true',
+                    id: v4(),
+                    original: { id: '[unknown]' },
+                });
+            }
+            else {
+                result['type'] = value;
+            }
         } else if (key === '@id') {
             result['id'] = value;
-        } else if (['contains', 'wasCollatedFrom', 'replaced', 'target', 'annotated'].includes(key)) {
+        } else if (['contains', 'wasCollatedFrom', 'replaced', 'target', 'annotated', 'witnesses'].includes(key)) {
             if (Array.isArray(value)) {
                 result[key] = fromIDArray(value, entitiesWithId);
             }
         } else if (key === 'hand' && typeof value === 'string') {
             result[key] = entitiesWithId.get(value);
         } else if (Array.isArray(value)) {
-            result[key] = value.map(v => fromJsonLdEntity(v, entitiesWithId));
+            result[key] = value.map(v => {
+                if (typeof v === 'string') {
+                    return v;
+                }
+                else {
+                    return fromJsonLdEntity(v, entitiesWithId)
+                }
+            })
         } else if (typeof value === 'object') {
             result[key] = fromJsonLdEntity(value, entitiesWithId);
         }
-        //  else {
-        //     result[key] = value;
-        // }
+        else {
+            result[key] = value;
+        }
     }
 
     return result;
@@ -62,84 +90,27 @@ const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
 
 export const importJsonLd = (json: any): Edition => {
     const entitiesWithId = collectEntitiesWithId(json)
+    const edition = fromJsonLdEntity(json, entitiesWithId) as Edition;
 
-    const edition: Edition = new Edition()
-    edition.title = json.title || 'untitled'
-    edition.license = json.license || 'no license'
-    edition.publicationEvent = fromJsonLdEntity(json.publicationEvent, entitiesWithId)
-    edition.roll = fromJsonLdEntity(json.roll, entitiesWithId)
+    edition.copies.forEach((copy: RollCopy) => {
+        copy.applyActions(copy.actions);
+    });
 
-    edition.copies = (json.copies || []).map((copy: any) => {
-        const newCopy = new RollCopy()
-
-        newCopy.id = copy['@id'] || v4()
-
-        newCopy.productionEvent = fromJsonLdEntity(copy.productionEvent, entitiesWithId)
-        newCopy.scan = copy.scan
-
-        newCopy.conditions = (copy.conditions || []).map((c: any) => fromJsonLdEntity(c, entitiesWithId))
-        newCopy.hands = (copy.hands || []).map((c: any) => fromJsonLdEntity(c, entitiesWithId))
-        if (copy.stretch) newCopy.stretch = fromJsonLdEntity(copy.stretch, entitiesWithId)
-        if (copy.shift) newCopy.shift = fromJsonLdEntity(copy.shift, entitiesWithId)
-
-        const events = copy.events
-        if (Array.isArray(events)) {
-            // delete copy.measurement.events
-            newCopy.measurements = copy.measurements.map((m: any) => fromJsonLdEntity(m, entitiesWithId))
-            newCopy.insertEvents(events.map((event: any) => fromJsonLdEntity(event, entitiesWithId)))
-        }
-
-        const additions = (copy.additions || []).map((a: any) => fromJsonLdEntity(a, entitiesWithId))
-        const conjectures = (copy.conjectures || []).map((c: any) => fromJsonLdEntity(c, entitiesWithId))
-
-        newCopy.applyActions([...additions, ...conjectures])
-
-        return newCopy
+    edition.collation.events.forEach(e => {
+        e.wasCollatedFrom = e.wasCollatedFrom
+            .map(re => {
+                const containingRoll = edition.copies.find(copy => copy.hasEventId(re.id))
+                return containingRoll?.getConstitutedEvents().find(e => e.id === re.id)
+            })
+            .filter((e: AnyRollEvent | undefined) => e !== undefined)
     })
 
-    edition.stages = (json.stages || [])
-        .filter((r: any) => {
-            return r.created && r.basedOn && r.edits
+    edition.stages.forEach((stage: StageCreation) => {
+        stage.created.witnesses = stage.created.witnesses.map(witness => {
+            const copy = edition.copies.find(copy => copy.siglum === witness.siglum)
+            return copy || witness;
         })
-        .map((r: any) => {
-            const stage = fromJsonLdEntity(r.created, entitiesWithId)
-            stage.witnesses = stage.witnesses
-                .map((w: any) => {
-                    return edition.copies.find(c => c.id === w.id)
-                })
-                .filter((c: RollCopy | undefined) => c !== undefined)
-
-            const creation = new StageCreation(
-                fromJsonLdEntity(r.created, entitiesWithId),
-                fromJsonLdEntity(r.basedOn, entitiesWithId))
-            creation.edits = r.edits.map((edit: any) => fromJsonLdEntity(edit, entitiesWithId))
-            return creation
-        })
-
-    const collation = json.collation
-    if (collation) {
-        edition.collation = {
-            measured: fromIDArray(collation.measured || [], entitiesWithId),
-            tolerance: collation.tolerance,
-            events: collation.events.map((event: any) => {
-                const result: CollatedEvent = fromJsonLdEntity(event, entitiesWithId)
-
-                if (Array.isArray(event.wasCollatedFrom)) {
-                    result.wasCollatedFrom = event.wasCollatedFrom
-                        .map((rollEventId: any) => {
-                            const containingRoll = edition.copies.find(copy => copy.hasEventId(rollEventId.id))
-                            if (!containingRoll) return undefined
-
-                            return containingRoll.getConstitutedEvents().find(e => e.id === rollEventId.id)
-                        })
-                        .filter((e: AnyRollEvent | undefined) => e !== undefined)
-                }
-
-                return result
-            })
-        }
-    }
-
+    })
 
     return edition;
 }
