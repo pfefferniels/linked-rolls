@@ -458,6 +458,11 @@ export class RollCopy {
             || this.events.findIndex(e => e.id === id) !== -1
     }
 
+    getById(id: string) {
+        return this.getConstitutedEvents().find(e => e.id === id)
+            || this.events.find(e => e.id === id)
+    }
+
     removeEditorialAction(assumption: AnyEditorialAssumption) {
         if (assumption.type === 'handAssignment') {
             const index = this.additions.indexOf(assumption)
