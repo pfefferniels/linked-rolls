@@ -29,7 +29,13 @@ const collectEntitiesWithId = (json: any): IdMap => {
 };
 
 const fromIDArray = (arr: string[], entities: IdMap): any[] => {
-    return arr.map(id => entities.get(id) || { id: '[unknown]' });
+    return arr.map(id => {
+        const entity = entities.get(id)
+        if (!entity) {
+            console.warn('Could not find entity with id', id)
+        }
+        return entity;
+    });
 }
 
 const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
