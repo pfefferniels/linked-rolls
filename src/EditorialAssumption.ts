@@ -67,11 +67,9 @@ export interface Stage {
     witnesses: RollCopy[]; // R7i has example
 }
 
-// rollo:Edit, subclass of E17 Type Assignment
 export interface Edit extends EditorialAssumption<'edit'> {
-    contains: CollatedEvent[];  // P41 classified
-    action?: 'insert' | 'delete';   // P42 assigned
-    follows?: Edit;
+    insert?: CollatedEvent[];
+    delete?: CollatedEvent[];
 }
 
 type DimensionMarker = {

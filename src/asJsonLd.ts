@@ -16,7 +16,7 @@ const asJsonLdEntity = (obj: object) => {
         if (typeof value === 'function' || typeof value === 'undefined') {
             // ignore
         }
-        else if (['premises', 'contains', 'wasCollatedFrom', 'replaced', 'target', 'annotated', 'witnesses', 'measurement', 'measured'].includes(key)) {
+        else if (['premises', 'insert', 'delete', 'wasCollatedFrom', 'replaced', 'target', 'annotated', 'witnesses', 'measurement', 'measured'].includes(key)) {
             if (!Array.isArray(value)) {
                 console.error(`Expected array for key ${key}, got ${value}`)
             }

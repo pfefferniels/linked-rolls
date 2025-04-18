@@ -40,7 +40,6 @@ export class StageCreation {
             if (!containedInWitnesses && containedInAncestor) {
                 // that's a remove
                 this.edits.push({
-                    action: 'delete',
                     argumentation: {
                         actor: '#collation-tool',
                         premises: [this.basedOn],
@@ -50,13 +49,12 @@ export class StageCreation {
                     certainty: 'true',
                     type: 'edit',
                     id: v4(),
-                    contains: [collatedEvent]
+                    delete: [collatedEvent]
                 })
             }
             else if (containedInWitnesses && !containedInAncestor) {
                 // that's an insert
                 this.edits.push({
-                    action: 'insert',
                     argumentation: {
                         actor: '#collation-tool',
                         premises: [],
@@ -66,7 +64,7 @@ export class StageCreation {
                     certainty: 'true',
                     type: 'edit',
                     id: v4(),
-                    contains: [collatedEvent]
+                    insert: [collatedEvent]
                 })
             }
         }

@@ -68,7 +68,7 @@ const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
             }
         } else if (key === '@id') {
             result['id'] = value;
-        } else if (['contains', 'wasCollatedFrom', 'replaced', 'target', 'annotated', 'witnesses'].includes(key)) {
+        } else if (['insert', 'delete', 'wasCollatedFrom', 'replaced', 'target', 'annotated', 'witnesses'].includes(key)) {
             if (Array.isArray(value)) {
                 result[key] = fromIDArray(value, entitiesWithId);
             }
