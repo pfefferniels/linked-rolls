@@ -3,6 +3,7 @@ import { Edition } from "./Edition";
 import { RollCopy } from "./RollCopy";
 import { StageCreation } from "./Stage";
 import { AnyRollEvent } from "./RollEvent";
+import { referenceTypes } from "./asJsonLd";
 
 type IdMap = Map<string, object>
 
@@ -10,8 +11,13 @@ const collectEntitiesWithId = (json: any): IdMap => {
     const result: IdMap = new Map()
 
     // Check if the current object has an `id` property and store it
-    if (json && typeof json === 'object' && '@id' in json) {
-        result.set(json['@id'], json)
+    if (json && typeof json === 'object') {
+        if ('@id' in json) {
+            result.set(json['@id'], json)
+        }
+        if ('siglum' in json) {
+            result.set(json['siglum'], json)
+        }
     }
 
     // Recursively search within arrays or nested objects
@@ -39,41 +45,56 @@ const fromIDArray = (arr: string[], entities: IdMap): any[] => {
 }
 
 const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
+    if (typeof json !== 'object') {
+        return json
+    }
+
     let result: any = json;
 
+    if ('@type' in json) {
+        const value = json['@type'];
+        if (value === 'Edition') {
+            result = new Edition();
+        }
+        else if (value === 'RollCopy') {
+            result = new RollCopy();
+        }
+        else if (value === 'StageCreation') {
+            result = new StageCreation({ siglum: '', witnesses: [] }, {
+                type: 'objectUsage',
+                argumentation: {
+                    actor: '#collation-tool',
+                    premises: [],
+                    adoptedBeliefs: [],
+                    observations: [],
+                },
+                certainty: 'true',
+                id: v4(),
+                original: { id: '[unknown]' },
+            });
+        }
+        else {
+            result['type'] = value;
+        }
+    }
+
     for (const [key, value] of Object.entries(json)) {
-        if (key === '@type') {
-            if (value === 'Edition') {
-                result = new Edition();
-            }
-            else if (value === 'RollCopy') {
-                result = new RollCopy();
-            }
-            else if (value === 'StageCreation') {
-                result = new StageCreation({ siglum: '', witnesses: [] }, {
-                    type: 'objectUsage',
-                    argumentation: {
-                        actor: '#collation-tool',
-                        premises: [],
-                        adoptedBeliefs: [],
-                        observations: [],
-                    },
-                    certainty: 'true',
-                    id: v4(),
-                    original: { id: '[unknown]' },
-                });
-            }
-            else {
-                result['type'] = value;
-            }
-        } else if (key === '@id') {
+        if (key === '@id') {
             result['id'] = value;
-        } else if (['insert', 'delete', 'wasCollatedFrom', 'replaced', 'target', 'annotated', 'witnesses'].includes(key)) {
-            if (Array.isArray(value)) {
-                result[key] = fromIDArray(value, entitiesWithId);
+        } else if ([...referenceTypes, 'measurement', 'original'].includes(key)) {
+            if (Array.isArray(value) && value.every(e => typeof e === 'string')) {
+                result[key] = fromIDArray(value, entitiesWithId)
+            }
+            else if (typeof value === 'string') {
+                const entity = entitiesWithId.get(value);
+                if (entity) {
+                    result[key] = entity, entitiesWithId;
+                } else {
+                    console.warn('Could not find entity with id', value);
+                }
             }
         } else if (key === 'hand' && typeof value === 'string') {
-            result[key] = entitiesWithId.get(value);
+            result[key] = entitiesWithId.get(value)
         } else if (Array.isArray(value)) {
             result[key] = value.map(v => {
                 if (typeof v === 'string') {
@@ -116,6 +137,11 @@ export const importJsonLd = (json: any): Edition => {
             const copy = edition.copies.find(copy => copy.siglum === witness.siglum)
             return copy || witness;
         })
+    })
+
+    edition.collation.measured = edition.collation.measured.map((measured: RollCopy) => {
+        const copy = edition.copies.find(c => c.siglum === measured.siglum)
+        return copy || measured;
     })
 
     return edition;

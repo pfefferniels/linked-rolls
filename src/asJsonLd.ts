@@ -1,6 +1,20 @@
 import { Edition } from "./Edition";
 import { WithId } from "./WithId";
 
+// for these keys, references by id will be inserted
+// rather than the object itself.
+export const referenceTypes = [
+    'premises',
+    'insert',
+    'delete',
+    'wasCollatedFrom',
+    'replaced',
+    'target',
+    'annotated',
+    'witnesses',
+    'measured'
+]
+
 const asIDArray = (arr: WithId[]) => {
     return arr.map(e => e.id)
 }
@@ -16,7 +30,15 @@ const asJsonLdEntity = (obj: object) => {
         if (typeof value === 'function' || typeof value === 'undefined') {
             // ignore
         }
-        else if (['premises', 'insert', 'delete', 'wasCollatedFrom', 'replaced', 'target', 'annotated', 'witnesses', 'measurement', 'measured'].includes(key)) {
+        if (['original', 'measurement'].includes(key)) {
+            if ('siglum' in value) {
+                result[key] = value.siglum;
+            }
+            else {
+                result[key] = value.id;
+            }
+        }
+        else if (referenceTypes.includes(key)) {
             if (!Array.isArray(value)) {
                 console.error(`Expected array for key ${key}, got ${value}`)
             }
@@ -34,7 +56,7 @@ const asJsonLdEntity = (obj: object) => {
             result['@id'] = value
         }
         else if (Array.isArray(value)) {
-            result[key] = value.map(v => asJsonLdEntity(v))
+            result[key] = value.map(v => (typeof v === 'object') ? asJsonLdEntity(v) : v)
         }
         else if (typeof value === 'object') {
             result[key] = asJsonLdEntity(value)
