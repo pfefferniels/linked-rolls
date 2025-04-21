@@ -26,6 +26,7 @@ export interface EditorialAssumption<T> extends WithId {
     type: T;
     certainty: Certainty, // held to be
     argumentation: Argumentation // was concluded by => Argumentation
+    questions?: string[]
 }
 
 export function isEditorialAssumption(obj: any): obj is AnyEditorialAssumption {
