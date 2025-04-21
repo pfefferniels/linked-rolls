@@ -12,10 +12,10 @@ export type Certainty = 'true' | 'likely' | 'possible' | 'unlikely' | 'false';
  * This is a shortcut for explicit P9 consists of.
  */
 export type Argumentation = {
-    actor: string // P14 carried out by
-    premises: AnyEditorialAssumption[] // (consists of) -> Inference Making -> used as premise
-    adoptedBeliefs: string[] // (consists of) -> Belief Adoption -> adopted belief
-    observations: string[] // (consists of) -> Observation -> has note
+    actor?: string // P14 carried out by
+    premises?: AnyEditorialAssumption[] // (consists of) -> Inference Making -> used as premise
+    adoptedBeliefs?: string[] // (consists of) -> Belief Adoption -> adopted belief
+    observations?: string[] // (consists of) -> Observation -> has note
     note?: string // why do the premises, adopted beliefs, or observations lead to the conclusion
 }
 
