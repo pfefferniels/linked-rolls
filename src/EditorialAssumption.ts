@@ -67,7 +67,20 @@ export interface Stage {
     witnesses: RollCopy[]; // R7i has example
 }
 
+export const editMotivations = [
+    'additional-accent',
+    'remove-redundancy',
+    'replace-with-equivalent',
+    'shift',
+    'correct-error',
+    'shorten',
+    'prolong',
+] as const;
+
+export type EditMotivation = typeof editMotivations[number];
+
 export interface Edit extends EditorialAssumption<'edit'> {
+    motivation?: EditMotivation
     insert?: CollatedEvent[];
     delete?: CollatedEvent[];
 }
