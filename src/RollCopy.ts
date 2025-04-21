@@ -96,6 +96,7 @@ export class RollCopy {
 
     asJSON() {
         return {
+            type: 'RollCopy',
             id: this.id,
             siglum: this.siglum,
             productionEvent: this.productionEvent,
