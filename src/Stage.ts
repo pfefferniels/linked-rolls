@@ -40,12 +40,11 @@ export class StageCreation {
             if (!containedInWitnesses && containedInAncestor) {
                 // that's a remove
                 this.edits.push({
-                    argumentation: {
+                    reasons: [{
+                        type: 'inference',
                         actor: '#collation-tool',
-                        premises: [this.basedOn],
-                        adoptedBeliefs: [],
-                        observations: [],
-                    },
+                        premises: [this.basedOn]
+                    }],
                     certainty: 'true',
                     type: 'edit',
                     id: v4(),
@@ -55,12 +54,11 @@ export class StageCreation {
             else if (containedInWitnesses && !containedInAncestor) {
                 // that's an insert
                 this.edits.push({
-                    argumentation: {
+                    reasons: [{
+                        type: 'inference',
                         actor: '#collation-tool',
-                        premises: [],
-                        adoptedBeliefs: [],
-                        observations: [],
-                    },
+                        premises: [this.basedOn]
+                    }],
                     certainty: 'true',
                     type: 'edit',
                     id: v4(),

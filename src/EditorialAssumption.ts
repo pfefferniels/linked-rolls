@@ -6,31 +6,57 @@ import { PreliminaryRoll } from "./Edition";
 
 export type Certainty = 'true' | 'likely' | 'possible' | 'unlikely' | 'false';
 
-/**
- * Argumentations, simplified in the form of
- * multiple instantation of Inference Making, Belief Adoption and Observation.
- * This is a shortcut for explicit P9 consists of.
- */
-export type Argumentation = {
+export type WithActor = {
     actor?: string // P14 carried out by
-    premises?: AnyEditorialAssumption[] // (consists of) -> Inference Making -> used as premise
-    adoptedBeliefs?: string[] // (consists of) -> Belief Adoption -> adopted belief
-    observations?: string[] // (consists of) -> Observation -> has note
-    note?: string // why do the premises, adopted beliefs, or observations lead to the conclusion
+}
+
+export type WithNote = {
+    note?: string // P3 has note
 }
 
 /**
- * An editorial assumpton is an I2 Belief and I4 Proposition Set
+ * This equals to CRMinf I5 Inference Making
+ */
+export interface Inference extends WithActor, WithNote {
+    type: 'inference';
+    premises: AnyEditorialAssumption[]; // used as premise
+}
+
+/**
+ * This equals to CRMinf I7 Belief Adoption
+ */
+export interface Reference extends WithActor, WithNote {
+    type: 'reference';
+}
+
+/**
+ * This equals to CRMsci S4 Observation
+ */
+export interface Observation extends WithActor, Required<WithNote> {
+    type: 'observation';
+    observed?: CollatedEvent[];
+}
+
+export type AnyArgumentation = Inference | Reference | Observation
+
+/**
+ * This equals to Question Making of the original IAM proposal
+ */
+export interface Question extends WithActor, Required<WithNote> {
+}
+
+/**
+ * An editorial assumpton is an I2 Belief *and* I4 Proposition Set
  */
 export interface EditorialAssumption<T> extends WithId {
     type: T;
     certainty: Certainty, // held to be
-    argumentation: Argumentation // was concluded by => Argumentation
+    reasons?: AnyArgumentation[]; // was concluded by
     questions?: string[]
 }
 
 export function isEditorialAssumption(obj: any): obj is AnyEditorialAssumption {
-    return obj && typeof obj === 'object' && 'type' in obj && 'certainty' in obj && 'argumentation' in obj;
+    return obj && typeof obj === 'object' && 'type' in obj && 'certainty' in obj;
 }
 
 export interface Conjecture extends EditorialAssumption<'conjecture'> {

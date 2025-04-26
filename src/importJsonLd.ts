@@ -62,12 +62,6 @@ const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
         else if (value === 'StageCreation') {
             result = new StageCreation({ siglum: '', witnesses: [] }, {
                 type: 'objectUsage',
-                argumentation: {
-                    actor: '#collation-tool',
-                    premises: [],
-                    adoptedBeliefs: [],
-                    observations: [],
-                },
                 certainty: 'true',
                 id: v4(),
                 original: { id: '[unknown]' },
