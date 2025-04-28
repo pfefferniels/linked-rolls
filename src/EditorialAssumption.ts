@@ -20,6 +20,7 @@ export type WithNote = {
 export interface Inference extends WithActor, WithNote {
     type: 'inference';
     premises: AnyEditorialAssumption[]; // used as premise
+    logic?: string
 }
 
 /**
@@ -40,19 +41,12 @@ export interface Observation extends WithActor, Required<WithNote> {
 export type AnyArgumentation = Inference | Reference | Observation
 
 /**
- * This equals to Question Making of the original IAM proposal
- */
-export interface Question extends WithActor, Required<WithNote> {
-}
-
-/**
  * An editorial assumpton is an I2 Belief *and* I4 Proposition Set
  */
 export interface EditorialAssumption<T> extends WithId {
     type: T;
     certainty: Certainty, // held to be
     reasons?: AnyArgumentation[]; // was concluded by
-    questions?: string[]
 }
 
 export function isEditorialAssumption(obj: any): obj is AnyEditorialAssumption {
@@ -62,6 +56,7 @@ export function isEditorialAssumption(obj: any): obj is AnyEditorialAssumption {
 export interface Conjecture extends EditorialAssumption<'conjecture'> {
     replaced: AnyRollEvent[];
     with: AnyRollEvent[];
+    note?: string
 }
 
 /**
@@ -95,6 +90,12 @@ export interface Stage {
 }
 
 export const editMotivations = [
+    /**
+     * An additional accent that can only be encoded with 
+     * sforzando on/off due to the short space left between
+     * the notes to be differentiated.
+     */
+    'short-dynamic-differentation',
     'additional-accent',
     'remove-redundancy',
     'replace-with-equivalent',
@@ -129,10 +130,6 @@ export interface HorizontalPlacement extends EditorialAssumption<'horizontalPlac
     };
 }
 
-export interface Annotation extends EditorialAssumption<'annotation'> {
-    annotated: CollatedEvent[];
-}
-
 export interface TempoAdjustment extends EditorialAssumption<'tempoAdjustment'> {
     adjusts: string;
     startsWith: number;
@@ -157,14 +154,26 @@ export interface Shift extends EditorialAssumption<'shift'> {
     horizontal: number;
 }
 
+export interface Intention extends EditorialAssumption<'intention'> {
+    description: string;
+}
+
+/**
+ * Modelled on IAM's Question, cf. M. Doerr et al., p. 12
+ */
+export interface Question extends EditorialAssumption<'question'> {
+    question: string // has conclusion (W)
+}
+
 export type AnyEditorialAssumption =
     Conjecture |
     Edit |
-    Annotation |
+    Question |
     HandAssignment |
     TempoAdjustment |
     HorizontalPlacement |
     Stretch |
     Shift |
-    ObjectUsage;
+    ObjectUsage |
+    Intention;
 

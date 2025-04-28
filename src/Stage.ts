@@ -1,6 +1,6 @@
 import { v4 } from "uuid";
 import { CollatedEvent, Collation } from "./Collation";
-import { Edit, ObjectUsage, Stage } from "./EditorialAssumption";
+import { Edit, Intention, ObjectUsage, Stage } from "./EditorialAssumption";
 import { RollCopy } from "./RollCopy";
 
 /**
@@ -10,15 +10,17 @@ export class StageCreation {
     created: Stage; // R17 created
     basedOn: ObjectUsage; // P140i was attributed by
     edits: Edit[]; // P9 consists of
+    intentions: Intention[]
 
     constructor(stage: Stage, basedOn: ObjectUsage) {
         this.created = stage
         this.basedOn = basedOn
         this.edits = []
+        this.intentions = []
     }
 
     get actions() {
-        return [...this.edits, this.basedOn]
+        return [...this.intentions, ...this.edits, this.basedOn]
     }
 
     fillEdits(usingCollation: Collation) {

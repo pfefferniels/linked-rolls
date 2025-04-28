@@ -1,5 +1,5 @@
 import { collateRolls, Collation } from "./Collation";
-import { Annotation, AnyEditorialAssumption, TempoAdjustment } from "./EditorialAssumption";
+import { AnyEditorialAssumption, Question, TempoAdjustment } from "./EditorialAssumption";
 import { WithId } from "./WithId";
 import { RollCopy } from "./RollCopy";
 import { StageCreation } from "./Stage";
@@ -37,7 +37,7 @@ export class Edition {
     copies: RollCopy[]
 
     stages: StageCreation[]
-    annotations: Annotation[]
+    questions: Question[]
     tempoAdjustment?: TempoAdjustment
 
     constructor() {
@@ -67,7 +67,7 @@ export class Edition {
             events: []
         }
         this.stages = []
-        this.annotations = []
+        this.questions = []
     }
 
     collateCopies() {
@@ -85,8 +85,8 @@ export class Edition {
             copy.applyActions([action])
         })
 
-        if (action.type === 'annotation') {
-            this.annotations.push(action)
+        if (action.type === 'question') {
+            this.questions.push(action)
         }
         else if (action.type === 'tempoAdjustment') {
             this.tempoAdjustment = this.tempoAdjustment
@@ -94,13 +94,22 @@ export class Edition {
     }
 
     removeEditorialAction(action: AnyEditorialAssumption) {
+        if (action.type === 'question') {
+            this.questions = this.questions.filter(q => q.id !== action.id)
+        }
+        else if (action.type === 'tempoAdjustment') {
+            this.tempoAdjustment = undefined
+        }
+
         // TODO
-        console.log(action)
+        // this.copies.forEach(copy => {
+        //     copy.removeActions(action)
+        // })
     }
 
     get actions() {
         const result: AnyEditorialAssumption[] = [
-            ...this.annotations,
+            ...this.questions,
             ...this.stages.map(stage => stage.actions).flat()
         ]
         if (this.tempoAdjustment) result.push(this.tempoAdjustment)
