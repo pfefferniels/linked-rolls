@@ -113,9 +113,7 @@ export const importJsonLd = (json: any): Edition => {
     const entitiesWithId = collectEntitiesWithId(json)
     const edition = fromJsonLdEntity(json, entitiesWithId) as Edition;
 
-    edition.copies.forEach((copy: RollCopy) => {
-        copy.applyActions(copy.actions);
-    });
+    edition.copies.forEach(copy => copy.constituteEvents())
 
     edition.collation.events.forEach(e => {
         e.wasCollatedFrom = e.wasCollatedFrom

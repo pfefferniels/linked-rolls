@@ -348,9 +348,15 @@ export class RollCopy {
 
 
     /**
+     * This method creates a new array of events with (1)
+     * all handwritten textes removed, (2) all unauthorized
+     * modifications removed, (3) all editorial conjectures
+     * applied, (4) all covers applied, (5) the assumed 
+     * stretch and shift applied.
+     * 
      * @note This is expensive. Use with care.
      */
-    private constituteEvents() {
+    constituteEvents() {
         this.modifiedEvents = structuredClone(this.events)
 
         // remove all handwritten texts
