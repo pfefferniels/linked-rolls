@@ -97,6 +97,7 @@ export const editMotivations = [
      */
     'short-dynamic-differentation',
     'additional-accent',
+    'add-redundancy',
     'remove-redundancy',
     'replace-with-equivalent',
     'shift',
