@@ -6,12 +6,12 @@ import { StageCreation } from "./Stage";
 
 export interface PreliminaryRoll extends WithId {}
 
-interface PublicationEvent {
+export interface PublicationEvent {
     publisher: string
     publicationDate: string
 }
 
-interface RecordingEvent {
+export interface RecordingEvent {
     recorded: { // R20 recorded => F31 Performance
         pianist: string;    // should point to GND
         playing: string;    // should point to GND
@@ -22,7 +22,7 @@ interface RecordingEvent {
 }
 
 // F21 Recording Work
-interface Roll {
+export interface Roll {
     catalogueNumber: string     // has inventory-no (of a certain type)
     recordingEvent: RecordingEvent
 }
@@ -100,6 +100,10 @@ export class Edition {
         else if (action.type === 'tempoAdjustment') {
             this.tempoAdjustment = undefined
         }
+
+        this.stages.forEach(stage => {
+            stage.removeEditorialAction(action);
+        })
 
         // TODO
         // this.copies.forEach(copy => {
