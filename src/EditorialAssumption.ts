@@ -116,7 +116,7 @@ export interface Edit extends EditorialAssumption<'edit'> {
 
 type DimensionMarker = {
     point: 'start' | 'end';
-    of: AnyRollEvent;
+    of: CollatedEvent;
 }
 
 type PlacementType = 'after' | 'before' | 'with';
