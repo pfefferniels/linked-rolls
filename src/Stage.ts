@@ -1,6 +1,6 @@
 import { v4 } from "uuid";
 import { CollatedEvent, Collation } from "./Collation";
-import { Edit, Intention, ObjectUsage, Stage } from "./EditorialAssumption";
+import { AnyEditorialAssumption, Edit, Intention, ObjectUsage, Stage } from "./EditorialAssumption";
 import { RollCopy } from "./RollCopy";
 
 /**
@@ -21,6 +21,15 @@ export class StageCreation {
 
     get actions() {
         return [...this.intentions, ...this.edits, this.basedOn]
+    }
+
+    removeEditorialAction(action: AnyEditorialAssumption) {
+        this.intentions = this.intentions.filter(a => a !== action)
+        this.edits = this.edits.filter(a => a !== action)
+        
+        this.created.witnesses.forEach(witness => {
+            witness.removeEditorialAction(action)
+        })
     }
 
     fillEdits(usingCollation: Collation) {
