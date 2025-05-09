@@ -44,7 +44,7 @@ const applyConjecture = (conjecture: Conjecture, to: AnyRollEvent[]) => {
         to.splice(index, 1)
     }
 
-    to.push(...conjecture.with)
+    to.push(...structuredClone(conjecture.with))
 }
 
 interface ProductionEvent {
