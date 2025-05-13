@@ -26,6 +26,7 @@ export interface RollMeasurement extends WithId {
         unit: string
     }
 
+    actor?: string // was carried out by. This should point to a person
     software: string  // used software or firmware
     date: string // L31 has starting date
 }

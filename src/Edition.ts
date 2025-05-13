@@ -3,17 +3,25 @@ import { AnyEditorialAssumption, Question, TempoAdjustment } from "./EditorialAs
 import { WithId } from "./WithId";
 import { RollCopy } from "./RollCopy";
 import { StageCreation } from "./Stage";
+import { v4 } from "uuid";
 
 export interface PreliminaryRoll extends WithId {}
 
+// E21 Person
+export interface Person extends WithId {
+    name: string // rdfs:label
+    sameAs: string[] // owl:sameAs - might link to GND, Wikidata, etc.
+    role?: string // e.g. 'pianist', 'editor', 'publisher', etc.
+}
+
 export interface PublicationEvent {
-    publisher: string
+    publisher: Person
     publicationDate: string
 }
 
 export interface RecordingEvent {
     recorded: { // R20 recorded => F31 Performance
-        pianist: string;    // should point to GND
+        pianist: Person;
         playing: string;    // should point to GND
     }
     tookPlaceAt: string // should point to geoplaces
@@ -43,7 +51,11 @@ export class Edition {
     constructor() {
         this.publicationEvent = {
             publicationDate: Date.now().toString(),
-            publisher: 'John Doe'
+            publisher: {
+                id: v4(),
+                name: 'John Doe',
+                sameAs: []
+            }
         }
         this.title = '? (Digital Edition)'
         this.license = 'Creative Commons 3.0'
@@ -51,7 +63,11 @@ export class Edition {
             catalogueNumber: 'WM ...',
             recordingEvent: {
                 recorded: {
-                    pianist: 'e.g. Alfred Grünfeld',
+                    pianist: {
+                        id: v4(),
+                        name: 'e.g. Alfred Grünfeld',
+                        sameAs: []
+                    },
                     playing: 'e.g. Schumann, Träumerei'
                 },
                 date: 'Recording date',
