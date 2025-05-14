@@ -63,7 +63,7 @@ export type EmulationOptions = {
 
 export class Emulation {
     placeTimeConversion: PlaceTimeConversion = new KinematicConversion()
-    midiEvents: AnyPerformedRollEvent[] = []
+    midiEvents: (AnyPerformedRollEvent)[] = []
 
     // sorted list of events with the negotiated assumptions already applied
     negotiatedEvents: NegotiatedEvent[] = []
@@ -144,7 +144,7 @@ export class Emulation {
     }
 
     private assignPhysicalTime(skipToFirstNote = false) {
-        if (this.negotiatedEvents.length === 0) return 
+        if (this.negotiatedEvents.length === 0) return
 
         const first = skipToFirstNote ? this.negotiatedEvents[0].horizontal.from : 0
         for (const event of this.negotiatedEvents) {
@@ -410,6 +410,31 @@ export class Emulation {
         this.midiEvents.sort((a, b) => a.at - b.at)
 
         let currentTime = 0
+        // insert metadata first
+        events.push({
+            type: 'meta',
+            subtype: 'text',
+            text: 'linked-rolls (based on midi2exp)',
+            deltaTime: 0
+        })
+
+        events.push({
+            type: 'meta',
+            subtype: 'text',
+            text: `place-time-conversion: ${this.placeTimeConversion.summary}`,
+            deltaTime: 0
+        })
+
+        for (const [key, value] of Object.entries(this.options)) {
+            events.push({
+                type: 'meta',
+                subtype: 'text',
+                text: `${key}=${value}`,
+                deltaTime: 0
+            })
+        }
+
+
         events.push({
             type: 'meta',
             subtype: 'setTempo',

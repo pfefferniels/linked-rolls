@@ -1,9 +1,14 @@
 export abstract class PlaceTimeConversion {
+    abstract get summary(): string
     abstract placeToTime(x1: number): number
     abstract timeToPlace(t1: number): number
 }
 
 export class NoAccelerationConversion implements PlaceTimeConversion {
+    get summary() {
+        return `no aceleration (${this.metersPerMinute} m/min)`
+    }
+
     metersPerMinute: number = 3; // according to most sources
 
     /**
@@ -38,6 +43,9 @@ enum AccelerationUnit {
 }
 
 export class KinematicConversion implements PlaceTimeConversion {
+    get summary() {
+        return `kinematic (acceleration: ${this.acceleration} ft/s², speed: ${this.feetPerMinute} ft/min)`
+    }
     static readonly slowSpeed = 9.46
     static readonly normalSpeed = 9.85
     static readonly stanfordAcceleration = 0.3147 // cf. https://github.com/pianoroll/midi2exp/commit/6a29060
@@ -113,6 +121,9 @@ export class KinematicConversion implements PlaceTimeConversion {
 }
 
 export class GottschewskiConversion implements PlaceTimeConversion {
+    get summary() {
+        return `Gottschewski (assuming paper thickness: ${this.paperThickness}, initial circumference: ${this.initialCircumference}, seconds per turn: ${this.secondsPerTurn})`
+    }
     paperThickness = 0.0075
     initialCircumference = 22.25
     secondsPerTurn = 4.64 // is that correct? Philips says 120 RPM (p. 113)
