@@ -129,6 +129,14 @@ export const importJsonLd = (json: any): Edition => {
             const copy = edition.copies.find(copy => copy.siglum === witness.siglum)
             return copy || witness;
         })
+
+        const original = stage.basedOn.original
+        if ('siglum' in original) {
+            const ref = edition.stages.find(creation => creation.created.siglum === original.siglum)
+            if (ref) {
+                stage.basedOn.original = ref.created
+            }
+        }
     })
 
     edition.collation.measured = edition.collation.measured.map((measured: RollCopy) => {
