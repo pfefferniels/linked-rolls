@@ -1,8 +1,7 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { Expression, ExpressionType, Note } from "./RollEvent";
-import { TempoAdjustment } from "./EditorialAssumption";
+import { Stage, TempoAdjustment } from "./EditorialAssumption";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
-import { RollCopy } from "./RollCopy";
 import { Edition } from "./Edition";
 import { CollatedEvent } from "./Collation";
 
@@ -95,14 +94,9 @@ export class Emulation {
         this.options = options
     }
 
-    /**
-     * This can be used to create something like a "Leithandschrift". 
-     * @todo: Still needs implementation of incorporating corrections 
-     * from versions that are likely deduced from the preferred source.
-     */
     private negotiateEvents(
         collatedEvents_: CollatedEvent[],
-        preferredSource: RollCopy,
+        preferredStage: Stage,
     ) {
         const collatedEvents = structuredClone(collatedEvents_)
         for (const collatedEvent of collatedEvents) {
@@ -113,12 +107,13 @@ export class Emulation {
             const mean = meanDimensionOf(collatedEvent)
             if (!mean) continue
 
-            // drop events that are not from the preferred source
-            if (!collatedEvent.wasCollatedFrom.some(event => preferredSource.hasEvent(event))) {
+            // drop events that are not included in the sources
+            // of the preferred stage
+            if (collatedEvent.wasCollatedFrom.every(event => {
+                return preferredStage.witnesses.findIndex(witness => witness.hasEvent(event)) === -1
+            })) {
                 continue
             }
-
-            // TODO: incorporate corrections from other sources
 
             const negotiated = collatedEvent.wasCollatedFrom[0] as NegotiatedEvent
             negotiated.id = collatedEvent.id
@@ -223,14 +218,14 @@ export class Emulation {
 
     emulateFromEdition(
         edition: Edition,
-        preferredSource: RollCopy,
+        preferredStage: Stage,
         skipToFirstNote: boolean = false
     ) {
         const { collation, tempoAdjustment } = edition
         const collatedEvents = collation.events
 
         this.negotiatedEvents = []
-        this.negotiateEvents(collatedEvents, preferredSource)
+        this.negotiateEvents(collatedEvents, preferredStage)
         this.findRollTempo(tempoAdjustment)
         this.applyTrackerBarExtension()
         this.assignPhysicalTime(skipToFirstNote)
