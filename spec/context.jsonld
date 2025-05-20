@@ -1,0 +1,51 @@
+{
+  "@context": {
+    "crm": "http://www.cidoc-crm.org/cidoc-crm/",
+    "lrmoo": "http://iflastandards.info/ns/lrm/lrmoo/",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "rollo": "http://linked-rolls.org/rollo/",
+    "publicationEvent": {
+      "@id": "crm:R17i_was_created_by",
+      "@type": "lrmoo:F28_Expression_Creation",
+      "@context": {
+        "publicationDate": {
+          "@id": "crm:P4_has_time-span",
+          "@type": "xsd:dateTime"
+        },
+        "publisher": {
+          "@id": "crm:P14_carried_out_by",
+          "@type": "crm:E21_Person",
+          "@context": {
+            "name": {
+              "@id": "rdfs:label",
+              "@type": "xsd:string"
+            },
+            "sameAs": {
+              "@id": "owl:sameAs",
+              "@type": "@id"
+            }
+          }
+        }
+      }
+    },
+    "title": "crm:P102_has_title",
+    "license": {
+      "@id": "crm:P104_is_subject_to",
+      "@type": "@id"
+    },
+    "copies": {
+      "@id": "lrmoo:R2_is_derivative_of",
+      "@type": "rollo:Roll_Copy",
+      "@context": {
+        "siglum": {
+          "@id": "crm:P1_is_identified_by",
+          "@type": "xsd:string"
+        }
+      }
+    },
+    "collation": "??",
+    "stages": "??",
+    "questions": "??"
+  }
+}
