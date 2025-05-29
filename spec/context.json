@@ -1,0 +1,167 @@
+{
+  "@context": {
+    "crm": "http://www.cidoc-crm.org/cidoc-crm/",
+    "lrmoo": "http://iflastandards.info/ns/lrm/lrmoo/",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "rollo": "http://linked-rolls.org/rollo/",
+    "@vocab": "http://linked-rolls.org/rollo/",
+    "C11_Derivation": {
+      "@id": "rollo:C11_Derivation",
+      "@context": {
+        "original": {
+          "@id": "rollo:P10_used",
+          "@type": "@id"
+        }
+      }
+    },
+    "C12_Stage": {
+      "@id": "rollo:C12_Stage",
+      "@context": {
+        "siglum": {
+          "@id": "rollo:P22_is_identified_by",
+          "@type": "xsd:string"
+        },
+        "witnesses": {
+          "@id": "rollo:P2i_is_witnessed_by",
+          "@type": "@id"
+        }
+      }
+    },
+    "C13_Stage_Creation": {
+      "@id": "rollo:C13_Stage_Creation",
+      "@context": {
+        "created": {
+          "@id": "rollo:P15_created_stage",
+          "@type": "rollo:C12_Stage"
+        },
+        "basedOn": {
+          "@id": "rollo:P10i_is_based_on",
+          "@type": "rollo:C11_Derivation"
+        },
+        "edits": {
+          "@id": "rollo:P16_involved_edit",
+          "@type": "rollo:C8_Edit"
+        },
+        "intentions": {
+          "@id": "rollo:P18_was_motivated_by",
+          "@type": "rollo:C9_Assumed_Intention"
+        }
+      }
+    },
+    "C1_Witness": {
+      "@context": {
+        "@base": "copy/",
+        "siglum": {
+          "@id": "rollo:P21_is_identified_by",
+          "@type": "xsd:string"
+        },
+        "productionEvent": {
+          "@id": "lrmoo:R28i_was_produced_by",
+          "@type": "lrmoo:F33_Reproduction_Event",
+          "@context": {
+            "date": {
+              "@id": "crm:P4_has_time-span",
+              "@type": "xsd:dateTime"
+            },
+            "paper": {
+              "@id": "crm:P126_employed",
+              "@type": "@id"
+            },
+            "company": {
+              "@id": "crm:P14_was_carried_out_by",
+              "@type": "@id"
+            }
+          }
+        },
+        "location": {
+          "@id": "crm:P53_has_current_or_former_location",
+          "@type": "xsd:string"
+        },
+        "measurements": {
+          "@id": "crm:P39i_was_measured_by",
+          "@type": "rollo:RollMeasurement",
+          "@context": {
+            "date": {
+              "@id": "crm:P4_has_time-span",
+              "@type": "xsd:dateTime"
+            },
+            "software": {
+              "@id": "crmdig:L23_used_software_or_firmware",
+              "@type": "@id"
+            }
+          }
+        },
+        "events": {
+          "@id": "crm:P128_carries",
+          "@context": {
+            "measurement": {
+              "@id": "crmdig:L20i_was_created_by",
+              "@type": "@id"
+            },
+            "annotates": {
+              "@id": "crmdig:L43_annotates",
+              "@type": "@id"
+            },
+            "horizontal": {
+              "@id": "crm:P43_has_dimension",
+              "@type": "rollo:C5_Event_Span"
+            },
+            "vertical": {
+              "@id": "crm:P43_has_dimension",
+              "@type": "rollo:C5_Event_Span"
+            }
+          }
+        }
+      }
+    },
+    "stamp": {
+      "@type": "rollo:C7_Stamp",
+      "@context": {
+        "text": {
+          "@id": "rollo:has_text"
+        }
+      }
+    },
+    "publicationEvent": {
+      "@id": "lrmoo:R17i_was_created_by",
+      "@type": "lrmoo:F28_Expression_Creation",
+      "@context": {
+        "publicationDate": {
+          "@id": "crm:P4_has_time-span",
+          "@type": "xsd:dateTime"
+        },
+        "publisher": {
+          "@id": "crm:P14_carried_out_by",
+          "@type": "crm:E21_Person",
+          "@context": {
+            "name": {
+              "@id": "rdfs:label",
+              "@type": "xsd:string"
+            },
+            "sameAs": {
+              "@id": "owl:sameAs",
+              "@type": "@id"
+            }
+          }
+        }
+      }
+    },
+    "title": "crm:P102_has_title",
+    "license": {
+      "@id": "crm:P104_is_subject_to",
+      "@type": "@id"
+    },
+    "copies": {
+      "@id": "lrmoo:R2_is_derivative_of",
+      "@type": "rollo:C1_Witness"
+    },
+    "collation": "??",
+    "stages": {
+      "@id": "has_stage",
+      "@type": "rollo:C13_Stage_Creation"
+    },
+    "questions": "??"
+  }
+}
+
