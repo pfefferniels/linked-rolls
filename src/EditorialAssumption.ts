@@ -55,7 +55,8 @@ export function isEditorialAssumption(obj: any): obj is AnyEditorialAssumption {
 
 const emendationMotivation = [
     'failed-perforation',
-    'torn-perforation'
+    'torn-perforation',
+    'vertical-displacement'
 ] as const 
 
 export type EmendationMotivation = typeof emendationMotivation[number];
