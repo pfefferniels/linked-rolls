@@ -53,10 +53,20 @@ export function isEditorialAssumption(obj: any): obj is AnyEditorialAssumption {
     return obj && typeof obj === 'object' && 'type' in obj && 'certainty' in obj;
 }
 
-export interface Conjecture extends EditorialAssumption<'conjecture'> {
-    replaced: AnyRollEvent[];
-    with: AnyRollEvent[];
-    note?: string
+const emendationMotivation = [
+    'failed-perforation',
+    'torn-perforation'
+] as const 
+
+export type EmendationMotivation = typeof emendationMotivation[number];
+
+/**
+ * Modelled on E13 Attribute Assignment
+ */
+export interface Emendation extends EditorialAssumption<'emendation'>, WithNote {
+    replaced: AnyRollEvent[]; // P140 assigned attribute to
+    with: AnyRollEvent[]; // P141 assigned
+    motivation?: EmendationMotivation
 }
 
 /**
@@ -67,6 +77,7 @@ export interface Hand extends WithId {
     date: string
     note?: string
     authorised?: boolean
+    assignments: HandAssignment[];
 }
 
 /**
@@ -167,7 +178,7 @@ export interface Question extends EditorialAssumption<'question'> {
 }
 
 export type AnyEditorialAssumption =
-    Conjecture |
+    Emendation |
     Edit |
     Question |
     HandAssignment |

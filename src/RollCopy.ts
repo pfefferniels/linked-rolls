@@ -3,7 +3,7 @@ import { v4 } from "uuid";
 import { RollMeasurement } from "./Measurement";
 import { ConditionState } from "./Condition";
 import { AnyRollEvent, Expression, HorizontalSpan, Note } from "./RollEvent";
-import { AnyEditorialAssumption, Conjecture, Hand, HandAssignment, Shift, Stretch } from "./EditorialAssumption";
+import { AnyEditorialAssumption, Emendation, Hand, HandAssignment, Shift, Stretch } from "./EditorialAssumption";
 import { read } from "midifile-ts";
 import { asSpans } from "./asMIDISpans";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
@@ -32,10 +32,10 @@ const applyStretch = (stretch: Stretch, to: AnyRollEvent[]) => {
     }
 }
 
-const applyConjecture = (conjecture: Conjecture, to: AnyRollEvent[]) => {
-    if (!conjecture.with.length || !conjecture.replaced.length) return
+const applyEmendation = (emendation: Emendation, to: AnyRollEvent[]) => {
+    if (!emendation.with.length || !emendation.replaced.length) return
 
-    for (const toDelete of conjecture.replaced) {
+    for (const toDelete of emendation.replaced) {
         const index = to.findIndex(e => e.id === toDelete.id)
         if (index === -1) {
             continue
@@ -44,7 +44,7 @@ const applyConjecture = (conjecture: Conjecture, to: AnyRollEvent[]) => {
         to.splice(index, 1)
     }
 
-    to.push(...structuredClone(conjecture.with))
+    to.push(...structuredClone(emendation.with))
 }
 
 interface ProductionEvent {
@@ -71,7 +71,7 @@ export class RollCopy {
 
     hands: Hand[]
     additions: HandAssignment[]
-    conjectures: Conjecture[]
+    emendations: Emendation[]
 
     private modifiedEvents: AnyRollEvent[]
 
@@ -89,7 +89,7 @@ export class RollCopy {
         this.modifiedEvents = []
         this.hands = []
         this.additions = []
-        this.conjectures = []
+        this.emendations = []
         this.measurements = []
         this.events = []
     }
@@ -109,7 +109,7 @@ export class RollCopy {
             shift: this.shift,
             hands: this.hands,
             additions: this.additions,
-            conjectures: this.conjectures
+            emendations: this.emendations
         }
     }
 
@@ -287,8 +287,8 @@ export class RollCopy {
                 this.shift = action
                 didChange = true
             }
-            else if (action.type === 'conjecture' && action.replaced.every(e => this.hasEventId(e.id))) {
-                this.conjectures.push(action)
+            else if (action.type === 'emendation' && action.replaced.every(e => this.hasEventId(e.id))) {
+                this.emendations.push(action)
                 didChange = true
             }
             else if (action.type === 'handAssignment' && action.target.every(e => this.hasEventId(e.id))) {
@@ -350,7 +350,7 @@ export class RollCopy {
     /**
      * This method creates a new array of events with (1)
      * all handwritten textes removed, (2) all unauthorized
-     * modifications removed, (3) all editorial conjectures
+     * modifications removed, (3) all editorial emendations
      * applied, (4) all covers applied, (5) the assumed 
      * stretch and shift applied.
      * 
@@ -370,8 +370,8 @@ export class RollCopy {
         // possibly unauthorized covers have been removed
         this.applyCovers()
 
-        for (const conjecture of this.conjectures) {
-            applyConjecture(conjecture, this.modifiedEvents)
+        for (const emendation of this.emendations) {
+            applyEmendation(emendation, this.modifiedEvents)
         }
 
         if (this.stretch) applyStretch(this.stretch, this.modifiedEvents)
@@ -475,9 +475,9 @@ export class RollCopy {
             const index = this.additions.indexOf(assumption)
             if (index !== -1) this.additions.splice(index, 1)
         }
-        else if (assumption.type === 'conjecture') {
-            const index = this.conjectures.indexOf(assumption)
-            if (index !== -1) this.conjectures.splice(index, 1)
+        else if (assumption.type === 'emendation') {
+            const index = this.emendations.indexOf(assumption)
+            if (index !== -1) this.emendations.splice(index, 1)
         }
         else if (assumption.type === 'stretch') {
             this.stretch = undefined
@@ -495,7 +495,7 @@ export class RollCopy {
     get actions() {
         const result: AnyEditorialAssumption[] = [
             ...this.additions,
-            ...this.conjectures,
+            ...this.emendations,
         ]
 
         if (this.stretch) result.push(this.stretch)
