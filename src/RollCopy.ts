@@ -3,7 +3,7 @@ import { v4 } from "uuid";
 import { RollMeasurement } from "./Measurement";
 import { ConditionState } from "./Condition";
 import { AnyRollEvent, Expression, HorizontalSpan, Note } from "./RollEvent";
-import { AnyEditorialAssumption, Emendation, Hand, HandAssignment, Shift, Stretch } from "./EditorialAssumption";
+import { AnyEditorialAssumption, Hand, HandAssignment, Constraint, Shift, Stretch, DimensionMarker, Replacement, AnyEmendation } from "./EditorialAssumption";
 import { read } from "midifile-ts";
 import { asSpans } from "./asMIDISpans";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
@@ -32,10 +32,10 @@ const applyStretch = (stretch: Stretch, to: AnyRollEvent[]) => {
     }
 }
 
-const applyEmendation = (emendation: Emendation, to: AnyRollEvent[]) => {
-    if (!emendation.with.length || !emendation.replaced.length) return
+const applyReplacement = (replacement: Replacement, to: AnyRollEvent[]) => {
+    if (!replacement.with.length || !replacement.replaced.length) return
 
-    for (const toDelete of emendation.replaced) {
+    for (const toDelete of replacement.replaced) {
         const index = to.findIndex(e => e.id === toDelete.id)
         if (index === -1) {
             continue
@@ -44,7 +44,51 @@ const applyEmendation = (emendation: Emendation, to: AnyRollEvent[]) => {
         to.splice(index, 1)
     }
 
-    to.push(...structuredClone(emendation.with))
+    to.push(...structuredClone(replacement.with))
+}
+
+const applyConstraint = (constraint: Constraint, modifiedEvents: AnyRollEvent[]) => {
+    const resolve = (marker: DimensionMarker | { number: number }) => {
+        if ('number' in marker) return marker.number
+        return marker.point === 'start'
+            ? marker.of.horizontal.from
+            : marker.of.horizontal.to
+    }
+
+    const affected = (constraint: Constraint) => {
+        return modifiedEvents.filter(event => event.id === constraint.placed.of.id)
+    }
+
+    const shift = (span: HorizontalSpan, point: 'start' | 'end', delta: number) => {
+        if (point === 'start') {
+            span.from += delta
+        }
+        else {
+            span.to += delta
+        }
+    }
+
+    const point = resolve(constraint.placed)
+    const reference = resolve(constraint.relativeTo)
+
+    if (constraint.placement === 'after' && point < reference) {
+        const delta = reference - point
+        affected(constraint).forEach(event => {
+            shift(event.horizontal, constraint.placed.point, delta)
+        })
+    }
+    else if (constraint.placement === 'before' && point > reference) {
+        const delta = point - reference
+        affected(constraint).forEach(event => {
+            shift(event.horizontal, constraint.placed.point, -delta)
+        })
+    }
+    else if (constraint.placement === 'with' && point !== reference) {
+        const delta = reference - point
+        affected(constraint).forEach(event => {
+            shift(event.horizontal, constraint.placed.point, delta)
+        })
+    }
 }
 
 interface ProductionEvent {
@@ -71,7 +115,7 @@ export class RollCopy {
 
     hands: Hand[]
     additions: HandAssignment[]
-    emendations: Emendation[]
+    emendations: AnyEmendation[]
 
     private modifiedEvents: AnyRollEvent[]
 
@@ -287,7 +331,11 @@ export class RollCopy {
                 this.shift = action
                 didChange = true
             }
-            else if (action.type === 'emendation' && action.replaced.every(e => this.hasEventId(e.id))) {
+            else if (action.type === 'replacement' && action.replaced.every(e => this.hasEventId(e.id))) {
+                this.emendations.push(action)
+                didChange = true
+            }
+            else if (action.type === 'constraint' && action.placed.of && this.hasEventId(action.placed.of.id)) {
                 this.emendations.push(action)
                 didChange = true
             }
@@ -346,7 +394,6 @@ export class RollCopy {
         }
     }
 
-
     /**
      * This method creates a new array of events with (1)
      * all handwritten textes removed, (2) all unauthorized
@@ -371,7 +418,12 @@ export class RollCopy {
         this.applyCovers()
 
         for (const emendation of this.emendations) {
-            applyEmendation(emendation, this.modifiedEvents)
+            if (emendation.type === 'constraint') {
+                applyConstraint(emendation, this.modifiedEvents)
+            }
+            else if (emendation.type === 'replacement') {
+                applyReplacement(emendation, this.modifiedEvents)
+            }
         }
 
         if (this.stretch) applyStretch(this.stretch, this.modifiedEvents)
@@ -475,7 +527,7 @@ export class RollCopy {
             const index = this.additions.indexOf(assumption)
             if (index !== -1) this.additions.splice(index, 1)
         }
-        else if (assumption.type === 'emendation') {
+        else if (assumption.type === 'replacement' || assumption.type === 'constraint') {
             const index = this.emendations.indexOf(assumption)
             if (index !== -1) this.emendations.splice(index, 1)
         }

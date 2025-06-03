@@ -61,14 +61,35 @@ const emendationMotivation = [
 
 export type EmendationMotivation = typeof emendationMotivation[number];
 
-/**
- * Modelled on E13 Attribute Assignment
- */
-export interface Emendation extends EditorialAssumption<'emendation'>, WithNote {
+export interface Emendation<T> extends EditorialAssumption<T>, WithNote {
+    motivation: EmendationMotivation;
+}
+
+export interface Replacement extends Emendation<'replacement'>, WithNote {
     replaced: AnyRollEvent[]; // P140 assigned attribute to
     with: AnyRollEvent[]; // P141 assigned
-    motivation?: EmendationMotivation
 }
+
+export type DimensionMarker = {
+    point: 'start' | 'end';
+    of: AnyRollEvent;
+}
+
+type PlacementType = 'after' | 'before' | 'with';
+
+// reo:Constraint, subclass of E13 Attribute Assignment
+export interface Constraint extends Emendation<'constraint'> {
+    placed: DimensionMarker;
+    placement: PlacementType;
+    relativeTo: DimensionMarker | {
+        number: number;
+        unit: string 
+    };
+}
+
+export type AnyEmendation = 
+    | Constraint
+    | Replacement
 
 /**
  * This type is modelled on E11 Modification
@@ -126,23 +147,6 @@ export interface Edit extends EditorialAssumption<'edit'> {
     delete?: CollatedEvent[];
 }
 
-type DimensionMarker = {
-    point: 'start' | 'end';
-    of: AnyRollEvent;
-}
-
-type PlacementType = 'after' | 'before' | 'with';
-
-// rolo:Horizontal Placement, subclass of E13 Attribute Assignment
-export interface HorizontalPlacement extends EditorialAssumption<'horizontalPlacement'> {
-    placed: DimensionMarker;
-    placement: PlacementType;
-    relativeTo: DimensionMarker | {
-        number: string;
-        unit: string 
-    };
-}
-
 export interface TempoAdjustment extends EditorialAssumption<'tempoAdjustment'> {
     adjusts: string;
     startsWith: number;
@@ -179,12 +183,11 @@ export interface Question extends EditorialAssumption<'question'> {
 }
 
 export type AnyEditorialAssumption =
-    Emendation |
+    AnyEmendation |
     Edit |
     Question |
     HandAssignment |
     TempoAdjustment |
-    HorizontalPlacement |
     Stretch |
     Shift |
     ObjectUsage |
