@@ -1,1 +1,1 @@
-export { default as jsonLdContext } from '../spec/context.json'
+export { default as jsonLdContext } from './spec/context.json'

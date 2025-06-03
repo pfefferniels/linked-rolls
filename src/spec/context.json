@@ -4,48 +4,74 @@
     "lrmoo": "http://iflastandards.info/ns/lrm/lrmoo/",
     "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
     "owl": "http://www.w3.org/2002/07/owl#",
-    "rollo": "http://linked-rolls.org/rollo/",
-    "@vocab": "http://linked-rolls.org/rollo/",
+    "reo": "http://linked-rolls.org/reo/",
+    "@vocab": "http://linked-rolls.org/reo/",
     "C11_Derivation": {
-      "@id": "rollo:C11_Derivation",
+      "@id": "reo:C11_Derivation",
       "@context": {
         "original": {
-          "@id": "rollo:P10_used",
+          "@id": "reo:P10_used",
           "@type": "@id"
         }
       }
     },
     "C12_Stage": {
-      "@id": "rollo:C12_Stage",
+      "@id": "reo:C12_Stage",
       "@context": {
         "siglum": {
-          "@id": "rollo:P22_is_identified_by",
+          "@id": "reo:P22_is_identified_by",
           "@type": "xsd:string"
         },
         "witnesses": {
-          "@id": "rollo:P2i_is_witnessed_by",
+          "@id": "reo:P2i_is_witnessed_by",
           "@type": "@id"
         }
       }
     },
     "C13_Stage_Creation": {
-      "@id": "rollo:C13_Stage_Creation",
+      "@id": "reo:C13_Stage_Creation",
       "@context": {
         "created": {
-          "@id": "rollo:P15_created_stage",
-          "@type": "rollo:C12_Stage"
+          "@id": "reo:P15_created_stage",
+          "@type": "reo:C12_Stage"
         },
         "basedOn": {
-          "@id": "rollo:P10i_is_based_on",
-          "@type": "rollo:C11_Derivation"
+          "@id": "reo:P10i_is_based_on",
+          "@type": "reo:C11_Derivation"
         },
         "edits": {
-          "@id": "rollo:P16_involved_edit",
-          "@type": "rollo:C8_Edit"
+          "@id": "reo:P16_involved_edit",
+          "@type": "reo:C8_Edit"
         },
         "intentions": {
-          "@id": "rollo:P18_was_motivated_by",
-          "@type": "rollo:C9_Assumed_Intention"
+          "@id": "reo:P18_was_motivated_by",
+          "@type": "reo:C9_Assumed_Intention"
+        }
+      }
+    },
+    "C9_Assument_Intention": {
+      "@id": "reo:C9_Assumed_Intention",
+      "@context": {
+        "description": {
+          "@id": "reo:P23_has_description",
+          "@type": "xsd:string"
+        },
+        "belief": {
+          "@id": "crminf:J4i_is_subject_to",
+          "@type": "crminf:I2_Belief"
+        }
+      }
+    },
+    "crminf:I2_Belief": {
+      "@id": "crminf:I2_Belief",
+      "@context": {
+        "certainty": {
+          "@id": "crminf:J5_holds_to_be",
+          "@type": "xsd:string"
+        },
+        "reasons": {
+          "@id": "crminf:J2i_was_concluded_by",
+          "@type": "crminf:Argumentation"
         }
       }
     },
@@ -53,7 +79,7 @@
       "@context": {
         "@base": "copy/",
         "siglum": {
-          "@id": "rollo:P21_is_identified_by",
+          "@id": "reo:P21_is_identified_by",
           "@type": "xsd:string"
         },
         "productionEvent": {
@@ -80,7 +106,7 @@
         },
         "measurements": {
           "@id": "crm:P39i_was_measured_by",
-          "@type": "rollo:RollMeasurement",
+          "@type": "reo:RollMeasurement",
           "@context": {
             "date": {
               "@id": "crm:P4_has_time-span",
@@ -105,21 +131,21 @@
             },
             "horizontal": {
               "@id": "crm:P43_has_dimension",
-              "@type": "rollo:C5_Event_Span"
+              "@type": "reo:C5_Event_Span"
             },
             "vertical": {
               "@id": "crm:P43_has_dimension",
-              "@type": "rollo:C5_Event_Span"
+              "@type": "reo:C5_Event_Span"
             }
           }
         }
       }
     },
     "stamp": {
-      "@type": "rollo:C7_Stamp",
+      "@type": "reo:C7_Stamp",
       "@context": {
         "text": {
-          "@id": "rollo:has_text"
+          "@id": "reo:has_text"
         }
       }
     },
@@ -154,14 +180,14 @@
     },
     "copies": {
       "@id": "lrmoo:R2_is_derivative_of",
-      "@type": "rollo:C1_Witness"
+      "@type": "reo:C1_Witness"
     },
-    "collation": "??",
+    "collation": "crm:P9_consists_of",
     "stages": {
-      "@id": "has_stage",
-      "@type": "rollo:C13_Stage_Creation"
+      "@id": "crm:P9_consists_of",
+      "@type": "reo:C13_Stage_Creation"
     },
-    "questions": "??"
+    "questions": "crm:P9_consists_of"
   }
 }
 

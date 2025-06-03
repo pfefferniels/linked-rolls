@@ -1,0 +1,165 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.org/schemas/roll.schema.json",
+  "title": "Linked Rolls Edition",
+  "type": "object",
+  "required": [
+    "@type",
+    "publicationEvent",
+    "title",
+    "license",
+    "roll",
+    "collation"
+  ],
+  "properties": {
+    "@context": {
+      "type": "string",
+      "format": "uri",
+      "const": "https://linked-rolls.org/rollo/1.0/edition.jsonld",
+      "description": "JSON-LD context URL"
+    },
+    "@type": {
+      "type": "string",
+      "const": "Edition",
+      "description": "JSON-LD type (optional, must equal to 'Edition')"
+    },
+    "publicationEvent": {
+      "$ref": "#/$defs/PublicationEvent"
+    },
+    "title": {
+      "type": "string",
+      "description": "Title of the edition"
+    },
+    "license": {
+      "type": "string",
+      "format": "uri",
+      "description": "License URL"
+    },
+    "roll": {
+      "$ref": "#/$defs/Roll"
+    },
+    "collation": {
+      "type": "object",
+      "required": ["events"],
+      "properties": {
+        "events": {
+          "type": "array",
+          "description": "List of collation events",
+          "items": { "$ref": "#/$defs/CollatedEvent" }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "PublicationEvent": {
+      "type": "object",
+      "required": ["publicationDate", "publisher"],
+      "properties": {
+        "publicationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date of publication (YYYY-MM-DD)"
+        },
+        "publisher": {
+          "$ref": "#/$defs/Actor"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Actor": {
+      "type": "object",
+      "required": ["@id", "name"],
+      "properties": {
+        "@id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier of the actor"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the actor (person or organization)"
+        },
+        "sameAs": {
+          "type": "array",
+          "description": "URIs with alternate identifiers",
+          "items": { "type": "string", "format": "uri" }
+        }
+      },
+      "description": "This resolves to E39 Actor",
+      "additionalProperties": false
+    },
+    "Roll": {
+      "type": "object",
+      "required": ["catalogueNumber", "recordingEvent"],
+      "properties": {
+        "catalogueNumber": {
+          "type": "string",
+          "description": "Catalogue number of the piano roll"
+        },
+        "recordingEvent": {
+          "$ref": "#/$defs/RecordingEvent"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RecordingEvent": {
+      "type": "object",
+      "required": ["date", "recorded", "tookPlaceAt"],
+      "properties": {
+        "date": {
+          "type": "string",
+          "pattern": "^\\d{1,2}\\.\\d{1,2}\\.\\d{4}$",
+          "description": "Original recording date (e.g. “20.1.1905”)"
+        },
+        "recorded": {
+          "type": "object",
+          "required": ["pianist", "playing"],
+          "properties": {
+            "pianist": { "$ref": "#/$defs/Actor" },
+            "playing": {
+              "type": "string",
+              "description": "Description of the musical work played"
+            }
+          },
+          "additionalProperties": false
+        },
+        "tookPlaceAt": {
+          "type": "string",
+          "description": "Location where the recording occurred"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CollatedEvent": {
+      "type": "object",
+      "required": ["@id", "wasCollatedFrom"],
+      "properties": {
+        "@id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Identifier of the collated event"
+        },
+        "wasCollatedFrom": {
+          "type": "array",
+          "description": "List of source event identifiers used for collation",
+          "items": { "$ref": "#/$defs/EntityReference" },
+          "minItems": 1
+        },
+        "witnesses": {
+          "type": "array",
+          "description": "List of IDs referencing Witness objects",
+          "items": { "$ref": "#/$defs/EntityReference" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "EntityReference": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Must match the @id of another entity (e.g. a Witness) defined elsewhere in this document",
+      "$comment": "Intended as a forward-reference to objects with that exact @id"
+    }
+  }
+}
