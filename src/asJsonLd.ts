@@ -55,6 +55,9 @@ const asJsonLdEntity = (obj: object) => {
         else if (key === 'id') {
             result['@id'] = value
         }
+        else if (key === 'base') {
+            result['@base'] = value
+        }
         else if (Array.isArray(value)) {
             result[key] = value.map(v => (typeof v === 'object') ? asJsonLdEntity(v) : v)
         }

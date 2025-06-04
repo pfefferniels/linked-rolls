@@ -36,6 +36,7 @@ export interface Roll {
 }
 
 export class Edition {
+    '@base': string = 'https://example.org/'
     publicationEvent: PublicationEvent
     title: string
     license: string

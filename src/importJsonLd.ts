@@ -75,7 +75,11 @@ const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
     for (const [key, value] of Object.entries(json)) {
         if (key === '@id') {
             result['id'] = value;
-        } else if ([...referenceTypes, 'measurement', 'original'].includes(key)) {
+        }
+        else if (key === '@base') {
+            result['base'] = value;
+        }
+        else if ([...referenceTypes, 'measurement', 'original'].includes(key)) {
             if (Array.isArray(value) && value.every(e => typeof e === 'string')) {
                 result[key] = fromIDArray(value, entitiesWithId)
             }
@@ -87,9 +91,11 @@ const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
                     console.warn('Could not find entity with id', value);
                 }
             }
-        } else if (key === 'hand' && typeof value === 'string') {
+        }
+        else if (key === 'hand' && typeof value === 'string') {
             result[key] = entitiesWithId.get(value)
-        } else if (Array.isArray(value)) {
+        }
+        else if (Array.isArray(value)) {
             result[key] = value.map(v => {
                 if (typeof v === 'string') {
                     return v;
@@ -98,7 +104,8 @@ const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
                     return fromJsonLdEntity(v, entitiesWithId)
                 }
             })
-        } else if (typeof value === 'object') {
+        }
+        else if (typeof value === 'object') {
             result[key] = fromJsonLdEntity(value, entitiesWithId);
         }
         else {
