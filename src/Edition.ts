@@ -8,7 +8,7 @@ import { v4 } from "uuid";
 export interface PreliminaryRoll extends WithId {}
 
 // E21 Person
-export interface Person extends WithId {
+export interface Person extends Partial<WithId> {
     name: string // rdfs:label
     sameAs: string[] // owl:sameAs - might link to GND, Wikidata, etc.
     role?: string // e.g. 'pianist', 'editor', 'publisher', etc.
@@ -64,7 +64,6 @@ export class Edition {
             recordingEvent: {
                 recorded: {
                     pianist: {
-                        id: v4(),
                         name: 'e.g. Alfred Grünfeld',
                         sameAs: []
                     },
