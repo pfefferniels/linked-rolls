@@ -53,7 +53,7 @@ export function isEditorialAssumption(obj: any): obj is AnyEditorialAssumption {
     return obj && typeof obj === 'object' && 'type' in obj && 'certainty' in obj;
 }
 
-const emendationMotivation = [
+export const emendationMotivation = [
     'failed-perforation',
     'torn-perforation',
     'vertical-displacement'
