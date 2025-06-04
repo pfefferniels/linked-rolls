@@ -2,7 +2,6 @@ import { RollCopy } from "./RollCopy";
 import { WithId } from "./WithId";
 import { AnyRollEvent } from "./RollEvent";
 import { CollatedEvent } from "./Collation";
-import { PreliminaryRoll } from "./Edition";
 
 export type Certainty = 'true' | 'likely' | 'possible' | 'unlikely' | 'false';
 
@@ -114,7 +113,7 @@ export interface HandAssignment extends EditorialAssumption<'handAssignment'> {
 // rollo:Object Usage, sub class of E13 Attribute Assignment
 // with assigned attribute of type = P16 used specific object
 export interface ObjectUsage extends EditorialAssumption<'objectUsage'> {
-    original: PreliminaryRoll | Stage // P141 assigned
+    original: Stage // P141 assigned
 }
 
 export interface Stage {

@@ -1,11 +1,9 @@
 import { collateRolls, Collation } from "./Collation";
-import { AnyEditorialAssumption, Question, TempoAdjustment } from "./EditorialAssumption";
+import { AnyEditorialAssumption, Question, Stage, TempoAdjustment } from "./EditorialAssumption";
 import { WithId } from "./WithId";
 import { RollCopy } from "./RollCopy";
 import { StageCreation } from "./Stage";
 import { v4 } from "uuid";
-
-export interface PreliminaryRoll extends WithId {}
 
 // E21 Person
 export interface Person extends Partial<WithId> {
@@ -26,7 +24,7 @@ export interface RecordingEvent {
     }
     tookPlaceAt: string // should point to geoplaces
     date: string
-    created?: PreliminaryRoll
+    created?: Stage
 }
 
 // F21 Recording Work
@@ -130,7 +128,10 @@ export class Edition {
     get actions() {
         const result: AnyEditorialAssumption[] = [
             ...this.questions,
-            ...this.stages.map(stage => stage.actions).flat()
+            ...this.stages
+                .map(stage => stage.actions)
+                .flat()
+                .filter(action => !!action)
         ]
         if (this.tempoAdjustment) result.push(this.tempoAdjustment)
 

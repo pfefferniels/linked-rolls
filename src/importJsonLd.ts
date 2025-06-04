@@ -1,4 +1,3 @@
-import { v4 } from "uuid";
 import { Edition } from "./Edition";
 import { RollCopy } from "./RollCopy";
 import { StageCreation } from "./Stage";
@@ -60,12 +59,7 @@ const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
             result = new RollCopy();
         }
         else if (value === 'StageCreation') {
-            result = new StageCreation({ siglum: '', witnesses: [] }, {
-                type: 'objectUsage',
-                certainty: 'true',
-                id: v4(),
-                original: { id: '[unknown]' },
-            });
+            result = new StageCreation({ siglum: '', witnesses: [] });
         }
         else {
             result['type'] = value;
@@ -137,13 +131,13 @@ export const importJsonLd = (json: any): Edition => {
             return copy || witness;
         })
 
+        if (!stage.basedOn) return;
+
         const original = stage.basedOn.original
-        if ('siglum' in original) {
-            const ref = edition.stages.find(creation => creation.created.siglum === original.siglum)
-            if (ref) {
-                stage.basedOn.original = ref.created
-            }
-        }
+        const ref = edition.stages.find(creation => creation.created.siglum === original.siglum)
+        if (!ref) return
+
+        stage.basedOn.original = ref.created
     })
 
     edition.collation.measured = edition.collation.measured.map((measured: RollCopy) => {

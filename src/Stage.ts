@@ -8,11 +8,11 @@ import { RollCopy } from "./RollCopy";
  */
 export class StageCreation {
     created: Stage; // R17 created
-    basedOn: ObjectUsage; // P140i was attributed by
+    basedOn?: ObjectUsage; // if no derivation is defined, it is assumed that this stage represents the mother roll
     edits: Edit[]; // P9 consists of
     intentions: Intention[]
 
-    constructor(stage: Stage, basedOn: ObjectUsage) {
+    constructor(stage: Stage, basedOn?: ObjectUsage) {
         this.created = stage
         this.basedOn = basedOn
         this.edits = []
@@ -33,7 +33,7 @@ export class StageCreation {
     }
 
     fillEdits(usingCollation: Collation) {
-        if (!('witnesses' in this.basedOn.original)) return
+        if (!this.basedOn) return
 
         // inserts: collated events that contain events
         // belonging to witnesses of the current stage,
@@ -45,7 +45,7 @@ export class StageCreation {
             )
 
             let containedInAncestor = collatedEvent.wasCollatedFrom.some(rollEvent => (
-                (this.basedOn.original as Stage).witnesses.some(witness => witness.hasEvent(rollEvent))
+                this.basedOn!.original.witnesses.some(witness => witness.hasEvent(rollEvent))
             ))
 
             if (!containedInWitnesses && containedInAncestor) {
