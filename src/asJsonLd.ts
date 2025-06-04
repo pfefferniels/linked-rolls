@@ -55,9 +55,6 @@ const asJsonLdEntity = (obj: object) => {
         else if (key === 'id') {
             result['@id'] = value
         }
-        else if (key === 'base') {
-            result['@base'] = value
-        }
         else if (Array.isArray(value)) {
             result[key] = value.map(v => (typeof v === 'object') ? asJsonLdEntity(v) : v)
         }
@@ -74,7 +71,12 @@ const asJsonLdEntity = (obj: object) => {
 
 export const asJsonLd = (edition: Edition) => {
     const result: any = {
-        '@context': 'https://linked-rolls.org/rollo/1.0/edition.jsonld',
+        '@context': [
+            'https://linked-rolls.org/rollo/1.0/edition.jsonld',
+            {
+                '@base': edition.base
+            }
+        ],
         '@type': "Edition",
         ...asJsonLdEntity(edition)
     }

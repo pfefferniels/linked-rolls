@@ -76,9 +76,6 @@ const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
         if (key === '@id') {
             result['id'] = value;
         }
-        else if (key === '@base') {
-            result['base'] = value;
-        }
         else if ([...referenceTypes, 'measurement', 'original'].includes(key)) {
             if (Array.isArray(value) && value.every(e => typeof e === 'string')) {
                 result[key] = fromIDArray(value, entitiesWithId)
@@ -119,6 +116,9 @@ const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
 export const importJsonLd = (json: any): Edition => {
     const entitiesWithId = collectEntitiesWithId(json)
     const edition = fromJsonLdEntity(json, entitiesWithId) as Edition;
+    if (Array.isArray(json['@context'])) {
+        edition.base = json['@context'].find((c: any) => c['@base'])?.['@base'] || '';
+    }
 
     edition.copies.forEach(copy => copy.constituteEvents())
 
