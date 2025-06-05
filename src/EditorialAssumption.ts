@@ -112,12 +112,12 @@ export interface HandAssignment extends EditorialAssumption<'handAssignment'> {
 
 // rollo:Object Usage, sub class of E13 Attribute Assignment
 // with assigned attribute of type = P16 used specific object
-export interface ObjectUsage extends EditorialAssumption<'objectUsage'> {
+export interface Derivation extends EditorialAssumption<'derivation'> {
     original: Stage // P141 assigned
 }
 
 export interface Stage {
-    siglum: string; // P149 is identified by (Conceptual Object Apellation)
+    siglum: string; // P149 is identified by
     witnesses: RollCopy[]; // R7i has example
 }
 
@@ -189,6 +189,6 @@ export type AnyEditorialAssumption =
     TempoAdjustment |
     Stretch |
     Shift |
-    ObjectUsage |
+    Derivation |
     Intention;
 
