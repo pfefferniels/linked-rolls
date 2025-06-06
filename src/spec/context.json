@@ -126,7 +126,7 @@
               "@type": "@id"
             },
             "annotates": {
-              "@id": "crmdig:L43_annotates",
+              "@id": "crm:P62i_is_depicted_by",
               "@type": "@id"
             },
             "horizontal": {
