@@ -166,3 +166,155 @@ export interface Collation {
     tolerance: number // L13 used parameters
     events: CollatedEvent[] // L20 created
 }
+
+/**
+ * Computes a pairwise distance matrix from raw data with missing values,
+ * using Euclidean distance and a fixed penalty for missing vs. present.
+ */
+function computeDistanceMatrix(
+    data: Array<Array<number | null>>,
+    penalty: number
+): number[][] {
+    const nTaxa = data.length;
+    if (nTaxa === 0) {
+        return [];
+    }
+    const nChars = data[0].length;
+
+    // Initialize an N×N matrix filled with zeros
+    const distMatrix: number[][] = Array.from({ length: nTaxa }, () =>
+        Array(nTaxa).fill(0)
+    );
+
+    // Helper to compute distance between two rows (i, j)
+    function distanceBetween(
+        rowA: Array<number | null>,
+        rowB: Array<number | null>
+    ): number {
+        let sumSq = 0;
+        for (let k = 0; k < nChars; k++) {
+            const a = rowA[k];
+            const b = rowB[k];
+            if (a === null && b === null) {
+                // both missing: contribute 0
+                continue;
+            } else if (a === null || b === null) {
+                // one missing, one present: add penalty^2
+                sumSq += penalty * penalty;
+            } else {
+                // both present: add squared difference
+                const diff = a - b;
+                sumSq += diff * diff;
+            }
+        }
+        return Math.sqrt(sumSq);
+    }
+
+    for (let i = 0; i < nTaxa; i++) {
+        for (let j = i + 1; j < nTaxa; j++) {
+            const d = distanceBetween(data[i], data[j]);
+            distMatrix[i][j] = d;
+            distMatrix[j][i] = d;
+        }
+    }
+
+    return distMatrix;
+}
+
+export const generateNexusDistanceMatrix = (collation: Collation) => {
+    // prepare the data
+    const data: Array<Array<number | null>> = []
+    const numberOfWitnesses = collation.measured.length
+
+    const numEvents = collation.events.length
+    // Build data so rows = witnesses, columns = events
+    for (let witnessIndex = 0; witnessIndex < numberOfWitnesses; witnessIndex++) {
+        const row: Array<number | null> = new Array(numEvents).fill(null)
+        collation.events.forEach((event, eventIndex) => {
+            const avgFrom =
+                event.wasCollatedFrom.reduce((acc, e) => acc + e.horizontal.from, 0) /
+                event.wasCollatedFrom.length
+            const avgTo =
+                event.wasCollatedFrom.reduce((acc, e) => acc + e.horizontal.to, 0) /
+                event.wasCollatedFrom.length
+
+            for (const rollEvent of event.wasCollatedFrom) {
+                const sourceIdx = collation.measured.findIndex(copy =>
+                    copy.hasEvent(rollEvent)
+                )
+                if (sourceIdx === witnessIndex) {
+                    const onDiff = Math.abs(rollEvent.horizontal.from - avgFrom)
+                    const offDiff = Math.abs(rollEvent.horizontal.to - avgTo)
+                    row[eventIndex] = onDiff + offDiff
+                    break
+                }
+            }
+        })
+        data.push(row)
+    }
+
+    const distanceMatrix = computeDistanceMatrix(data, 20)
+
+    const nTaxa = numberOfWitnesses
+    const labels = collation.measured.map(c => c.siglum)
+
+    const matrixLines = distanceMatrix.map((row, i) => {
+        const label = labels[i]
+        const entries = row.map(d => d.toFixed(4)).join('  ')
+        return `    ${label}  ${entries}`
+    }).join('\n')
+
+    return `
+#nexus
+
+Begin DISTANCES;
+    Dimensions NTax=${nTaxa};
+    Format labels diagonal;
+    Matrix
+${matrixLines}
+    ;
+End;
+
+Begin PAUP;
+    set criterion=distance;
+    nj;
+End;
+    `
+}
+
+export const generateNexusMatrix = (collation: Collation) => {
+    // prepare the data
+    const data: Array<Array<number | null>> = []
+    const numberOfWitnesses = collation.measured.length
+
+    const numEvents = collation.events.length
+    // Build data so rows = witnesses, columns = events
+    for (let witnessIndex = 0; witnessIndex < numberOfWitnesses; witnessIndex++) {
+        const row: Array<number | null> = new Array(numEvents).fill(null)
+        collation.events.forEach((event, eventIndex) => {
+            for (const rollEvent of event.wasCollatedFrom) {
+                const sourceIdx = collation.measured.findIndex(copy =>
+                    copy.hasEvent(rollEvent)
+                )
+                if (sourceIdx === witnessIndex) {
+                    row[eventIndex] = 0
+                    break
+                }
+            }
+        })
+        data.push(row)
+    }
+
+    return `
+#nexus 
+
+Begin DATA;
+    Dimensions NTax=${numberOfWitnesses} NChar=${numEvents};
+    Format datatype=standard missing=? gap=-;
+    Matrix
+${collation.measured.map(c => c.siglum).join(' ')}
+${data.map((row, i) => `${collation.measured[i].siglum} ${row.map(v => v === null ? '?' : v).join(' ')}`).join('\n')}
+    ;
+End;
+`
+}
