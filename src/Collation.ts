@@ -7,8 +7,8 @@ export interface Symbol extends WithId {
     isCarriedBy: AnyRollEvent[]
 }
 
-export const isCollatedEvent = (e: any): e is Symbol => {
-    return 'wasCollatedFrom' in e
+export const isSymbol = (e: any): e is Symbol => {
+    return 'isCarriedBy' in e
 }
 
 const inRange = (range: [number, number], search: number) => {
