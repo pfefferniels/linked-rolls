@@ -13,7 +13,7 @@ export interface VerticalSpan {
     to?: number
 }
 
-export interface RollEvent<T> extends WithId {
+export interface RollFeature<T> extends WithId {
     type: T;
 
     /**
@@ -35,7 +35,7 @@ export interface RollEvent<T> extends WithId {
     measurement: RollMeasurement // L20i was created by
 }
 
-export interface Note extends RollEvent<'note'> {
+export interface Note extends RollFeature<'note'> {
     pitch: number;
 }
 
@@ -57,7 +57,7 @@ export type ExpressionType =
     | 'Rewind'
     | 'ElectricCutOff';
 
-export interface Expression extends RollEvent<'expression'> {
+export interface Expression extends RollFeature<'expression'> {
     scope: ExpressionScope;
     expressionType: ExpressionType;
 }
@@ -66,7 +66,7 @@ export const isRollEvent = (e: any): e is AnyRollEvent => {
     return 'horizontal' in e && 'vertical' in e
 }
 
-export interface Perforation extends RollEvent<'perforation'> {
+export interface Perforation extends RollFeature<'perforation'> {
     accelerating?: boolean;
 }
 
@@ -76,7 +76,7 @@ export interface Perforation extends RollEvent<'perforation'> {
  * The covered perforation is not considered to be part
  * of the original note or expression hole anymore.
  */
-export interface Cover extends RollEvent<'cover'> {
+export interface Cover extends RollFeature<'cover'> {
     /**
      * This property can be used to indicate e.g. the
      * color or material of the cover.
@@ -88,7 +88,7 @@ export interface Cover extends RollEvent<'cover'> {
  * For handwritten insertions like e. g. the
  * perforation date in the end of a roll.
  */
-export interface HandwrittenText extends RollEvent<'handwrittenText'> {
+export interface HandwrittenText extends RollFeature<'handwrittenText'> {
     text: string;
     rotation?: number;
 }
@@ -98,12 +98,12 @@ export interface HandwrittenText extends RollEvent<'handwrittenText'> {
  * "controlliert" stamp in the beginning of rolls or the
  * date at the end of (later) Welte rolls.
  */
-export interface Stamp extends RollEvent<'stamp'> {
+export interface Stamp extends RollFeature<'stamp'> {
     text: string;
     rotation?: number;
 }
 
-export interface RollLabel extends RollEvent<'rollLabel'> {
+export interface RollLabel extends RollFeature<'rollLabel'> {
     text: string;
     signed: boolean;
 }

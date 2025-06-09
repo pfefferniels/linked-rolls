@@ -1,5 +1,5 @@
 import { v4 } from "uuid";
-import { CollatedEvent, Collation } from "./Collation";
+import { Symbol, Collation } from "./Collation";
 import { AnyEditorialAssumption, Edit, Intention, Derivation, Stage } from "./EditorialAssumption";
 import { RollCopy } from "./RollCopy";
 
@@ -40,11 +40,11 @@ export class StageCreation {
         // but do not contain any events belonging 
         // to witnesses of the previous stage.
         for (const collatedEvent of usingCollation.events) {
-            let containedInWitnesses = collatedEvent.wasCollatedFrom.some(rollEvent =>
+            let containedInWitnesses = collatedEvent.isCarriedBy.some(rollEvent =>
                 this.created.witnesses.some(witness => witness.hasEvent(rollEvent))
             )
 
-            let containedInAncestor = collatedEvent.wasCollatedFrom.some(rollEvent => (
+            let containedInAncestor = collatedEvent.isCarriedBy.some(rollEvent => (
                 this.basedOn!.original.witnesses.some(witness => witness.hasEvent(rollEvent))
             ))
 
@@ -80,9 +80,9 @@ export class StageCreation {
     }
 }
 
-export const findWitnessesWithinStage = (collatedEvent: CollatedEvent, within: Stage): Set<RollCopy> => {
+export const findWitnessesWithinStage = (collatedEvent: Symbol, within: Stage): Set<RollCopy> => {
     const witnessList = new Set<RollCopy>()
-    for (const event of collatedEvent.wasCollatedFrom) {
+    for (const event of collatedEvent.isCarriedBy) {
         const witness = within.witnesses.find(witness => witness.hasEvent(event))
         if (witness) witnessList.add(witness)
     }

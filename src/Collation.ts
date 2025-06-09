@@ -3,11 +3,11 @@ import { v4 } from "uuid";
 import { AnyRollEvent } from "./RollEvent";
 import { WithId } from "./WithId";
 
-export interface CollatedEvent extends WithId {
-    wasCollatedFrom: AnyRollEvent[]
+export interface Symbol extends WithId {
+    isCarriedBy: AnyRollEvent[]
 }
 
-export const isCollatedEvent = (e: any): e is CollatedEvent => {
+export const isCollatedEvent = (e: any): e is Symbol => {
     return 'wasCollatedFrom' in e
 }
 
@@ -23,7 +23,7 @@ const determinePitch = (event: AnyRollEvent) => {
     return event.vertical.from
 }
 
-const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRollEvent[], tolerance = 5) => {
+const reduceEvents = async (collatedEvents: Symbol[], otherEvents: AnyRollEvent[], tolerance = 5) => {
     type EventInfo = {
         onset: number
         offset: number
@@ -35,12 +35,12 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRol
     for (const event of collatedEvents) {
         if (!collatedEvents.length) continue
 
-        const pitch = determinePitch(event.wasCollatedFrom[0])
+        const pitch = determinePitch(event.isCarriedBy[0])
 
         myInfo.push({
             id: event.id,
-            onset: event.wasCollatedFrom.reduce((acc, current) => acc + current.horizontal.from, 0) / event.wasCollatedFrom.length,
-            offset: event.wasCollatedFrom.reduce((acc, current) => acc + current.horizontal.to, 0) / event.wasCollatedFrom.length,
+            onset: event.isCarriedBy.reduce((acc, current) => acc + current.horizontal.from, 0) / event.isCarriedBy.length,
+            offset: event.isCarriedBy.reduce((acc, current) => acc + current.horizontal.to, 0) / event.isCarriedBy.length,
             pitch
         })
     }
@@ -81,7 +81,7 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRol
 
             collatedEvents.push({
                 id: v4(),
-                wasCollatedFrom: [correspEvent]
+                isCarriedBy: [correspEvent]
             })
             continue
         }
@@ -99,7 +99,7 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRol
         }
 
 
-        collatedEvents.find(e => e.id === bestEvent.id)?.wasCollatedFrom?.push(me)
+        collatedEvents.find(e => e.id === bestEvent.id)?.isCarriedBy?.push(me)
     }
 }
 
@@ -108,9 +108,9 @@ const reduceEvents = async (collatedEvents: CollatedEvent[], otherEvents: AnyRol
  * Collates multiple roll copies. 
  */
 export const collateRolls = (rolls: RollCopy[], tolerance = 5): Collation => {
-    const collatedEvents: CollatedEvent[] = rolls[0].getConstitutedEvents().map(event => ({
+    const collatedEvents: Symbol[] = rolls[0].getConstitutedEvents().map(event => ({
         id: v4(),
-        wasCollatedFrom: [event]
+        isCarriedBy: [event]
     }))
 
     for (let i = 1; i < rolls.length; i++) {
@@ -130,7 +130,7 @@ export const sourceOf = (sources: RollCopy[], eventId: string) => {
     return containingSource.id
 }
 
-export const sourcesOf = (sources: RollCopy[], event_: CollatedEvent | CollatedEvent[] | string[]) => {
+export const sourcesOf = (sources: RollCopy[], event_: Symbol | Symbol[] | string[]) => {
     const result: Set<string> = new Set()
 
     if (Array.isArray(event_) && event_.every(e => typeof e === 'string')) {
@@ -146,7 +146,7 @@ export const sourcesOf = (sources: RollCopy[], event_: CollatedEvent | CollatedE
     const events = Array.isArray(event_) ? event_ : [event_]
 
     for (const event of events) {
-        for (const copyEvent of event.wasCollatedFrom) {
+        for (const copyEvent of event.isCarriedBy) {
             const sourceLink = sourceOf(sources, copyEvent.id)
             if (!sourceLink) continue
 
@@ -164,7 +164,7 @@ export const sourcesOf = (sources: RollCopy[], event_: CollatedEvent | CollatedE
 export interface Collation {
     measured: RollCopy[] // L2 used as source
     tolerance: number // L13 used parameters
-    events: CollatedEvent[] // L20 created
+    events: Symbol[] // L20 created
 }
 
 /**
@@ -232,13 +232,13 @@ export const generateNexusDistanceMatrix = (collation: Collation) => {
         const row: Array<number | null> = new Array(numEvents).fill(null)
         collation.events.forEach((event, eventIndex) => {
             const avgFrom =
-                event.wasCollatedFrom.reduce((acc, e) => acc + e.horizontal.from, 0) /
-                event.wasCollatedFrom.length
+                event.isCarriedBy.reduce((acc, e) => acc + e.horizontal.from, 0) /
+                event.isCarriedBy.length
             const avgTo =
-                event.wasCollatedFrom.reduce((acc, e) => acc + e.horizontal.to, 0) /
-                event.wasCollatedFrom.length
+                event.isCarriedBy.reduce((acc, e) => acc + e.horizontal.to, 0) /
+                event.isCarriedBy.length
 
-            for (const rollEvent of event.wasCollatedFrom) {
+            for (const rollEvent of event.isCarriedBy) {
                 const sourceIdx = collation.measured.findIndex(copy =>
                     copy.hasEvent(rollEvent)
                 )
@@ -292,7 +292,7 @@ export const generateNexusMatrix = (collation: Collation) => {
     for (let witnessIndex = 0; witnessIndex < numberOfWitnesses; witnessIndex++) {
         const row: Array<number | null> = new Array(numEvents).fill(null)
         collation.events.forEach((event, eventIndex) => {
-            for (const rollEvent of event.wasCollatedFrom) {
+            for (const rollEvent of event.isCarriedBy) {
                 const sourceIdx = collation.measured.findIndex(copy =>
                     copy.hasEvent(rollEvent)
                 )

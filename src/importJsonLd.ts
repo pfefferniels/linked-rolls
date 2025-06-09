@@ -117,7 +117,7 @@ export const importJsonLd = (json: any): Edition => {
     edition.copies.forEach(copy => copy.constituteEvents())
 
     edition.collation.events.forEach(e => {
-        e.wasCollatedFrom = e.wasCollatedFrom
+        e.isCarriedBy = e.isCarriedBy
             .map(re => {
                 const containingRoll = edition.copies.find(copy => copy.hasEventId(re.id))
                 return containingRoll?.getConstitutedEvents().find(e => e.id === re.id)

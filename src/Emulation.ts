@@ -3,7 +3,7 @@ import { Expression, ExpressionType, Note } from "./RollEvent";
 import { Stage, TempoAdjustment } from "./EditorialAssumption";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 import { Edition } from "./Edition";
-import { CollatedEvent } from "./Collation";
+import { Symbol } from "./Collation";
 
 function resize<T>(arr: T[], newSize: number, defaultValue: T) {
     while (newSize > arr.length)
@@ -12,7 +12,7 @@ function resize<T>(arr: T[], newSize: number, defaultValue: T) {
 
 interface PerformedRollEvent<T> {
     type: T
-    performs: (CollatedEvent | NegotiatedEvent)
+    performs: (Symbol | NegotiatedEvent)
     at: number
 }
 
@@ -35,7 +35,7 @@ export type AnyPerformedRollEvent =
     PerformedSoftPedalOnEvent | PerformedSoftPedalOffEvent
 
 type FromCollatedEvent = {
-    fromCollatedEvent?: (CollatedEvent)
+    fromCollatedEvent?: (Symbol)
 }
 
 type AssumedPhysicalTimeSpan = {
@@ -95,12 +95,12 @@ export class Emulation {
     }
 
     private negotiateEvents(
-        collatedEvents_: CollatedEvent[],
+        collatedEvents_: Symbol[],
         preferredStage: Stage,
     ) {
         const collatedEvents = structuredClone(collatedEvents_)
         for (const collatedEvent of collatedEvents) {
-            if (!collatedEvent.wasCollatedFrom || !collatedEvent.wasCollatedFrom.length) return
+            if (!collatedEvent.isCarriedBy || !collatedEvent.isCarriedBy.length) return
 
             // try to negotiate the mean onset and offset
             // TODO: this should be controllable by parameter
@@ -109,13 +109,13 @@ export class Emulation {
 
             // drop events that are not included in the sources
             // of the preferred stage
-            if (collatedEvent.wasCollatedFrom.every(event => {
+            if (collatedEvent.isCarriedBy.every(event => {
                 return preferredStage.witnesses.findIndex(witness => witness.hasEvent(event)) === -1
             })) {
                 continue
             }
 
-            const negotiated = collatedEvent.wasCollatedFrom[0] as NegotiatedEvent
+            const negotiated = collatedEvent.isCarriedBy[0] as NegotiatedEvent
             negotiated.id = collatedEvent.id
             negotiated.horizontal.from = mean[0]
             negotiated.horizontal.to = mean[1]
@@ -544,8 +544,8 @@ export class Emulation {
     }
 }
 
-const meanDimensionOf = (collatedEvent: CollatedEvent): [number, number] | undefined => {
-    const originalEvents = collatedEvent.wasCollatedFrom
+const meanDimensionOf = (collatedEvent: Symbol): [number, number] | undefined => {
+    const originalEvents = collatedEvent.isCarriedBy
     if (!originalEvents) return
 
     const meanStart =

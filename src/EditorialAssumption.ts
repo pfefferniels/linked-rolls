@@ -1,7 +1,7 @@
 import { RollCopy } from "./RollCopy";
 import { WithId } from "./WithId";
 import { AnyRollEvent } from "./RollEvent";
-import { CollatedEvent } from "./Collation";
+import { Symbol } from "./Collation";
 
 export type Certainty = 'true' | 'likely' | 'possible' | 'unlikely' | 'false';
 
@@ -34,7 +34,7 @@ export interface Reference extends WithActor, WithNote {
  */
 export interface Observation extends WithActor, Required<WithNote> {
     type: 'observation';
-    observed?: CollatedEvent[];
+    observed?: Symbol[];
 }
 
 export type AnyArgumentation = Inference | Reference | Observation
@@ -142,8 +142,8 @@ export type EditMotivation = typeof editMotivations[number];
 
 export interface Edit extends EditorialAssumption<'edit'> {
     motivation?: EditMotivation
-    insert?: CollatedEvent[];
-    delete?: CollatedEvent[];
+    insert?: Symbol[];
+    delete?: Symbol[];
 }
 
 export interface TempoAdjustment extends EditorialAssumption<'tempoAdjustment'> {
