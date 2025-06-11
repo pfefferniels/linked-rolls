@@ -7,7 +7,8 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "vitest"
+    "test": "vitest",
+    "build:schema": "npx ts-json-schema-generator --path 'src/**/*.ts' --type 'Edition' > context.json"
   },
   "devDependencies": {
     "typescript": "^5.6.0-dev.20240809",
@@ -19,6 +20,7 @@
     "aton": "^0.0.4",
     "fast-xml-parser": "^4.4.1",
     "midifile-ts": "^1.5.1",
+    "ts-json-schema-generator": "^2.4.0",
     "uuid": "^10.0.0"
   }
 }
