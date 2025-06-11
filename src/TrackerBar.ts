@@ -1,5 +1,4 @@
-import { Expression, ExpressionType, Note } from "./RollEvent"
-
+import { Expression, ExpressionType, Note } from "./Symbol"
 
 export abstract class TrackerBar {
     abstract meaningOf(track: number): Partial<Note> | Partial<Expression>
@@ -7,7 +6,7 @@ export abstract class TrackerBar {
 
 export class WelteT100 {
     meaningOf(track: number):
-        Pick<Note, 'type' | 'pitch' | 'vertical'> | Pick<Expression, 'type' | 'expressionType' | 'scope' | 'vertical'> {
+        Pick<Note, 'type' | 'pitch'> | Pick<Expression, 'type' | 'expressionType' | 'scope'> {
         if (track <= 0 || track > 100) {
             throw new Error('Track out of range')
         }
@@ -41,11 +40,7 @@ export class WelteT100 {
             return {
                 expressionType: expressionMap.get(track)!,
                 scope,
-                type: 'expression',
-                vertical: {
-                    from: track,
-                    unit: 'track'
-                }
+                type: 'expression'
             }
         }
 
@@ -53,10 +48,6 @@ export class WelteT100 {
         return {
             pitch: track + 13,
             type: 'note',
-            vertical: {
-                from: track,
-                unit: 'track'
-            }
         }
     }
 }

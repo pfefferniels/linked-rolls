@@ -2,14 +2,15 @@ import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
 import { RollMeasurement } from "./Measurement";
 import { ConditionState } from "./Condition";
-import { AnyRollEvent, Expression, HorizontalSpan, Note } from "./RollEvent";
-import { AnyEditorialAssumption, Hand, HandAssignment, Constraint, Shift, Stretch, DimensionMarker, Replacement, AnyEmendation } from "./EditorialAssumption";
+import { AnySymbol } from "./Symbol";
+import { Shift, Stretch } from "./EditorialAssumption";
 import { read } from "midifile-ts";
 import { asSpans } from "./asMIDISpans";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 import { WelteT100 } from "./TrackerBar";
+import { HorizontalSpan, RollFeature } from "./Feature";
 
-const applyShift = (shift: Shift, to: AnyRollEvent[]) => {
+const applyShift = (shift: Shift, to: RollFeature[]) => {
     for (const event of to) {
         event.horizontal.from += shift.horizontal
         if (event.horizontal.to) {
@@ -23,71 +24,12 @@ const applyShift = (shift: Shift, to: AnyRollEvent[]) => {
     }
 }
 
-const applyStretch = (stretch: Stretch, to: AnyRollEvent[]) => {
+const applyStretch = (stretch: Stretch, to: RollFeature[]) => {
     for (const event of to) {
         event.horizontal.from *= stretch.factor
         if (event.horizontal.to) {
             event.horizontal.to *= stretch.factor
         }
-    }
-}
-
-const applyReplacement = (replacement: Replacement, to: AnyRollEvent[]) => {
-    if (!replacement.with.length || !replacement.replaced.length) return
-
-    for (const toDelete of replacement.replaced) {
-        const index = to.findIndex(e => e.id === toDelete.id)
-        if (index === -1) {
-            continue
-        }
-
-        to.splice(index, 1)
-    }
-
-    to.push(...structuredClone(replacement.with))
-}
-
-const applyConstraint = (constraint: Constraint, modifiedEvents: AnyRollEvent[]) => {
-    const resolve = (marker: DimensionMarker | { number: number }) => {
-        if ('number' in marker) return marker.number
-        return marker.point === 'start'
-            ? marker.of.horizontal.from
-            : marker.of.horizontal.to
-    }
-
-    const affected = (constraint: Constraint) => {
-        return modifiedEvents.filter(event => event.id === constraint.placed.of.id)
-    }
-
-    const shift = (span: HorizontalSpan, point: 'start' | 'end', delta: number) => {
-        if (point === 'start') {
-            span.from += delta
-        }
-        else {
-            span.to += delta
-        }
-    }
-
-    const point = resolve(constraint.placed)
-    const reference = resolve(constraint.relativeTo)
-
-    if (constraint.placement === 'after' && point < reference) {
-        const delta = reference - point
-        affected(constraint).forEach(event => {
-            shift(event.horizontal, constraint.placed.point, delta)
-        })
-    }
-    else if (constraint.placement === 'before' && point > reference) {
-        const delta = point - reference
-        affected(constraint).forEach(event => {
-            shift(event.horizontal, constraint.placed.point, -delta)
-        })
-    }
-    else if (constraint.placement === 'with' && point !== reference) {
-        const delta = reference - point
-        affected(constraint).forEach(event => {
-            shift(event.horizontal, constraint.placed.point, delta)
-        })
     }
 }
 
@@ -99,460 +41,271 @@ interface ProductionEvent {
 }
 
 export class RollCopy {
-    id: string
-    siglum: string // P149 is identified by (Conceptual Object Apellation)
+    id: string = v4()
 
-    productionEvent: ProductionEvent
-    conditions: ConditionState[]
-    location: string
+    dimensions?: {
+        width: number,
+        height: number,
+        unit: string
+    }
 
-    measurements: RollMeasurement[]
-    private events: AnyRollEvent[]
-    scan?: string // P138 has representation => IIIF Image Link (considered to be an E38 Image)
+    punchDiameter?: {
+        value: number
+        unit: string
+    }
+
+    holeSeparation?: {
+        value: number
+        unit: string
+    }
+
+    margins?: {
+        treble: number
+        bass: number
+        unit: string
+    }
 
     stretch?: Stretch
     shift?: Shift
 
-    hands: Hand[]
-    additions: HandAssignment[]
-    emendations: AnyEmendation[]
+    productionEvent?: ProductionEvent
+    conditions: ConditionState[] = []
+    location: string = ''
 
-    private modifiedEvents: AnyRollEvent[]
+    transcriptions: RollMeasurement[] = []
 
-    constructor() {
-        this.id = v4()
-        this.siglum = '[no siglum]'
-        this.productionEvent = {
-            date: '',
-            paper: '',
-            company: '',
-            system: ''
-        }
-        this.location = ''
-        this.conditions = []
-        this.modifiedEvents = []
-        this.hands = []
-        this.additions = []
-        this.emendations = []
-        this.measurements = []
-        this.events = []
+    // will not be exported in final JSON. Shift, stretch
+    // and emendations are applied already.
+    features: RollFeature[] = []
+    scan?: string // P138 has representation => IIIF Image Link (considered to be an E38 Image)
+
+    insertFeature(feature: RollFeature) {
+        this.shift && applyShift(this.shift, [feature])
+        this.stretch && applyStretch(this.stretch, [feature])
+        this.features.push(feature)
     }
 
-    asJSON() {
+    setShift(shift: Shift) {
+        this.shift = shift
+        applyShift(shift, this.features)
+    }
+
+    setStretch(stretch: Stretch) {
+        this.stretch = stretch
+        applyStretch(stretch, this.features)
+    }
+}
+
+export function asSymbols(copy: RollCopy): AnySymbol[] {
+    return copy.features.map(feature => {
         return {
-            type: 'RollCopy',
-            id: this.id,
-            siglum: this.siglum,
-            productionEvent: this.productionEvent,
-            conditions: this.conditions,
-            location: this.location,
-            measurements: this.measurements,
-            events: this.events,
-            scan: this.scan,
-            stretch: this.stretch,
-            shift: this.shift,
-            hands: this.hands,
-            additions: this.additions,
-            emendations: this.emendations
+            id: `symbol_${v4()}`,
+            ...new WelteT100().meaningOf(feature.vertical.from),
+            isCarriedBy: [feature]
         }
+    })
+}
+
+export function readFromStanfordAton(atonString: string, adjustByRewind: boolean = true, shift = 0): RollCopy {
+    function pixelsToMillimeters(pixels: number, dpi: number): number {
+        return pixels / dpi * 25.4;
     }
 
-    /**
-     * Note: this overwrites any existing measurements and events.
-     */
-    readFromStanfordAton(atonString: string, adjustByRewind: boolean = true, shift = 0) {
-        function pixelsToMillimeters(pixels: number, dpi: number): number {
-            return pixels / dpi * 25.4;
+    const parser = new AtonParser()
+    const json = parser.parse(atonString)
+
+    const holes = json.ROLLINFO.HOLES.HOLE
+    const druid = json.ROLLINFO.DRUID
+    const holeSeparation = parseFloat(json.ROLLINFO.HOLE_SEPARATION.replace('px'))
+    const hardMarginBass = parseFloat(json.ROLLINFO.HARD_MARGIN_BASS.replace('px'))
+    const hardMarginTreble = parseFloat(json.ROLLINFO.HARD_MARGIN_TREBLE.replace('px'))
+    const date = json.ROLLINFO.ANALYSIS_DATE
+    const dpi = parseFloat(json.ROLLINFO.LENGTH_DPI.replace('ppi'))
+    const rollWidth = parseFloat(json.ROLLINFO.ROLL_WIDTH.replace('px')) / dpi * 25.4
+    const rollHeight = parseFloat(json.ROLLINFO.IMAGE_LENGTH.replace('px')) / dpi * 25.4
+    let averagePunchDiameter = -1
+
+    const lastHole = +holes[holes.length - 1].TRACKER_HOLE
+    const rewindShift = adjustByRewind ? 91 - lastHole : shift
+
+    const measurement = {
+        id: `measurement_${v4().slice(0, 8)}`,
+        software: 'https://github.com/pianoroll/roll-image-parser',
+        date
+    }
+
+    const copy: RollCopy = new RollCopy()
+
+    copy.dimensions = {
+        width: rollWidth,
+        height: rollHeight,
+        unit: 'mm'
+    }
+
+    copy.punchDiameter = {
+        value: averagePunchDiameter,
+        unit: 'mm'
+    }
+
+    copy.holeSeparation = {
+        value: holeSeparation,
+        unit: 'px'
+    }
+
+    copy.margins = {
+        treble: hardMarginTreble,
+        bass: hardMarginBass,
+        unit: 'px'
+    }
+
+    copy.transcriptions = [measurement]
+
+    let circularPunches = 0
+    const features = []
+    for (let i = 0; i < holes.length; i++) {
+        const hole = holes[i]
+
+        const circularity = +hole.CIRCULARITY.replace('px', '')
+        if (circularity > 0.95) {
+            const perimeterInMM = pixelsToMillimeters(+hole.PERIMETER.replace('px', ''), dpi)
+            averagePunchDiameter += perimeterInMM
+            circularPunches += 1
         }
 
-        const parser = new AtonParser()
-        const json = parser.parse(atonString)
+        if (!hole.NOTE_ATTACK || !hole.OFF_TIME) continue
 
-        const holes = json.ROLLINFO.HOLES.HOLE
-        const druid = json.ROLLINFO.DRUID
-        const holeSeparation = parseFloat(json.ROLLINFO.HOLE_SEPARATION.replace('px'))
-        const hardMarginBass = parseFloat(json.ROLLINFO.HARD_MARGIN_BASS.replace('px'))
-        const hardMarginTreble = parseFloat(json.ROLLINFO.HARD_MARGIN_TREBLE.replace('px'))
-        const date = json.ROLLINFO.ANALYSIS_DATE
-        const dpi = parseFloat(json.ROLLINFO.LENGTH_DPI.replace('ppi'))
-        const rollWidth = parseFloat(json.ROLLINFO.ROLL_WIDTH.replace('px')) / dpi * 25.4
-        const rollHeight = parseFloat(json.ROLLINFO.IMAGE_LENGTH.replace('px')) / dpi * 25.4
-        let averagePunchDiameter = -1
+        const trackerHole = +hole.TRACKER_HOLE + rewindShift
 
-        const lastHole = +holes[holes.length - 1].TRACKER_HOLE
-        const rewindShift = adjustByRewind ? 91 - lastHole : shift
+        const noteAttack = +hole.NOTE_ATTACK.replace('px', '')
+        const offset = +hole.OFF_TIME.replace('px', '')
+        const height = +hole.WIDTH_ROW.replace('px', '')
+        const column = +hole.ORIGIN_COL.replace('px', '')
+        const columnWidth = +hole.WIDTH_COL.replace('px', '')
 
-        const measurement: RollMeasurement = {
+        const annotates = `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column - 10},${noteAttack - 10},${columnWidth + 20},${height + 20}/128,/0/default.jpg`
+
+        const feature: RollFeature = {
             id: v4(),
-            dimensions: {
-                width: rollWidth,
-                height: rollHeight,
-                unit: 'mm'
+            annotates,
+            vertical: {
+                from: trackerHole,
+                unit: 'track'
             },
-            punchDiameter: {
-                value: averagePunchDiameter,
-                unit: 'mm'
+            measurement,
+            horizontal: {
+                unit: 'mm',
+                from: pixelsToMillimeters(noteAttack, dpi),
+                to: pixelsToMillimeters(offset, dpi)
+            }
+        }
+        features.push(feature)
+    }
+
+    averagePunchDiameter /= circularPunches
+    averagePunchDiameter /= Math.PI
+
+    copy.scan = `https://stacks.stanford.edu/image/iiif/${druid}%2F${druid}_0001/`
+    copy.features = features
+    copy.transcriptions = [measurement]
+
+    return copy
+}
+
+/**
+ * Spencer Chase's rolls seem to be scanned at a roll speed of 
+ * 83 (=8.3 feet per minute).
+ * 
+ * @param midiBuffer 
+ * @param conversion 
+ */
+export function readFromSpencerMIDI(
+    midiBuffer: ArrayBuffer,
+    conversion: PlaceTimeConversion = new KinematicConversion(8.3)
+): RollCopy {
+    const midi = read(midiBuffer)
+    const features: RollFeature[] = []
+
+    const measurement: RollMeasurement = {
+        date: 'unknown',
+        id: v4(),
+        software: 'unknown'
+    }
+
+    const copy = new RollCopy()
+    copy.transcriptions.push(measurement)
+
+    const spans = asSpans(midi)
+
+    for (const span of spans) {
+        const left = conversion.timeToPlace(span.onsetMs / 1000) * 10
+        const right = conversion.timeToPlace(span.offsetMs / 1000) * 10
+
+        const horizontalDimension: HorizontalSpan = {
+            from: left,
+            to: right,
+            unit: 'mm'
+        }
+
+        if (span.type !== 'note') continue
+
+
+        const midiShift = 13
+        let trackerHole = span.pitch - midiShift
+
+        // for whatever reasons, the expression tracks
+        // of the Spencer Chase's MIDI rolls are off
+        // by two on the bass-side.
+        if (trackerHole < 10) {
+            trackerHole -= 2
+        }
+
+
+        const feature: RollFeature = {
+            vertical: {
+                from: trackerHole,
+                unit: 'track'
             },
-            holeSeparation: {
-                value: holeSeparation,
-                unit: 'px'
-            },
-            margins: {
-                treble: hardMarginTreble,
-                bass: hardMarginBass,
-                unit: 'px'
-            },
-            software: 'https://github.com/pianoroll/roll-image-parser',
-            date
+            horizontal: horizontalDimension,
+            measurement,
+            id: v4()
         }
-
-        let circularPunches = 0
-        const events = []
-        for (let i = 0; i < holes.length; i++) {
-            const hole = holes[i]
-
-            const circularity = +hole.CIRCULARITY.replace('px', '')
-            if (circularity > 0.95) {
-                const perimeterInMM = pixelsToMillimeters(+hole.PERIMETER.replace('px', ''), dpi)
-                averagePunchDiameter += perimeterInMM
-                circularPunches += 1
-            }
-
-            if (!hole.NOTE_ATTACK || !hole.OFF_TIME) continue
-
-            const trackerHole = +hole.TRACKER_HOLE + rewindShift
-
-            const noteAttack = +hole.NOTE_ATTACK.replace('px', '')
-            const offset = +hole.OFF_TIME.replace('px', '')
-            const height = +hole.WIDTH_ROW.replace('px', '')
-            const column = +hole.ORIGIN_COL.replace('px', '')
-            const columnWidth = +hole.WIDTH_COL.replace('px', '')
-
-            const annotates = `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column - 10},${noteAttack - 10},${columnWidth + 20},${height + 20}/128,/0/default.jpg`
-
-            const event: Note | Expression = {
-                ...(new WelteT100().meaningOf(trackerHole)),
-                annotates,
-                measurement,
-                horizontal: {
-                    unit: 'mm',
-                    from: pixelsToMillimeters(noteAttack, dpi),
-                    to: pixelsToMillimeters(offset, dpi)
-                },
-                id: v4()
-            }
-            events.push(event)
-        }
-
-        averagePunchDiameter /= circularPunches
-        averagePunchDiameter /= Math.PI
-
-        this.scan = `https://stacks.stanford.edu/image/iiif/${druid}%2F${druid}_0001/`
-        this.events = events
-        this.measurements = [measurement]
-
-        this.constituteEvents()
+        features.push(feature)
     }
 
-    /**
-     * Spencer Chase's rolls seem to be scanned at a roll speed of 
-     * 83 (=8.3 feet per minute).
-     * 
-     * @param midiBuffer 
-     * @param conversion 
-     */
-    readFromSpencerMIDI(
-        midiBuffer: ArrayBuffer,
-        conversion: PlaceTimeConversion = new KinematicConversion(8.3)
-    ) {
-        const midi = read(midiBuffer)
-        const events: AnyRollEvent[] = []
 
-        const measurement: RollMeasurement = {
-            date: 'unknown',
-            id: v4(),
-            software: 'unknown'
-        }
+    copy.features = features
+    return copy
+}
 
-        const spans = asSpans(midi)
-
-        for (const span of spans) {
-            const left = conversion.timeToPlace(span.onsetMs / 1000) * 10
-            const right = conversion.timeToPlace(span.offsetMs / 1000) * 10
-
-            const horizontalDimension: HorizontalSpan = {
-                from: left,
-                to: right,
-                unit: 'mm'
-            }
-
-            if (span.type !== 'note') continue
-
-
-            const midiShift = 13
-            let trackerHole = span.pitch - midiShift
-
-            // for whatever reasons, the expression tracks
-            // of the Spencer Chase's MIDI rolls are off
-            // by two on the bass-side.
-            if (trackerHole < 10) {
-                trackerHole -= 2
-            }
-
-
-            const event: Note | Expression = {
-                ...(new WelteT100().meaningOf(trackerHole)),
-                horizontal: horizontalDimension,
-                measurement,
-                id: v4()
-            }
-            events.push(event)
-        }
-
-
-        this.events = events
-        this.measurements = [measurement]
-
-        this.constituteEvents()
-    }
-
-    addHand(hand: Hand) {
-        this.hands.push(hand)
-    }
-
-    applyActions(actions: AnyEditorialAssumption[]) {
-        let didChange = false
-        for (const action of actions) {
-            if (action.type === 'stretch') {
-                this.stretch = action
-                didChange = true
-            }
-            else if (action.type === 'shift') {
-                this.shift = action
-                didChange = true
-            }
-            else if (action.type === 'replacement' && action.replaced.every(e => this.hasEventId(e.id))) {
-                this.emendations.push(action)
-                didChange = true
-            }
-            else if (action.type === 'constraint' && action.placed.of && this.hasEventId(action.placed.of.id)) {
-                this.emendations.push(action)
-                didChange = true
-            }
-            else if (action.type === 'handAssignment' && action.target.every(e => this.hasEventId(e.id))) {
-                this.additions.push(action)
-                didChange = true
+export function shiftVertically(
+    features: RollFeature[],
+    amount: number,
+    measurement: RollMeasurement
+) {
+    for (const event of features) {
+        event.measurement = measurement // replace the measurement
+        event.vertical.from += amount;
+        try {
+            const newEvent = new WelteT100().meaningOf(event.vertical.from)
+            for (const key in newEvent) {
+                (event as any)[key] = (newEvent as any)[key]
             }
         }
-
-        if (didChange || this.modifiedEvents.length === 0) {
-            this.constituteEvents()
+        catch (e) {
+            console.error(e)
         }
     }
+}
 
-    private applyCovers() {
-        const covers = this.modifiedEvents.filter(e => e.type === 'cover')
-        const notes = this.modifiedEvents.filter(e => e.type === 'note' || e.type === 'expression')
-        for (const cover of covers) {
-            // Find either note or expression that is covered
-            for (const event of notes) {
-                // first check if the cover vertically covers a wider area 
-                // than the note or expression
-                const coveredVertically = event.vertical.from >= cover.vertical.from &&
-                    event.vertical.from <= (cover.vertical.to || cover.vertical.from)
+export const findCopiesCarrying = (sources: RollCopy[], symbol: AnySymbol) => {
+    const result: Set<string> = new Set()
 
-                if (!coveredVertically) continue
-
-                // check if the cover partially covers the begin of the note or expression
-                if (event.horizontal.from >= cover.horizontal.from &&
-                    event.horizontal.from <= cover.horizontal.to) {
-                    // the note starts where the cover ends
-                    event.horizontal.from = cover.horizontal.to
-                }
-
-                // check if the cover partially covers the end of the note or expression
-                if (event.horizontal.to >= cover.horizontal.from &&
-                    event.horizontal.to <= cover.horizontal.to) {
-                    // the note ends where the cover starts
-                    event.horizontal.to = cover.horizontal.from
-                }
+    for (const feature of symbol.isCarriedBy) {
+        for (const copy of sources) {
+            if (copy.features.includes(feature)) {
+                result.add(copy.id)
             }
         }
     }
-
-    private removeUnauthorisedAdditions() {
-        for (const addition of this.additions) {
-            if (!addition.hand.authorised) {
-                for (const event of addition.target) {
-                    // remove that event from the modified events
-                    const index = this.modifiedEvents.findIndex(e => e.id === event.id)
-                    if (index !== -1) {
-                        this.modifiedEvents.splice(index, 1)
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * This method creates a new array of events with (1)
-     * all handwritten textes removed, (2) all unauthorized
-     * modifications removed, (3) all editorial emendations
-     * applied, (4) all covers applied, (5) the assumed 
-     * stretch and shift applied.
-     * 
-     * @note This is expensive. Use with care.
-     */
-    constituteEvents() {
-        this.modifiedEvents = structuredClone(this.events)
-
-        // remove all handwritten texts
-        this.modifiedEvents = this.modifiedEvents.filter(e => e.type !== 'handwrittenText')
-
-        // remove all unauthorized modifications
-        this.removeUnauthorisedAdditions()
-
-        // cut note and expression events by covers
-        // note: this should be done only after
-        // possibly unauthorized covers have been removed
-        this.applyCovers()
-
-        for (const emendation of this.emendations) {
-            if (emendation.type === 'constraint') {
-                applyConstraint(emendation, this.modifiedEvents)
-            }
-            else if (emendation.type === 'replacement') {
-                applyReplacement(emendation, this.modifiedEvents)
-            }
-        }
-
-        if (this.stretch) applyStretch(this.stretch, this.modifiedEvents)
-        if (this.shift) applyShift(this.shift, this.modifiedEvents)
-
-        this.modifiedEvents.sort((a, b) => a.horizontal.from - b.horizontal.from)
-    }
-
-    getOriginalEvents() {
-        return this.events
-    }
-
-    getConstitutedEvents() {
-        return this.modifiedEvents
-    }
-
-    setEvents(newEvents: AnyRollEvent[]) {
-        this.events = newEvents
-        this.constituteEvents()
-    }
-
-    insertEvent(event: AnyRollEvent) {
-        this.events.push(event)
-        this.events.sort((a, b) => a.horizontal.from - b.horizontal.from)
-
-        if (!this.measurements.includes(event.measurement)) {
-            this.measurements.push(event.measurement)
-        }
-
-        this.constituteEvents()
-    }
-
-    /**
-     * This is a separate method, since recalculating the modified events 
-     * is expensive.
-     */
-    insertEvents(events: AnyRollEvent[]) {
-        this.events.push(...events)
-        this.events.sort((a, b) => a.horizontal.from - b.horizontal.from)
-
-        for (const event of events) {
-            if (!this.measurements.includes(event.measurement)) {
-                this.measurements.push(event.measurement)
-            }
-        }
-
-        this.constituteEvents()
-    }
-
-    removeEvent(eventId: string) {
-        const index = this.events.findIndex(e => e.id === eventId)
-        if (index === -1) return
-        this.events.splice(index, 1)
-
-        this.constituteEvents()
-    }
-
-    shiftEventsVertically(ids: string[], amount: number, measurement: RollMeasurement) {
-        const originalEvents = this.events.filter(event => ids.includes(event.id))
-        for (const event of originalEvents) {
-            event.measurement = measurement // replace the measurement
-            event.vertical.from += amount;
-            try {
-                const newEvent = new WelteT100().meaningOf(event.vertical.from)
-                for (const key in newEvent) {
-                    (event as any)[key] = (newEvent as any)[key]
-                }
-            }
-            catch (e) {
-                console.error(e)
-            }
-        }
-
-        if (!this.measurements.includes(measurement)) {
-            this.measurements.push(measurement)
-        }
-
-        this.constituteEvents()
-    }
-
-    shallowClone(): RollCopy {
-        return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
-    }
-
-    hasEvent(otherEvent: AnyRollEvent) {
-        return this.hasEventId(otherEvent.id)
-    }
-
-    hasEventId(id: string) {
-        return this.getConstitutedEvents().findIndex(e => e.id === id) !== -1
-            || this.events.findIndex(e => e.id === id) !== -1
-    }
-
-    getById(id: string) {
-        return this.getConstitutedEvents().find(e => e.id === id)
-            || this.events.find(e => e.id === id)
-    }
-
-    removeEditorialAction(assumption: AnyEditorialAssumption) {
-        if (assumption.type === 'handAssignment') {
-            const index = this.additions.indexOf(assumption)
-            if (index !== -1) this.additions.splice(index, 1)
-        }
-        else if (assumption.type === 'replacement' || assumption.type === 'constraint') {
-            const index = this.emendations.indexOf(assumption)
-            if (index !== -1) this.emendations.splice(index, 1)
-        }
-        else if (assumption.type === 'stretch') {
-            this.stretch = undefined
-        }
-        else if (assumption.type === 'shift') {
-            this.shift = undefined
-        }
-        else {
-            throw new Error('Unsupported assumption type provided')
-        }
-
-        this.constituteEvents()
-    }
-
-    get actions() {
-        const result: AnyEditorialAssumption[] = [
-            ...this.additions,
-            ...this.emendations,
-        ]
-
-        if (this.stretch) result.push(this.stretch)
-        if (this.shift) result.push(this.shift)
-
-        return result
-    }
+    return result
 }

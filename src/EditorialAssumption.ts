@@ -1,7 +1,7 @@
-import { RollCopy } from "./RollCopy";
 import { WithId } from "./WithId";
-import { AnyRollEvent } from "./RollEvent";
-import { Symbol } from "./Collation";
+import { RollFeature } from "./Feature";
+import { AnySymbol } from "./Symbol";
+import { Stage } from "./Stage";
 
 export type Certainty = 'true' | 'likely' | 'possible' | 'unlikely' | 'false';
 
@@ -34,7 +34,7 @@ export interface Reference extends WithActor, WithNote {
  */
 export interface Observation extends WithActor, Required<WithNote> {
     type: 'observation';
-    observed?: Symbol[];
+    observed?: AnySymbol[];
 }
 
 export type AnyArgumentation = Inference | Reference | Observation
@@ -65,13 +65,13 @@ export interface Emendation<T> extends EditorialAssumption<T>, WithNote {
 }
 
 export interface Replacement extends Emendation<'replacement'>, WithNote {
-    replaced: AnyRollEvent[]; // P140 assigned attribute to
-    with: AnyRollEvent[]; // P141 assigned
+    replaced: RollFeature[]; // P140 assigned attribute to
+    with: RollFeature[]; // P141 assigned
 }
 
 export type DimensionMarker = {
     point: 'start' | 'end';
-    of: AnyRollEvent;
+    of: RollFeature;
 }
 
 type PlacementType = 'after' | 'before' | 'with';
@@ -90,35 +90,8 @@ export type AnyEmendation =
     | Constraint
     | Replacement
 
-/**
- * This type is modelled on E11 Modification
- */
-export interface Hand extends WithId {
-    carriedOutBy: string
-    date: string
-    note?: string
-    authorised?: boolean
-    assignments: HandAssignment[];
-}
-
-/**
- * Assigns a hand ("Bearbeitungsschicht") to one or many
- * roll events with a given certainty.
- */
-export interface HandAssignment extends EditorialAssumption<'handAssignment'> {
-    hand: Hand;
-    target: AnyRollEvent[];
-}
-
-// rollo:Object Usage, sub class of E13 Attribute Assignment
-// with assigned attribute of type = P16 used specific object
 export interface Derivation extends EditorialAssumption<'derivation'> {
-    original: Stage // P141 assigned
-}
-
-export interface Stage {
-    siglum: string; // P149 is identified by
-    witnesses: RollCopy[]; // R7i has example
+    predecessor: Stage
 }
 
 export const editMotivations = [
@@ -142,8 +115,8 @@ export type EditMotivation = typeof editMotivations[number];
 
 export interface Edit extends EditorialAssumption<'edit'> {
     motivation?: EditMotivation
-    insert?: Symbol[];
-    delete?: Symbol[];
+    insert?: AnySymbol[];
+    delete?: AnySymbol[];
 }
 
 export interface TempoAdjustment extends EditorialAssumption<'tempoAdjustment'> {
@@ -185,7 +158,6 @@ export type AnyEditorialAssumption =
     AnyEmendation |
     Edit |
     Question |
-    HandAssignment |
     TempoAdjustment |
     Stretch |
     Shift |

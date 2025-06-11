@@ -1,19 +1,22 @@
 import { WithId } from "./WithId";
 
 /**
- * Describes the physical condition of a roll
- * in a certain time period or time point. It
- * also documents the responsible person who
- * assessed the roll's condition.
+ * Describes the physical condition of a roll or
+ * of a feature on the roll (e.g. a damaged
+ * or unsuccessful perforation). 
  */
 
 export interface ConditionState extends WithId {
-    note: string;
-    date: string;
+    type?: 'damaged';
+    description?: string;
     assessment: ConditionAssessment;
 }
 
+/**
+ * Documents when and by whom a condition state
+ * was assessed.
+ */
 export interface ConditionAssessment extends WithId {
-    carriedOutBy: string;
+    actor: string;
     date: string;
 }

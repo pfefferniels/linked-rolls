@@ -1,48 +1,48 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
-import { Expression, ExpressionType, Note } from "./RollEvent";
-import { Stage, TempoAdjustment } from "./EditorialAssumption";
+import { AnySymbol, Expression, ExpressionType, Note } from "./Symbol";
+import { TempoAdjustment } from "./EditorialAssumption";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
-import { Edition } from "./Edition";
-import { Symbol } from "./Collation";
+import { getSnaphsot, Stage } from "./Stage";
+import { dimensionOf } from "./Symbol";
+import { RollFeature } from "./Feature";
 
 function resize<T>(arr: T[], newSize: number, defaultValue: T) {
     while (newSize > arr.length)
         arr.push(defaultValue);
 }
 
-interface PerformedRollEvent<T> {
+interface PerformedRollFeature<T> {
     type: T
-    performs: (Symbol | NegotiatedEvent)
+    performs: (AnySymbol | NegotiatedEvent)
     at: number
 }
 
-interface PerformedNoteEvent<T> extends PerformedRollEvent<T> {
+interface PerformedNoteEvent<T> extends PerformedRollFeature<T> {
     pitch: number;
     velocity: number;
 }
 
 export interface PerformedNoteOnEvent extends PerformedNoteEvent<'noteOn'> { }
 export interface PerformedNoteOffEvent extends PerformedNoteEvent<'noteOff'> { }
-export interface PerformedSustainPedalOnEvent extends PerformedRollEvent<'sustainPedalOn'> { }
-export interface PerformedSustainPedalOffEvent extends PerformedRollEvent<'sustainPedalOff'> { }
-export interface PerformedSoftPedalOnEvent extends PerformedRollEvent<'softPedalOn'> { }
-export interface PerformedSoftPedalOffEvent extends PerformedRollEvent<'softPedalOff'> { }
+export interface PerformedSustainPedalOnEvent extends PerformedRollFeature<'sustainPedalOn'> { }
+export interface PerformedSustainPedalOffEvent extends PerformedRollFeature<'sustainPedalOff'> { }
+export interface PerformedSoftPedalOnEvent extends PerformedRollFeature<'softPedalOn'> { }
+export interface PerformedSoftPedalOffEvent extends PerformedRollFeature<'softPedalOff'> { }
 
-export type AnyPerformedRollEvent =
+export type AnyPerformedRollFeature =
     PerformedNoteOnEvent |
     PerformedNoteOffEvent |
     PerformedSustainPedalOnEvent | PerformedSustainPedalOffEvent |
     PerformedSoftPedalOnEvent | PerformedSoftPedalOffEvent
 
-type FromCollatedEvent = {
-    fromCollatedEvent?: (Symbol)
-}
-
 type AssumedPhysicalTimeSpan = {
     assumedPhysicalTime?: [number, number]
 }
 
-export type NegotiatedEvent = (Note | Expression) & FromCollatedEvent & AssumedPhysicalTimeSpan
+export type NegotiatedEvent =
+    Omit<Note | Expression, 'isCarriedBy'>
+    & Pick<RollFeature, 'horizontal' | 'vertical'>
+    & AssumedPhysicalTimeSpan
 
 export type EmulationOptions = {
     welte_p: number
@@ -60,9 +60,20 @@ export type EmulationOptions = {
     division: number
 }
 
+const simplifySymbol = (symbol: Note | Expression): NegotiatedEvent | null => {
+    if (!symbol.isCarriedBy || !symbol.isCarriedBy.length) return null
+
+    const mean = dimensionOf(symbol)
+
+    return {
+        ...symbol,
+        ...mean
+    }
+}
+
 export class Emulation {
     placeTimeConversion: PlaceTimeConversion = new KinematicConversion()
-    midiEvents: (AnyPerformedRollEvent)[] = []
+    midiEvents: (AnyPerformedRollFeature)[] = []
 
     // sorted list of events with the negotiated assumptions already applied
     negotiatedEvents: NegotiatedEvent[] = []
@@ -92,39 +103,6 @@ export class Emulation {
         options.fastC_step = (options.welte_mf - options.welte_p) / options.fastC_decay_rate
         options.fastD_step = -(options.welte_f - options.welte_p) / options.fastD_decay_rate
         this.options = options
-    }
-
-    private negotiateEvents(
-        collatedEvents_: Symbol[],
-        preferredStage: Stage,
-    ) {
-        const collatedEvents = structuredClone(collatedEvents_)
-        for (const collatedEvent of collatedEvents) {
-            if (!collatedEvent.isCarriedBy || !collatedEvent.isCarriedBy.length) return
-
-            // try to negotiate the mean onset and offset
-            // TODO: this should be controllable by parameter
-            const mean = meanDimensionOf(collatedEvent)
-            if (!mean) continue
-
-            // drop events that are not included in the sources
-            // of the preferred stage
-            if (collatedEvent.isCarriedBy.every(event => {
-                return preferredStage.witnesses.findIndex(witness => witness.hasEvent(event)) === -1
-            })) {
-                continue
-            }
-
-            const negotiated = collatedEvent.isCarriedBy[0] as NegotiatedEvent
-            negotiated.id = collatedEvent.id
-            negotiated.horizontal.from = mean[0]
-            negotiated.horizontal.to = mean[1]
-            negotiated.fromCollatedEvent = collatedEvent
-            this.negotiatedEvents.push(negotiated)
-        }
-
-
-        this.negotiatedEvents.sort((a, b) => a.horizontal.from - b.horizontal.from)
     }
 
     private findRollTempo(adjustment?: TempoAdjustment) {
@@ -165,7 +143,7 @@ export class Emulation {
     private convertEventsToMIDI() {
         for (const event of this.negotiatedEvents) {
             if (event.type === 'expression') {
-                const expression = event as Expression
+                const expression = event as unknown as Expression
 
                 const map = new Map<ExpressionType, string>([
                     ['SustainPedalOn', 'sustainPedalOn'],
@@ -177,14 +155,16 @@ export class Emulation {
                 if (map.has(expression.expressionType)) {
                     this.midiEvents.push({
                         type: map.get(expression.expressionType)! as 'sustainPedalOn' | 'sustainPedalOff' | 'softPedalOn' | 'softPedalOff',
-                        performs: event.fromCollatedEvent || event,
+                        performs: event,
                         at: event.assumedPhysicalTime![0],
                     })
                 }
             }
             else if (event.type === 'note') {
+                const note = event as unknown as Note
+
                 // take velocity from the calculated velocity list
-                const pitch = event.pitch
+                const pitch = note.pitch
                 if (event.vertical.from >= this.options.division) {
                     this.insertNote(
                         event,
@@ -206,7 +186,11 @@ export class Emulation {
     emulateFromRoll(events: (Note | Expression)[]) {
         this.startTempo = 104.331
         this.endTempo = 104.331
-        this.negotiatedEvents = structuredClone(events)
+
+        this.negotiatedEvents = events
+            .map(simplifySymbol)
+            .filter(s => s !== null)
+
         this.applyTrackerBarExtension()
         this.assignPhysicalTime()
         this.applyTrackerBarExtension()
@@ -216,16 +200,17 @@ export class Emulation {
         return this.midiEvents
     }
 
-    emulateFromEdition(
-        edition: Edition,
-        preferredStage: Stage,
+    emulateStage(
+        stage: Stage,
+        tempoAdjustment?: TempoAdjustment,
         skipToFirstNote: boolean = false
     ) {
-        const { collation, tempoAdjustment } = edition
-        const collatedEvents = collation.events
+        this.negotiatedEvents =
+            getSnaphsot(stage)
+                .filter(s => s.type === 'note' || s.type === 'expression')
+                .map(simplifySymbol)
+                .filter(s => s !== null)
 
-        this.negotiatedEvents = []
-        this.negotiateEvents(collatedEvents, preferredStage)
         this.findRollTempo(tempoAdjustment)
         this.applyTrackerBarExtension()
         this.assignPhysicalTime(skipToFirstNote)
@@ -282,7 +267,7 @@ export class Emulation {
             if (scope === 'treble' && negotiatedEvent.vertical.from < this.options.division) continue
             else if (scope === 'bass' && negotiatedEvent.vertical.from >= this.options.division) continue
 
-            const event = negotiatedEvent as Expression & AssumedPhysicalTimeSpan
+            const event = negotiatedEvent as unknown as Expression & AssumedPhysicalTimeSpan
 
             const startMs = event.assumedPhysicalTime![0] * 1000
             const endMs = event.assumedPhysicalTime![1] * 1000
@@ -381,7 +366,7 @@ export class Emulation {
     private insertNote(event: NegotiatedEvent, pitch: number, velocity: number) {
         this.midiEvents.push({
             type: 'noteOn',
-            performs: event.fromCollatedEvent || event,
+            performs: event,
             velocity,
             at: event.assumedPhysicalTime![0],
             pitch
@@ -389,7 +374,7 @@ export class Emulation {
 
         this.midiEvents.push({
             type: 'noteOff',
-            performs: event.fromCollatedEvent || event,
+            performs: event,
             velocity: 127,
             at: event.assumedPhysicalTime![1],
             pitch
@@ -542,16 +527,4 @@ export class Emulation {
             tracks: [events]
         }
     }
-}
-
-const meanDimensionOf = (collatedEvent: Symbol): [number, number] | undefined => {
-    const originalEvents = collatedEvent.isCarriedBy
-    if (!originalEvents) return
-
-    const meanStart =
-        originalEvents.reduce((acc, cur) => acc + cur.horizontal.from, 0) / originalEvents.length
-    const meanEnd =
-        originalEvents.reduce((acc, cur) => acc + cur.horizontal.to, 0) / originalEvents.length
-
-    return [meanStart, meanEnd]
 }

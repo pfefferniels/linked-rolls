@@ -1,7 +1,5 @@
 import { Edition } from "./Edition";
 import { RollCopy } from "./RollCopy";
-import { StageCreation } from "./Stage";
-import { AnyRollEvent } from "./RollEvent";
 import { referenceTypes } from "./asJsonLd";
 
 type IdMap = Map<string, object>
@@ -52,14 +50,8 @@ const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
 
     if ('@type' in json) {
         const value = json['@type'];
-        if (value === 'Edition') {
-            result = new Edition();
-        }
-        else if (value === 'RollCopy') {
+        if (value === 'RollCopy') {
             result = new RollCopy();
-        }
-        else if (value === 'StageCreation') {
-            result = new StageCreation({ siglum: '', witnesses: [] });
         }
         else {
             result['type'] = value;
@@ -113,37 +105,6 @@ export const importJsonLd = (json: any): Edition => {
     if (Array.isArray(json['@context'])) {
         edition.base = json['@context'].find((c: any) => c['@base'])?.['@base'] || '';
     }
-
-    edition.copies.forEach(copy => copy.constituteEvents())
-
-    edition.collation.events.forEach(e => {
-        e.isCarriedBy = e.isCarriedBy
-            .map(re => {
-                const containingRoll = edition.copies.find(copy => copy.hasEventId(re.id))
-                return containingRoll?.getConstitutedEvents().find(e => e.id === re.id)
-            })
-            .filter((e: AnyRollEvent | undefined) => e !== undefined)
-    })
-
-    edition.stages.forEach((stage: StageCreation) => {
-        stage.created.witnesses = stage.created.witnesses.map(witness => {
-            const copy = edition.copies.find(copy => copy.siglum === witness.siglum)
-            return copy || witness;
-        })
-
-        if (!stage.basedOn) return;
-
-        const original = stage.basedOn.original
-        const ref = edition.stages.find(creation => creation.created.siglum === original.siglum)
-        if (!ref) return
-
-        stage.basedOn.original = ref.created
-    })
-
-    edition.collation.measured = edition.collation.measured.map((measured: RollCopy) => {
-        const copy = edition.copies.find(c => c.siglum === measured.siglum)
-        return copy || measured;
-    })
 
     return edition;
 }
