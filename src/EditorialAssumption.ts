@@ -1,5 +1,4 @@
 import { WithId } from "./WithId";
-import { RollFeature } from "./Feature";
 import { AnySymbol } from "./Symbol";
 import { Stage } from "./Stage";
 
@@ -60,24 +59,16 @@ export const emendationMotivation = [
 
 export type EmendationMotivation = typeof emendationMotivation[number];
 
-export interface Emendation<T> extends EditorialAssumption<T>, WithNote {
-    motivation: EmendationMotivation;
-}
-
-export interface Replacement extends Emendation<'replacement'>, WithNote {
-    replaced: RollFeature[]; // P140 assigned attribute to
-    with: RollFeature[]; // P141 assigned
-}
 
 export type DimensionMarker = {
     point: 'start' | 'end';
-    of: RollFeature;
+    of: Symbol;
 }
 
 type PlacementType = 'after' | 'before' | 'with';
 
 // reo:Constraint, subclass of E13 Attribute Assignment
-export interface Constraint extends Emendation<'constraint'> {
+export interface Constraint extends EditorialAssumption<'constraint'> {
     placed: DimensionMarker;
     placement: PlacementType;
     relativeTo: DimensionMarker | {
@@ -85,10 +76,6 @@ export interface Constraint extends Emendation<'constraint'> {
         unit: string 
     };
 }
-
-export type AnyEmendation = 
-    | Constraint
-    | Replacement
 
 export interface Derivation extends EditorialAssumption<'derivation'> {
     predecessor: Stage
@@ -155,7 +142,7 @@ export interface Question extends EditorialAssumption<'question'> {
 }
 
 export type AnyEditorialAssumption =
-    AnyEmendation |
+    Constraint |
     Edit |
     Question |
     TempoAdjustment |
