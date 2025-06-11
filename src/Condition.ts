@@ -7,7 +7,7 @@ import { WithId } from "./WithId";
  */
 
 export interface ConditionState extends WithId {
-    type?: 'damaged';
+    type?: 'failed-single-perforation' | 'teared' | 'damaged-perforation';
     description?: string;
     assessment: ConditionAssessment;
 }
