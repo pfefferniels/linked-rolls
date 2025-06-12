@@ -100,7 +100,13 @@ export const editMotivations = [
 
 export type EditMotivation = typeof editMotivations[number];
 
-export interface Edit extends EditorialAssumption<'edit'> {
+/**
+ * Actor should be used to indicate the person who
+ * (presumably) carried out the edit. This is distinct
+ * from the person who made the assumption about the edit,
+ * which is documented in the `reasons` property.
+ */
+export interface Edit extends EditorialAssumption<'edit'>, WithActor {
     motivation?: EditMotivation
     insert?: AnySymbol[];
     delete?: AnySymbol[];
