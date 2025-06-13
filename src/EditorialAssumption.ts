@@ -1,5 +1,4 @@
 import { WithId } from "./WithId";
-import { Stage } from "./Stage";
 import { Person } from "./Edition";
 import { Edit } from "./Edit";
 import { v4 } from "uuid";
@@ -66,31 +65,6 @@ export function assign<Type extends string, T>(type: Type, object: T): Editorial
         assigned: object
     }
 }
-
-export interface Derivation extends EditorialAssumption<'derivation', Stage> { }
-
-export interface RollTempo {
-    startsWith: number;
-    endsWith: number;
-    unit: string;
-}
-
-export interface TempoAssignment extends EditorialAssumption<'tempoAssignment', RollTempo> { }
-
-/**
- * Stretch a roll copy so that it can be collated with others.
- * The note property should reflect about the relationship between
- * the roll condition, its physical properties, and the assumed
- * stretching.
- */
-export interface StretchAssignment extends EditorialAssumption<'stretchAssignment', number> { }
-
-export interface Shift {
-    vertical: number;
-    horizontal: number;
-}
-
-export interface ShiftAssignment extends EditorialAssumption<'shiftAssignment', Shift> { }
 
 export type DimensionMarker = {
     point: 'start' | 'end';

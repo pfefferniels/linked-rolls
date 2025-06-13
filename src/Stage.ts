@@ -1,6 +1,8 @@
 import { Edit } from "./Edit";
-import { Intention, Derivation, flat } from "./EditorialAssumption";
+import { EditorialAssumption, Intention, flat } from "./EditorialAssumption";
 import { AnySymbol, dimensionOf } from "./Symbol";
+
+export interface Derivation extends EditorialAssumption<'derivation', Stage> { }
 
 /**
  * Stage + Stage Creation

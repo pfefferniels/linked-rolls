@@ -1,4 +1,4 @@
-import { Question, TempoAssignment } from "./EditorialAssumption";
+import { EditorialAssumption, Question } from "./EditorialAssumption";
 import { WithId } from "./WithId";
 import { DateAssignment, RollCopy } from "./RollCopy";
 import { Stage } from "./Stage";
@@ -44,6 +44,14 @@ export interface Roll {
     catalogueNumber: string     // has inventory-no (of a certain type)
     recordingEvent: RecordingEvent
 }
+
+export interface RollTempo {
+    startsWith: number;
+    endsWith: number;
+    unit: string;
+}
+
+export interface TempoAssignment extends EditorialAssumption<'tempoAssignment', RollTempo> { }
 
 export interface Edition {
     base: string

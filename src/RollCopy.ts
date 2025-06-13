@@ -2,12 +2,27 @@ import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
 import { ConditionState } from "./Condition";
 import { AnySymbol } from "./Symbol";
-import { assign, EditorialAssumption, flat, Shift, ShiftAssignment, StretchAssignment } from "./EditorialAssumption";
+import { assign, EditorialAssumption, flat } from "./EditorialAssumption";
 import { read } from "midifile-ts";
 import { asSpans } from "./asMIDISpans";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 import { WelteT100 } from "./TrackerBar";
 import { HorizontalSpan, RollFeature } from "./Feature";
+
+/**
+ * Stretch a roll copy so that it can be collated with others.
+ * The note property should reflect about the relationship between
+ * the roll condition, its physical properties, and the assumed
+ * stretching.
+ */
+export interface StretchAssignment extends EditorialAssumption<'stretchAssignment', number> { }
+
+export interface Shift {
+    vertical: number;
+    horizontal: number;
+}
+
+export interface ShiftAssignment extends EditorialAssumption<'shiftAssignment', Shift> { }
 
 const applyShift = (shift: Shift, to: RollFeature[]) => {
     for (const event of to) {

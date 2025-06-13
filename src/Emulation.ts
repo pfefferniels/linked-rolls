@@ -1,10 +1,10 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { AnySymbol, Expression, ExpressionType, Note } from "./Symbol";
-import { RollTempo } from "./EditorialAssumption";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 import { getSnaphsot, Stage } from "./Stage";
 import { dimensionOf } from "./Symbol";
 import { RollFeature } from "./Feature";
+import { RollTempo } from "./Edition";
 
 function resize<T>(arr: T[], newSize: number, defaultValue: T) {
     while (newSize > arr.length)
