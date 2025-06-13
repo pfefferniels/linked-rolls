@@ -1,7 +1,8 @@
-import { Question, TempoAdjustment } from "./EditorialAssumption";
+import { Question, TempoAssignment } from "./EditorialAssumption";
 import { WithId } from "./WithId";
 import { RollCopy } from "./RollCopy";
 import { Stage } from "./Stage";
+import { Collation } from "./Collation";
 
 // E21 Person
 export interface Person extends Partial<WithId> {
@@ -10,9 +11,10 @@ export interface Person extends Partial<WithId> {
     role?: string // e.g. 'pianist', 'editor', 'publisher', etc.
 }
 
-export interface PublicationEvent {
+export interface EditionCreation {
     publisher: Person
     publicationDate: string
+    consistsOf: Collation
 }
 
 export interface RecordingEvent {
@@ -33,12 +35,12 @@ export interface Roll {
 
 export interface Edition {
     base: string
-    publicationEvent: PublicationEvent
+    publicationEvent: EditionCreation
     title: string
     license: string
     roll: Roll
     copies: RollCopy[]
     stages: Stage[]
     questions: Question[]
-    tempoAdjustment?: TempoAdjustment
+    tempoAdjustment?: TempoAssignment
 }

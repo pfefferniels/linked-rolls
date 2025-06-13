@@ -1,0 +1,38 @@
+import { Person } from "./Edition";
+import { EditorialAssumption } from "./EditorialAssumption";
+import { AnySymbol } from "./Symbol";
+import { WithId } from "./WithId";
+
+export const editMotivations = [
+    /**
+     * An additional accent that can only be encoded with 
+     * sforzando on/off due to the short space left between
+     * the notes to be differentiated.
+     */
+    'short-dynamic-differentation',
+    'additional-accent',
+    'add-redundancy',
+    'remove-redundancy',
+    'replace-with-equivalent',
+    'shift',
+    'correct-error',
+    'shorten',
+    'prolong',
+] as const;
+
+export type EditMotivation = typeof editMotivations[number];
+
+export interface MotivationAssignment extends EditorialAssumption<'motivationAssignment', EditMotivation> { }
+
+export interface ActorAssignment extends EditorialAssumption<'actorAssignment', Person> { }
+
+/**
+ * Actor should be used to indicate the person who
+ * (presumably) carried out the edit. 
+ */
+export interface Edit extends WithId {
+    actor?: ActorAssignment;
+    motivation?: MotivationAssignment;
+    insert?: AnySymbol[];
+    delete?: AnySymbol[];
+}

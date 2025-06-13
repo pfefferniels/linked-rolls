@@ -1,4 +1,5 @@
-import { Edit, Intention, Derivation } from "./EditorialAssumption";
+import { Edit } from "./Edit";
+import { Intention, Derivation, flat } from "./EditorialAssumption";
 import { AnySymbol, dimensionOf } from "./Symbol";
 
 /**
@@ -12,10 +13,10 @@ export interface Stage {
     intentions: Intention[]
 }
 
-const traverseStages = (stage: Stage, callback: (stage: Stage) => void) => {
+export const traverseStages = (stage: Stage, callback: (stage: Stage) => void) => {
     callback(stage);
     if (stage.basedOn) {
-        traverseStages(stage.basedOn.predecessor, callback);
+        traverseStages(flat(stage.basedOn), callback);
     }
 }
 
@@ -38,10 +39,10 @@ const isCollatable = (symbolA: AnySymbol, symbolB: AnySymbol): boolean => {
     // two symbols are collatible if they share the same 
     // symbol characteristics (pitch, expression type etc.)
     // and occur in the same horizontal position.
-    if (symbolA.type === 'note' && symbolB.type === 'note') {
+    if (symbolA.symbolType === 'note' && symbolB.symbolType === 'note') {
         if (symbolA.pitch !== symbolB.pitch) return false;
     }
-    else if (symbolA.type === 'expression' && symbolB.type === 'expression') {
+    else if (symbolA.symbolType === 'expression' && symbolB.symbolType === 'expression') {
         if (symbolA.expressionType !== symbolB.expressionType) return false;
         if (symbolA.scope !== symbolB.scope) return false;
     }
@@ -98,19 +99,19 @@ export function fillEdits(currentStage: Stage, symbols: AnySymbol[]) {
         snapshot
             .filter(toCompare => isCollatable(symbol, toCompare))
             .forEach(corresp => {
-                corresp.isCarriedBy.push(...symbol.isCarriedBy);
+                corresp.carriers.push(...symbol.carriers);
                 insertions.splice(insertions.indexOf(symbol), 1);
             })
     }
 
     // special treatment for covers
-    const covers = insertions.filter(symbol => symbol.type === 'cover');
+    const covers = insertions.filter(symbol => symbol.symbolType === 'cover');
     for (const cover of covers) {
         // find perforations in the snapshot that 
         // overlap with the cover
         snapshot
             .filter(
-                symbol => symbol.type === 'note' || symbol.type === 'expression'
+                symbol => symbol.symbolType === 'note' || symbol.symbolType === 'expression'
             )
             .map(dimensionOf)
             .filter(dimension => overlaps(dimension, dimensionOf(cover)))
@@ -139,22 +140,18 @@ export function fillEdits(currentStage: Stage, symbols: AnySymbol[]) {
     currentStage.edits.push(
         ...insertions.map((symbol): Edit => {
             return {
-                type: 'edit',
                 insert: [symbol],
                 delete: [],
                 id: symbol.id,
-                certainty: 'likely'
             }
         }));
 
     const deletions = new Set(snapshot).difference(new Set(symbols));
     for (const symbol of deletions) {
         currentStage.edits.push({
-            type: 'edit',
             insert: [],
             delete: [symbol],
             id: symbol.id,
-            certainty: 'likely'
         });
     }
 }

@@ -1,5 +1,4 @@
-import { ConditionState } from "./Condition";
-import { RollMeasurement } from "./Measurement";
+import { ConditionAssessment } from "./Condition";
 import { WithId } from "./WithId";
 
 export interface HorizontalSpan {
@@ -35,7 +34,5 @@ export interface RollFeature extends WithId {
      * This can be used e.g. to indicate a perforation
      * which is torn out or in any other way damaged.
      */
-    condition?: ConditionState
-
-    measurement: RollMeasurement // L20i was created by
+    condition?: ConditionAssessment
 }

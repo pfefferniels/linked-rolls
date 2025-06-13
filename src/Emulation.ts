@@ -1,6 +1,6 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { AnySymbol, Expression, ExpressionType, Note } from "./Symbol";
-import { TempoAdjustment } from "./EditorialAssumption";
+import { RollTempo } from "./EditorialAssumption";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 import { getSnaphsot, Stage } from "./Stage";
 import { dimensionOf } from "./Symbol";
@@ -40,7 +40,7 @@ type AssumedPhysicalTimeSpan = {
 }
 
 export type NegotiatedEvent =
-    Omit<Note | Expression, 'isCarriedBy'>
+    Omit<Note | Expression, 'carriers'>
     & Pick<RollFeature, 'horizontal' | 'vertical'>
     & AssumedPhysicalTimeSpan
 
@@ -61,7 +61,7 @@ export type EmulationOptions = {
 }
 
 const simplifySymbol = (symbol: Note | Expression): NegotiatedEvent | null => {
-    if (!symbol.isCarriedBy || !symbol.isCarriedBy.length) return null
+    if (!symbol.carriers || !symbol.carriers.length) return null
 
     const mean = dimensionOf(symbol)
 
@@ -105,15 +105,15 @@ export class Emulation {
         this.options = options
     }
 
-    private findRollTempo(adjustment?: TempoAdjustment) {
-        if (!adjustment) {
+    private findRollTempo(tempo?: RollTempo) {
+        if (!tempo) {
             this.startTempo = 104.331
             this.endTempo = 104.331
             return
         }
 
-        this.startTempo = adjustment.startsWith
-        this.endTempo = adjustment.endsWith
+        this.startTempo = tempo.startsWith
+        this.endTempo = tempo.endsWith
     }
 
     private assignPhysicalTime(skipToFirstNote = false) {
@@ -142,7 +142,7 @@ export class Emulation {
 
     private convertEventsToMIDI() {
         for (const event of this.negotiatedEvents) {
-            if (event.type === 'expression') {
+            if (event.symbolType === 'expression') {
                 const expression = event as unknown as Expression
 
                 const map = new Map<ExpressionType, string>([
@@ -160,7 +160,7 @@ export class Emulation {
                     })
                 }
             }
-            else if (event.type === 'note') {
+            else if (event.symbolType === 'note') {
                 const note = event as unknown as Note
 
                 // take velocity from the calculated velocity list
@@ -202,16 +202,16 @@ export class Emulation {
 
     emulateStage(
         stage: Stage,
-        tempoAdjustment?: TempoAdjustment,
+        rollTempo?: RollTempo,
         skipToFirstNote: boolean = false
     ) {
         this.negotiatedEvents =
             getSnaphsot(stage)
-                .filter(s => s.type === 'note' || s.type === 'expression')
+                .filter(s => s.symbolType === 'note' || s.symbolType === 'expression')
                 .map(simplifySymbol)
                 .filter(s => s !== null)
 
-        this.findRollTempo(tempoAdjustment)
+        this.findRollTempo(rollTempo)
         this.applyTrackerBarExtension()
         this.assignPhysicalTime(skipToFirstNote)
         this.calculateVelocities('treble')
@@ -262,7 +262,7 @@ export class Emulation {
         // state of each expression.
 
         for (const negotiatedEvent of this.negotiatedEvents) {
-            if (negotiatedEvent.type !== 'expression') continue
+            if (negotiatedEvent.symbolType !== 'expression') continue
 
             if (scope === 'treble' && negotiatedEvent.vertical.from < this.options.division) continue
             else if (scope === 'bass' && negotiatedEvent.vertical.from >= this.options.division) continue

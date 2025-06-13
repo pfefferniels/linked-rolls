@@ -6,7 +6,7 @@ export abstract class TrackerBar {
 
 export class WelteT100 {
     meaningOf(track: number):
-        Pick<Note, 'type' | 'pitch'> | Pick<Expression, 'type' | 'expressionType' | 'scope'> {
+        Pick<Note, 'symbolType' | 'pitch'> | Pick<Expression, 'symbolType' | 'expressionType' | 'scope'> {
         if (track <= 0 || track > 100) {
             throw new Error('Track out of range')
         }
@@ -40,14 +40,14 @@ export class WelteT100 {
             return {
                 expressionType: expressionMap.get(track)!,
                 scope,
-                type: 'expression'
+                symbolType: 'expression'
             }
         }
 
         // C1-G4 = track 11-90 = 24-103 in MIDI keys
         return {
             pitch: track + 13,
-            type: 'note',
+            symbolType: 'note',
         }
     }
 }

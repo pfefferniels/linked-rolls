@@ -1,64 +1,96 @@
 import { WithId } from "./WithId";
-import { AnySymbol } from "./Symbol";
 import { Stage } from "./Stage";
+import { Person } from "./Edition";
+import { Edit } from "./Edit";
+import { v4 } from "uuid";
 
 export type Certainty = 'true' | 'likely' | 'possible' | 'unlikely' | 'false';
 
 export type WithActor = {
-    actor?: string // P14 carried out by
+    actor?: Person // P14 carried out by
 }
 
 export type WithNote = {
     note?: string // P3 has note
 }
 
-/**
- * This equals to CRMinf I5 Inference Making
- */
-export interface Inference extends WithActor, WithNote {
-    type: 'inference';
-    premises: AnyEditorialAssumption[]; // used as premise
-    logic?: string
+export interface Argumentation extends WithActor, WithNote {
+    motivation?: Question
+}
+
+export interface Inference extends Argumentation {
+    premise: Belief
+}
+
+export interface Belief extends WithId {
+    type: 'belief';
+    certainty: Certainty;
+    reasons: Argumentation[]
+}
+
+export interface IntendedMeaningBelief<AboutT> extends Belief {
+    about: AboutT; // P2 is about
 }
 
 /**
- * This equals to CRMinf I7 Belief Adoption
+ * An editorial assumpton is always a One-Proposition Set.
  */
-export interface Reference extends WithActor, WithNote {
-    type: 'reference';
+export interface EditorialAssumption<Name, AssignedType> extends WithId {
+    type: Name;
+    assigned: AssignedType,
+    belief?: Belief
 }
+
+export function flat<Name, Type>(
+    assumption: EditorialAssumption<Name, Type>
+): Type
+
+export function flat<Name, Type>(
+    assumption: EditorialAssumption<Name, Type>[]
+): Type[]
+
+export function flat<Name, Type>(
+    assumption:
+        | EditorialAssumption<Name, Type>
+        | EditorialAssumption<Name, Type>[]
+): Type | Type[] {
+    return Array.isArray(assumption)
+        ? assumption.map(a => a.assigned)
+        : assumption.assigned
+}
+
+export function assign<Type extends string, T>(type: Type, object: T): EditorialAssumption<Type, T> {
+    return {
+        type,
+        id: v4(),
+        assigned: object
+    }
+}
+
+export interface Derivation extends EditorialAssumption<'derivation', Stage> { }
+
+export interface RollTempo {
+    startsWith: number;
+    endsWith: number;
+    unit: string;
+}
+
+export interface TempoAssignment extends EditorialAssumption<'tempoAssignment', RollTempo> { }
 
 /**
- * This equals to CRMsci S4 Observation
+ * Stretch a roll copy so that it can be collated with others.
+ * The note property should reflect about the relationship between
+ * the roll condition, its physical properties, and the assumed
+ * stretching.
  */
-export interface Observation extends WithActor, Required<WithNote> {
-    type: 'observation';
-    observed?: AnySymbol[];
+export interface StretchAssignment extends EditorialAssumption<'stretchAssignment', number> { }
+
+export interface Shift {
+    vertical: number;
+    horizontal: number;
 }
 
-export type AnyArgumentation = Inference | Reference | Observation
-
-/**
- * An editorial assumpton is an I2 Belief *and* I4 Proposition Set
- */
-export interface EditorialAssumption<T> extends WithId {
-    type: T;
-    certainty: Certainty, // held to be
-    reasons?: AnyArgumentation[]; // was concluded by
-}
-
-export function isEditorialAssumption(obj: any): obj is AnyEditorialAssumption {
-    return obj && typeof obj === 'object' && 'type' in obj && 'certainty' in obj;
-}
-
-export const emendationMotivation = [
-    'failed-perforation',
-    'torn-perforation',
-    'vertical-displacement'
-] as const 
-
-export type EmendationMotivation = typeof emendationMotivation[number];
-
+export interface ShiftAssignment extends EditorialAssumption<'shiftAssignment', Shift> { }
 
 export type DimensionMarker = {
     point: 'start' | 'end';
@@ -67,93 +99,34 @@ export type DimensionMarker = {
 
 type PlacementType = 'after' | 'before' | 'with';
 
+interface IntendedMeaning<AboutT> {
+    belief: IntendedMeaningBelief<AboutT>
+}
+
 // reo:Constraint, subclass of E13 Attribute Assignment
-export interface Constraint extends EditorialAssumption<'constraint'> {
+export interface Constraint {
     placed: DimensionMarker;
     placement: PlacementType;
     relativeTo: DimensionMarker | {
         number: number;
-        unit: string 
+        unit: string
     };
 }
 
-export interface Derivation extends EditorialAssumption<'derivation'> {
-    predecessor: Stage
-}
-
-export const editMotivations = [
-    /**
-     * An additional accent that can only be encoded with 
-     * sforzando on/off due to the short space left between
-     * the notes to be differentiated.
-     */
-    'short-dynamic-differentation',
-    'additional-accent',
-    'add-redundancy',
-    'remove-redundancy',
-    'replace-with-equivalent',
-    'shift',
-    'correct-error',
-    'shorten',
-    'prolong',
-] as const;
-
-export type EditMotivation = typeof editMotivations[number];
-
-/**
- * Actor should be used to indicate the person who
- * (presumably) carried out the edit. This is distinct
- * from the person who made the assumption about the edit,
- * which is documented in the `reasons` property.
- */
-export interface Edit extends EditorialAssumption<'edit'>, WithActor {
-    motivation?: EditMotivation
-    insert?: AnySymbol[];
-    delete?: AnySymbol[];
-}
-
-export interface TempoAdjustment extends EditorialAssumption<'tempoAdjustment'> {
-    adjusts: string;
-    startsWith: number;
-    endsWith: number;
-}
-
-/**
- * Stretch a roll copy so that it can be collated with others.
- * The note property should reflect about the relationship between
- * the roll condition, its physical properties, and the assumed
- * stretching.
- */
-export interface Stretch extends EditorialAssumption<'stretch'> {
-    factor: number;
-}
-
-/**
- * Shift a copy so that it can be collated with others.
- */
-export interface Shift extends EditorialAssumption<'shift'> {
-    vertical: number;
-    horizontal: number;
-}
-
-export interface Intention extends EditorialAssumption<'intention'> {
+export interface Intention extends IntendedMeaning<Edit> {
     description: string;
+}
+
+export interface QuestionMaking extends WithActor {
+    premise: Belief | Question; // has premise
 }
 
 /**
  * Modelled on IAM's Question, cf. M. Doerr et al., p. 12
  */
-export interface Question extends EditorialAssumption<'question'> {
+export interface Question {
     question: string // has conclusion (W)
+    making: {
+        premise: Belief
+    }
 }
-
-export type AnyEditorialAssumption =
-    Constraint |
-    Edit |
-    Question |
-    TempoAdjustment |
-    Stretch |
-    Shift |
-    Derivation |
-    Intention;
-

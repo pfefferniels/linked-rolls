@@ -1,13 +1,15 @@
+import { EditorialAssumption, flat } from "./EditorialAssumption";
 import { HorizontalSpan, RollFeature, VerticalSpan } from "./Feature";
 import { WithId } from "./WithId";
 
-export interface Symbol<T extends string> extends WithId {
-    type: T
-    isCarriedBy: RollFeature[]
-}
+/**
+ * @todo Should this be called Transcription?
+ */
+export type CarrierAssignment = EditorialAssumption<'carrierAssignment', RollFeature>;
 
-export function isSymbol<T extends string>(e: any): e is Symbol<T> {
-    return 'isCarriedBy' in e
+export interface Symbol<T extends string> extends WithId {
+    symbolType: T
+    carriers: CarrierAssignment[]
 }
 
 export interface Perforation<T extends string> extends Symbol<T> {
@@ -86,19 +88,22 @@ export type AnySymbol =
     | Cover
     | RollLabel;
 
-
 export const dimensionOf = (symbol: AnySymbol): { horizontal: HorizontalSpan, vertical: VerticalSpan } => {
-    if (symbol.isCarriedBy.length === 0) {
+    if (symbol.carriers.length === 0) {
         return {
             horizontal: { unit: 'mm', from: 0, to: 0 },
             vertical: { unit: 'track', from: 0, to: 0 }
         };
     }
 
-    const horizontalFrom = symbol.isCarriedBy.reduce((hAcc, h) => hAcc + h.horizontal.from, 0) / symbol.isCarriedBy.length;
-    const horizontalTo = symbol.isCarriedBy.reduce((hAcc, h) => hAcc + h.horizontal.to, 0) / symbol.isCarriedBy.length;
-    const verticalFrom = symbol.isCarriedBy.reduce((vAcc, v) => vAcc + v.vertical.from, 0) / symbol.isCarriedBy.length;
-    const verticalTo = symbol.isCarriedBy.reduce((vAcc, v) => vAcc + (v.vertical.to ?? v.vertical.from), 0) / symbol.isCarriedBy.length;
+    const horizontalFrom = flat(symbol.carriers)
+        .reduce((hAcc, h) => hAcc + h.horizontal.from, 0) / symbol.carriers.length;
+    const horizontalTo = flat(symbol.carriers)
+        .reduce((hAcc, h) => hAcc + h.horizontal.to, 0) / symbol.carriers.length;
+    const verticalFrom = flat(symbol.carriers)
+        .reduce((vAcc, v) => vAcc + v.vertical.from, 0) / symbol.carriers.length;
+    const verticalTo = flat(symbol.carriers)
+        .reduce((vAcc, v) => vAcc + (v.vertical.to ?? v.vertical.from), 0) / symbol.carriers.length;
 
     return {
         horizontal: { unit: 'mm', from: horizontalFrom, to: horizontalTo },

@@ -1,9 +1,8 @@
 import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
-import { RollMeasurement } from "./Measurement";
 import { ConditionState } from "./Condition";
 import { AnySymbol } from "./Symbol";
-import { Shift, Stretch } from "./EditorialAssumption";
+import { assign, flat, Shift, ShiftAssignment, StretchAssignment } from "./EditorialAssumption";
 import { read } from "midifile-ts";
 import { asSpans } from "./asMIDISpans";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
@@ -24,11 +23,11 @@ const applyShift = (shift: Shift, to: RollFeature[]) => {
     }
 }
 
-const applyStretch = (stretch: Stretch, to: RollFeature[]) => {
+const applyStretch = (stretch: number, to: RollFeature[]) => {
     for (const event of to) {
-        event.horizontal.from *= stretch.factor
+        event.horizontal.from *= stretch
         if (event.horizontal.to) {
-            event.horizontal.to *= stretch.factor
+            event.horizontal.to *= stretch
         }
     }
 }
@@ -65,14 +64,12 @@ export class RollCopy {
         unit: string
     }
 
-    stretch?: Stretch
-    shift?: Shift
+    stretch?: StretchAssignment
+    shift?: ShiftAssignment
 
     productionEvent?: ProductionEvent
     conditions: ConditionState[] = []
     location: string = ''
-
-    transcriptions: RollMeasurement[] = []
 
     // will not be exported in final JSON. Shift, stretch
     // and emendations are applied already.
@@ -80,28 +77,28 @@ export class RollCopy {
     scan?: string // P138 has representation => IIIF Image Link (considered to be an E38 Image)
 
     insertFeature(feature: RollFeature) {
-        this.shift && applyShift(this.shift, [feature])
-        this.stretch && applyStretch(this.stretch, [feature])
+        this.shift && applyShift(flat(this.shift), [feature])
+        this.stretch && applyStretch(flat(this.stretch), [feature])
         this.features.push(feature)
     }
 
-    setShift(shift: Shift) {
+    setShift(shift: ShiftAssignment) {
         this.shift = shift
-        applyShift(shift, this.features)
+        applyShift(flat(shift), this.features)
     }
 
-    setStretch(stretch: Stretch) {
+    setStretch(stretch: StretchAssignment) {
         this.stretch = stretch
-        applyStretch(stretch, this.features)
+        applyStretch(flat(stretch), this.features)
     }
 }
 
 export function asSymbols(copy: RollCopy): AnySymbol[] {
-    return copy.features.map(feature => {
+    return copy.features.map((feature): AnySymbol => {
         return {
             id: `symbol_${v4()}`,
             ...new WelteT100().meaningOf(feature.vertical.from),
-            isCarriedBy: [feature]
+            carriers: [assign('carrierAssignment', feature)]
         }
     })
 }
@@ -119,7 +116,6 @@ export function readFromStanfordAton(atonString: string, adjustByRewind: boolean
     const holeSeparation = parseFloat(json.ROLLINFO.HOLE_SEPARATION.replace('px'))
     const hardMarginBass = parseFloat(json.ROLLINFO.HARD_MARGIN_BASS.replace('px'))
     const hardMarginTreble = parseFloat(json.ROLLINFO.HARD_MARGIN_TREBLE.replace('px'))
-    const date = json.ROLLINFO.ANALYSIS_DATE
     const dpi = parseFloat(json.ROLLINFO.LENGTH_DPI.replace('ppi'))
     const rollWidth = parseFloat(json.ROLLINFO.ROLL_WIDTH.replace('px')) / dpi * 25.4
     const rollHeight = parseFloat(json.ROLLINFO.IMAGE_LENGTH.replace('px')) / dpi * 25.4
@@ -127,12 +123,6 @@ export function readFromStanfordAton(atonString: string, adjustByRewind: boolean
 
     const lastHole = +holes[holes.length - 1].TRACKER_HOLE
     const rewindShift = adjustByRewind ? 91 - lastHole : shift
-
-    const measurement = {
-        id: `measurement_${v4().slice(0, 8)}`,
-        software: 'https://github.com/pianoroll/roll-image-parser',
-        date
-    }
 
     const copy: RollCopy = new RollCopy()
 
@@ -157,8 +147,6 @@ export function readFromStanfordAton(atonString: string, adjustByRewind: boolean
         bass: hardMarginBass,
         unit: 'px'
     }
-
-    copy.transcriptions = [measurement]
 
     let circularPunches = 0
     const features = []
@@ -191,7 +179,6 @@ export function readFromStanfordAton(atonString: string, adjustByRewind: boolean
                 from: trackerHole,
                 unit: 'track'
             },
-            measurement,
             horizontal: {
                 unit: 'mm',
                 from: pixelsToMillimeters(noteAttack, dpi),
@@ -206,7 +193,6 @@ export function readFromStanfordAton(atonString: string, adjustByRewind: boolean
 
     copy.scan = `https://stacks.stanford.edu/image/iiif/${druid}%2F${druid}_0001/`
     copy.features = features
-    copy.transcriptions = [measurement]
 
     return copy
 }
@@ -225,14 +211,7 @@ export function readFromSpencerMIDI(
     const midi = read(midiBuffer)
     const features: RollFeature[] = []
 
-    const measurement: RollMeasurement = {
-        date: 'unknown',
-        id: v4(),
-        software: 'unknown'
-    }
-
     const copy = new RollCopy()
-    copy.transcriptions.push(measurement)
 
     const spans = asSpans(midi)
 
@@ -266,7 +245,6 @@ export function readFromSpencerMIDI(
                 unit: 'track'
             },
             horizontal: horizontalDimension,
-            measurement,
             id: v4()
         }
         features.push(feature)
@@ -279,11 +257,9 @@ export function readFromSpencerMIDI(
 
 export function shiftVertically(
     features: RollFeature[],
-    amount: number,
-    measurement: RollMeasurement
+    amount: number
 ) {
     for (const event of features) {
-        event.measurement = measurement // replace the measurement
         event.vertical.from += amount;
         try {
             const newEvent = new WelteT100().meaningOf(event.vertical.from)
@@ -300,7 +276,7 @@ export function shiftVertically(
 export const findCopiesCarrying = (sources: RollCopy[], symbol: AnySymbol) => {
     const result: Set<string> = new Set()
 
-    for (const feature of symbol.isCarriedBy) {
+    for (const feature of flat(symbol.carriers)) {
         for (const copy of sources) {
             if (copy.features.includes(feature)) {
                 result.add(copy.id)

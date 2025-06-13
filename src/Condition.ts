@@ -1,3 +1,4 @@
+import { EditorialAssumption } from "./EditorialAssumption";
 import { WithId } from "./WithId";
 
 /**
@@ -9,14 +10,10 @@ import { WithId } from "./WithId";
 export interface ConditionState extends WithId {
     type?: 'failed-single-perforation' | 'teared' | 'damaged-perforation';
     description?: string;
-    assessment: ConditionAssessment;
 }
 
 /**
  * Documents when and by whom a condition state
  * was assessed.
  */
-export interface ConditionAssessment extends WithId {
-    actor: string;
-    date: string;
-}
+export interface ConditionAssessment extends EditorialAssumption<'conditionAssessment', ConditionState> { }
