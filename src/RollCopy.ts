@@ -2,7 +2,7 @@ import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
 import { ConditionState } from "./Condition";
 import { AnySymbol } from "./Symbol";
-import { assign, flat, Shift, ShiftAssignment, StretchAssignment } from "./EditorialAssumption";
+import { assign, EditorialAssumption, flat, Shift, ShiftAssignment, StretchAssignment } from "./EditorialAssumption";
 import { read } from "midifile-ts";
 import { asSpans } from "./asMIDISpans";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
@@ -32,11 +32,13 @@ const applyStretch = (stretch: number, to: RollFeature[]) => {
     }
 }
 
+export type DateAssignment = EditorialAssumption<'dateAssignment', Date>
+
 interface ProductionEvent {
     company: string
     system: string
     paper: string
-    date: string
+    date: DateAssignment
 }
 
 export class RollCopy {
