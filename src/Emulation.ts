@@ -142,7 +142,7 @@ export class Emulation {
 
     private convertEventsToMIDI() {
         for (const event of this.negotiatedEvents) {
-            if (event.symbolType === 'expression') {
+            if (event.type === 'expression') {
                 const expression = event as unknown as Expression
 
                 const map = new Map<ExpressionType, string>([
@@ -160,7 +160,7 @@ export class Emulation {
                     })
                 }
             }
-            else if (event.symbolType === 'note') {
+            else if (event.type === 'note') {
                 const note = event as unknown as Note
 
                 // take velocity from the calculated velocity list
@@ -207,7 +207,7 @@ export class Emulation {
     ) {
         this.negotiatedEvents =
             getSnaphsot(stage)
-                .filter(s => s.symbolType === 'note' || s.symbolType === 'expression')
+                .filter(s => s.type === 'note' || s.type === 'expression')
                 .map(simplifySymbol)
                 .filter(s => s !== null)
 
@@ -262,7 +262,7 @@ export class Emulation {
         // state of each expression.
 
         for (const negotiatedEvent of this.negotiatedEvents) {
-            if (negotiatedEvent.symbolType !== 'expression') continue
+            if (negotiatedEvent.type !== 'expression') continue
 
             if (scope === 'treble' && negotiatedEvent.vertical.from < this.options.division) continue
             else if (scope === 'bass' && negotiatedEvent.vertical.from >= this.options.division) continue

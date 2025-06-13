@@ -8,7 +8,7 @@ import { WithId } from "./WithId";
 export type CarrierAssignment = EditorialAssumption<'carrierAssignment', RollFeature>;
 
 export interface Symbol<T extends string> extends WithId {
-    symbolType: T
+    type: T
     carriers: CarrierAssignment[]
 }
 

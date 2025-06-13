@@ -104,3 +104,17 @@ export interface Question {
         premise: Belief
     }
 }
+
+/*
+type BeliefSubjectMap = Map<string, any>;
+
+export function findBeliefSubject(belief: Belief, map: BeliefSubjectMap) {
+    if (map.has(belief.id)) {
+        return map.get(belief.id);
+    }
+}
+
+export function buildBeliefSubjectMap = (edition: Edition): BeliefSubjectMap => {
+    
+}
+    */

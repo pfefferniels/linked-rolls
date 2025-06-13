@@ -41,10 +41,10 @@ const isCollatable = (symbolA: AnySymbol, symbolB: AnySymbol): boolean => {
     // two symbols are collatible if they share the same 
     // symbol characteristics (pitch, expression type etc.)
     // and occur in the same horizontal position.
-    if (symbolA.symbolType === 'note' && symbolB.symbolType === 'note') {
+    if (symbolA.type === 'note' && symbolB.type === 'note') {
         if (symbolA.pitch !== symbolB.pitch) return false;
     }
-    else if (symbolA.symbolType === 'expression' && symbolB.symbolType === 'expression') {
+    else if (symbolA.type === 'expression' && symbolB.type === 'expression') {
         if (symbolA.expressionType !== symbolB.expressionType) return false;
         if (symbolA.scope !== symbolB.scope) return false;
     }
@@ -107,13 +107,13 @@ export function fillEdits(currentStage: Stage, symbols: AnySymbol[]) {
     }
 
     // special treatment for covers
-    const covers = insertions.filter(symbol => symbol.symbolType === 'cover');
+    const covers = insertions.filter(symbol => symbol.type === 'cover');
     for (const cover of covers) {
         // find perforations in the snapshot that 
         // overlap with the cover
         snapshot
             .filter(
-                symbol => symbol.symbolType === 'note' || symbol.symbolType === 'expression'
+                symbol => symbol.type === 'note' || symbol.type === 'expression'
             )
             .map(dimensionOf)
             .filter(dimension => overlaps(dimension, dimensionOf(cover)))
