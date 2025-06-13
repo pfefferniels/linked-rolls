@@ -1,6 +1,6 @@
 import { Question, TempoAssignment } from "./EditorialAssumption";
 import { WithId } from "./WithId";
-import { RollCopy } from "./RollCopy";
+import { DateAssignment, RollCopy } from "./RollCopy";
 import { Stage } from "./Stage";
 import { Collation } from "./Collation";
 
@@ -11,9 +11,15 @@ export interface Person extends Partial<WithId> {
     role?: string // e.g. 'pianist', 'editor', 'publisher', etc.
 }
 
+// E53 Place
+export interface Place {
+    name: string 
+    sameAs: string[] // should point e.g. to geoplaces
+}
+
 export interface EditionCreation {
     publisher: Person
-    publicationDate: string
+    publicationDate: Date
     consistsOf: Collation
 }
 
@@ -22,8 +28,14 @@ export interface RecordingEvent {
         pianist: Person;
         playing: string;    // should point to GND
     }
-    tookPlaceAt: string // should point to geoplaces
-    date: string
+    place: Place
+
+    /**
+     * The recording date of the roll. This is a date
+     * assignment so that we can state e.g. the catalogue
+     * or the roll label which indicates the date of the recording.
+     */
+    date: DateAssignment 
     created?: Stage
 }
 
