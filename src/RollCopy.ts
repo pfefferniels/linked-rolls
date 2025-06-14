@@ -1,6 +1,6 @@
 import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
-import { ConditionState } from "./Condition";
+import { ConditionAssessment, PaperStretch } from "./Condition";
 import { AnySymbol } from "./Symbol";
 import { assign, EditorialAssumption, flat } from "./EditorialAssumption";
 import { read } from "midifile-ts";
@@ -9,20 +9,10 @@ import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion"
 import { WelteT100 } from "./TrackerBar";
 import { HorizontalSpan, RollFeature } from "./Feature";
 
-/**
- * Stretch a roll copy so that it can be collated with others.
- * The note property should reflect about the relationship between
- * the roll condition, its physical properties, and the assumed
- * stretching.
- */
-export interface StretchAssignment extends EditorialAssumption<'stretchAssignment', number> { }
-
 export interface Shift {
-    vertical: number;
-    horizontal: number;
+    horizontal: number
+    vertical: number
 }
-
-export interface ShiftAssignment extends EditorialAssumption<'shiftAssignment', Shift> { }
 
 const applyShift = (shift: Shift, to: RollFeature[]) => {
     for (const event of to) {
@@ -59,54 +49,69 @@ interface ProductionEvent {
 export class RollCopy {
     id: string = v4()
 
-    dimensions?: {
-        width: number,
-        height: number,
-        unit: string
-    }
+    measurements: Partial<{
+        dimensions: {
+            width: number,
+            height: number,
+            unit: string
+        }
 
-    punchDiameter?: {
-        value: number
-        unit: string
-    }
+        punchDiameter: {
+            value: number
+            unit: string
+        }
 
-    holeSeparation?: {
-        value: number
-        unit: string
-    }
+        holeSeparation: {
+            value: number
+            unit: string
+        }
 
-    margins?: {
-        treble: number
-        bass: number
-        unit: string
-    }
+        margins: {
+            treble: number
+            bass: number
+            unit: string
+        }
 
-    stretch?: StretchAssignment
-    shift?: ShiftAssignment
+        shift: Shift
+
+        measuredBy: {
+            software: string,
+            version: string
+            date: Date
+        }
+    }> = {}
 
     productionEvent?: ProductionEvent
-    conditions: ConditionState[] = []
+    conditions: ConditionAssessment[] = []
     location: string = ''
 
-    // will not be exported in final JSON. Shift, stretch
-    // and emendations are applied already.
+    /**
+     * Provides a reconstructed version of the roll,
+     * with shift, stretch and emendations already
+     * taken into account. This property will not be
+     * exported in the final JSON.
+     */
     features: RollFeature[] = []
     scan?: string // P138 has representation => IIIF Image Link (considered to be an E38 Image)
 
     insertFeature(feature: RollFeature) {
-        this.shift && applyShift(flat(this.shift), [feature])
-        this.stretch && applyStretch(flat(this.stretch), [feature])
+        this.measurements.shift && applyShift(this.measurements.shift, [feature])
+        const stretch = flat(this.conditions)
+            .find(state => state.type === 'paper-stretch')
+        if (stretch) {
+            applyStretch(stretch.factor, [feature])
+        }
         this.features.push(feature)
     }
 
-    setShift(shift: ShiftAssignment) {
-        this.shift = shift
-        applyShift(flat(shift), this.features)
+    setShift(shift: Shift) {
+        this.measurements.shift = shift
+        applyShift(shift, this.features)
     }
 
-    setStretch(stretch: StretchAssignment) {
-        this.stretch = stretch
-        applyStretch(flat(stretch), this.features)
+    setStretch(stretch: EditorialAssumption<'conditionAssessment', PaperStretch>) {
+        this.conditions.push(stretch)
+        applyStretch(flat(stretch).factor, this.features)
     }
 }
 
@@ -142,27 +147,30 @@ export function readFromStanfordAton(atonString: string, adjustByRewind: boolean
     const rewindShift = adjustByRewind ? 91 - lastHole : shift
 
     const copy: RollCopy = new RollCopy()
-
-    copy.dimensions = {
-        width: rollWidth,
-        height: rollHeight,
-        unit: 'mm'
-    }
-
-    copy.punchDiameter = {
-        value: averagePunchDiameter,
-        unit: 'mm'
-    }
-
-    copy.holeSeparation = {
-        value: holeSeparation,
-        unit: 'px'
-    }
-
-    copy.margins = {
-        treble: hardMarginTreble,
-        bass: hardMarginBass,
-        unit: 'px'
+    copy.measurements = {
+        dimensions: {
+            width: rollWidth,
+            height: rollHeight,
+            unit: 'mm'
+        },
+        punchDiameter: {
+            value: averagePunchDiameter,
+            unit: 'mm'
+        },
+        holeSeparation: {
+            value: holeSeparation,
+            unit: 'px'
+        },
+        margins: {
+            treble: hardMarginTreble,
+            bass: hardMarginBass,
+            unit: 'px'
+        },
+        // todo
+        shift: {
+            horizontal: 0,
+            vertical: 0
+        }
     }
 
     let circularPunches = 0
