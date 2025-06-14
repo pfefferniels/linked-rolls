@@ -18,7 +18,11 @@ export interface Argumentation extends WithActor, WithNote {
 }
 
 export interface Inference extends Argumentation {
-    premise: Belief
+    premises: Belief[]
+}
+
+export const isInference = (arg: Argumentation): arg is Inference => {
+    return 'premises' in arg;
 }
 
 export interface Belief extends WithId {
@@ -73,7 +77,7 @@ export type DimensionMarker = {
 
 type PlacementType = 'after' | 'before' | 'with';
 
-interface IntendedMeaning<AboutT> {
+interface IntendedMeaning<AboutT> extends WithId {
     belief: IntendedMeaningBelief<AboutT>
 }
 
