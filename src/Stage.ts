@@ -1,4 +1,4 @@
-import { Edit } from "./Edit";
+import { ActorAssignment, Edit } from "./Edit";
 import { EditorialAssumption, Intention, flat } from "./EditorialAssumption";
 import { AnySymbol, dimensionOf } from "./Symbol";
 
@@ -10,6 +10,7 @@ export interface Derivation extends EditorialAssumption<'derivation', Stage> { }
 export interface Stage {
     id: string // This is the id of the actual stage which is R17 created
     siglum: string; // the siglum of the stage, e.g. P9
+    actor?: ActorAssignment
     basedOn?: Derivation; // if no derivation is defined, it is assumed that this stage represents the mother roll
     edits: Edit[]; // P9 consists of
     intentions: Intention[]
@@ -148,7 +149,9 @@ export function fillEdits(currentStage: Stage, symbols: AnySymbol[]) {
             }
         }));
 
-    const deletions = new Set(snapshot).difference(new Set(symbols));
+    const deletions = snapshot.filter(sym => {
+        return !symbols.includes(sym)
+    });
     for (const symbol of deletions) {
         currentStage.edits.push({
             insert: [],
