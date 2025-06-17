@@ -1,6 +1,6 @@
 import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
-import { ConditionAssessment, PaperStretch } from "./Condition";
+import { ConditionState } from "./ConditionState";
 import { AnySymbol } from "./Symbol";
 import { assign, EditorialAssumption, flat } from "./EditorialAssumption";
 import { read } from "midifile-ts";
@@ -8,6 +8,20 @@ import { asSpans } from "./asMIDISpans";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 import { WelteT100 } from "./TrackerBar";
 import { HorizontalSpan, RollFeature } from "./Feature";
+
+/**
+ * This condition state is used to describe to roll's 
+ * paper shrinkage or stretching. It might be calculated
+ * on the basis of comparing the vertical or horizontal 
+ * extent with other witnesses of the same roll.
+ */
+export interface PaperStretch extends ConditionState<'paper-stretch'> {
+    factor: number
+}
+
+export interface GeneralRollCondition extends ConditionState<'general'> { }
+
+export type RollConditionAssignment = EditorialAssumption<'conditionAssignment', GeneralRollCondition | PaperStretch>
 
 export interface Shift {
     horizontal: number
@@ -39,7 +53,7 @@ const applyStretch = (stretch: number, to: RollFeature[]) => {
 
 export type DateAssignment = EditorialAssumption<'dateAssignment', Date>
 
-interface ProductionEvent {
+export interface ProductionEvent {
     company: string
     system: string
     paper: string
@@ -82,7 +96,7 @@ export class RollCopy {
     }> = {}
 
     productionEvent?: ProductionEvent
-    conditions: ConditionAssessment[] = []
+    conditions: RollConditionAssignment[] = []
     location: string = ''
 
     /**
@@ -109,14 +123,14 @@ export class RollCopy {
         applyShift(shift, this.features)
     }
 
-    setStretch(stretch: EditorialAssumption<'conditionAssessment', PaperStretch>) {
+    setStretch(stretch: EditorialAssumption<'conditionAssignment', PaperStretch>) {
         this.conditions.push(stretch)
         applyStretch(flat(stretch).factor, this.features)
     }
 }
 
-export function asSymbols(copy: RollCopy): AnySymbol[] {
-    return copy.features.map((feature): AnySymbol => {
+export function asSymbols(features: RollFeature[]): AnySymbol[] {
+    return features.map((feature): AnySymbol => {
         return {
             id: `symbol_${v4()}`,
             ...new WelteT100().meaningOf(feature.vertical.from),
@@ -191,11 +205,11 @@ export function readFromStanfordAton(atonString: string, adjustByRewind: boolean
 
         const noteAttack = +hole.NOTE_ATTACK.replace('px', '')
         const offset = +hole.OFF_TIME.replace('px', '')
-        const height = +hole.WIDTH_ROW.replace('px', '')
+        const height = offset - noteAttack
         const column = +hole.ORIGIN_COL.replace('px', '')
         const columnWidth = +hole.WIDTH_COL.replace('px', '')
 
-        const annotates = `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column - 10},${noteAttack - 10},${columnWidth + 20},${height + 20}/128,/0/default.jpg`
+        const annotates = `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${noteAttack},${columnWidth},${height}/128,/270/default.jpg`
 
         const feature: RollFeature = {
             id: v4(),

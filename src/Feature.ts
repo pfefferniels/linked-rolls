@@ -1,5 +1,12 @@
-import { ConditionAssessment } from "./Condition";
+import { ConditionState } from "./ConditionState";
+import { EditorialAssumption } from "./EditorialAssumption";
 import { WithId } from "./WithId";
+
+export interface FeatureCondition extends ConditionState<
+    'missing-perforation' | 'damaged-perforation' | 'illegible'
+> { }
+
+export type FeatureConditionAssignment = EditorialAssumption<'conditionAssignment', FeatureCondition>;
 
 export interface HorizontalSpan {
     unit: 'mm';
@@ -34,5 +41,9 @@ export interface RollFeature extends WithId {
      * This can be used e.g. to indicate a perforation
      * which is torn out or in any other way damaged.
      */
-    condition?: ConditionAssessment
+    condition?: FeatureConditionAssignment
+}
+
+export const isRollFeature = (obj: object): obj is RollFeature => {
+    return 'horizontal' in obj && 'vertical' in obj;
 }
