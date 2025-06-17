@@ -91,8 +91,12 @@ export interface Constraint {
     };
 }
 
-export interface Intention extends IntendedMeaning<Edit> {
+export interface Intention extends IntendedMeaning<Edit[]> {
     description: string;
+}
+
+export const isIntention = (object: any): object is Intention => {
+    return 'description' in object && 'belief' in object;
 }
 
 export interface QuestionMaking extends WithActor {
@@ -105,20 +109,6 @@ export interface QuestionMaking extends WithActor {
 export interface Question {
     question: string // has conclusion (W)
     making: {
-        premise: Belief
+        premises: Belief[]
     }
 }
-
-/*
-type BeliefSubjectMap = Map<string, any>;
-
-export function findBeliefSubject(belief: Belief, map: BeliefSubjectMap) {
-    if (map.has(belief.id)) {
-        return map.get(belief.id);
-    }
-}
-
-export function buildBeliefSubjectMap = (edition: Edition): BeliefSubjectMap => {
-    
-}
-    */

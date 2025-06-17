@@ -12,6 +12,10 @@ export interface Symbol<T extends string> extends WithId {
     carriers: CarrierAssignment[]
 }
 
+export const isSymbol = (object: any): object is AnySymbol => {
+    return 'carriers' in object
+}
+
 export interface Perforation<T extends string> extends Symbol<T> {
     accelerating?: boolean;
 }
@@ -102,8 +106,14 @@ export const dimensionOf = (symbol: AnySymbol): { horizontal: HorizontalSpan, ve
         .reduce((hAcc, h) => hAcc + h.horizontal.to, 0) / symbol.carriers.length;
     const verticalFrom = flat(symbol.carriers)
         .reduce((vAcc, v) => vAcc + v.vertical.from, 0) / symbol.carriers.length;
-    const verticalTo = flat(symbol.carriers)
-        .reduce((vAcc, v) => vAcc + (v.vertical.to ?? v.vertical.from), 0) / symbol.carriers.length;
+
+    const definedVerticalTo = flat(symbol.carriers)
+        .filter(v => v.vertical.to !== undefined)
+    let verticalTo: number | undefined = undefined
+    if (definedVerticalTo.length > 0) {
+        verticalTo = definedVerticalTo
+            .reduce((vAcc, v) => vAcc + v.vertical.to!, 0) / definedVerticalTo.length;
+    }
 
     return {
         horizontal: { unit: 'mm', from: horizontalFrom, to: horizontalTo },

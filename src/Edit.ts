@@ -36,3 +36,7 @@ export interface Edit extends WithId {
     insert?: AnySymbol[];
     delete?: AnySymbol[];
 }
+
+export const isEdit = (object: any): object is Edit => {
+    return 'insert' in object || 'delete' in object;
+};
