@@ -3,7 +3,14 @@ import { Person } from "./Edition";
 import { Edit } from "./Edit";
 import { v4 } from "uuid";
 
-export type Certainty = 'true' | 'likely' | 'possible' | 'unlikely' | 'false';
+export const certainties = [
+    'true',
+    'likely',
+    'possible',
+    'unlikely',
+    'false'
+] as const;
+export type Certainty = typeof certainties[number];
 
 export type WithActor = {
     actor?: Person // P14 carried out by
