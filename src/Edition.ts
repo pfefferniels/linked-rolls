@@ -64,3 +64,5 @@ export interface Edition {
     questions: Question[]
     tempoAdjustment?: TempoAssignment
 }
+
+export type EditionMetadata = Pick<Edition, 'base' | 'title' | 'license' | 'publicationEvent' | 'roll'>
