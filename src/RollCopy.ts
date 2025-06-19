@@ -127,6 +127,18 @@ export class RollCopy {
         this.conditions.push(stretch)
         applyStretch(flat(stretch).factor, this.features)
     }
+
+    shallowClone(): RollCopy {
+        const copy = new RollCopy()
+        copy.id = this.id
+        copy.measurements = { ...this.measurements }
+        copy.productionEvent = this.productionEvent
+        copy.location = this.location
+        copy.conditions = [...this.conditions]
+        copy.scan = this.scan
+        copy.features = [...this.features]
+        return copy
+    }
 }
 
 export function asSymbols(features: RollFeature[]): AnySymbol[] {
