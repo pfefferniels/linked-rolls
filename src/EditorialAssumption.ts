@@ -1,6 +1,5 @@
 import { WithId } from "./WithId";
 import { Person } from "./Edition";
-import { Edit } from "./Edit";
 import { v4 } from "uuid";
 
 export const certainties = [
@@ -24,6 +23,19 @@ export interface Argumentation extends WithActor, WithNote {
     motivation?: Question
 }
 
+export interface MeaningComprehension<T> extends WithActor, WithNote {
+    comprehends: T[]
+}
+
+export const isMeaningComprehension = <T,>(
+    arg: Argumentation,
+    aboutGuard: (obj: any) => obj is T
+): arg is MeaningComprehension<T> => {
+    return 'comprehends' in arg
+        && Array.isArray(arg.comprehends)
+        && arg.comprehends.every(aboutGuard);
+}
+
 export interface Inference extends Argumentation {
     premises: Belief[]
 }
@@ -36,10 +48,6 @@ export interface Belief extends WithId {
     type: 'belief';
     certainty: Certainty;
     reasons: Argumentation[]
-}
-
-export interface IntendedMeaningBelief<AboutT> extends Belief {
-    about: AboutT; // P2 is about
 }
 
 /**
@@ -84,10 +92,6 @@ export type DimensionMarker = {
 
 type PlacementType = 'after' | 'before' | 'with';
 
-interface IntendedMeaning<AboutT> extends WithId {
-    belief: IntendedMeaningBelief<AboutT>
-}
-
 // reo:Constraint, subclass of E13 Attribute Assignment
 export interface Constraint {
     placed: DimensionMarker;
@@ -98,12 +102,10 @@ export interface Constraint {
     };
 }
 
-export interface Intention extends IntendedMeaning<Edit[]> {
-    description: string;
-}
+export interface Motivation extends EditorialAssumption<'motivationAssignment', string> { }
 
-export const isIntention = (object: any): object is Intention => {
-    return 'description' in object && 'belief' in object;
+export const isMotivation = (object: any): object is Motivation => {
+    return 'type' in object && object.type === 'motivationAssignment'
 }
 
 export interface QuestionMaking extends WithActor {
