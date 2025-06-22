@@ -1,5 +1,5 @@
 import { Person } from "./Edition";
-import { EditorialAssumption } from "./EditorialAssumption";
+import { EditorialAssumption, Motivation } from "./EditorialAssumption";
 import { AnySymbol } from "./Symbol";
 import { WithId } from "./WithId";
 
@@ -22,8 +22,6 @@ export const editMotivations = [
 
 export type EditMotivation = typeof editMotivations[number];
 
-export interface MotivationAssignment extends EditorialAssumption<'motivationAssignment', EditMotivation> { }
-
 export interface ActorAssignment extends EditorialAssumption<'actorAssignment', Person> { }
 
 /**
@@ -32,7 +30,7 @@ export interface ActorAssignment extends EditorialAssumption<'actorAssignment', 
  */
 export interface Edit extends WithId {
     actor?: ActorAssignment;
-    motivation?: MotivationAssignment;
+    motivation?: Motivation<EditMotivation>;
     insert?: AnySymbol[];
     delete?: AnySymbol[];
 }

@@ -13,7 +13,7 @@ export interface Stage {
     actor?: ActorAssignment
     basedOn?: Derivation; // if no derivation is defined, it is assumed that this stage represents the mother roll
     edits: Edit[]; // P9 consists of
-    motivations: Motivation[]
+    motivations: Motivation<string>[]
 }
 
 export const traverseStages = (stage: Stage, callback: (stage: Stage) => void) => {

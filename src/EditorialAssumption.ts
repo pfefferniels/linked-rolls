@@ -102,9 +102,9 @@ export interface Constraint {
     };
 }
 
-export interface Motivation extends EditorialAssumption<'motivationAssignment', string> { }
+export interface Motivation<MotivationT> extends EditorialAssumption<'motivationAssignment', MotivationT> { }
 
-export const isMotivation = (object: any): object is Motivation => {
+export const isMotivation = (object: any): object is Motivation<any> => {
     return 'type' in object && object.type === 'motivationAssignment'
 }
 
