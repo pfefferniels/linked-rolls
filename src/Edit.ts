@@ -44,6 +44,9 @@ const arraysIdentical = <T,>(a: T[], b: T[]) => {
     let i = a.length;
     if (i != b.length) return false;
     while (i--) {
+        if (Array.isArray(a[i]) && Array.isArray(b[i])) {
+            return arraysIdentical(a[i] as any[], b[i] as any[]);
+        }
         if (a[i] !== b[i]) return false;
     }
     return true;
