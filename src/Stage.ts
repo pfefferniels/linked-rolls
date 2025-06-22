@@ -25,6 +25,7 @@ export const traverseStages = (stage: Stage, callback: (stage: Stage) => void) =
 
 export const getSnaphsot = (stage: Stage): AnySymbol[] => {
     const snapshot: AnySymbol[] = [];
+    
     traverseStages(stage, s => {
         snapshot.push(...s.edits.flatMap(edit => edit.insert || []));
         const deletions = s.edits.flatMap(edit => edit.delete || []);
@@ -95,6 +96,8 @@ const overlaps = (a: LazyArea, b: LazyArea): boolean => {
 export function fillEdits(currentStage: Stage, symbols: AnySymbol[]) {
     const snapshot = getSnaphsot(currentStage);
 
+    const treatedSymbols: AnySymbol[] = []
+
     // can it be collated with any of the symbols of 
     // included in the current snapshot?
     const insertions = [...symbols]
@@ -104,6 +107,7 @@ export function fillEdits(currentStage: Stage, symbols: AnySymbol[]) {
             .forEach(corresp => {
                 corresp.carriers.push(...symbol.carriers);
                 insertions.splice(insertions.indexOf(symbol), 1);
+                treatedSymbols.push(corresp)
             })
     }
 
@@ -150,8 +154,9 @@ export function fillEdits(currentStage: Stage, symbols: AnySymbol[]) {
         }));
 
     const deletions = snapshot.filter(sym => {
-        return !symbols.includes(sym)
+        return !treatedSymbols.includes(sym)
     });
+
     for (const symbol of deletions) {
         currentStage.edits.push({
             insert: [],
