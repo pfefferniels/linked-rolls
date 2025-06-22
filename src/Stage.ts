@@ -1,3 +1,4 @@
+import { v4 } from "uuid";
 import { ActorAssignment, Edit } from "./Edit";
 import { EditorialAssumption, Motivation, flat } from "./EditorialAssumption";
 import { AnySymbol, dimensionOf } from "./Symbol";
@@ -149,7 +150,7 @@ export function fillEdits(currentStage: Stage, symbols: AnySymbol[]) {
             return {
                 insert: [symbol],
                 delete: [],
-                id: symbol.id,
+                id: v4(),
             }
         }));
 
@@ -161,7 +162,7 @@ export function fillEdits(currentStage: Stage, symbols: AnySymbol[]) {
         currentStage.edits.push({
             insert: [],
             delete: [symbol],
-            id: symbol.id,
+            id: v4(),
         });
     }
 }
