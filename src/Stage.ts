@@ -45,7 +45,11 @@ export const getSnaphsot = (stage: Stage): AnySymbol[] => {
         toDelete.push(...s.edits.flatMap(edit => edit.delete || []));
     });
 
-    return snapshot;
+    return snapshot.sort((a, b) => {
+        const aDimension = dimensionOf(a)
+        const bDimension = dimensionOf(b)
+        return aDimension.horizontal.from - bDimension.horizontal.from;
+    })
 }
 
 const isCollatable = (symbolA: AnySymbol, symbolB: AnySymbol): boolean => {
