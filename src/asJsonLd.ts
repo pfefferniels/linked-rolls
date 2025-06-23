@@ -6,7 +6,7 @@ import { WithId } from "./WithId";
 export const referenceTypes = [
     'premises',
     'delete',
-    'carriers',
+    'comprehends'
 ]
 
 const asIDArray = (arr: WithId[]) => {
@@ -32,7 +32,10 @@ const asJsonLdEntity = (obj: object) => {
                 result[key] = asIDArray(value)
             }
         }
-        else if (key === 'assigned' && result['@type'] === 'derivation') {
+        else if (key === 'assigned'
+            && (result['@type'] === 'derivation'
+                || result['@type'] === 'carrierAssignment')
+        ) {
             result['assigned'] = value.id
         }
         else if (key === 'type') {
