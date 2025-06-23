@@ -26,17 +26,25 @@ export const traverseStages = (stage: Stage, callback: (stage: Stage) => void) =
 
 export const getSnaphsot = (stage: Stage): AnySymbol[] => {
     const snapshot: AnySymbol[] = [];
-    
+    const toDelete: AnySymbol[] = [];
+
     traverseStages(stage, s => {
         snapshot.push(...s.edits.flatMap(edit => edit.insert || []));
-        const deletions = s.edits.flatMap(edit => edit.delete || []);
-        for (const toRemove of deletions) {
+
+        // as we travel further up, remove symbols that are 
+        // deleted in the stages further down
+        for (const toRemove of toDelete) {
             const index = snapshot.findIndex(s => s.id === toRemove.id);
             if (index !== -1) {
                 snapshot.splice(index, 1);
+                toDelete.splice(toDelete.indexOf(toRemove), 1);
             }
         }
+
+        // collect symbols that are deleted in the current stage
+        toDelete.push(...s.edits.flatMap(edit => edit.delete || []));
     });
+
     return snapshot;
 }
 
