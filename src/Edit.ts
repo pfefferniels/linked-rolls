@@ -86,7 +86,7 @@ const guessMotivation = (edit: Edit): EditMotivation => {
     if (inserts.length === 1 && deletes.length === 1) {
         const insertDim = dimensionOf(inserts[0]).horizontal
         const deleteDim = dimensionOf(deletes[0]).horizontal
-        
+
         if (Math.abs(insertDim.from - deleteDim.from) < 5) {
             const insertLength = Math.abs(insertDim.to - insertDim.from)
             const deleteLength = Math.abs(deleteDim.to - deleteDim.from)
@@ -128,4 +128,24 @@ export const merge = (selection: Edit[]): Edit => {
         id: v4(),
         motivation: assign('motivationAssignment', guessMotivation(result)),
     }
+}
+
+export const split = (edit: Edit): Edit[] => {
+    const result: Edit[] = []
+    
+    for (const insert of edit.insert ?? []) {
+        result.push({
+            id: v4(),
+            insert: [insert]
+        })
+    }
+
+    for (const remove of edit.delete ?? []) {
+        result.push({
+            id: v4(),
+            delete: [remove]
+        })
+    }
+
+    return result
 }

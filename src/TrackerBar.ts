@@ -50,4 +50,6 @@ export class WelteT100 {
             type: 'note',
         }
     }
+
+    width = 328 // in mm, cf. Hagmann, p. 75
 }

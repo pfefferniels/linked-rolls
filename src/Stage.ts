@@ -5,6 +5,40 @@ import { AnySymbol, dimensionOf } from "./Symbol";
 
 export interface Derivation extends EditorialAssumption<'derivation', Stage> { }
 
+const versionType = [
+    /**
+     * The roll is in a state where it is used as 
+     * the master roll for several new reproductions.
+     */
+    'edition',
+
+    /**
+     * This denotes a stage which is specific to (early)
+     * Welte-Mignon piano rolls, where rolls inteded to 
+     * be pulished are revised by a controller first. These
+     * rolls typically carry a "controlliert" stamp. The
+     * revision is done on the same date as the perforation 
+     * and the date is written on the roll towards its end.
+     */
+    'authorised-revision',
+
+    /**
+     * Unauthorised revisions are those, which cannot be linked
+     * to a specific controller and are likely done by
+     * a later, anonymous hand. 
+     */
+    'unauthorised-revision',
+
+    /**
+     * In the case of Welte Mignon rolls, glosses are
+     * typically comments about the roll's condition, added
+     * e.g. by the collector.
+     */
+    'gloss'
+] as const
+
+export type VersionType = typeof versionType[number];
+
 /**
  * Stage + Stage Creation
  */
@@ -15,6 +49,7 @@ export interface Stage {
     basedOn?: Derivation; // if no derivation is defined, it is assumed that this stage represents the mother roll
     edits: Edit[]; // P9 consists of
     motivations: Motivation<string>[]
+    type: VersionType
 }
 
 export const traverseStages = (stage: Stage, callback: (stage: Stage) => void) => {
@@ -24,7 +59,7 @@ export const traverseStages = (stage: Stage, callback: (stage: Stage) => void) =
     }
 }
 
-export const getSnaphsot = (stage: Stage): AnySymbol[] => {
+export const getSnapshot = (stage: Stage): AnySymbol[] => {
     const snapshot: AnySymbol[] = [];
     const toDelete: AnySymbol[] = [];
 
@@ -33,12 +68,16 @@ export const getSnaphsot = (stage: Stage): AnySymbol[] => {
 
         // as we travel further up, remove symbols that are 
         // deleted in the stages further down
+        const deleted: AnySymbol[] = []
         for (const toRemove of toDelete) {
-            const index = snapshot.findIndex(s => s.id === toRemove.id);
+            const index = snapshot.findIndex(s => s === toRemove);
             if (index !== -1) {
                 snapshot.splice(index, 1);
-                toDelete.splice(toDelete.indexOf(toRemove), 1);
+                deleted.push(toRemove)
             }
+        }
+        for (const del of deleted) {
+            toDelete.splice(toDelete.indexOf(del), 1);
         }
 
         // collect symbols that are deleted in the current stage
@@ -107,7 +146,7 @@ const overlaps = (a: LazyArea, b: LazyArea): boolean => {
  * @returns 
  */
 export function fillEdits(currentStage: Stage, symbols: AnySymbol[]) {
-    const snapshot = getSnaphsot(currentStage);
+    const snapshot = getSnapshot(currentStage);
 
     const treatedSymbols: AnySymbol[] = []
 

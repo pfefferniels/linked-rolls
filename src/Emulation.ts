@@ -1,7 +1,7 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { AnySymbol, Expression, ExpressionType, Note } from "./Symbol";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
-import { getSnaphsot, Stage } from "./Stage";
+import { getSnapshot, Stage } from "./Stage";
 import { dimensionOf } from "./Symbol";
 import { RollFeature } from "./Feature";
 import { RollTempo } from "./Edition";
@@ -206,7 +206,7 @@ export class Emulation {
         skipToFirstNote: boolean = false
     ) {
         this.negotiatedEvents =
-            getSnaphsot(stage)
+            getSnapshot(stage)
                 .filter(s => s.type === 'note' || s.type === 'expression')
                 .map(simplifySymbol)
                 .filter(s => s !== null)

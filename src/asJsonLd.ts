@@ -5,14 +5,8 @@ import { WithId } from "./WithId";
 // rather than the object itself.
 export const referenceTypes = [
     'premises',
-    'insert',
     'delete',
-    'wasCollatedFrom',
-    'replaced',
-    'target',
-    'annotated',
-    'witnesses',
-    'measured'
+    'carriers',
 ]
 
 const asIDArray = (arr: WithId[]) => {
@@ -30,14 +24,6 @@ const asJsonLdEntity = (obj: object) => {
         if (typeof value === 'function' || typeof value === 'undefined') {
             // ignore
         }
-        if (['original', 'measurement'].includes(key)) {
-            if ('siglum' in value) {
-                result[key] = value.siglum;
-            }
-            else {
-                result[key] = value.id;
-            }
-        }
         else if (referenceTypes.includes(key)) {
             if (!Array.isArray(value)) {
                 console.error(`Expected array for key ${key}, got ${value}`)
@@ -46,8 +32,8 @@ const asJsonLdEntity = (obj: object) => {
                 result[key] = asIDArray(value)
             }
         }
-        else if (['hand'].includes(key)) {
-            result[key] = value.id || '[unknown]'
+        else if (key === 'assigned' && result['@type'] === 'derivation') {
+            result['assigned'] = value.id
         }
         else if (key === 'type') {
             result['@type'] = value
