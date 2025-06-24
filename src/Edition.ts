@@ -1,7 +1,7 @@
 import { EditorialAssumption, Question } from "./EditorialAssumption";
 import { WithId } from "./WithId";
 import { DateAssignment, RollCopy } from "./RollCopy";
-import { Stage } from "./Stage";
+import { Version } from "./Version";
 import { Collation } from "./Collation";
 
 // E21 Person
@@ -36,7 +36,7 @@ export interface RecordingEvent {
      * or the roll label which indicates the date of the recording.
      */
     date: DateAssignment 
-    created?: Stage
+    created?: Version
 }
 
 // F21 Recording Work
@@ -60,7 +60,7 @@ export interface Edition {
     license: string
     roll: Roll
     copies: RollCopy[]
-    stages: Stage[]
+    versions: Version[]
     questions: Question[]
     tempoAdjustment?: TempoAssignment
 }

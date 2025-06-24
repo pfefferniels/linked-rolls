@@ -3,7 +3,7 @@ import { ActorAssignment, Edit } from "./Edit";
 import { EditorialAssumption, Motivation, flat } from "./EditorialAssumption";
 import { AnySymbol, dimensionOf } from "./Symbol";
 
-export interface Derivation extends EditorialAssumption<'derivation', Stage> { }
+export interface Derivation extends EditorialAssumption<'derivation', Version> { }
 
 const versionType = [
     /**
@@ -13,7 +13,7 @@ const versionType = [
     'edition',
 
     /**
-     * This denotes a stage which is specific to (early)
+     * This denotes a version which is specific to (early)
      * Welte-Mignon piano rolls, where rolls inteded to 
      * be pulished are revised by a controller first. These
      * rolls typically carry a "controlliert" stamp. The
@@ -40,34 +40,34 @@ const versionType = [
 export type VersionType = typeof versionType[number];
 
 /**
- * Stage + Stage Creation
+ * Version + Version Creation
  */
-export interface Stage {
-    id: string // This is the id of the actual stage which is R17 created
-    siglum: string; // the siglum of the stage, e.g. P9
+export interface Version {
+    id: string // This is the id of the actual version which is R17 created
+    siglum: string; // the siglum of the version, e.g. P9
     actor?: ActorAssignment
-    basedOn?: Derivation; // if no derivation is defined, it is assumed that this stage represents the mother roll
+    basedOn?: Derivation; // if no derivation is defined, it is assumed that this version represents the mother roll
     edits: Edit[]; // P9 consists of
     motivations: Motivation<string>[]
     type: VersionType
 }
 
-export const traverseStages = (stage: Stage, callback: (stage: Stage) => void) => {
-    callback(stage);
-    if (stage.basedOn) {
-        traverseStages(flat(stage.basedOn), callback);
+export const traverseVersions = (version: Version, callback: (version: Version) => void) => {
+    callback(version);
+    if (version.basedOn) {
+        traverseVersions(flat(version.basedOn), callback);
     }
 }
 
-export const getSnapshot = (stage: Stage): AnySymbol[] => {
+export const getSnapshot = (version: Version): AnySymbol[] => {
     const snapshot: AnySymbol[] = [];
     const toDelete: AnySymbol[] = [];
 
-    traverseStages(stage, s => {
+    traverseVersions(version, s => {
         snapshot.push(...s.edits.flatMap(edit => edit.insert || []));
 
         // as we travel further up, remove symbols that are 
-        // deleted in the stages further down
+        // deleted in the versions further down
         const deleted: AnySymbol[] = []
         for (const toRemove of toDelete) {
             const index = snapshot.findIndex(s => s === toRemove);
@@ -80,7 +80,7 @@ export const getSnapshot = (stage: Stage): AnySymbol[] => {
             toDelete.splice(toDelete.indexOf(del), 1);
         }
 
-        // collect symbols that are deleted in the current stage
+        // collect symbols that are deleted in the current version
         toDelete.push(...s.edits.flatMap(edit => edit.delete || []));
     });
 
@@ -132,11 +132,11 @@ const overlaps = (a: LazyArea, b: LazyArea): boolean => {
 }
 
 /**
- * Walks through the stages. If it finds a symbol that is still
+ * Walks through the versions. If it finds a symbol that is still
  * part of the tradition (i.e. it is included in the current snapshot)
  * and is equivalent with the given symbol, it will add the feature
  * carrying the symbol to the collated symbol. Otherwise, the
- * given symbol will be added to the current stage's insertions.
+ * given symbol will be added to the current version's insertions.
  * 
  * All symbols of the tradition that are not included in the given 
  * symbols are considered to be deleted.
@@ -145,8 +145,8 @@ const overlaps = (a: LazyArea, b: LazyArea): boolean => {
  * @param symbols 
  * @returns 
  */
-export function fillEdits(currentStage: Stage, symbols: AnySymbol[]) {
-    const snapshot = getSnapshot(currentStage);
+export function fillEdits(currentVersion: Version, symbols: AnySymbol[]) {
+    const snapshot = getSnapshot(currentVersion);
 
     const treatedSymbols: AnySymbol[] = []
 
@@ -196,7 +196,7 @@ export function fillEdits(currentStage: Stage, symbols: AnySymbol[]) {
         insertions.splice(insertions.indexOf(cover), 1);
     }
 
-    currentStage.edits.push(
+    currentVersion.edits.push(
         ...insertions.map((symbol): Edit => {
             return {
                 insert: [symbol],
@@ -210,7 +210,7 @@ export function fillEdits(currentStage: Stage, symbols: AnySymbol[]) {
     });
 
     for (const symbol of deletions) {
-        currentStage.edits.push({
+        currentVersion.edits.push({
             insert: [],
             delete: [symbol],
             id: v4(),
