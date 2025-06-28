@@ -5,7 +5,7 @@ import { AnySymbol, dimensionOf } from "./Symbol";
 
 export interface Derivation extends EditorialAssumption<'derivation', Version> { }
 
-const versionType = [
+export const versionTypes = [
     /**
      * The roll is in a state where it is used as 
      * the master roll for several new reproductions.
@@ -37,7 +37,7 @@ const versionType = [
     'gloss'
 ] as const
 
-export type VersionType = typeof versionType[number];
+export type VersionType = typeof versionTypes[number];
 
 /**
  * Version + Version Creation

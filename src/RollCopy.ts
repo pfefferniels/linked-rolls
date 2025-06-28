@@ -61,6 +61,7 @@ export interface ProductionEvent {
 }
 
 export class RollCopy {
+    type: 'RollCopy' = 'RollCopy'
     id: string = v4()
 
     measurements: Partial<{

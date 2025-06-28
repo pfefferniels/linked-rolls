@@ -2,6 +2,23 @@ import { Edition } from "./Edition";
 import { RollCopy } from "./RollCopy";
 import { referenceTypes } from "./asJsonLd";
 
+export const exportDate = (date: Date) => {
+    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+}
+
+const isDate = (value: string) => {
+    const datePattern = /^\d{4}-\d{1,2}-\d{1,2}$/;
+    return datePattern.test(value);
+}
+
+export const importDate = (str: string): Date => {
+    const [y, m, d] = str.split('-').map(s => parseInt(s, 10))
+    if ([y, m, d].some(n => isNaN(n))) {
+        throw new Error(`Invalid date format: "${str}". Expected "YYYY-MM-DD".`)
+    }
+    return new Date(y, m - 1, d)
+}
+
 type IdMap = Map<string, object>
 
 const collectEntitiesWithId = (json: any): IdMap => {
@@ -11,9 +28,6 @@ const collectEntitiesWithId = (json: any): IdMap => {
     if (json && typeof json === 'object') {
         if ('@id' in json) {
             result.set(json['@id'], json)
-        }
-        if ('siglum' in json) {
-            result.set(json['siglum'], json)
         }
     }
 
@@ -42,6 +56,7 @@ const fromIDArray = (arr: string[], entities: IdMap): any[] => {
 }
 
 const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
+    console.log('importing', json)
     if (typeof json !== 'object') {
         return json
     }
@@ -62,25 +77,32 @@ const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
         if (key === '@id') {
             result['id'] = value;
         }
-        else if ([...referenceTypes, 'measurement', 'original'].includes(key)) {
+        if (typeof value === 'string' && isDate(value)) {
+            result[key] = importDate(value);
+        }
+        else if ([...referenceTypes, 'premises', 'delete', 'comprehends', 'assigned'].includes(key)) {
             if (Array.isArray(value) && value.every(e => typeof e === 'string')) {
                 result[key] = fromIDArray(value, entitiesWithId)
             }
             else if (typeof value === 'string') {
-                const entity = entitiesWithId.get(value);
-                if (entity) {
-                    result[key] = entity, entitiesWithId;
+                if (isDate(value)) {
+                    result[key] = importDate(value);
                 } else {
-                    console.warn('Could not find entity with id', value);
+                    const entity = entitiesWithId.get(value);
+                    if (entity) {
+                        result[key] = entity
+                    } else {
+                        console.warn('Could not find entity with id', value);
+                    }
                 }
             }
-        }
-        else if (key === 'hand' && typeof value === 'string') {
-            result[key] = entitiesWithId.get(value)
         }
         else if (Array.isArray(value)) {
             result[key] = value.map(v => {
                 if (typeof v === 'string') {
+                    if (isDate(v)) {
+                        return importDate(v);
+                    }
                     return v;
                 }
                 else {

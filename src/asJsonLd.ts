@@ -1,4 +1,5 @@
 import { Edition } from "./Edition";
+import { exportDate } from "./importJsonLd";
 import { WithId } from "./WithId";
 
 // for these keys, references by id will be inserted
@@ -14,6 +15,10 @@ const asIDArray = (arr: WithId[]) => {
 }
 
 const asJsonLdEntity = (obj: object) => {
+    if (obj instanceof Date) {
+        return exportDate(obj)
+    }
+
     const result: any = {}
 
     if ('asJSON' in obj && typeof obj['asJSON'] === 'function') {
