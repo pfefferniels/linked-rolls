@@ -60,13 +60,17 @@ export interface Cover extends Symbol<'cover'> {
     note?: string;
 }
 
+export interface Text<T extends string> extends Symbol<T> {
+    text: string;
+    rotation?: number;
+}
+
 /**
  * For handwritten insertions like e. g. the
  * perforation date in the end of a roll.
  */
-export interface HandwrittenText extends Symbol<'handwrittenText'> {
-    text: string;
-    rotation?: number;
+export interface HandwrittenText extends Text<'handwrittenText'> {
+    pen?: 'ink' | 'pencil' | 'crayon';
 }
 
 /**
@@ -74,13 +78,9 @@ export interface HandwrittenText extends Symbol<'handwrittenText'> {
  * "controlliert" stamp in the beginning of rolls or the
  * date at the end of (later) Welte rolls.
  */
-export interface Stamp extends Symbol<'stamp'> {
-    text: string;
-    rotation?: number;
-}
+export interface Stamp extends Text<'stamp'> { }
 
-export interface RollLabel extends Symbol<'rollLabel'> {
-    text: string;
+export interface RollLabel extends Text<'rollLabel'> {
     signed: boolean;
 }
 
@@ -100,7 +100,7 @@ export const dimensionOf = (symbol: AnySymbol): { horizontal: HorizontalSpan, ve
         };
     }
 
-    const horizontalFrom = flat(symbol.carriers)
+    const horizontalFrom = flat<'carrierAssignment', RollFeature>(symbol.carriers)
         .reduce((hAcc, h) => hAcc + h.horizontal.from, 0) / symbol.carriers.length;
     const horizontalTo = flat(symbol.carriers)
         .reduce((hAcc, h) => hAcc + h.horizontal.to, 0) / symbol.carriers.length;

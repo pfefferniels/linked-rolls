@@ -56,7 +56,6 @@ const fromIDArray = (arr: string[], entities: IdMap): any[] => {
 }
 
 const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
-    console.log('importing', json)
     if (typeof json !== 'object') {
         return json
     }

@@ -54,6 +54,7 @@ export interface Belief extends WithId {
  * An editorial assumpton is always a One-Proposition Set.
  */
 export interface EditorialAssumption<Name, AssignedType> extends WithId {
+    // TODO: this should be called propertyType or something similar
     type: Name;
     assigned: AssignedType,
     belief?: Belief
@@ -109,7 +110,8 @@ export const isMotivation = (object: any): object is Motivation<any> => {
 }
 
 export interface QuestionMaking extends WithActor {
-    premise: Belief | Question; // has premise
+    premises: (Belief | Question)[]; // has premise
+    raise: Question;
 }
 
 /**
@@ -117,7 +119,4 @@ export interface QuestionMaking extends WithActor {
  */
 export interface Question {
     question: string // has conclusion (W)
-    making: {
-        premises: Belief[]
-    }
 }

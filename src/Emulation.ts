@@ -85,6 +85,8 @@ export class Emulation {
     startTempo?: number
     endTempo?: number
 
+    source?: string
+
     options: EmulationOptions
 
     constructor(options: EmulationOptions = {
@@ -205,6 +207,8 @@ export class Emulation {
         rollTempo?: RollTempo,
         skipToFirstNote: boolean = false
     ) {
+        this.source = version.id
+        
         this.negotiatedEvents =
             getSnapshot(version)
                 .filter(s => s.type === 'note' || s.type === 'expression')
@@ -397,6 +401,15 @@ export class Emulation {
             text: 'linked-rolls (based on midi2exp)',
             deltaTime: 0
         })
+
+        if (this.source) {
+            events.push({
+                type: 'meta',
+                subtype: 'text',
+                text: this.source,
+                deltaTime: 0
+            })
+        }
 
         events.push({
             type: 'meta',

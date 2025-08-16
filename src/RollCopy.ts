@@ -107,7 +107,7 @@ export class RollCopy {
      * exported in the final JSON.
      */
     features: RollFeature[] = []
-    scan?: string // P138 has representation => IIIF Image Link (considered to be an E38 Image)
+    scan?: string // P138i has representation => IIIF Image Link
 
     insertFeature(feature: RollFeature) {
         this.measurements.shift && applyShift(this.measurements.shift, [feature])

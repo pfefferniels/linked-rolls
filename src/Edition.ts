@@ -1,8 +1,8 @@
-import { EditorialAssumption, Question } from "./EditorialAssumption";
+import { EditorialAssumption, QuestionMaking } from "./EditorialAssumption";
 import { WithId } from "./WithId";
 import { DateAssignment, RollCopy } from "./RollCopy";
 import { Version } from "./Version";
-import { Collation } from "./Collation";
+import { CollationTolerance } from "./Collation";
 
 // E21 Person
 export interface Person extends Partial<WithId> {
@@ -17,10 +17,12 @@ export interface Place {
     sameAs: string[] // should point e.g. to geoplaces
 }
 
+// F28 Expression Creation and D10 Software Execution
 export interface EditionCreation {
     publisher: Person
     publicationDate: Date
-    consistsOf: Collation
+    collationTolerance?: CollationTolerance // L13 used parameters
+    questions: QuestionMaking[] // P9 consists of
 }
 
 export interface RecordingEvent {
@@ -39,9 +41,9 @@ export interface RecordingEvent {
     created?: Version
 }
 
-// F21 Recording Work
+// F1 Work
 export interface Roll {
-    catalogueNumber: string     // has inventory-no (of a certain type)
+    catalogueNumber: string     // has identifier
     recordingEvent: RecordingEvent
 }
 
@@ -51,18 +53,17 @@ export interface RollTempo {
     unit: string;
 }
 
-export interface TempoAssignment extends EditorialAssumption<'tempoAssignment', RollTempo> { }
+export type TempoAssignment = EditorialAssumption<'tempoAssignment', RollTempo>
 
 export interface Edition {
     base: string
-    publicationEvent: EditionCreation
+    creation: EditionCreation
     title: string
     license: string
     roll: Roll
     copies: RollCopy[]
     versions: Version[]
-    questions: Question[]
     tempoAdjustment?: TempoAssignment
 }
 
-export type EditionMetadata = Pick<Edition, 'base' | 'title' | 'license' | 'publicationEvent' | 'roll'>
+export type EditionMetadata = Pick<Edition, 'base' | 'title' | 'license' | 'creation' | 'roll'>

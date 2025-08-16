@@ -23,7 +23,7 @@ export const editMotivations = [
 
 export type EditMotivation = typeof editMotivations[number];
 
-export interface ActorAssignment extends EditorialAssumption<'actorAssignment', Person> { }
+export type ActorAssignment = EditorialAssumption<'actorAssignment', Person>
 
 /**
  * Actor should be used to indicate the person who
@@ -34,6 +34,7 @@ export interface Edit extends WithId {
     motivation?: Motivation<EditMotivation>;
     insert?: AnySymbol[];
     delete?: AnySymbol[];
+    intentionOf?: AnySymbol[];
 }
 
 export const isEdit = (object: any): object is Edit => {

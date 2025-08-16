@@ -1,4 +1,4 @@
-export interface Collation {
+export interface CollationTolerance {
     toleranceStart: number
     toleranceEnd: number
 }

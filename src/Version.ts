@@ -2,8 +2,9 @@ import { v4 } from "uuid";
 import { ActorAssignment, Edit } from "./Edit";
 import { EditorialAssumption, Motivation, flat } from "./EditorialAssumption";
 import { AnySymbol, dimensionOf } from "./Symbol";
+import { CollationTolerance } from "./Collation";
 
-export interface Derivation extends EditorialAssumption<'derivation', Version> { }
+export type Derivation = EditorialAssumption<'derivation', Version>
 
 export const versionTypes = [
     /**
@@ -91,7 +92,14 @@ export const getSnapshot = (version: Version): AnySymbol[] => {
     })
 }
 
-const isCollatable = (symbolA: AnySymbol, symbolB: AnySymbol): boolean => {
+const isCollatable = (
+    symbolA: AnySymbol,
+    symbolB: AnySymbol,
+    tolerance: CollationTolerance = {
+        toleranceEnd: 5,
+        toleranceStart: 5
+    }
+): boolean => {
     // two symbols are collatible if they share the same 
     // symbol characteristics (pitch, expression type etc.)
     // and occur in the same horizontal position.
@@ -109,7 +117,9 @@ const isCollatable = (symbolA: AnySymbol, symbolB: AnySymbol): boolean => {
     const distanceStart = Math.abs(dimensionA.horizontal.from - dimensionB.horizontal.from);
     const distanceEnd = Math.abs(dimensionA.horizontal.to - dimensionB.horizontal.to);
 
-    if (distanceStart > 5 || distanceEnd > 5) {
+    if (distanceStart > tolerance.toleranceStart
+        || distanceEnd > tolerance.toleranceEnd
+    ) {
         // the symbols are too far apart to be collated
         return false;
     }
@@ -145,7 +155,14 @@ const overlaps = (a: LazyArea, b: LazyArea): boolean => {
  * @param symbols 
  * @returns 
  */
-export function fillEdits(currentVersion: Version, symbols: AnySymbol[]) {
+export function fillEdits(
+    currentVersion: Version,
+    symbols: AnySymbol[],
+    tolerance: CollationTolerance = {
+        toleranceEnd: 5,
+        toleranceStart: 5
+    }
+) {
     const snapshot = getSnapshot(currentVersion);
 
     const treatedSymbols: AnySymbol[] = []
@@ -155,7 +172,7 @@ export function fillEdits(currentVersion: Version, symbols: AnySymbol[]) {
     const insertions = [...symbols]
     for (const symbol of symbols) {
         snapshot
-            .filter(toCompare => isCollatable(symbol, toCompare))
+            .filter(toCompare => isCollatable(symbol, toCompare, tolerance))
             .forEach(corresp => {
                 corresp.carriers.push(...symbol.carriers);
                 insertions.splice(insertions.indexOf(symbol), 1);
