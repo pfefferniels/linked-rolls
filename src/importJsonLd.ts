@@ -1,5 +1,4 @@
 import { Edition } from "./Edition";
-import { RollCopy } from "./RollCopy";
 import { referenceTypes } from "./asJsonLd";
 
 export const exportDate = (date: Date) => {
@@ -63,13 +62,7 @@ const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
     let result: any = json;
 
     if ('@type' in json) {
-        const value = json['@type'];
-        if (value === 'RollCopy') {
-            result = new RollCopy();
-        }
-        else {
-            result['type'] = value;
-        }
+        result['type'] = json['@type'];
     }
 
     for (const [key, value] of Object.entries(json)) {
@@ -77,6 +70,7 @@ const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
             result['id'] = value;
         }
         if (typeof value === 'string' && isDate(value)) {
+            console.log('importing date', value)
             result[key] = importDate(value);
         }
         else if ([...referenceTypes, 'premises', 'delete', 'comprehends', 'assigned'].includes(key)) {
@@ -85,13 +79,17 @@ const fromJsonLdEntity = (json: any, entitiesWithId: IdMap): any => {
             }
             else if (typeof value === 'string') {
                 if (isDate(value)) {
+                    console.log('treating', value, 'as date')
                     result[key] = importDate(value);
                 } else {
+                    if (value.startsWith('1905')) {
+                        console.log('oh no, dealing with a date, but it is treated as a string!', value)
+                    }
                     const entity = entitiesWithId.get(value);
                     if (entity) {
                         result[key] = entity
                     } else {
-                        console.warn('Could not find entity with id', value);
+                        result[key] = value
                     }
                 }
             }

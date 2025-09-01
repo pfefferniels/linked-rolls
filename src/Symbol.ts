@@ -1,11 +1,13 @@
-import { EditorialAssumption, flat } from "./EditorialAssumption";
-import { HorizontalSpan, RollFeature, VerticalSpan } from "./Feature";
+import { EditorialAssumption } from "./EditorialAssumption";
+import { RollFeature } from "./Feature";
 import { WithId } from "./WithId";
 
 /**
  * @todo Should this be called Transcription?
  */
-export type CarrierAssignment = EditorialAssumption<'carrierAssignment', RollFeature>;
+export type CarrierAssignment = EditorialAssumption<'carrierAssignment', string>;
+
+export type RetrieveCarriers = (symbol: AnySymbol) => RollFeature[];
 
 export interface Symbol<T extends string> extends WithId {
     type: T
@@ -92,31 +94,3 @@ export type AnySymbol =
     | Cover
     | RollLabel;
 
-export const dimensionOf = (symbol: AnySymbol): { horizontal: HorizontalSpan, vertical: VerticalSpan } => {
-    if (symbol.carriers.length === 0) {
-        return {
-            horizontal: { unit: 'mm', from: 0, to: 0 },
-            vertical: { unit: 'track', from: 0, to: 0 }
-        };
-    }
-
-    const horizontalFrom = flat<'carrierAssignment', RollFeature>(symbol.carriers)
-        .reduce((hAcc, h) => hAcc + h.horizontal.from, 0) / symbol.carriers.length;
-    const horizontalTo = flat(symbol.carriers)
-        .reduce((hAcc, h) => hAcc + h.horizontal.to, 0) / symbol.carriers.length;
-    const verticalFrom = flat(symbol.carriers)
-        .reduce((vAcc, v) => vAcc + v.vertical.from, 0) / symbol.carriers.length;
-
-    const definedVerticalTo = flat(symbol.carriers)
-        .filter(v => v.vertical.to !== undefined)
-    let verticalTo: number | undefined = undefined
-    if (definedVerticalTo.length > 0) {
-        verticalTo = definedVerticalTo
-            .reduce((vAcc, v) => vAcc + v.vertical.to!, 0) / definedVerticalTo.length;
-    }
-
-    return {
-        horizontal: { unit: 'mm', from: horizontalFrom, to: horizontalTo },
-        vertical: { unit: 'track', from: verticalFrom, to: verticalTo }
-    };
-}

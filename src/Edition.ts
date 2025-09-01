@@ -1,4 +1,4 @@
-import { EditorialAssumption, QuestionMaking } from "./EditorialAssumption";
+import { EditorialAssumption } from "./EditorialAssumption";
 import { WithId } from "./WithId";
 import { DateAssignment, RollCopy } from "./RollCopy";
 import { Version } from "./Version";
@@ -22,7 +22,6 @@ export interface EditionCreation {
     publisher: Person
     publicationDate: Date
     collationTolerance?: CollationTolerance // L13 used parameters
-    questions: QuestionMaking[] // P9 consists of
 }
 
 export interface RecordingEvent {

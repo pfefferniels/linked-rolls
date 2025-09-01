@@ -37,12 +37,6 @@ const asJsonLdEntity = (obj: object) => {
                 result[key] = asIDArray(value)
             }
         }
-        else if (key === 'assigned'
-            && (result['@type'] === 'derivation'
-                || result['@type'] === 'carrierAssignment')
-        ) {
-            result['assigned'] = value.id
-        }
         else if (key === 'type') {
             result['@type'] = value
         }

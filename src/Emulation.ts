@@ -1,10 +1,10 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { AnySymbol, Expression, ExpressionType, Note } from "./Symbol";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
-import { getSnapshot, Version } from "./Version";
-import { dimensionOf } from "./Symbol";
+import { Version } from "./Version";
 import { RollFeature } from "./Feature";
 import { RollTempo } from "./Edition";
+import { EditionView } from "./EditionView";
 
 function resize<T>(arr: T[], newSize: number, defaultValue: T) {
     while (newSize > arr.length)
@@ -58,17 +58,6 @@ export type EmulationOptions = {
     fastC_step?: number
     fastD_step?: number
     division: number
-}
-
-const simplifySymbol = (symbol: Note | Expression): NegotiatedEvent | null => {
-    if (!symbol.carriers || !symbol.carriers.length) return null
-
-    const mean = dimensionOf(symbol)
-
-    return {
-        ...symbol,
-        ...mean
-    }
 }
 
 export class Emulation {
@@ -185,12 +174,12 @@ export class Emulation {
         this.midiEvents.sort((a, b) => a.at - b.at)
     }
 
-    emulateFromRoll(events: (Note | Expression)[]) {
+    emulateFromRoll(events: (Note | Expression)[], view: EditionView) {
         this.startTempo = 104.331
         this.endTempo = 104.331
 
         this.negotiatedEvents = events
-            .map(simplifySymbol)
+            .map(e => view.simplifySymbol(e))
             .filter(s => s !== null)
 
         this.applyTrackerBarExtension()
@@ -204,15 +193,16 @@ export class Emulation {
 
     emulateVersion(
         version: Version,
+        view: EditionView,
         rollTempo?: RollTempo,
         skipToFirstNote: boolean = false
     ) {
         this.source = version.id
         
         this.negotiatedEvents =
-            getSnapshot(version)
+            view.getSnapshot(version)
                 .filter(s => s.type === 'note' || s.type === 'expression')
-                .map(simplifySymbol)
+                .map((e) => view.simplifySymbol(e))
                 .filter(s => s !== null)
 
         this.findRollTempo(rollTempo)

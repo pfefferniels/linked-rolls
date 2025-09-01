@@ -28,7 +28,10 @@ export interface Shift {
     vertical: number
 }
 
-const applyShift = (shift: Shift, to: RollFeature[]) => {
+export const applyShift = (shift: Shift, copy: RollCopy) => {
+    if (copy.ops.has('shifted')) return
+
+    const to = copy.features
     for (const event of to) {
         event.horizontal.from += shift.horizontal
         if (event.horizontal.to) {
@@ -40,15 +43,26 @@ const applyShift = (shift: Shift, to: RollFeature[]) => {
             event.vertical.to += shift.vertical
         }
     }
+    copy.ops = copy.ops.add('shifted')
+    copy.measurements.shift = shift
 }
 
-const applyStretch = (stretch: number, to: RollFeature[]) => {
+export const applyStretch = (
+    paperStretch: EditorialAssumption<'conditionAssignment', PaperStretch>,
+    copy: RollCopy
+) => {
+    if (copy.ops.has('stretched')) return
+
+    const stretch = paperStretch.assigned.factor
+    const to = copy.features
     for (const event of to) {
         event.horizontal.from *= stretch
         if (event.horizontal.to) {
             event.horizontal.to *= stretch
         }
     }
+    copy.ops = copy.ops.add('stretched')
+    copy.conditions.push(paperStretch)
 }
 
 export type DateAssignment = EditorialAssumption<'dateAssignment', Date>
@@ -60,9 +74,10 @@ export interface ProductionEvent {
     date: DateAssignment
 }
 
-export class RollCopy {
-    type: 'RollCopy' = 'RollCopy'
-    id: string = v4()
+export interface RollCopy {
+    readonly type: 'RollCopy'
+    readonly id: string
+    ops: Set<'shifted' | 'stretched'>
 
     measurements: Partial<{
         dimensions: {
@@ -94,11 +109,11 @@ export class RollCopy {
             version: string
             date: Date
         }
-    }> = {}
+    }>
 
     productionEvent?: ProductionEvent
-    conditions: RollConditionAssignment[] = []
-    location: string = ''
+    conditions: RollConditionAssignment[]
+    location: string
 
     /**
      * Provides a reconstructed version of the roll,
@@ -106,40 +121,19 @@ export class RollCopy {
      * taken into account. This property will not be
      * exported in the final JSON.
      */
-    features: RollFeature[] = []
+    features: RollFeature[]
     scan?: string // P138i has representation => IIIF Image Link
 
-    insertFeature(feature: RollFeature) {
-        this.measurements.shift && applyShift(this.measurements.shift, [feature])
-        const stretch = flat(this.conditions)
-            .find(state => state.type === 'paper-stretch')
-        if (stretch) {
-            applyStretch(stretch.factor, [feature])
+    /*    insertFeature(feature: RollFeature) {
+            this.measurements.shift && applyShift(this.measurements.shift, [feature])
+            const stretch = flat(this.conditions)
+                .find(state => state.type === 'paper-stretch')
+            if (stretch) {
+                applyStretch(stretch.factor, [feature])
+            }
+            this.features.push(feature)
         }
-        this.features.push(feature)
-    }
-
-    setShift(shift: Shift) {
-        this.measurements.shift = shift
-        applyShift(shift, this.features)
-    }
-
-    setStretch(stretch: EditorialAssumption<'conditionAssignment', PaperStretch>) {
-        this.conditions.push(stretch)
-        applyStretch(flat(stretch).factor, this.features)
-    }
-
-    shallowClone(): RollCopy {
-        const copy = new RollCopy()
-        copy.id = this.id
-        copy.measurements = { ...this.measurements }
-        copy.productionEvent = this.productionEvent
-        copy.location = this.location
-        copy.conditions = [...this.conditions]
-        copy.scan = this.scan
-        copy.features = [...this.features]
-        return copy
-    }
+    */
 }
 
 export function asSymbols(features: RollFeature[]): AnySymbol[] {
@@ -147,7 +141,7 @@ export function asSymbols(features: RollFeature[]): AnySymbol[] {
         return {
             id: `symbol_${v4()}`,
             ...new WelteT100().meaningOf(feature.vertical.from),
-            carriers: [assign('carrierAssignment', feature)]
+            carriers: [assign('carrierAssignment', feature.id)]
         }
     })
 }
@@ -173,32 +167,35 @@ export function readFromStanfordAton(atonString: string, adjustByRewind: boolean
     const lastHole = +holes[holes.length - 1].TRACKER_HOLE
     const rewindShift = adjustByRewind ? 91 - lastHole : shift
 
-    const copy: RollCopy = new RollCopy()
-    copy.measurements = {
-        dimensions: {
-            width: rollWidth,
-            height: rollHeight,
-            unit: 'mm'
-        },
-        punchDiameter: {
-            value: averagePunchDiameter,
-            unit: 'mm'
-        },
-        holeSeparation: {
-            value: holeSeparation,
-            unit: 'px'
-        },
-        margins: {
-            treble: hardMarginTreble,
-            bass: hardMarginBass,
-            unit: 'px'
-        },
-        // todo
-        shift: {
-            horizontal: 0,
-            vertical: 0
+    const copy: RollCopy = {
+        type: 'RollCopy',
+        id: v4(),
+        ops: new Set(),
+        conditions: [],
+        location: '',
+        features: [],
+        measurements: {
+            dimensions: {
+                width: rollWidth,
+                height: rollHeight,
+                unit: 'mm'
+            },
+            punchDiameter: {
+                value: averagePunchDiameter,
+                unit: 'mm'
+            },
+            holeSeparation: {
+                value: holeSeparation,
+                unit: 'px'
+            },
+            margins: {
+                treble: hardMarginTreble,
+                bass: hardMarginBass,
+                unit: 'px'
+            },
         }
     }
+
 
     let circularPunches = 0
     const features = []
@@ -263,7 +260,15 @@ export function readFromSpencerMIDI(
     const midi = read(midiBuffer)
     const features: RollFeature[] = []
 
-    const copy = new RollCopy()
+    const copy: RollCopy = {
+        type: 'RollCopy',
+        id: v4(),
+        ops: new Set(),
+        conditions: [],
+        location: '',
+        features: [],
+        measurements: {}
+    }
 
     const spans = asSpans(midi)
 
@@ -330,7 +335,7 @@ export const findCopiesCarrying = (sources: RollCopy[], symbol: AnySymbol) => {
 
     for (const feature of flat(symbol.carriers)) {
         for (const copy of sources) {
-            if (copy.features.includes(feature)) {
+            if (copy.features.findIndex(f => f.id === feature)) {
                 result.add(copy.id)
             }
         }

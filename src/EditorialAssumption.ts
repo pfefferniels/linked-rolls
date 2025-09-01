@@ -19,35 +19,32 @@ export type WithNote = {
     note?: string // P3 has note
 }
 
-export interface Argumentation extends WithActor, WithNote {
-    motivation?: Question
+export interface Argumentation<T extends string = 'simpleArgumentation'> extends WithActor, WithNote {
+    type: T
 }
 
-export interface MeaningComprehension<T> extends WithActor, WithNote {
+export interface MeaningComprehension<T> extends Argumentation<'meaningComprehension'> {
     comprehends: T[]
 }
 
-export const isMeaningComprehension = <T,>(
-    arg: Argumentation,
-    aboutGuard: (obj: any) => obj is T
-): arg is MeaningComprehension<T> => {
-    return 'comprehends' in arg
-        && Array.isArray(arg.comprehends)
-        && arg.comprehends.every(aboutGuard);
-}
-
-export interface Inference extends Argumentation {
+export interface Inference extends Argumentation<'inference'> {
     premises: Belief[]
 }
 
-export const isInference = (arg: Argumentation): arg is Inference => {
-    return 'premises' in arg;
+export interface BeliefAdoption extends Argumentation<'beliefAdoption'> {
+    note: string;
+}
+
+export type AnyArgumentation = MeaningComprehension<any> | Inference | BeliefAdoption | Argumentation
+
+export function isMeaningComprehension<AboutT>(object: AnyArgumentation, aboutGuard: (x: any) => x is AboutT): object is MeaningComprehension<AboutT> {
+    return object.type === 'meaningComprehension' && object.comprehends.every(aboutGuard)
 }
 
 export interface Belief extends WithId {
     type: 'belief';
     certainty: Certainty;
-    reasons: Argumentation[]
+    reasons: AnyArgumentation[]
 }
 
 /**

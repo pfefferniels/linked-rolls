@@ -5,6 +5,7 @@
     "module": "esnext",
     "lib": ["ESNext"],
     "skipLibCheck": true,
+    "esModuleInterop": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
