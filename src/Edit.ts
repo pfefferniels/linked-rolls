@@ -32,7 +32,7 @@ export interface Edit extends WithId {
     actor?: ActorAssignment;
     motivation?: Motivation<EditMotivation>;
     insert?: AnySymbol[];
-    delete?: AnySymbol[];
+    delete?: string[];
     intentionOf?: AnySymbol[];
 }
 

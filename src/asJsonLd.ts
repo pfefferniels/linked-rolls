@@ -6,7 +6,6 @@ import { WithId } from "./WithId";
 // rather than the object itself.
 export const referenceTypes = [
     'premises',
-    'delete',
     'comprehends'
 ]
 
