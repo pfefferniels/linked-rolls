@@ -200,7 +200,7 @@ export class Emulation {
         this.source = version.id
         
         this.negotiatedEvents =
-            view.getSnapshot(version)
+            view.getSnapshot(version.id)
                 .filter(s => s.type === 'note' || s.type === 'expression')
                 .map((e) => view.simplifySymbol(e))
                 .filter(s => s !== null)
