@@ -28,7 +28,7 @@ export interface MeaningComprehension extends Argumentation<'meaningComprehensio
 }
 
 export interface Inference extends Argumentation<'inference'> {
-    premises: Belief[]
+    premises: string[]
 }
 
 export interface BeliefAdoption extends Argumentation<'beliefAdoption'> {
@@ -100,16 +100,4 @@ export interface Motivation<MotivationT> extends EditorialAssumption<'motivation
 
 export const isMotivation = (object: any): object is Motivation<any> => {
     return 'type' in object && object.type === 'motivationAssignment'
-}
-
-export interface QuestionMaking extends WithActor {
-    premises: (Belief | Question)[]; // has premise
-    raise: Question;
-}
-
-/**
- * Modelled on IAM's Question, cf. M. Doerr et al., p. 12
- */
-export interface Question {
-    question: string // has conclusion (W)
 }

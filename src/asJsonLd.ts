@@ -1,16 +1,5 @@
 import { Edition } from "./Edition";
 import { exportDate } from "./importJsonLd";
-import { WithId } from "./WithId";
-
-// for these keys, references by id will be inserted
-// rather than the object itself.
-export const referenceTypes = [
-    'premises',
-]
-
-const asIDArray = (arr: WithId[]) => {
-    return arr.map(e => e.id)
-}
 
 const asJsonLdEntity = (obj: object) => {
     if (obj instanceof Date) {
@@ -26,14 +15,6 @@ const asJsonLdEntity = (obj: object) => {
     for (const [key, value] of Object.entries(obj)) {
         if (typeof value === 'function' || typeof value === 'undefined') {
             // ignore
-        }
-        else if (referenceTypes.includes(key)) {
-            if (!Array.isArray(value)) {
-                console.error(`Expected array for key ${key}, got ${value}`)
-            }
-            else {
-                result[key] = asIDArray(value)
-            }
         }
         else if (key === 'type') {
             result['@type'] = value
