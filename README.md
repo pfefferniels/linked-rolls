@@ -8,8 +8,10 @@ and exporting digital editions of piano roll. In particular it allows to:
   - collate differing piano roll copies
   - create an manipulate editorial assumptions 
   - export the edition as JSON-LD (based on the 
-    linked-rolls ontology)
+    [Roll Edition Ontology](https://ontome.net/project/168))
 
+This library is the foundation of the
+[Roll Desk](https://github.com/pfefferniels/roll-desk).
 
 ## Building
 ```
