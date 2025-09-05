@@ -29,7 +29,7 @@ export interface Shift {
 }
 
 export const applyShift = (shift: Shift, copy: RollCopy) => {
-    if (copy.ops.has('shifted')) return
+    if (copy.ops.includes('shifted')) return
 
     const to = copy.features
     for (const event of to) {
@@ -43,7 +43,7 @@ export const applyShift = (shift: Shift, copy: RollCopy) => {
             event.vertical.to += shift.vertical
         }
     }
-    copy.ops = copy.ops.add('shifted')
+    copy.ops = [...copy.ops, 'shifted']
     copy.measurements.shift = shift
 }
 
@@ -51,7 +51,7 @@ export const applyStretch = (
     paperStretch: EditorialAssumption<'conditionAssignment', PaperStretch>,
     copy: RollCopy
 ) => {
-    if (copy.ops.has('stretched')) return
+    if (copy.ops.includes('stretched')) return
 
     const stretch = paperStretch.assigned.factor
     const to = copy.features
@@ -61,7 +61,7 @@ export const applyStretch = (
             event.horizontal.to *= stretch
         }
     }
-    copy.ops = copy.ops.add('stretched')
+    copy.ops = [...copy.ops, 'stretched']
     copy.conditions.push(paperStretch)
 }
 
@@ -77,7 +77,7 @@ export interface ProductionEvent {
 export interface RollCopy {
     readonly type: 'RollCopy'
     readonly id: string
-    ops: Set<'shifted' | 'stretched'>
+    ops: Array<'shifted' | 'stretched'>
 
     measurements: Partial<{
         dimensions: {
@@ -170,7 +170,7 @@ export function readFromStanfordAton(atonString: string, adjustByRewind: boolean
     const copy: RollCopy = {
         type: 'RollCopy',
         id: v4(),
-        ops: new Set(),
+        ops: [],
         conditions: [],
         location: '',
         features: [],
@@ -263,7 +263,7 @@ export function readFromSpencerMIDI(
     const copy: RollCopy = {
         type: 'RollCopy',
         id: v4(),
-        ops: new Set(),
+        ops: [],
         conditions: [],
         location: '',
         features: [],

@@ -9,6 +9,9 @@ const renames = {
 
 const ignores = ['base']
 
+const replace = {
+}
+
 function renameKeys(obj) {
     if (Array.isArray(obj)) {
         return obj.map(renameKeys);
@@ -31,6 +34,10 @@ function renameKeys(obj) {
                         return null
                     }
 
+                    if (replace[key]) {
+                        value = replace[key];
+                    }
+
                     if (key === 'required' && Array.isArray(value)) {
                         value = value
                             .filter(v => !ignores.includes(v))
@@ -46,4 +53,6 @@ function renameKeys(obj) {
 }
 
 const transformed = renameKeys(schema);
-fs.writeFileSync("schema.json", JSON.stringify(transformed, null, 2));
+fs.writeFileSync("schema.json", JSON.stringify(transformed, null, 2)
+    .replaceAll('date-time', 'date')
+);
