@@ -57,6 +57,10 @@ export interface Place {
  */
 export interface EditionCreation {
     publisher: Person
+
+    /**
+     * @format date
+     */
     publicationDate: Date
     collationTolerance?: CollationTolerance // L13 used parameters
 }

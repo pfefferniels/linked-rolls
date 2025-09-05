@@ -1,9 +1,5 @@
 import { Edition } from "./Edition";
 
-export const exportDate = (date: Date) => {
-    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
-}
-
 const isDate = (value: string) => {
     const datePattern = /^\d{4}-\d{1,2}-\d{1,2}$/;
     return datePattern.test(value);

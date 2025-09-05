@@ -1,0 +1,1272 @@
+{
+  "$ref": "#/definitions/Edition",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "ActorAssignment": {
+      "$ref": "#/definitions/EditorialAssumption%3C%22actorAssignment%22%2CPerson%3E"
+    },
+    "AnyArgumentation": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/MeaningComprehension"
+        },
+        {
+          "$ref": "#/definitions/Inference"
+        },
+        {
+          "$ref": "#/definitions/BeliefAdoption"
+        },
+        {
+          "$ref": "#/definitions/Argumentation"
+        }
+      ]
+    },
+    "AnySymbol": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Note"
+        },
+        {
+          "$ref": "#/definitions/Expression"
+        },
+        {
+          "$ref": "#/definitions/HandwrittenText"
+        },
+        {
+          "$ref": "#/definitions/Stamp"
+        },
+        {
+          "$ref": "#/definitions/Cover"
+        },
+        {
+          "$ref": "#/definitions/RollLabel"
+        }
+      ]
+    },
+    "Argumentation": {
+      "properties": {
+        "actor": {
+          "$ref": "#/definitions/Person"
+        },
+        "note": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "simpleArgumentation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "@type"
+      ],
+      "type": "object"
+    },
+    "Belief": {
+      "properties": {
+        "certainty": {
+          "$ref": "#/definitions/Certainty"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/definitions/AnyArgumentation"
+          },
+          "type": "array"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "belief",
+          "type": "string"
+        }
+      },
+      "required": [
+        "certainty",
+        "@id",
+        "reasons",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "BeliefAdoption": {
+      "properties": {
+        "actor": {
+          "$ref": "#/definitions/Person"
+        },
+        "note": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "beliefAdoption",
+          "type": "string"
+        }
+      },
+      "required": [
+        "note",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "CarrierAssignment": {
+      "$ref": "#/definitions/EditorialAssumption%3C%22carrierAssignment%22%2Cstring%3E"
+    },
+    "Certainty": {
+      "enum": [
+        "true",
+        "likely",
+        "possible",
+        "unlikely",
+        "false"
+      ],
+      "type": "string"
+    },
+    "CollationTolerance": {
+      "properties": {
+        "toleranceEnd": {
+          "type": "number"
+        },
+        "toleranceStart": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "toleranceStart",
+        "toleranceEnd"
+      ],
+      "type": "object"
+    },
+    "Cover": {
+      "description": "This denotes perforations that are covered by an editor. The covered perforation is not considered to be part of the original note or expression hole anymore.",
+      "properties": {
+        "carriers": {
+          "items": {
+            "$ref": "#/definitions/CarrierAssignment"
+          },
+          "type": "array"
+        },
+        "note": {
+          "description": "This property can be used to indicate e.g. the color or material of the cover.",
+          "type": "string"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "cover",
+          "type": "string"
+        }
+      },
+      "required": [
+        "carriers",
+        "@id",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "DateAssignment": {
+      "$ref": "#/definitions/EditorialAssumption%3C%22dateAssignment%22%2Cstring870780834%3E"
+    },
+    "Derivation": {
+      "$ref": "#/definitions/EditorialAssumption%3C%22derivation%22%2Cstring%3E"
+    },
+    "Edit": {
+      "description": "Actor should be used to indicate the person who (presumably) carried out the edit.",
+      "properties": {
+        "actor": {
+          "$ref": "#/definitions/ActorAssignment"
+        },
+        "delete": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "insert": {
+          "items": {
+            "$ref": "#/definitions/AnySymbol"
+          },
+          "type": "array"
+        },
+        "intentionOf": {
+          "items": {
+            "$ref": "#/definitions/AnySymbol"
+          },
+          "type": "array"
+        },
+        "motivation": {
+          "$ref": "#/definitions/Motivation%3CEditMotivation%3E"
+        },
+        "@id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "@id"
+      ],
+      "type": "object"
+    },
+    "EditMotivation": {
+      "enum": [
+        "short-dynamic-differentation",
+        "additional-accent",
+        "add-redundancy",
+        "remove-redundancy",
+        "replace-with-equivalent",
+        "shift",
+        "correct-error",
+        "shorten",
+        "prolong"
+      ],
+      "type": "string"
+    },
+    "Edition": {
+      "description": "Describes the specific digital edition of a piano roll. This type refers to lrm:F2 Expression.",
+      "properties": {
+        "copies": {
+          "items": {
+            "$ref": "#/definitions/RollCopy"
+          },
+          "type": "array"
+        },
+        "creation": {
+          "$ref": "#/definitions/EditionCreation"
+        },
+        "license": {
+          "description": "The license under which the edition is published. This property refers to dcterms:license.",
+          "examples": [
+            "https://creativecommons.org/licenses/by/4.0/"
+          ],
+          "type": "string"
+        },
+        "roll": {
+          "$ref": "#/definitions/Roll",
+          "description": "The roll which is edited in this edition. This property refers to lrm:R3i realises."
+        },
+        "tempoAdjustment": {
+          "$ref": "#/definitions/TempoAssignment"
+        },
+        "title": {
+          "description": "The title of the edition. This property refers to crm:P102 has title.",
+          "examples": [
+            "Alfred Grünfeld spielt Robert Schumann, Träumerei"
+          ],
+          "type": "string"
+        },
+        "versions": {
+          "description": "The different versions of the roll on which this edition is based. This property refers to lrm:R76 is derivative of.",
+          "items": {
+            "$ref": "#/definitions/Version"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "creation",
+        "title",
+        "license",
+        "roll",
+        "copies",
+        "versions"
+      ],
+      "type": "object"
+    },
+    "EditionCreation": {
+      "description": "This type describes the creation of an edition, i.e. the editor, publisher, and publication date. This type refers to lrm:F28 Expression Creation.",
+      "properties": {
+        "collationTolerance": {
+          "$ref": "#/definitions/CollationTolerance"
+        },
+        "publicationDate": {
+          "format": "date",
+          "type": "string"
+        },
+        "publisher": {
+          "$ref": "#/definitions/Person"
+        }
+      },
+      "required": [
+        "publisher",
+        "publicationDate"
+      ],
+      "type": "object"
+    },
+    "EditorialAssumption<\"actorAssignment\",Person>": {
+      "description": "An editorial assumpton is always a One-Proposition Set.",
+      "properties": {
+        "assigned": {
+          "$ref": "#/definitions/Person"
+        },
+        "belief": {
+          "$ref": "#/definitions/Belief"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "actorAssignment",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assigned",
+        "@id",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "EditorialAssumption<\"carrierAssignment\",string>": {
+      "description": "An editorial assumpton is always a One-Proposition Set.",
+      "properties": {
+        "assigned": {
+          "type": "string"
+        },
+        "belief": {
+          "$ref": "#/definitions/Belief"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "carrierAssignment",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assigned",
+        "@id",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "EditorialAssumption<\"conditionAssignment\",(GeneralRollCondition|PaperStretch)>": {
+      "description": "An editorial assumpton is always a One-Proposition Set.",
+      "properties": {
+        "assigned": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GeneralRollCondition"
+            },
+            {
+              "$ref": "#/definitions/PaperStretch"
+            }
+          ]
+        },
+        "belief": {
+          "$ref": "#/definitions/Belief"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "conditionAssignment",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assigned",
+        "@id",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "EditorialAssumption<\"conditionAssignment\",FeatureCondition>": {
+      "description": "An editorial assumpton is always a One-Proposition Set.",
+      "properties": {
+        "assigned": {
+          "$ref": "#/definitions/FeatureCondition"
+        },
+        "belief": {
+          "$ref": "#/definitions/Belief"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "conditionAssignment",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assigned",
+        "@id",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "EditorialAssumption<\"dateAssignment\",string870780834>": {
+      "description": "An editorial assumpton is always a One-Proposition Set.",
+      "properties": {
+        "assigned": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "belief": {
+          "$ref": "#/definitions/Belief"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "dateAssignment",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assigned",
+        "@id",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "EditorialAssumption<\"derivation\",string>": {
+      "description": "An editorial assumpton is always a One-Proposition Set.",
+      "properties": {
+        "assigned": {
+          "type": "string"
+        },
+        "belief": {
+          "$ref": "#/definitions/Belief"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "derivation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assigned",
+        "@id",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "EditorialAssumption<\"tempoAssignment\",RollTempo>": {
+      "description": "An editorial assumpton is always a One-Proposition Set.",
+      "properties": {
+        "assigned": {
+          "$ref": "#/definitions/RollTempo"
+        },
+        "belief": {
+          "$ref": "#/definitions/Belief"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "tempoAssignment",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assigned",
+        "@id",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "Expression": {
+      "properties": {
+        "accelerating": {
+          "type": "boolean"
+        },
+        "carriers": {
+          "items": {
+            "$ref": "#/definitions/CarrierAssignment"
+          },
+          "type": "array"
+        },
+        "expressionType": {
+          "$ref": "#/definitions/ExpressionType"
+        },
+        "scope": {
+          "$ref": "#/definitions/ExpressionScope"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "expression",
+          "type": "string"
+        }
+      },
+      "required": [
+        "carriers",
+        "expressionType",
+        "@id",
+        "scope",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "ExpressionScope": {
+      "enum": [
+        "bass",
+        "treble"
+      ],
+      "type": "string"
+    },
+    "ExpressionType": {
+      "enum": [
+        "SustainPedalOn",
+        "SustainPedalOff",
+        "SoftPedalOn",
+        "SoftPedalOff",
+        "MezzoforteOff",
+        "MezzoforteOn",
+        "SlowCrescendoOn",
+        "SlowCrescendoOff",
+        "ForzandoOn",
+        "ForzandoOff",
+        "MotorOff",
+        "MotorOn",
+        "Rewind",
+        "ElectricCutOff"
+      ],
+      "type": "string"
+    },
+    "FeatureCondition": {
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "@type": {
+          "enum": [
+            "missing-perforation",
+            "damaged-perforation",
+            "illegible"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "@type"
+      ],
+      "type": "object"
+    },
+    "FeatureConditionAssignment": {
+      "$ref": "#/definitions/EditorialAssumption%3C%22conditionAssignment%22%2CFeatureCondition%3E"
+    },
+    "GeneralRollCondition": {
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "general",
+          "type": "string"
+        }
+      },
+      "required": [
+        "@type"
+      ],
+      "type": "object"
+    },
+    "HandwrittenText": {
+      "description": "For handwritten insertions like e. g. the perforation date in the end of a roll.",
+      "properties": {
+        "carriers": {
+          "items": {
+            "$ref": "#/definitions/CarrierAssignment"
+          },
+          "type": "array"
+        },
+        "pen": {
+          "enum": [
+            "ink",
+            "pencil",
+            "crayon"
+          ],
+          "type": "string"
+        },
+        "rotation": {
+          "type": "number"
+        },
+        "text": {
+          "type": "string"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "handwrittenText",
+          "type": "string"
+        }
+      },
+      "required": [
+        "carriers",
+        "@id",
+        "text",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "HorizontalSpan": {
+      "properties": {
+        "from": {
+          "type": "number"
+        },
+        "to": {
+          "type": "number"
+        },
+        "unit": {
+          "const": "mm",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit",
+        "from",
+        "to"
+      ],
+      "type": "object"
+    },
+    "Inference": {
+      "properties": {
+        "actor": {
+          "$ref": "#/definitions/Person"
+        },
+        "note": {
+          "type": "string"
+        },
+        "premises": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "@type": {
+          "const": "inference",
+          "type": "string"
+        }
+      },
+      "required": [
+        "premises",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "MeaningComprehension": {
+      "properties": {
+        "actor": {
+          "$ref": "#/definitions/Person"
+        },
+        "comprehends": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "note": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "meaningComprehension",
+          "type": "string"
+        }
+      },
+      "required": [
+        "comprehends",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "Motivation<EditMotivation>": {
+      "properties": {
+        "assigned": {
+          "$ref": "#/definitions/EditMotivation"
+        },
+        "belief": {
+          "$ref": "#/definitions/Belief"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "motivationAssignment",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assigned",
+        "@id",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "Motivation<string>": {
+      "properties": {
+        "assigned": {
+          "type": "string"
+        },
+        "belief": {
+          "$ref": "#/definitions/Belief"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "motivationAssignment",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assigned",
+        "@id",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "Note": {
+      "properties": {
+        "accelerating": {
+          "type": "boolean"
+        },
+        "carriers": {
+          "items": {
+            "$ref": "#/definitions/CarrierAssignment"
+          },
+          "type": "array"
+        },
+        "pitch": {
+          "type": "number"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "carriers",
+        "@id",
+        "pitch",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "PaperStretch": {
+      "description": "This condition state is used to describe to roll's  paper shrinkage or stretching. It might be calculated on the basis of comparing the vertical or horizontal  extent with other witnesses of the same roll.",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "factor": {
+          "type": "number"
+        },
+        "@type": {
+          "const": "paper-stretch",
+          "type": "string"
+        }
+      },
+      "required": [
+        "factor",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "Person": {
+      "description": "A person, e.g. a pianist, editor, publisher, etc. This type refers to crm:E21 Person.",
+      "properties": {
+        "name": {
+          "description": "The full name of the person. This property refers to rdfs:label.",
+          "examples": [
+            "Grünfeld, Alfred"
+          ],
+          "type": "string"
+        },
+        "role": {
+          "description": "The role of the person in the context of the edition, e.g. 'pianist', 'editor', 'publisher', etc. This property refers to crm:P2 has type.",
+          "type": "string"
+        },
+        "sameAs": {
+          "description": "This property can be used to point to a GND, Wikidata, or similar entry. This property refers to owl:sameAs.",
+          "examples": [
+            "https://d-nb.info/gnd/116888652"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "@id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "sameAs"
+      ],
+      "type": "object"
+    },
+    "Place": {
+      "description": "A place, e.g. a recording location, publishing location, etc. This type refers to a crm:E53 Place.",
+      "properties": {
+        "name": {
+          "description": "The name of the place.",
+          "examples": [
+            "Wien"
+          ],
+          "type": "string"
+        },
+        "sameAs": {
+          "description": "This property can be used to point to a geonames or wikidata entry.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "sameAs"
+      ],
+      "type": "object"
+    },
+    "ProductionEvent": {
+      "properties": {
+        "company": {
+          "type": "string"
+        },
+        "date": {
+          "$ref": "#/definitions/DateAssignment"
+        },
+        "paper": {
+          "type": "string"
+        },
+        "system": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "company",
+        "system",
+        "paper",
+        "date"
+      ],
+      "type": "object"
+    },
+    "RecordingEvent": {
+      "description": "Describes the event of recording and documents  the persons involved in the process (e.g. pianist), the place, and the date of the recording. This type is built on reo:C14 Recording.",
+      "properties": {
+        "created": {
+          "$ref": "#/definitions/Version",
+          "description": "The version of the roll which was created in the recording. Since it is usually not handed down, this is an optional property. This property is built on R17 created."
+        },
+        "date": {
+          "$ref": "#/definitions/DateAssignment",
+          "description": "The recording date of the roll. This is a date assignment so that we can state e.g. the catalogue or the roll label which indicates the date of the recording. This property is a reified version of crm:P4 has time-span."
+        },
+        "place": {
+          "$ref": "#/definitions/Place",
+          "description": "The place where the recording took place. This property is built on crm:P7 took place at."
+        },
+        "recorded": {
+          "description": "Documents the performance which was recorded.  This property is built on lrm:R81 recorded.",
+          "properties": {
+            "pianist": {
+              "$ref": "#/definitions/Person"
+            },
+            "playing": {
+              "description": "This property should point to a standard  URI, e.g. the GND.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "pianist",
+            "playing"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "recorded",
+        "place",
+        "date"
+      ],
+      "type": "object"
+    },
+    "Roll": {
+      "description": "The abstract concept of a roll, identified by its catalogue number. This type refers to lrm:F1 Work.",
+      "properties": {
+        "catalogueNumber": {
+          "description": "The catalogue number of the roll.",
+          "examples": [
+            "WM 225"
+          ],
+          "type": "string"
+        },
+        "recordingEvent": {
+          "$ref": "#/definitions/RecordingEvent",
+          "description": "This property refers to lrm:R19i was realized through"
+        }
+      },
+      "required": [
+        "catalogueNumber",
+        "recordingEvent"
+      ],
+      "type": "object"
+    },
+    "RollConditionAssignment": {
+      "$ref": "#/definitions/EditorialAssumption%3C%22conditionAssignment%22%2C(GeneralRollCondition%7CPaperStretch)%3E"
+    },
+    "RollCopy": {
+      "properties": {
+        "conditions": {
+          "items": {
+            "$ref": "#/definitions/RollConditionAssignment"
+          },
+          "type": "array"
+        },
+        "features": {
+          "description": "Provides a reconstructed version of the roll, with shift, stretch and emendations already taken into account. This property will not be exported in the final JSON.",
+          "items": {
+            "$ref": "#/definitions/RollFeature"
+          },
+          "type": "array"
+        },
+        "location": {
+          "type": "string"
+        },
+        "measurements": {
+          "properties": {
+            "dimensions": {
+              "properties": {
+                "height": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "string"
+                },
+                "width": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "width",
+                "height",
+                "unit"
+              ],
+              "type": "object"
+            },
+            "holeSeparation": {
+              "properties": {
+                "unit": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "type": "object"
+            },
+            "margins": {
+              "properties": {
+                "bass": {
+                  "type": "number"
+                },
+                "treble": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "treble",
+                "bass",
+                "unit"
+              ],
+              "type": "object"
+            },
+            "measuredBy": {
+              "properties": {
+                "date": {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                "software": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "software",
+                "version",
+                "date"
+              ],
+              "type": "object"
+            },
+            "punchDiameter": {
+              "properties": {
+                "unit": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "value",
+                "unit"
+              ],
+              "type": "object"
+            },
+            "shift": {
+              "$ref": "#/definitions/Shift"
+            }
+          },
+          "type": "object"
+        },
+        "ops": {
+          "properties": {
+            "size": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "size"
+          ],
+          "type": "object"
+        },
+        "productionEvent": {
+          "$ref": "#/definitions/ProductionEvent"
+        },
+        "scan": {
+          "type": "string"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "RollCopy",
+          "type": "string"
+        }
+      },
+      "required": [
+        "@type",
+        "@id",
+        "ops",
+        "measurements",
+        "conditions",
+        "location",
+        "features"
+      ],
+      "type": "object"
+    },
+    "RollFeature": {
+      "properties": {
+        "annotates": {
+          "description": "IIIF region in string form.",
+          "type": "string"
+        },
+        "condition": {
+          "$ref": "#/definitions/FeatureConditionAssignment",
+          "description": "This can be used e.g. to indicate a perforation which is torn out or in any other way damaged."
+        },
+        "horizontal": {
+          "$ref": "#/definitions/HorizontalSpan"
+        },
+        "side": {
+          "description": "Describes whether the event takes place on the verso or recto side of the roll. Since the same perforation is present on both sides, this property is left optional for now.",
+          "enum": [
+            "verso",
+            "recto"
+          ],
+          "type": "string"
+        },
+        "vertical": {
+          "$ref": "#/definitions/VerticalSpan"
+        },
+        "@id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "horizontal",
+        "@id",
+        "vertical"
+      ],
+      "type": "object"
+    },
+    "RollLabel": {
+      "properties": {
+        "carriers": {
+          "items": {
+            "$ref": "#/definitions/CarrierAssignment"
+          },
+          "type": "array"
+        },
+        "rotation": {
+          "type": "number"
+        },
+        "signed": {
+          "type": "boolean"
+        },
+        "text": {
+          "type": "string"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "rollLabel",
+          "type": "string"
+        }
+      },
+      "required": [
+        "carriers",
+        "@id",
+        "signed",
+        "text",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "RollTempo": {
+      "properties": {
+        "endsWith": {
+          "type": "number"
+        },
+        "startsWith": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "startsWith",
+        "endsWith",
+        "unit"
+      ],
+      "type": "object"
+    },
+    "Shift": {
+      "properties": {
+        "horizontal": {
+          "type": "number"
+        },
+        "vertical": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "horizontal",
+        "vertical"
+      ],
+      "type": "object"
+    },
+    "Stamp": {
+      "description": "This type can be used to indicate stamps like e. g. the \"controlliert\" stamp in the beginning of rolls or the date at the end of (later) Welte rolls.",
+      "properties": {
+        "carriers": {
+          "items": {
+            "$ref": "#/definitions/CarrierAssignment"
+          },
+          "type": "array"
+        },
+        "rotation": {
+          "type": "number"
+        },
+        "text": {
+          "type": "string"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "stamp",
+          "type": "string"
+        }
+      },
+      "required": [
+        "carriers",
+        "@id",
+        "text",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "TempoAssignment": {
+      "$ref": "#/definitions/EditorialAssumption%3C%22tempoAssignment%22%2CRollTempo%3E"
+    },
+    "Version": {
+      "description": "Version + Version Creation",
+      "properties": {
+        "actor": {
+          "$ref": "#/definitions/ActorAssignment"
+        },
+        "basedOn": {
+          "$ref": "#/definitions/Derivation"
+        },
+        "edits": {
+          "items": {
+            "$ref": "#/definitions/Edit"
+          },
+          "type": "array"
+        },
+        "motivations": {
+          "items": {
+            "$ref": "#/definitions/Motivation%3Cstring%3E"
+          },
+          "type": "array"
+        },
+        "siglum": {
+          "type": "string"
+        },
+        "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "$ref": "#/definitions/VersionType"
+        }
+      },
+      "required": [
+        "@id",
+        "siglum",
+        "edits",
+        "motivations",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "VersionType": {
+      "enum": [
+        "edition",
+        "authorised-revision",
+        "unauthorised-revision",
+        "gloss"
+      ],
+      "type": "string"
+    },
+    "VerticalSpan": {
+      "properties": {
+        "from": {
+          "type": "number"
+        },
+        "to": {
+          "type": "number"
+        },
+        "unit": {
+          "const": "track",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit",
+        "from"
+      ],
+      "type": "object"
+    }
+  }
+}
