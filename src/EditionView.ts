@@ -17,96 +17,106 @@ export const getAt = <T,>(path: Path, obj: unknown): T | undefined => {
     return node as T;
 }
 
+const referenceKeys = new Set([
+    'delete',
+    'assigned', // for carrierAssumption and derivation
+    'comprehends'
+]);
+
 export class EditionView {
     readonly edition: Edition
 
-    readonly versionsById: Map<string, Version> = new Map()
+    /**
+     * Map from id to object
+     */
+    private readonly byId: Map<string, any> = new Map()
 
-    // maps symbol IDs to the features that carry them
-    readonly symbolCarriers: Map<string, RollFeature[]> = new Map()
+    /**
+     * Map from id to its path within the edition
+     */
+    private readonly paths: Map<string, Path> = new Map()
 
-    // maps symbol IDs to their path in the edition structure
-    readonly symbolPaths: Map<string, Path> = new Map()
-
-    // maps feature IDs to the copy they belong to and the symbol they carry
-    readonly featureInfos: Map<string, {
-        copyId: string,
-        symbolId?: string
-    }> = new Map()
+    /**
+     * Map from id to paths where it is referenced
+     */
+    private readonly links: Map<string, Set<Path>> = new Map()
 
     constructor(edition: Edition) {
         this.edition = edition;
-
-        this.indexVersions()
-        this.indexSymbolPaths()
-        this.indexSymbolCarriers()
-        this.indexFeatures()
+        this.indexObjects();
     }
 
-    private indexVersions() {
-        this.edition.versions.forEach(version => {
-            this.versionsById.set(version.id, version);
-        })
-    }
+    indexObjects() {
+        const visited = new WeakSet<object>();
 
-    private indexFeatures() {
-        this.edition.copies.forEach(copy => {
-            copy.features.forEach(feature => {
-                let symbolId
-                for (const [key, value] of this.symbolCarriers) {
-                    if (value.find(f => f.id === feature.id)) {
-                        symbolId = key;
-                        break;
+        const isObject = (v: unknown): v is object => v !== null && typeof v === "object";
+
+        const traverse = (node: unknown, path: Path) => {
+            if (!isObject(node)) return;
+            if (visited.has(node)) return;
+            visited.add(node);
+
+            const anyNode = node as any;
+            if (typeof anyNode.id === "string") {
+                if (!this.byId.has(anyNode.id)) {
+                    this.byId.set(anyNode.id, node);
+                    this.paths.set(anyNode.id, [...path]);
+                }
+            }
+
+            for (const key of Object.keys(anyNode)) {
+                if (referenceKeys.has(key)) {
+                    const ref = anyNode[key];
+                    if (typeof ref === "string") {
+                        if (!this.links.has(anyNode.id)) {
+                            this.links.set(anyNode.id, new Set());
+                        }
+                        this.links.get(anyNode.id)!.add([...path, key]);
+                    } else if (Array.isArray(ref)) {
+                        for (const r of ref) {
+                            if (typeof r === "string") {
+                                if (!this.links.has(anyNode.id)) {
+                                    this.links.set(anyNode.id, new Set());
+                                }
+                                this.links.get(anyNode.id)!.add([...path, key]);
+                            }
+                        }
                     }
                 }
+            }
 
-                this.featureInfos.set(feature.id, {
-                    copyId: copy.id,
-                    symbolId: symbolId
-                })
-            })
-        })
+            if (Array.isArray(node)) {
+                for (let i = 0; i < node.length; i++) {
+                    traverse(node[i], [...path, i]);
+                }
+            } else {
+                for (const key of Object.keys(node)) {
+                    traverse(anyNode[key], [...path, key]);
+                }
+            }
+        };
+
+        traverse(this.edition, []);
     }
 
-    private indexSymbolCarriers() {
-        const flatFeatures = this.edition.copies.map(c => c.features).flat();
-        this.edition.versions.forEach(version => {
-            version.edits.forEach(edit => {
-                (edit.insert || []).forEach(symbol => {
-                    const carriers = symbol.carriers
-                        .map(featureId => {
-                            return flatFeatures.find(f => f.id === flat(featureId));
-                        })
-                        .filter((f): f is RollFeature => !!f);
-                    this.symbolCarriers.set(symbol.id, carriers);
-                })
-            })
-        })
+    get<T,>(anyId: string): T | undefined {
+        return this.byId.get(anyId) as T;
     }
 
-    private indexSymbolPaths() {
-        this.edition.versions.forEach((version, vi) => {
-            version.edits.forEach((edit, ei) => {
-                (edit.insert || []).forEach((symbol, si) => {
-                    const path: Path = ['versions', vi, 'edits', ei, 'insert', si] as const
-                    this.symbolPaths.set(symbol.id, path);
-                })
-            })
-        })
+    getAll<T,>(anyIds: readonly string[]): T[] {
+        return anyIds.map(id => this.get<T>(id)).filter((v): v is T => !!v);
     }
 
-    simplifySymbol(symbol: Note | Expression): NegotiatedEvent | null {
-        const dim = this.dimensionOf(symbol)
-        if (!symbol.carriers.length || !dim) return null
-
-        return {
-            ...symbol,
-            ...dim
-        }
+    getPath(anyId: string): Path | undefined {
+        return this.paths.get(anyId);
     }
-    
+
+    linksTo(anyId: string): Path[] {
+        return Array.from(this.links.get(anyId) || []);
+    }
+
     travelUp(versionId: string, callback: (version: Readonly<Version>) => void) {
-        const v = this.versionsById.get(versionId)
+        const v = this.get<Version>(versionId)
         if (!v) return
 
         callback(v);
@@ -115,15 +125,18 @@ export class EditionView {
         }
     }
 
+    carriersOf(symbol: AnySymbol): Readonly<RollFeature>[] {
+        return this.getAll<RollFeature>(flat(symbol.carriers));
+    }
+
     predecessorOf(versionId: string): Readonly<Version> | undefined {
-        const v = this.versionsById.get(versionId)
+        const v = this.get<Version>(versionId)
         if (!v?.basedOn) return
-        return this.versionsById.get(flat(v.basedOn))
+        return this.get<Version>(flat(v.basedOn))
     }
 
     dimensionOf(symbol: AnySymbol): Readonly<{ horizontal: HorizontalSpan, vertical: VerticalSpan }> | undefined {
-        const carriers = this.carriersOf(symbol);
-
+        const carriers = this.getAll<RollFeature>(flat(symbol.carriers))
         if (carriers.length === 0) {
             return
         }
@@ -145,7 +158,7 @@ export class EditionView {
         };
     }
 
-    getSnapshot(versionId: string): readonly Readonly<AnySymbol>[] {
+    snapshot(versionId: string): readonly Readonly<AnySymbol>[] {
         const snapshot: AnySymbol[] = [];
         const toDelete: string[] = [];
 
@@ -175,14 +188,6 @@ export class EditionView {
             const bDimension = this.dimensionOf(b)
             return (aDimension?.horizontal.from || 0) - (bDimension?.horizontal.from || 0);
         })
-    }
-
-    carriersOf(symbol: AnySymbol): readonly Readonly<RollFeature>[] {
-        return this.symbolCarriers.get(symbol.id) || [];
-    }
-
-    pathOfSymbol(symbolId: string): Path | undefined {
-        return this.symbolPaths.get(symbolId);
     }
 
     isCollatable(
@@ -237,7 +242,7 @@ export class EditionView {
                 );
             }
 
-            const node = this.versionsById.get(id);
+            const node = this.get<Version>(id);
             if (!node) {
                 memo.set(id, 0);
                 return 0;
@@ -250,7 +255,7 @@ export class EditionView {
 
             if (basedOn === undefined) {
                 gen = 0; // root
-            } else if (!this.versionsById.has(basedOn)) {
+            } else if (!this.get(basedOn)) {
                 // Orphaned parent reference — treat boundary as root
                 gen = 0;
             } else {
@@ -271,14 +276,14 @@ export class EditionView {
         return withGen;
     }
 
-    findSymbol(symbolId: string): AnySymbol | undefined {
-        const path = this.symbolPaths.get(symbolId)
-        if (!path) return
+    simplifySymbol(symbol: Note | Expression): NegotiatedEvent | null {
+        const dim = this.dimensionOf(symbol)
+        if (!symbol.carriers.length || !dim) return null
 
-        const symbol = getAt<AnySymbol>(path, this.edition)
-        if (!symbol) return
-
-        return symbol
+        return {
+            ...symbol,
+            ...dim
+        }
     }
 }
 

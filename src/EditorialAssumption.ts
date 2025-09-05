@@ -23,8 +23,8 @@ export interface Argumentation<T extends string = 'simpleArgumentation'> extends
     type: T
 }
 
-export interface MeaningComprehension<T> extends Argumentation<'meaningComprehension'> {
-    comprehends: T[]
+export interface MeaningComprehension extends Argumentation<'meaningComprehension'> {
+    comprehends: string[]
 }
 
 export interface Inference extends Argumentation<'inference'> {
@@ -35,11 +35,7 @@ export interface BeliefAdoption extends Argumentation<'beliefAdoption'> {
     note: string;
 }
 
-export type AnyArgumentation = MeaningComprehension<any> | Inference | BeliefAdoption | Argumentation
-
-export function isMeaningComprehension<AboutT>(object: AnyArgumentation, aboutGuard: (x: any) => x is AboutT): object is MeaningComprehension<AboutT> {
-    return object.type === 'meaningComprehension' && object.comprehends.every(aboutGuard)
-}
+export type AnyArgumentation = MeaningComprehension | Inference | BeliefAdoption | Argumentation
 
 export interface Belief extends WithId {
     type: 'belief';

@@ -6,7 +6,7 @@ import { CollationTolerance } from "./Collation";
 import { Edit, EditMotivation } from "./Edit";
 import { v4 } from "uuid";
 import { HorizontalSpan, RollFeature, VerticalSpan } from "./Feature";
-import { assign } from "./EditorialAssumption";
+import { assign, flat } from "./EditorialAssumption";
 import { Version } from "./Version";
 import { asSymbols, RollCopy } from "./RollCopy";
 
@@ -60,8 +60,8 @@ export class ConnectVersions extends BasePlan {
         const view = this.view;
         const result: EditionOp[] = []
 
-        const parentSnapshot = view.getSnapshot(this.parentId);
-        const childSnapshot = view.getSnapshot(this.childId);
+        const parentSnapshot = view.snapshot(this.parentId);
+        const childSnapshot = view.snapshot(this.childId);
         const treatedSymbols: AnySymbol[] = []
 
         // can the symbol be collated with any of the
@@ -73,7 +73,7 @@ export class ConnectVersions extends BasePlan {
                 .filter(toCompare => view.isCollatable(symbol, toCompare, this.tolerance))
                 .forEach(parentSymbol => {
                     result.push(draft => {
-                        const symbolPath = view.pathOfSymbol(parentSymbol.id)
+                        const symbolPath = view.getPath(parentSymbol.id)
                         if (!symbolPath) return
 
                         const correspSymbol = getAt<AnySymbol>(symbolPath, draft)
@@ -196,7 +196,7 @@ export class CoverPerforation extends BasePlan {
                 // find perforations in the snapshot that 
                 // overlap with the cover
                 const overlappingSymbols =
-                    view.getSnapshot(this.versionId)
+                    view.snapshot(this.versionId)
                         .filter(symbol => {
                             const dimension = view.dimensionOf(symbol)
                             if (!dimension) return false
@@ -276,6 +276,7 @@ export class CoverPerforation extends BasePlan {
 
 export class RemoveFeature extends BasePlan {
     constructor(
+        private copyID: string,
         private featureIDs: string[]
     ) {
         super()
@@ -287,41 +288,45 @@ export class RemoveFeature extends BasePlan {
 
         return [
             (draft: Draft<Edition>) => {
-                for (const featureID of this.featureIDs) {
-                    const info = view.featureInfos.get(featureID)
-                    if (!info) return
+                const copy = draft.copies.find(c => c.id === this.copyID)
+                if (!copy) return
 
-                    const copy = draft.copies.find(c => c.id === info.copyId)
-                    if (!copy) return
+                copy.features = copy.features.filter(f => !this.featureIDs.includes(f.id))
 
-                    copy.features.splice(copy.features.findIndex(f => f.id === featureID), 1);
+                this.featureIDs.forEach(featureId => {
+                    // expect a path of format:
+                    // ['versions', index, 'edits', index, 'insert', index, 'carriers', index, 'assigned']
+                    const carrierPath = view.linksTo(featureId).at(0)
+                    if (!carrierPath) return
 
-                    const symbolId = info.symbolId
-                    if (!symbolId) continue
+                    // expect to find the parent symbol at:
+                    // ['versions', index, 'edits', index, 'insert', index]
+                    const symbol = getAt<AnySymbol>(carrierPath.slice(0, 6), draft)
+                    if (!symbol) return
 
-                    const symbolPath = view.symbolPaths.get(symbolId)
-                    if (!symbolPath) continue
+                    symbol.carriers = symbol.carriers.filter(c => flat(c) !== featureId)
 
-                    // remove the last segment
-                    symbolPath.splice(-1, 1)
-                    const insert = getAt(symbolPath, draft) as AnySymbol[] | undefined
-                    if (!insert) continue
+                    // if the symbol has no more carriers, remove it
+                    if (symbol.carriers.length === 0) {
+                        // expect to find the parent edit at:
+                        // ['versions', index, 'edits', index]
+                        const inserts = getAt<AnySymbol[]>(carrierPath.slice(0, 5), draft)
+                        if (!inserts) return 
 
-                    insert.splice(insert.findIndex(s => s.id === symbolId), 1)
+                        inserts.splice(inserts.findIndex(s => s.id === symbol.id), 1)
+                        if (inserts.length === 0) {
+                            const edit = getAt<Edit>(carrierPath.slice(0, 4), draft)
+                            if (!edit) return
 
-                    // remove one more segment
-                    symbolPath.splice(-1, 1)
-                    const edit = getAt(symbolPath, draft) as Edit
-                    if (edit.insert?.length === 0 && edit.delete?.length === 0) {
-                        // remove the edit completly 
-                        symbolPath.splice(-1, 1)
-                        const edits = getAt(symbolPath, draft) as Edit[] | undefined
-                        if (!edits) continue
+                            if (!edit.insert?.length && !edit.delete?.length) {
+                                const edits = getAt<Edit[]>(carrierPath.slice(0, 3), draft)
+                                if (!edits) return
 
-                        const index = edits.findIndex(e => e.id === edit.id)
-                        if (index !== -1) edits.splice(index, 1)
+                                edits.splice(edits.findIndex(e => e.id === edit.id), 1)
+                            }
+                        }
                     }
-                }
+                })
             }
         ]
     }
@@ -340,9 +345,7 @@ export class MergeEdits extends BasePlan {
         if (!view) return 'correct-error'
 
         const inserts = (edit.insert || [])
-        const deletes = (edit.delete || [])
-            .map(id => view.findSymbol(id))
-            .filter((s) => !!s)
+        const deletes = view.getAll<AnySymbol>(edit.delete ?? [])
 
         const types = [
             inserts.filter(e => e.type === 'expression').map(e => e.expressionType),
