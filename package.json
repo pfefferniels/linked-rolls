@@ -10,9 +10,9 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "npm run build:schema && tsc",
     "test": "vitest",
-    "build:schema": "npx ts-json-schema-generator --additional-properties --path 'src/**/*.ts' --type 'Edition' > schema_.json && node schema/postprocess.js && rm schema_.json"
+    "build:schema": "npx ts-json-schema-generator --additional-properties --path 'src/**/*.ts' --type 'Edition' > schema_.json && node schema/postprocess.js && rm schema_.json && mv schema.json src/schema.json"
   },
   "devDependencies": {
     "typescript": "^5.6.0-dev.20240809",
@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@types/uuid": "^10.0.0",
+    "ajv": "^8.17.1",
     "aton": "^0.0.4",
     "fast-xml-parser": "^4.4.1",
     "immer": "^10.1.3",
