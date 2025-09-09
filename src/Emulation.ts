@@ -107,16 +107,15 @@ export class Emulation {
         this.endTempo = tempo.endsWith
     }
 
-    private assignPhysicalTime(skipToFirstNote = false) {
+    private assignPhysicalTime() {
         if (this.negotiatedEvents.length === 0) return
 
-        const first = skipToFirstNote ? this.negotiatedEvents[0].horizontal.from : 0
         for (const event of this.negotiatedEvents) {
             if (!event.assumedPhysicalTime) {
                 // convert from mm to cm and then to time
                 event.assumedPhysicalTime = [
-                    this.placeTimeConversion.placeToTime((event.horizontal.from - first) / 10),
-                    this.placeTimeConversion.placeToTime((event.horizontal.to - first) / 10)
+                    this.placeTimeConversion.placeToTime(event.horizontal.from / 10),
+                    this.placeTimeConversion.placeToTime(event.horizontal.to / 10)
                 ]
             }
         }
@@ -131,7 +130,7 @@ export class Emulation {
         }
     }
 
-    private convertEventsToMIDI() {
+    private convertEventsToMIDI(skipToFirstNote = false) {
         for (const event of this.negotiatedEvents) {
             if (event.type === 'expression') {
                 const expression = event as unknown as Expression
@@ -171,7 +170,19 @@ export class Emulation {
             }
         }
 
-        this.midiEvents.sort((a, b) => a.at - b.at)
+        const firstNote = this.negotiatedEvents.find(e => e.type === 'note')
+
+        if (skipToFirstNote && firstNote) {
+            for (const midiEvent of this.midiEvents) {
+                midiEvent.at -= firstNote.assumedPhysicalTime![0]
+                if (midiEvent.at < 0) {
+                    this.midiEvents = this.midiEvents.filter(e => e !== midiEvent)
+                }
+            }
+        }
+
+        this.midiEvents
+            .sort((a, b) => a.at - b.at)
     }
 
     emulateFromRoll(events: (Note | Expression)[], view: EditionView) {
@@ -195,22 +206,34 @@ export class Emulation {
         version: Version,
         view: EditionView,
         rollTempo?: RollTempo,
-        skipToFirstNote: boolean = false
+        range: [number, number] | undefined = undefined,
+        skipToFirstNote = false
     ) {
         this.source = version.id
-        
+
         this.negotiatedEvents =
             view.snapshot(version.id)
                 .filter(s => s.type === 'note' || s.type === 'expression')
+                .filter(s => {
+                    if (range && s.type === 'note') {
+                        const dimensions = view.dimensionOf(s)
+                        if (!dimensions) return true // in case of doubt, include the note
+
+                        // check if the note onset is within the specified range
+                        const onset = dimensions.horizontal.from
+                        return onset > range[0] && onset < range[1]
+                    }
+                    return true
+                })
                 .map((e) => view.simplifySymbol(e))
                 .filter(s => s !== null)
 
         this.findRollTempo(rollTempo)
         this.applyTrackerBarExtension()
-        this.assignPhysicalTime(skipToFirstNote)
+        this.assignPhysicalTime()
         this.calculateVelocities('treble')
         this.calculateVelocities('bass')
-        this.convertEventsToMIDI()
+        this.convertEventsToMIDI(skipToFirstNote)
         return this.midiEvents
     }
 
