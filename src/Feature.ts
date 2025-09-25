@@ -1,12 +1,12 @@
+import { Assumption } from "doubtful";
 import { ConditionState } from "./ConditionState";
-import { EditorialAssumption } from "./EditorialAssumption";
 import { WithId } from "./WithId";
 
 export interface FeatureCondition extends ConditionState<
     'missing-perforation' | 'damaged-perforation' | 'illegible'
 > { }
 
-export type FeatureConditionAssignment = EditorialAssumption<'conditionAssignment', FeatureCondition>;
+export type FeatureConditionAssignment = Assumption<'conditionAssignment', FeatureCondition>;
 
 export interface HorizontalSpan {
     unit: 'mm';

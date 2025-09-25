@@ -1,10 +1,10 @@
 import { CollationTolerance } from "./Collation";
 import { Edition } from "./Edition";
-import { flat } from "./EditorialAssumption";
 import { RollFeature, HorizontalSpan, VerticalSpan } from "./Feature";
 import { AnySymbol, Expression, Note } from "./Symbol";
 import { Version } from "./Version";
 import { NegotiatedEvent } from "./Emulation";
+import { flat } from "doubtful";
 
 export type Path = (string | number)[];
 
@@ -41,10 +41,30 @@ export class EditionView {
      */
     private readonly links: Map<string, Set<Path>> = new Map()
 
+    /**
+     * Dimensions cache: one frequent operation is to find the average
+     * dimensions of a symbol based on its carriers. This cache stores
+     * the computed dimensions for reuse.
+     */
+    //private readonly dimensionsCache: Map<string, { horizontal: HorizontalSpan, vertical: VerticalSpan }> = new Map()
+
+
     constructor(edition: Edition) {
         this.edition = edition;
         this.indexObjects();
+        //this.buildDimensionsCache()
     }
+
+    // private buildDimensionsCache() {
+    //     for (const version of this.edition.versions) {
+    //         for (const symbol of version.edits.flatMap(edit => edit.insert || [])) {
+    //             const dim = this.dimensionOf(symbol)
+    //             if (dim) {
+    //                 this.dimensionsCache.set(symbol.id, dim)
+    //             }
+    //         }
+    //     }
+    // }
 
     indexObjects() {
         const visited = new WeakSet<object>();
@@ -136,6 +156,10 @@ export class EditionView {
     }
 
     dimensionOf(symbol: AnySymbol): Readonly<{ horizontal: HorizontalSpan, vertical: VerticalSpan }> | undefined {
+        // if (this.dimensionsCache.has(symbol.id)) {
+        //     return this.dimensionsCache.get(symbol.id);
+        // }
+        
         const carriers = this.getAll<RollFeature>(flat(symbol.carriers))
         if (carriers.length === 0) {
             return

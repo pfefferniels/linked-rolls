@@ -1,7 +1,8 @@
+import { Assumption } from "doubtful";
 import { ActorAssignment, Edit } from "./Edit";
-import { EditorialAssumption, Motivation } from "./EditorialAssumption";
+import { Motivation } from "./Motivation";
 
-export type Derivation = EditorialAssumption<'derivation', string>
+export type Derivation = Assumption<'derivation', string>
 
 export const versionTypes = [
     /**

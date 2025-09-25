@@ -2,12 +2,12 @@ import { AtonParser } from "./aton/AtonParser";
 import { v4 } from "uuid";
 import { ConditionState } from "./ConditionState";
 import { AnySymbol } from "./Symbol";
-import { assign, EditorialAssumption, flat } from "./EditorialAssumption";
 import { read } from "midifile-ts";
 import { asSpans } from "./asMIDISpans";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 import { WelteT100 } from "./TrackerBar";
 import { HorizontalSpan, RollFeature } from "./Feature";
+import { assign, Assumption, flat } from "doubtful";
 
 /**
  * This condition state is used to describe to roll's 
@@ -21,7 +21,7 @@ export interface PaperStretch extends ConditionState<'paper-stretch'> {
 
 export interface GeneralRollCondition extends ConditionState<'general'> { }
 
-export type RollConditionAssignment = EditorialAssumption<'conditionAssignment', GeneralRollCondition | PaperStretch>
+export type RollConditionAssignment = Assumption<'conditionAssignment', GeneralRollCondition | PaperStretch>
 
 export interface Shift {
     horizontal: number
@@ -48,7 +48,7 @@ export const applyShift = (shift: Shift, copy: RollCopy) => {
 }
 
 export const applyStretch = (
-    paperStretch: EditorialAssumption<'conditionAssignment', PaperStretch>,
+    paperStretch: Assumption<'conditionAssignment', PaperStretch>,
     copy: RollCopy
 ) => {
     if (copy.ops.includes('stretched')) return
@@ -65,7 +65,7 @@ export const applyStretch = (
     copy.conditions.push(paperStretch)
 }
 
-export type DateAssignment = EditorialAssumption<'dateAssignment', Date>
+export type DateAssignment = Assumption<'dateAssignment', Date>
 
 export interface ProductionEvent {
     company: string

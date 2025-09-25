@@ -1,11 +1,11 @@
-import { EditorialAssumption } from "./EditorialAssumption";
+import { Assumption } from "doubtful";
 import { RollFeature } from "./Feature";
 import { WithId } from "./WithId";
 
 /**
  * @todo Should this be called Transcription?
  */
-export type CarrierAssignment = EditorialAssumption<'carrierAssignment', string>;
+export type CarrierAssignment = Assumption<'carrierAssignment', string>;
 
 export type RetrieveCarriers = (symbol: AnySymbol) => RollFeature[];
 

@@ -1,8 +1,8 @@
-import { EditorialAssumption } from "./EditorialAssumption";
 import { WithId } from "./WithId";
 import { DateAssignment, RollCopy } from "./RollCopy";
 import { Version } from "./Version";
 import { CollationTolerance } from "./Collation";
+import { Assumption } from "doubtful";
 
 /**
  * A person, e.g. a pianist, editor, publisher, etc.
@@ -133,7 +133,7 @@ export interface RollTempo {
     unit: string;
 }
 
-export type TempoAssignment = EditorialAssumption<'tempoAssignment', RollTempo>
+export type TempoAssignment = Assumption<'tempoAssignment', RollTempo>
 
 /**
  * Describes the specific digital edition of a piano roll.

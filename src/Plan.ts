@@ -6,9 +6,9 @@ import { CollationTolerance } from "./Collation";
 import { Edit, EditMotivation } from "./Edit";
 import { v4 } from "uuid";
 import { HorizontalSpan, RollFeature, VerticalSpan } from "./Feature";
-import { assign, flat } from "./EditorialAssumption";
 import { Version } from "./Version";
 import { asSymbols, RollCopy } from "./RollCopy";
+import { assign, flat } from "doubtful";
 
 export type EditionOp = (d: Draft<Edition>) => void;
 

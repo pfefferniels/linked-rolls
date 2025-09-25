@@ -1,5 +1,6 @@
+import { Assumption } from "doubtful";
 import { Person } from "./Edition";
-import { EditorialAssumption, Motivation } from "./EditorialAssumption";
+import { Motivation } from "./Motivation";
 import { AnySymbol } from "./Symbol";
 import { WithId } from "./WithId";
 
@@ -22,7 +23,7 @@ export const editMotivations = [
 
 export type EditMotivation = typeof editMotivations[number];
 
-export type ActorAssignment = EditorialAssumption<'actorAssignment', Person>
+export type ActorAssignment = Assumption<'actorAssignment', Person>
 
 /**
  * Actor should be used to indicate the person who
