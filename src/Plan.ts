@@ -8,7 +8,7 @@ import { v4 } from "uuid";
 import { HorizontalSpan, RollFeature, VerticalSpan } from "./Feature";
 import { Version } from "./Version";
 import { asSymbols, RollCopy } from "./RollCopy";
-import { assign, flat } from "doubtful";
+import { assignObject, assignReference, idOf } from "./Assumption";
 
 export type EditionOp = (d: Draft<Edition>) => void;
 
@@ -89,9 +89,10 @@ export class ConnectVersions extends BasePlan {
 
         const edits: Edit[] = insertions.map((symbol): Edit => {
             return {
+                type: 'edit',
+                id: v4(),
                 insert: [symbol],
                 delete: [],
-                id: v4(),
             }
         })
 
@@ -101,9 +102,10 @@ export class ConnectVersions extends BasePlan {
 
         for (const symbol of deletions) {
             edits.push({
+                type: 'edit',
+                id: v4(),
                 insert: [],
                 delete: [symbol.id],
-                id: v4(),
             });
         }
 
@@ -111,7 +113,7 @@ export class ConnectVersions extends BasePlan {
             const v = draft.versions.find(v => v.id === this.childId)
             if (!v) return
             v.edits = edits
-            v.basedOn = assign('derivation', this.parentId)
+            v.basedOn = assignReference(this.parentId)
         })
 
         return result
@@ -153,9 +155,10 @@ export class CreateVersion extends BasePlan {
                 id: v4(),
                 edits: asSymbols(this.copy.features).map((symbol): Edit => {
                     return {
+                        type: 'edit',
+                        id: v4(),
                         insert: [symbol],
                         delete: [],
-                        id: v4(),
                     }
                 }),
                 type: 'edition',
@@ -237,7 +240,7 @@ export class CoverPerforation extends BasePlan {
 
                     copy.features.push(newFeature)
                     symbol.id = `symbol-${v4().slice(0, 8)}`
-                    symbol.carriers = [assign('carrierAssignment', newFeature.id)]
+                    symbol.carriers = [assignReference(newFeature.id)]
                 }
 
                 const coverId = `cover-${v4().slice(0, 8)}`
@@ -247,6 +250,7 @@ export class CoverPerforation extends BasePlan {
                 })
 
                 const edit: Edit = {
+                    type: 'edit',
                     id: v4(),
                     delete: overlappingSymbols.map(s => s.id),
                     insert: deepClone,
@@ -254,21 +258,19 @@ export class CoverPerforation extends BasePlan {
                         type: 'cover',
                         id: v4(),
                         note: this.material,
-                        carriers: [assign('carrierAssignment', coverId)],
+                        carriers: [assignReference(coverId)],
                     }]
                 }
 
                 draft.versions.push({
                     edits: [edit],
                     id: v4(),
-                    basedOn: assign('derivation', version.id),
+                    basedOn: assignReference(version.id),
                     siglum: version.siglum + ' rev',
                     type: 'authorised-revision',
-                    motivations: [{
-                        assigned: 'Stanzfehler korrigiert',
-                        type: 'motivationAssignment',
-                        id: v4()
-                    }],
+                    motivations: [
+                        assignObject({ type: 'motivation', note: 'Stanzfehler korrigiert' }),
+                    ],
                 })
             }]
     }
@@ -295,7 +297,7 @@ export class RemoveFeature extends BasePlan {
 
                 this.featureIDs.forEach(featureId => {
                     // expect a path of format:
-                    // ['versions', index, 'edits', index, 'insert', index, 'carriers', index, 'assigned']
+                    // ['versions', index, 'edits', index, 'insert', index, 'carriers', index, 'id']
                     const carrierPath = view.linksTo(featureId).at(0)
                     if (!carrierPath) return
 
@@ -304,14 +306,14 @@ export class RemoveFeature extends BasePlan {
                     const symbol = getAt<AnySymbol>(carrierPath.slice(0, 6), draft)
                     if (!symbol) return
 
-                    symbol.carriers = symbol.carriers.filter(c => flat(c) !== featureId)
+                    symbol.carriers = symbol.carriers.filter(c => idOf(c) !== featureId)
 
                     // if the symbol has no more carriers, remove it
                     if (symbol.carriers.length === 0) {
                         // expect to find the parent edit at:
                         // ['versions', index, 'edits', index]
                         const inserts = getAt<AnySymbol[]>(carrierPath.slice(0, 5), draft)
-                        if (!inserts) return 
+                        if (!inserts) return
 
                         inserts.splice(inserts.findIndex(s => s.id === symbol.id), 1)
                         if (inserts.length === 0) {
@@ -421,10 +423,10 @@ export class MergeEdits extends BasePlan {
                 }
             })
 
-        const edit = {
+        const edit: Edit = {
             ...result,
             id: v4(),
-            motivation: assign('motivationAssignment', this.guessMotivation(result)),
+            motivation: this.guessMotivation(result),
         }
 
         return ([draft => {
@@ -458,6 +460,7 @@ export class SplitEdit extends BasePlan {
 
         for (const insert of this.toSplit.insert ?? []) {
             result.push({
+                type: 'edit',
                 id: v4(),
                 insert: [insert]
             })
@@ -465,6 +468,7 @@ export class SplitEdit extends BasePlan {
 
         for (const remove of this.toSplit.delete ?? []) {
             result.push({
+                type: 'edit',
                 id: v4(),
                 delete: [remove]
             })
@@ -494,7 +498,7 @@ const overlaps = (a: LazyArea, b: LazyArea): boolean => {
     const overlapsDimension = (a: LazyDimension, b: LazyDimension): boolean =>
         (a.from ?? 0) < (b.to ?? Infinity) && (b.from ?? 0) < (a.to ?? Infinity);
 
-    console.log('do the dimensions overlap?', a, b)
+    // console.log('do the dimensions overlap?', a, b)
 
     return overlapsDimension(a.horizontal, b.horizontal);
 }

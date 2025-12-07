@@ -1,8 +1,8 @@
-import { WithId } from "./WithId";
+import { WithId } from "./utils";
 import { DateAssignment, RollCopy } from "./RollCopy";
 import { Version } from "./Version";
 import { CollationTolerance } from "./Collation";
-import { Assumption } from "doubtful";
+import { ObjectAssumption } from "./Assumption";
 
 /**
  * A person, e.g. a pianist, editor, publisher, etc.
@@ -133,8 +133,6 @@ export interface RollTempo {
     unit: string;
 }
 
-export type TempoAssignment = Assumption<'tempoAssignment', RollTempo>
-
 /**
  * Describes the specific digital edition of a piano roll.
  * This type refers to lrm:F2 Expression.
@@ -176,7 +174,7 @@ export interface Edition {
      * This property refers to lrm:R76 is derivative of.
      */
     versions: Version[]
-    tempoAdjustment?: TempoAssignment
+    tempoAdjustment?: ObjectAssumption<RollTempo>
 }
 
 export type EditionMetadata = Pick<Edition, 'base' | 'title' | 'license' | 'creation' | 'roll'>

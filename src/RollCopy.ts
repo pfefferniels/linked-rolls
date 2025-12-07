@@ -7,7 +7,7 @@ import { asSpans } from "./asMIDISpans";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 import { WelteT100 } from "./TrackerBar";
 import { HorizontalSpan, RollFeature } from "./Feature";
-import { assign, Assumption, flat } from "doubtful";
+import { assignReference, idsOf, ObjectAssumption, ValueAssumption } from "./Assumption";
 
 /**
  * This condition state is used to describe to roll's 
@@ -21,7 +21,7 @@ export interface PaperStretch extends ConditionState<'paper-stretch'> {
 
 export interface GeneralRollCondition extends ConditionState<'general'> { }
 
-export type RollConditionAssignment = Assumption<'conditionAssignment', GeneralRollCondition | PaperStretch>
+export type RollConditionAssignment = ObjectAssumption<GeneralRollCondition | PaperStretch>
 
 export interface Shift {
     horizontal: number
@@ -48,12 +48,12 @@ export const applyShift = (shift: Shift, copy: RollCopy) => {
 }
 
 export const applyStretch = (
-    paperStretch: Assumption<'conditionAssignment', PaperStretch>,
+    paperStretch: ObjectAssumption<PaperStretch>,
     copy: RollCopy
 ) => {
     if (copy.ops.includes('stretched')) return
 
-    const stretch = paperStretch.assigned.factor
+    const stretch = paperStretch.factor
     const to = copy.features
     for (const event of to) {
         event.horizontal.from *= stretch
@@ -65,7 +65,7 @@ export const applyStretch = (
     copy.conditions.push(paperStretch)
 }
 
-export type DateAssignment = Assumption<'dateAssignment', Date>
+export type DateAssignment = ValueAssumption<Date>
 
 export interface ProductionEvent {
     company: string
@@ -141,7 +141,7 @@ export function asSymbols(features: RollFeature[]): AnySymbol[] {
         return {
             id: `symbol_${v4()}`,
             ...new WelteT100().meaningOf(feature.vertical.from),
-            carriers: [assign('carrierAssignment', feature.id)]
+            carriers: [assignReference(feature.id)]
         }
     })
 }
@@ -333,7 +333,7 @@ export function shiftVertically(
 export const findCopiesCarrying = (sources: RollCopy[], symbol: AnySymbol) => {
     const result: Set<string> = new Set()
 
-    for (const feature of flat(symbol.carriers)) {
+    for (const feature of idsOf(symbol.carriers)) {
         for (const copy of sources) {
             if (copy.features.findIndex(f => f.id === feature)) {
                 result.add(copy.id)

@@ -15,8 +15,8 @@
         }
       }
     },
-    "C12_Stage": {
-      "@id": "reo:C12_Stage",
+    "C12_Version": {
+      "@id": "reo:C12_Version",
       "@context": {
         "siglum": {
           "@id": "reo:P22_is_identified_by",
@@ -28,12 +28,12 @@
         }
       }
     },
-    "C13_Stage_Creation": {
-      "@id": "reo:C13_Stage_Creation",
+    "C13_Version_Creation": {
+      "@id": "reo:C13_Version_Creation",
       "@context": {
         "created": {
-          "@id": "reo:P15_created_stage",
-          "@type": "reo:C12_Stage"
+          "@id": "reo:P15_created_version",
+          "@type": "reo:C12_Version"
         },
         "basedOn": {
           "@id": "reo:P10i_is_based_on",
@@ -183,9 +183,9 @@
       "@type": "reo:C1_Witness"
     },
     "collation": "crm:P9_consists_of",
-    "stages": {
+    "versions": {
       "@id": "crm:P9_consists_of",
-      "@type": "reo:C13_Stage_Creation"
+      "@type": "reo:C13_Version_Creation"
     },
     "questions": "crm:P9_consists_of"
   }

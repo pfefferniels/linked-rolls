@@ -4,7 +4,7 @@ import { RollFeature, HorizontalSpan, VerticalSpan } from "./Feature";
 import { AnySymbol, Expression, Note } from "./Symbol";
 import { Version } from "./Version";
 import { NegotiatedEvent } from "./Emulation";
-import { flat } from "doubtful";
+import { idOf, idsOf } from "./Assumption";
 
 export type Path = (string | number)[];
 
@@ -19,7 +19,6 @@ export const getAt = <T,>(path: Path, obj: unknown): T | undefined => {
 
 const referenceKeys = new Set([
     'delete',
-    'assigned', // for carrierAssumption and derivation
     'comprehends'
 ]);
 
@@ -78,14 +77,25 @@ export class EditionView {
 
             const anyNode = node as any;
             if (typeof anyNode.id === "string") {
-                if (!this.byId.has(anyNode.id)) {
-                    this.byId.set(anyNode.id, node);
-                    this.paths.set(anyNode.id, [...path]);
+                if (Object.keys(anyNode).filter(k => k !== '@annotation').length === 1) {
+                    // this is a reference-only object, store link
+                    if (!this.links.has(anyNode.id)) {
+                        this.links.set(anyNode.id, new Set());
+                    }
+                    this.links.get(anyNode.id)!.add([...path, 'id']);
+                }
+                else {
+                    if (!this.byId.has(anyNode.id)) {
+                        this.byId.set(anyNode.id, node);
+                        this.paths.set(anyNode.id, [...path]);
+                    }
                 }
             }
 
-            for (const key of Object.keys(anyNode)) {
-                if (referenceKeys.has(key)) {
+            Object
+                .keys(anyNode)
+                .filter(k => referenceKeys.has(k))
+                .forEach(key => {
                     const ref = anyNode[key];
                     if (typeof ref === "string") {
                         if (!this.links.has(anyNode.id)) {
@@ -102,8 +112,7 @@ export class EditionView {
                             }
                         }
                     }
-                }
-            }
+                })
 
             if (Array.isArray(node)) {
                 for (let i = 0; i < node.length; i++) {
@@ -141,26 +150,26 @@ export class EditionView {
 
         callback(v);
         if (v.basedOn) {
-            this.travelUp(flat(v.basedOn), callback);
+            this.travelUp(idOf(v.basedOn), callback);
         }
     }
 
     carriersOf(symbol: AnySymbol): Readonly<RollFeature>[] {
-        return this.getAll<RollFeature>(flat(symbol.carriers));
+        return this.getAll<RollFeature>(idsOf(symbol.carriers));
     }
 
     predecessorOf(versionId: string): Readonly<Version> | undefined {
         const v = this.get<Version>(versionId)
         if (!v?.basedOn) return
-        return this.get<Version>(flat(v.basedOn))
+        return this.get<Version>(idOf(v.basedOn))
     }
 
     dimensionOf(symbol: AnySymbol): Readonly<{ horizontal: HorizontalSpan, vertical: VerticalSpan }> | undefined {
         // if (this.dimensionsCache.has(symbol.id)) {
         //     return this.dimensionsCache.get(symbol.id);
         // }
-        
-        const carriers = this.getAll<RollFeature>(flat(symbol.carriers))
+
+        const carriers = this.getAll<RollFeature>(idsOf(symbol.carriers))
         if (carriers.length === 0) {
             return
         }
@@ -275,7 +284,7 @@ export class EditionView {
             inStack.add(id);
 
             let gen: number;
-            const basedOn = node.basedOn?.assigned;
+            const basedOn = node.basedOn && idOf(node.basedOn);
 
             if (basedOn === undefined) {
                 gen = 0; // root

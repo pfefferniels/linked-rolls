@@ -1,12 +1,12 @@
-import { Assumption } from "doubtful";
+import { ObjectAssumption } from "./Assumption";
 import { ConditionState } from "./ConditionState";
-import { WithId } from "./WithId";
+import { WithId } from "./utils";
 
 export interface FeatureCondition extends ConditionState<
     'missing-perforation' | 'damaged-perforation' | 'illegible'
 > { }
 
-export type FeatureConditionAssignment = Assumption<'conditionAssignment', FeatureCondition>;
+export type FeatureConditionAssignment = ObjectAssumption<FeatureCondition>;
 
 export interface HorizontalSpan {
     unit: 'mm';
@@ -20,13 +20,26 @@ export interface VerticalSpan {
     to?: number
 }
 
+/**
+ * A feature on the roll, e.g. a perforation, a tear, a mark, etc., 
+ * defined by its horizontal and vertical position and extent.
+ */
 export interface RollFeature extends WithId {
     /**
      * IIIF region in string form.
      */
     annotates?: string;
 
+    /**
+     * Horizontal span of the feature on the roll.
+     * Usually given in millimeters.
+     */
     horizontal: HorizontalSpan;
+
+    /**
+     * Vertical span of the feature on the roll.
+     * Usually given in track numbers.
+     */
     vertical: VerticalSpan;
 
     /**

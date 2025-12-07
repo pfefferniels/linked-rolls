@@ -3,7 +3,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
     "ActorAssignment": {
-      "$ref": "#/definitions/EditorialAssumption%3C%22actorAssignment%22%2CPerson%3E"
+      "$ref": "#/definitions/ObjectAssumption%3CPerson%3E"
     },
     "AnyArgumentation": {
       "anyOf": [
@@ -19,7 +19,8 @@
         {
           "$ref": "#/definitions/Argumentation"
         }
-      ]
+      ],
+      "description": "An argumentation can be either a plain argumentation, a meaning comprehension,  an inference, or a belief adoption."
     },
     "AnySymbol": {
       "anyOf": [
@@ -44,6 +45,7 @@
       ]
     },
     "Argumentation": {
+      "description": "An argumentation provides reasons for a belief and  may be associated with an person carrying out that argumentation.",
       "properties": {
         "actor": {
           "$ref": "#/definitions/Person"
@@ -62,6 +64,7 @@
       "type": "object"
     },
     "Belief": {
+      "description": "A belief associates a certainty with an assumption and provides reasons for it.",
       "properties": {
         "certainty": {
           "$ref": "#/definitions/Certainty"
@@ -89,6 +92,7 @@
       "type": "object"
     },
     "BeliefAdoption": {
+      "description": "A belief adoption adopts someone else's belief. This type is used  to indicate e.g. knowledge through private communication or from secondary literature.",
       "properties": {
         "actor": {
           "$ref": "#/definitions/Person"
@@ -107,10 +111,8 @@
       ],
       "type": "object"
     },
-    "CarrierAssignment": {
-      "$ref": "#/definitions/EditorialAssumption%3C%22carrierAssignment%22%2Cstring%3E"
-    },
     "Certainty": {
+      "description": "Certainty levels for beliefs.",
       "enum": [
         "true",
         "likely",
@@ -121,6 +123,7 @@
       "type": "string"
     },
     "CollationTolerance": {
+      "description": "Tolerance used in collation of roll copies.",
       "properties": {
         "toleranceEnd": {
           "type": "number"
@@ -140,7 +143,7 @@
       "properties": {
         "carriers": {
           "items": {
-            "$ref": "#/definitions/CarrierAssignment"
+            "$ref": "#/definitions/ReferenceAssumption"
           },
           "type": "array"
         },
@@ -164,13 +167,10 @@
       "type": "object"
     },
     "DateAssignment": {
-      "$ref": "#/definitions/EditorialAssumption%3C%22dateAssignment%22%2Cstring870780834%3E"
-    },
-    "Derivation": {
-      "$ref": "#/definitions/EditorialAssumption%3C%22derivation%22%2Cstring%3E"
+      "$ref": "#/definitions/ValueAssumption%3Cstring870780834%3E"
     },
     "Edit": {
-      "description": "Actor should be used to indicate the person who (presumably) carried out the edit.",
+      "description": "A set of edits transforms a version of a roll into another version. Edits insert or delete symbols, or both (= replace). Edits may be motivated by a given set of reasons, e.g. to add an additional accent or to correct an error.",
       "properties": {
         "actor": {
           "$ref": "#/definitions/ActorAssignment"
@@ -194,14 +194,19 @@
           "type": "array"
         },
         "motivation": {
-          "$ref": "#/definitions/Motivation%3CEditMotivation%3E"
+          "$ref": "#/definitions/EditMotivation"
         },
         "@id": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "edit",
           "type": "string"
         }
       },
       "required": [
-        "@id"
+        "@id",
+        "@type"
       ],
       "type": "object"
     },
@@ -243,7 +248,7 @@
           "description": "The roll which is edited in this edition. This property refers to lrm:R3i realises."
         },
         "tempoAdjustment": {
-          "$ref": "#/definitions/TempoAssignment"
+          "$ref": "#/definitions/ObjectAssumption%3CRollTempo%3E"
         },
         "title": {
           "description": "The title of the edition. This property refers to crm:P102 has title.",
@@ -290,182 +295,6 @@
       ],
       "type": "object"
     },
-    "EditorialAssumption<\"actorAssignment\",Person>": {
-      "description": "An editorial assumpton is always a One-Proposition Set.",
-      "properties": {
-        "assigned": {
-          "$ref": "#/definitions/Person"
-        },
-        "belief": {
-          "$ref": "#/definitions/Belief"
-        },
-        "@id": {
-          "type": "string"
-        },
-        "@type": {
-          "const": "actorAssignment",
-          "type": "string"
-        }
-      },
-      "required": [
-        "assigned",
-        "@id",
-        "@type"
-      ],
-      "type": "object"
-    },
-    "EditorialAssumption<\"carrierAssignment\",string>": {
-      "description": "An editorial assumpton is always a One-Proposition Set.",
-      "properties": {
-        "assigned": {
-          "type": "string"
-        },
-        "belief": {
-          "$ref": "#/definitions/Belief"
-        },
-        "@id": {
-          "type": "string"
-        },
-        "@type": {
-          "const": "carrierAssignment",
-          "type": "string"
-        }
-      },
-      "required": [
-        "assigned",
-        "@id",
-        "@type"
-      ],
-      "type": "object"
-    },
-    "EditorialAssumption<\"conditionAssignment\",(GeneralRollCondition|PaperStretch)>": {
-      "description": "An editorial assumpton is always a One-Proposition Set.",
-      "properties": {
-        "assigned": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/GeneralRollCondition"
-            },
-            {
-              "$ref": "#/definitions/PaperStretch"
-            }
-          ]
-        },
-        "belief": {
-          "$ref": "#/definitions/Belief"
-        },
-        "@id": {
-          "type": "string"
-        },
-        "@type": {
-          "const": "conditionAssignment",
-          "type": "string"
-        }
-      },
-      "required": [
-        "assigned",
-        "@id",
-        "@type"
-      ],
-      "type": "object"
-    },
-    "EditorialAssumption<\"conditionAssignment\",FeatureCondition>": {
-      "description": "An editorial assumpton is always a One-Proposition Set.",
-      "properties": {
-        "assigned": {
-          "$ref": "#/definitions/FeatureCondition"
-        },
-        "belief": {
-          "$ref": "#/definitions/Belief"
-        },
-        "@id": {
-          "type": "string"
-        },
-        "@type": {
-          "const": "conditionAssignment",
-          "type": "string"
-        }
-      },
-      "required": [
-        "assigned",
-        "@id",
-        "@type"
-      ],
-      "type": "object"
-    },
-    "EditorialAssumption<\"dateAssignment\",string870780834>": {
-      "description": "An editorial assumpton is always a One-Proposition Set.",
-      "properties": {
-        "assigned": {
-          "format": "date",
-          "type": "string"
-        },
-        "belief": {
-          "$ref": "#/definitions/Belief"
-        },
-        "@id": {
-          "type": "string"
-        },
-        "@type": {
-          "const": "dateAssignment",
-          "type": "string"
-        }
-      },
-      "required": [
-        "assigned",
-        "@id",
-        "@type"
-      ],
-      "type": "object"
-    },
-    "EditorialAssumption<\"derivation\",string>": {
-      "description": "An editorial assumpton is always a One-Proposition Set.",
-      "properties": {
-        "assigned": {
-          "type": "string"
-        },
-        "belief": {
-          "$ref": "#/definitions/Belief"
-        },
-        "@id": {
-          "type": "string"
-        },
-        "@type": {
-          "const": "derivation",
-          "type": "string"
-        }
-      },
-      "required": [
-        "assigned",
-        "@id",
-        "@type"
-      ],
-      "type": "object"
-    },
-    "EditorialAssumption<\"tempoAssignment\",RollTempo>": {
-      "description": "An editorial assumpton is always a One-Proposition Set.",
-      "properties": {
-        "assigned": {
-          "$ref": "#/definitions/RollTempo"
-        },
-        "belief": {
-          "$ref": "#/definitions/Belief"
-        },
-        "@id": {
-          "type": "string"
-        },
-        "@type": {
-          "const": "tempoAssignment",
-          "type": "string"
-        }
-      },
-      "required": [
-        "assigned",
-        "@id",
-        "@type"
-      ],
-      "type": "object"
-    },
     "Expression": {
       "properties": {
         "accelerating": {
@@ -473,7 +302,7 @@
         },
         "carriers": {
           "items": {
-            "$ref": "#/definitions/CarrierAssignment"
+            "$ref": "#/definitions/ReferenceAssumption"
           },
           "type": "array"
         },
@@ -526,49 +355,15 @@
       ],
       "type": "string"
     },
-    "FeatureCondition": {
-      "properties": {
-        "description": {
-          "type": "string"
-        },
-        "@type": {
-          "enum": [
-            "missing-perforation",
-            "damaged-perforation",
-            "illegible"
-          ],
-          "type": "string"
-        }
-      },
-      "required": [
-        "@type"
-      ],
-      "type": "object"
-    },
     "FeatureConditionAssignment": {
-      "$ref": "#/definitions/EditorialAssumption%3C%22conditionAssignment%22%2CFeatureCondition%3E"
-    },
-    "GeneralRollCondition": {
-      "properties": {
-        "description": {
-          "type": "string"
-        },
-        "@type": {
-          "const": "general",
-          "type": "string"
-        }
-      },
-      "required": [
-        "@type"
-      ],
-      "type": "object"
+      "$ref": "#/definitions/ObjectAssumption%3CFeatureCondition%3E"
     },
     "HandwrittenText": {
       "description": "For handwritten insertions like e. g. the perforation date in the end of a roll.",
       "properties": {
         "carriers": {
           "items": {
-            "$ref": "#/definitions/CarrierAssignment"
+            "$ref": "#/definitions/ReferenceAssumption"
           },
           "type": "array"
         },
@@ -623,6 +418,7 @@
       "type": "object"
     },
     "Inference": {
+      "description": "An inference draws a conclusion from given premises.",
       "properties": {
         "actor": {
           "$ref": "#/definitions/Person"
@@ -648,6 +444,7 @@
       "type": "object"
     },
     "MeaningComprehension": {
+      "description": "A meaning comprehension interprets or disambiguates the meaning of  symbols or features.",
       "properties": {
         "actor": {
           "$ref": "#/definitions/Person"
@@ -672,52 +469,6 @@
       ],
       "type": "object"
     },
-    "Motivation<EditMotivation>": {
-      "properties": {
-        "assigned": {
-          "$ref": "#/definitions/EditMotivation"
-        },
-        "belief": {
-          "$ref": "#/definitions/Belief"
-        },
-        "@id": {
-          "type": "string"
-        },
-        "@type": {
-          "const": "motivationAssignment",
-          "type": "string"
-        }
-      },
-      "required": [
-        "assigned",
-        "@id",
-        "@type"
-      ],
-      "type": "object"
-    },
-    "Motivation<string>": {
-      "properties": {
-        "assigned": {
-          "type": "string"
-        },
-        "belief": {
-          "$ref": "#/definitions/Belief"
-        },
-        "@id": {
-          "type": "string"
-        },
-        "@type": {
-          "const": "motivationAssignment",
-          "type": "string"
-        }
-      },
-      "required": [
-        "assigned",
-        "@id",
-        "@type"
-      ],
-      "type": "object"
-    },
     "Note": {
       "properties": {
         "accelerating": {
@@ -725,7 +476,7 @@
         },
         "carriers": {
           "items": {
-            "$ref": "#/definitions/CarrierAssignment"
+            "$ref": "#/definitions/ReferenceAssumption"
           },
           "type": "array"
         },
@@ -748,22 +499,217 @@
       ],
       "type": "object"
     },
-    "PaperStretch": {
-      "description": "This condition state is used to describe to roll's  paper shrinkage or stretching. It might be calculated on the basis of comparing the vertical or horizontal  extent with other witnesses of the same roll.",
+    "ObjectAssumption<(GeneralRollCondition|PaperStretch)>": {
+      "anyOf": [
+        {
+          "properties": {
+            "@annotation": {
+              "properties": {
+                "belief": {
+                  "$ref": "#/definitions/Belief"
+                },
+                "@id": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "belief",
+                "@id"
+              ],
+              "type": "object"
+            },
+            "description": {
+              "type": "string"
+            },
+            "@type": {
+              "const": "general",
+              "type": "string"
+            }
+          },
+          "required": [
+            "@type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "@annotation": {
+              "properties": {
+                "belief": {
+                  "$ref": "#/definitions/Belief"
+                },
+                "@id": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "belief",
+                "@id"
+              ],
+              "type": "object"
+            },
+            "description": {
+              "type": "string"
+            },
+            "factor": {
+              "type": "number"
+            },
+            "@type": {
+              "const": "paper-stretch",
+              "type": "string"
+            }
+          },
+          "required": [
+            "factor",
+            "@type"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ObjectAssumption<FeatureCondition>": {
       "properties": {
+        "@annotation": {
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief"
+            },
+            "@id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
         "description": {
           "type": "string"
         },
-        "factor": {
-          "type": "number"
-        },
         "@type": {
-          "const": "paper-stretch",
+          "enum": [
+            "missing-perforation",
+            "damaged-perforation",
+            "illegible"
+          ],
           "type": "string"
         }
       },
       "required": [
-        "factor",
+        "@type"
+      ],
+      "type": "object"
+    },
+    "ObjectAssumption<Person>": {
+      "properties": {
+        "@annotation": {
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief"
+            },
+            "@id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "name": {
+          "description": "The full name of the person. This property refers to rdfs:label.",
+          "examples": [
+            "Grünfeld, Alfred"
+          ],
+          "type": "string"
+        },
+        "role": {
+          "description": "The role of the person in the context of the edition, e.g. 'pianist', 'editor', 'publisher', etc. This property refers to crm:P2 has type.",
+          "type": "string"
+        },
+        "sameAs": {
+          "description": "This property can be used to point to a GND, Wikidata, or similar entry. This property refers to owl:sameAs.",
+          "examples": [
+            "https://d-nb.info/gnd/116888652"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "@id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "sameAs"
+      ],
+      "type": "object"
+    },
+    "ObjectAssumption<RollTempo>": {
+      "properties": {
+        "@annotation": {
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief"
+            },
+            "@id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "endsWith": {
+          "type": "number"
+        },
+        "startsWith": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "endsWith",
+        "startsWith",
+        "unit"
+      ],
+      "type": "object"
+    },
+    "ObjectAssumption<structure-src_Version.ts-1157-1193-src_Version.ts-1139-1194-src_Version.ts-1120-1194-src_Version.ts-0-2050>": {
+      "properties": {
+        "@annotation": {
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief"
+            },
+            "@id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "note": {
+          "type": "string"
+        },
+        "@type": {
+          "const": "motivation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "note",
         "@type"
       ],
       "type": "object"
@@ -889,6 +835,32 @@
       ],
       "type": "object"
     },
+    "ReferenceAssumption": {
+      "properties": {
+        "@annotation": {
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief"
+            },
+            "@id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "@id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "@id"
+      ],
+      "type": "object"
+    },
     "Roll": {
       "description": "The abstract concept of a roll, identified by its catalogue number. This type refers to lrm:F1 Work.",
       "properties": {
@@ -911,7 +883,7 @@
       "type": "object"
     },
     "RollConditionAssignment": {
-      "$ref": "#/definitions/EditorialAssumption%3C%22conditionAssignment%22%2C(GeneralRollCondition%7CPaperStretch)%3E"
+      "$ref": "#/definitions/ObjectAssumption%3C(GeneralRollCondition%7CPaperStretch)%3E"
     },
     "RollCopy": {
       "properties": {
@@ -1063,6 +1035,7 @@
       "type": "object"
     },
     "RollFeature": {
+      "description": "A feature on the roll, e.g. a perforation, a tear, a mark, etc.,  defined by its horizontal and vertical position and extent.",
       "properties": {
         "annotates": {
           "description": "IIIF region in string form.",
@@ -1073,7 +1046,8 @@
           "description": "This can be used e.g. to indicate a perforation which is torn out or in any other way damaged."
         },
         "horizontal": {
-          "$ref": "#/definitions/HorizontalSpan"
+          "$ref": "#/definitions/HorizontalSpan",
+          "description": "Horizontal span of the feature on the roll. Usually given in millimeters."
         },
         "side": {
           "description": "Describes whether the event takes place on the verso or recto side of the roll. Since the same perforation is present on both sides, this property is left optional for now.",
@@ -1084,7 +1058,8 @@
           "type": "string"
         },
         "vertical": {
-          "$ref": "#/definitions/VerticalSpan"
+          "$ref": "#/definitions/VerticalSpan",
+          "description": "Vertical span of the feature on the roll. Usually given in track numbers."
         },
         "@id": {
           "type": "string"
@@ -1101,7 +1076,7 @@
       "properties": {
         "carriers": {
           "items": {
-            "$ref": "#/definitions/CarrierAssignment"
+            "$ref": "#/definitions/ReferenceAssumption"
           },
           "type": "array"
         },
@@ -1131,25 +1106,6 @@
       ],
       "type": "object"
     },
-    "RollTempo": {
-      "properties": {
-        "endsWith": {
-          "type": "number"
-        },
-        "startsWith": {
-          "type": "number"
-        },
-        "unit": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "startsWith",
-        "endsWith",
-        "unit"
-      ],
-      "type": "object"
-    },
     "Shift": {
       "properties": {
         "horizontal": {
@@ -1170,7 +1126,7 @@
       "properties": {
         "carriers": {
           "items": {
-            "$ref": "#/definitions/CarrierAssignment"
+            "$ref": "#/definitions/ReferenceAssumption"
           },
           "type": "array"
         },
@@ -1196,17 +1152,43 @@
       ],
       "type": "object"
     },
-    "TempoAssignment": {
-      "$ref": "#/definitions/EditorialAssumption%3C%22tempoAssignment%22%2CRollTempo%3E"
+    "ValueAssumption<string870780834>": {
+      "properties": {
+        "@annotation": {
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief"
+            },
+            "@id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "@value": {
+          "format": "date",
+          "type": "string"
+        }
+      },
+      "required": [
+        "@value"
+      ],
+      "type": "object"
     },
     "Version": {
-      "description": "Version + Version Creation",
+      "description": "A version is defined by the sum of edits applied  to the version it is based on. For simple identification,  a siglum is given to each version.",
       "properties": {
         "actor": {
-          "$ref": "#/definitions/ActorAssignment"
+          "$ref": "#/definitions/ActorAssignment",
+          "description": "The person who carried out the edits resulting in this version. This person can be identified only in very rare cases."
         },
         "basedOn": {
-          "$ref": "#/definitions/Derivation"
+          "$ref": "#/definitions/ReferenceAssumption",
+          "description": "If no derivation is defined, it is assumed that this version represents the mother roll"
         },
         "edits": {
           "items": {
@@ -1215,12 +1197,14 @@
           "type": "array"
         },
         "motivations": {
+          "description": "The presumed motivations for creating this version.",
           "items": {
-            "$ref": "#/definitions/Motivation%3Cstring%3E"
+            "$ref": "#/definitions/ObjectAssumption%3Cstructure-src_Version.ts-1157-1193-src_Version.ts-1139-1194-src_Version.ts-1120-1194-src_Version.ts-0-2050%3E"
           },
           "type": "array"
         },
         "siglum": {
+          "description": "A short siglum to identify the version, e.g. \"A\", \"B1\", B2_rev\", etc.",
           "type": "string"
         },
         "@id": {

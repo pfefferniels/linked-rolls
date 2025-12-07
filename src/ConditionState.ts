@@ -1,5 +1,5 @@
 /**
- * Describes the physical condition of a roll or
+ * Physical condition of a roll or
  * of a feature on the roll (e.g. a damaged
  * or unsuccessful perforation). 
  */

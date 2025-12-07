@@ -22,13 +22,16 @@ const fromJsonLdEntity = (json: any): any => {
 
     if ('@type' in json) {
         result['type'] = json['@type'];
+        delete result['@type'];
     }
 
     for (const [key, value] of Object.entries(json)) {
         if (key === '@id') {
+            console.log("deleting @id", value);
             result['id'] = value;
+            delete result['@id'];
         }
-        if (typeof value === 'string' && isDate(value)) {
+        else if (typeof value === 'string' && isDate(value)) {
             result[key] = importDate(value);
         }
         else if (Array.isArray(value)) {

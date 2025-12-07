@@ -1,17 +1,16 @@
-import { Assumption } from "doubtful";
+import { ReferenceAssumption } from "./Assumption";
 import { RollFeature } from "./Feature";
-import { WithId } from "./WithId";
+import { WithId } from "./utils";
 
 /**
  * @todo Should this be called Transcription?
  */
-export type CarrierAssignment = Assumption<'carrierAssignment', string>;
 
 export type RetrieveCarriers = (symbol: AnySymbol) => RollFeature[];
 
 export interface Symbol<T extends string> extends WithId {
     type: T
-    carriers: CarrierAssignment[]
+    carriers: ReferenceAssumption[]
 }
 
 export const isSymbol = (object: any): object is AnySymbol => {

@@ -1,8 +1,7 @@
-import { Assumption } from "doubtful";
+import { ObjectAssumption } from "./Assumption";
 import { Person } from "./Edition";
-import { Motivation } from "./Motivation";
 import { AnySymbol } from "./Symbol";
-import { WithId } from "./WithId";
+import { WithId } from "./utils";
 
 export const editMotivations = [
     /**
@@ -23,21 +22,23 @@ export const editMotivations = [
 
 export type EditMotivation = typeof editMotivations[number];
 
-export type ActorAssignment = Assumption<'actorAssignment', Person>
+export type ActorAssignment = ObjectAssumption<Person>
 
 /**
- * Actor should be used to indicate the person who
- * (presumably) carried out the edit. 
+ * A set of edits transforms a version of a roll into another version.
+ * Edits insert or delete symbols, or both (= replace).
+ * Edits may be motivated by a given set of reasons, e.g.
+ * to add an additional accent or to correct an error.
  */
 export interface Edit extends WithId {
+    type: 'edit';
+    motivation?: EditMotivation;
     actor?: ActorAssignment;
-    motivation?: Motivation<EditMotivation>;
     insert?: AnySymbol[];
     delete?: string[];
     intentionOf?: AnySymbol[];
 }
 
 export const isEdit = (object: any): object is Edit => {
-    return 'insert' in object || 'delete' in object;
+    return 'type' in object && object.type === 'edit';
 };
-

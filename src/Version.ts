@@ -1,8 +1,5 @@
-import { Assumption } from "doubtful";
 import { ActorAssignment, Edit } from "./Edit";
-import { Motivation } from "./Motivation";
-
-export type Derivation = Assumption<'derivation', string>
+import { ObjectAssumption, ReferenceAssumption } from "./Assumption";
 
 export const versionTypes = [
     /**
@@ -38,17 +35,37 @@ export const versionTypes = [
 
 export type VersionType = typeof versionTypes[number];
 
+export type Motivation = ObjectAssumption<{ type: 'motivation', note: string }>
+
 /**
- * Version + Version Creation
+ * A version is defined by the sum of edits applied 
+ * to the version it is based on. For simple identification, 
+ * a siglum is given to each version. 
  */
 export interface Version {
     id: string // This is the id of the actual version which is R17 created
-    siglum: string; // the siglum of the version, e.g. P9
+
+    /**
+     * A short siglum to identify the version, e.g. "A", "B1", B2_rev", etc.
+     */
+    siglum: string;
+
+    /**
+     * The person who carried out the edits resulting in this version.
+     * This person can be identified only in very rare cases.
+     */
     actor?: ActorAssignment
-    basedOn?: Derivation; // if no derivation is defined, it is assumed that this version represents the mother roll
-    edits: Edit[]; // P9 consists of
-    motivations: Motivation<string>[]
+
+    /**
+     * If no derivation is defined, it is assumed that this version represents the mother roll
+     */
+    basedOn?: ReferenceAssumption;
+    edits: Edit[];
+
+    /**
+     * The presumed motivations for creating this version.
+     */
+    motivations: Motivation[]
     type: VersionType
 }
-
 
