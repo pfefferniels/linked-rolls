@@ -19,7 +19,8 @@ export const getAt = <T,>(path: Path, obj: unknown): T | undefined => {
 
 const referenceKeys = new Set([
     'delete',
-    'comprehends'
+    'comprehends',
+    'motivation'
 ]);
 
 export class EditionView {
@@ -65,6 +66,11 @@ export class EditionView {
     //     }
     // }
 
+    atPath<T>(path: Path): T | null {
+        const node = getAt<T>(path, this.edition);
+        return node || null;
+    }
+
     indexObjects() {
         const visited = new WeakSet<object>();
 
@@ -98,10 +104,10 @@ export class EditionView {
                 .forEach(key => {
                     const ref = anyNode[key];
                     if (typeof ref === "string") {
-                        if (!this.links.has(anyNode.id)) {
-                            this.links.set(anyNode.id, new Set());
+                        if (!this.links.has(ref)) {
+                            this.links.set(ref, new Set());
                         }
-                        this.links.get(anyNode.id)!.add([...path, key]);
+                        this.links.get(ref)!.add([...path, key]);
                     } else if (Array.isArray(ref)) {
                         for (const r of ref) {
                             if (typeof r === "string") {

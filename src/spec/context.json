@@ -100,6 +100,11 @@
             }
           }
         },
+        "motivations": "@included",
+        "motivation": {
+          "@id": "crm:P17_was_motivated_by",
+          "@type": "@id"
+        },
         "location": {
           "@id": "crm:P53_has_current_or_former_location",
           "@type": "xsd:string"
@@ -186,8 +191,6 @@
     "versions": {
       "@id": "crm:P9_consists_of",
       "@type": "reo:C13_Version_Creation"
-    },
-    "questions": "crm:P9_consists_of"
+    }
   }
 }
-

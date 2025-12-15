@@ -85,7 +85,7 @@ export class Emulation {
         welte_loud: 75,
         trackerBarDiameter: 1.413,
         punchExtensionFraction: 0.75,
-        slow_decay_rate: 2380,
+        slow_decay_rate: 2380, // steps per millisecond
         fastC_decay_rate: 300,
         fastD_decay_rate: 400,
         division: 54

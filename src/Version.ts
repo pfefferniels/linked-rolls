@@ -1,5 +1,6 @@
 import { ActorAssignment, Edit } from "./Edit";
-import { ObjectAssumption, ReferenceAssumption } from "./Assumption";
+import { ReferenceAssumption } from "./Assumption";
+import { WithId, WithNote, WithType } from "./utils";
 
 export const versionTypes = [
     /**
@@ -35,7 +36,7 @@ export const versionTypes = [
 
 export type VersionType = typeof versionTypes[number];
 
-export type Motivation = ObjectAssumption<{ type: 'motivation', note: string }>
+export type Motivation = WithType<'motivation'> & WithId & WithNote
 
 /**
  * A version is defined by the sum of edits applied 
@@ -63,7 +64,7 @@ export interface Version {
     edits: Edit[];
 
     /**
-     * The presumed motivations for creating this version.
+     * A collection of motivations used in this version's edits.
      */
     motivations: Motivation[]
     type: VersionType

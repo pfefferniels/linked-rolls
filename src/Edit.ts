@@ -3,7 +3,7 @@ import { Person } from "./Edition";
 import { AnySymbol } from "./Symbol";
 import { WithId } from "./utils";
 
-export const editMotivations = [
+export const editTypes = [
     /**
      * An additional accent that can only be encoded with 
      * sforzando on/off due to the short space left between
@@ -20,7 +20,7 @@ export const editMotivations = [
     'prolong',
 ] as const;
 
-export type EditMotivation = typeof editMotivations[number];
+export type EditType = typeof editTypes[number];
 
 export type ActorAssignment = ObjectAssumption<Person>
 
@@ -32,7 +32,8 @@ export type ActorAssignment = ObjectAssumption<Person>
  */
 export interface Edit extends WithId {
     type: 'edit';
-    motivation?: EditMotivation;
+    editType?: EditType;
+    motivation?: string;
     actor?: ActorAssignment;
     insert?: AnySymbol[];
     delete?: string[];

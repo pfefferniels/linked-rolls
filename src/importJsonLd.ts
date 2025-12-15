@@ -27,7 +27,7 @@ const fromJsonLdEntity = (json: any): any => {
 
     for (const [key, value] of Object.entries(json)) {
         if (key === '@id') {
-            console.log("deleting @id", value);
+            // console.log("deleting @id", value);
             result['id'] = value;
             delete result['@id'];
         }

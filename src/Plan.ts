@@ -3,12 +3,12 @@ import { EditionView, getAt } from "./EditionView";
 import { Edition } from "./Edition";
 import { AnySymbol, ExpressionType } from "./Symbol";
 import { CollationTolerance } from "./Collation";
-import { Edit, EditMotivation } from "./Edit";
+import { Edit, EditType } from "./Edit";
 import { v4 } from "uuid";
 import { HorizontalSpan, RollFeature, VerticalSpan } from "./Feature";
 import { Version } from "./Version";
 import { asSymbols, RollCopy } from "./RollCopy";
-import { assignObject, assignReference, idOf } from "./Assumption";
+import { assignReference, idOf } from "./Assumption";
 
 export type EditionOp = (d: Draft<Edition>) => void;
 
@@ -269,7 +269,11 @@ export class CoverPerforation extends BasePlan {
                     siglum: version.siglum + ' rev',
                     type: 'authorised-revision',
                     motivations: [
-                        assignObject({ type: 'motivation', note: 'Stanzfehler korrigiert' }),
+                        {
+                            type: 'motivation',
+                            note: 'Stanzfehler korrigiert',
+                            id: v4(),
+                        }
                     ],
                 })
             }]
@@ -342,7 +346,7 @@ export class MergeEdits extends BasePlan {
         super()
     }
 
-    private guessMotivation(edit: Edit): EditMotivation {
+    private guessMotivation(edit: Edit): EditType {
         const view = this.view
         if (!view) return 'correct-error'
 
