@@ -2,7 +2,7 @@ import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { AnySymbol, Expression, ExpressionType, Note } from "./Symbol";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 import { Version } from "./Version";
-import { RollFeature } from "./Feature";
+import { Hole } from "./Feature";
 import { RollTempo } from "./Edition";
 import { EditionView } from "./EditionView";
 
@@ -41,7 +41,7 @@ type AssumedPhysicalTimeSpan = {
 
 export type NegotiatedEvent =
     Omit<Note | Expression, 'carriers'>
-    & Pick<RollFeature, 'horizontal' | 'vertical'>
+    & Pick<Hole, 'horizontal' | 'vertical'>
     & AssumedPhysicalTimeSpan
 
 export type EmulationOptions = {

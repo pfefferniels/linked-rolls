@@ -5,7 +5,6 @@ import { AnySymbol, ExpressionType } from "./Symbol";
 import { CollationTolerance } from "./Collation";
 import { Edit, EditType } from "./Edit";
 import { v4 } from "uuid";
-import { HorizontalSpan, RollFeature, VerticalSpan } from "./Feature";
 import { Version } from "./Version";
 import { asSymbols, RollCopy } from "./RollCopy";
 import { assignReference, idOf } from "./Assumption";
@@ -175,7 +174,7 @@ export class CreateVersion extends BasePlan {
 /**
  * Creates a new version based on the given version
  * calculating the effect of a cover on existing symbols.
- */
+ 
 export class CoverPerforation extends BasePlan {
     constructor(
         private copyId: string,
@@ -279,6 +278,7 @@ export class CoverPerforation extends BasePlan {
             }]
     }
 }
+    */
 
 export class RemoveFeature extends BasePlan {
     constructor(
@@ -491,6 +491,7 @@ export class SplitEdit extends BasePlan {
     }
 }
 
+/*
 type LazyDimension = Partial<{ from: number, to: number }>;
 
 type LazyArea = {
@@ -506,6 +507,7 @@ const overlaps = (a: LazyArea, b: LazyArea): boolean => {
 
     return overlapsDimension(a.horizontal, b.horizontal);
 }
+    */
 
 const arraysIdentical = <T,>(a: T[], b: T[]) => {
     let i = a.length;

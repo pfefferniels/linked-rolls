@@ -1,12 +1,5 @@
 import { ReferenceAssumption } from "./Assumption";
-import { RollFeature } from "./Feature";
 import { WithId } from "./utils";
-
-/**
- * @todo Should this be called Transcription?
- */
-
-export type RetrieveCarriers = (symbol: AnySymbol) => RollFeature[];
 
 export interface Symbol<T extends string> extends WithId {
     type: T
@@ -48,48 +41,7 @@ export interface Expression extends Perforation<'expression'> {
     expressionType: ExpressionType;
 }
 
-/**
- * This denotes perforations that are covered by an editor.
- * The covered perforation is not considered to be part
- * of the original note or expression hole anymore.
- */
-export interface Cover extends Symbol<'cover'> {
-    /**
-     * This property can be used to indicate e.g. the
-     * color or material of the cover.
-     */
-    note?: string;
-}
-
-export interface Text<T extends string> extends Symbol<T> {
-    text: string;
-    rotation?: number;
-}
-
-/**
- * For handwritten insertions like e. g. the
- * perforation date in the end of a roll.
- */
-export interface HandwrittenText extends Text<'handwrittenText'> {
-    pen?: 'ink' | 'pencil' | 'crayon';
-}
-
-/**
- * This type can be used to indicate stamps like e. g. the
- * "controlliert" stamp in the beginning of rolls or the
- * date at the end of (later) Welte rolls.
- */
-export interface Stamp extends Text<'stamp'> { }
-
-export interface RollLabel extends Text<'rollLabel'> {
-    signed: boolean;
-}
-
 export type AnySymbol =
     | Note
     | Expression
-    | HandwrittenText
-    | Stamp
-    | Cover
-    | RollLabel;
 

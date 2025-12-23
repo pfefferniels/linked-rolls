@@ -82,7 +82,7 @@
           "@id": "reo:P21_is_identified_by",
           "@type": "xsd:string"
         },
-        "productionEvent": {
+        "production": {
           "@id": "lrmoo:R28i_was_produced_by",
           "@type": "lrmoo:F33_Reproduction_Event",
           "@context": {

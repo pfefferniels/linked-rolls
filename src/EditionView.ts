@@ -1,6 +1,6 @@
 import { CollationTolerance } from "./Collation";
 import { Edition } from "./Edition";
-import { RollFeature, HorizontalSpan, VerticalSpan } from "./Feature";
+import { HorizontalSpan, VerticalSpan, AnyFeature } from "./Feature";
 import { AnySymbol, Expression, Note } from "./Symbol";
 import { Version } from "./Version";
 import { NegotiatedEvent } from "./Emulation";
@@ -160,8 +160,8 @@ export class EditionView {
         }
     }
 
-    carriersOf(symbol: AnySymbol): Readonly<RollFeature>[] {
-        return this.getAll<RollFeature>(idsOf(symbol.carriers));
+    carriersOf(symbol: AnySymbol): Readonly<AnyFeature>[] {
+        return this.getAll<AnyFeature>(idsOf(symbol.carriers));
     }
 
     predecessorOf(versionId: string): Readonly<Version> | undefined {
@@ -175,7 +175,7 @@ export class EditionView {
         //     return this.dimensionsCache.get(symbol.id);
         // }
 
-        const carriers = this.getAll<RollFeature>(idsOf(symbol.carriers))
+        const carriers = this.getAll<AnyFeature>(idsOf(symbol.carriers))
         if (carriers.length === 0) {
             return
         }

@@ -1,4 +1,4 @@
-import { ObjectAssumption } from "./Assumption";
+import { Assumption, ObjectAssumption } from "./Assumption";
 import { Person } from "./Edition";
 import { AnySymbol } from "./Symbol";
 import { WithId } from "./utils";
@@ -29,15 +29,17 @@ export type ActorAssignment = ObjectAssumption<Person>
  * Edits insert or delete symbols, or both (= replace).
  * Edits may be motivated by a given set of reasons, e.g.
  * to add an additional accent or to correct an error.
+ * 
+ * If an edit is the interpretation of a metamark, 
+ * such as a pencil mark, this should be made explicit
+ * using a meaning comprehension on the `@annotation` field.
  */
-export interface Edit extends WithId {
+export interface Edit extends WithId, Assumption {
     type: 'edit';
     editType?: EditType;
     motivation?: string;
-    actor?: ActorAssignment;
     insert?: AnySymbol[];
     delete?: string[];
-    intentionOf?: AnySymbol[];
 }
 
 export const isEdit = (object: any): object is Edit => {

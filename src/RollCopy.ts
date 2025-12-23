@@ -6,8 +6,10 @@ import { read } from "midifile-ts";
 import { asSpans } from "./asMIDISpans";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 import { WelteT100 } from "./TrackerBar";
-import { HorizontalSpan, RollFeature } from "./Feature";
+import { AnyFeature, Hole, HorizontalSpan } from "./Feature";
 import { assignReference, idsOf, ObjectAssumption, ValueAssumption } from "./Assumption";
+import { WithId, WithType } from "./utils";
+import { ActorAssignment } from "./Edit";
 
 /**
  * This condition state is used to describe to roll's 
@@ -71,12 +73,40 @@ export interface ProductionEvent {
     company: string
     system: string
     paper: string
-    date: DateAssignment
+    date?: DateAssignment
 }
 
-export interface RollCopy {
-    readonly type: 'RollCopy'
-    readonly id: string
+/**
+ * This class denotes identifiable activities that modified
+ * the roll copy after its production, e.g. annotations, repairs,
+ * etc.
+ *  
+ * This maps to crm:E11 Modification.
+ */
+export interface Modification {
+    actor: ActorAssignment
+    date: DateAssignment
+
+    /**
+     * Maps to crm:P108 has produced.
+     */
+    produced: string[]
+
+    /**
+     * Maps to crm:P21 had general purpose.
+     */
+    purpose?:
+        'musical-improvement' |
+        'technical-improvement' |
+        'correction' |
+        'repair' |
+        'labeling' |
+        'control' |
+        'dating' |
+        'glossing'
+}
+
+export interface RollCopy extends WithType<'RollCopy'>, WithId {
     ops: Array<'shifted' | 'stretched'>
 
     measurements: Partial<{
@@ -111,7 +141,7 @@ export interface RollCopy {
         }
     }>
 
-    productionEvent?: ProductionEvent
+    production?: ProductionEvent
     conditions: RollConditionAssignment[]
     location: string
 
@@ -121,29 +151,34 @@ export interface RollCopy {
      * taken into account. This property will not be
      * exported in the final JSON.
      */
-    features: RollFeature[]
-    scan?: string // P138i has representation => IIIF Image Link
+    features: AnyFeature[]
 
-    /*    insertFeature(feature: RollFeature) {
-            this.measurements.shift && applyShift(this.measurements.shift, [feature])
-            const stretch = flat(this.conditions)
-                .find(state => state.type === 'paper-stretch')
-            if (stretch) {
-                applyStretch(stretch.factor, [feature])
-            }
-            this.features.push(feature)
-        }
-    */
+    /**
+     * Maps to crm:P31 was modified by.
+     */
+    modifications: Modification[]
+
+    /**
+     * The scan URL or IIIF URL of the roll.
+     * 
+     * This will map to P138i has representation
+     */
+    scan?: string
 }
 
-export function asSymbols(features: RollFeature[]): AnySymbol[] {
-    return features.map((feature): AnySymbol => {
-        return {
-            id: `symbol_${v4()}`,
-            ...new WelteT100().meaningOf(feature.vertical.from),
-            carriers: [assignReference(feature.id)]
-        }
-    })
+export function asSymbols(
+    features: AnyFeature[],
+    _: boolean = false // todo: applyCovers
+): AnySymbol[] {
+    return features
+        .filter(feature => feature.type === 'Hole')
+        .map((feature): AnySymbol => {
+            return {
+                id: `symbol_${v4()}`,
+                ...new WelteT100().meaningOf(feature.vertical.from),
+                carriers: [assignReference(feature.id)]
+            }
+        })
 }
 
 export function readFromStanfordAton(atonString: string, adjustByRewind: boolean = true, shift = 0): RollCopy {
@@ -173,7 +208,7 @@ export function readFromStanfordAton(atonString: string, adjustByRewind: boolean
         ops: [],
         conditions: [],
         location: '',
-        features: [],
+        modifications: [],
         measurements: {
             dimensions: {
                 width: rollWidth,
@@ -193,7 +228,8 @@ export function readFromStanfordAton(atonString: string, adjustByRewind: boolean
                 bass: hardMarginBass,
                 unit: 'px'
             },
-        }
+        },
+        features: []
     }
 
 
@@ -221,7 +257,8 @@ export function readFromStanfordAton(atonString: string, adjustByRewind: boolean
 
         const annotates = `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${noteAttack},${columnWidth},${height}/128,/270/default.jpg`
 
-        const feature: RollFeature = {
+        const feature: Hole = {
+            type: 'Hole',
             id: v4(),
             annotates,
             vertical: {
@@ -258,7 +295,7 @@ export function readFromSpencerMIDI(
     conversion: PlaceTimeConversion = new KinematicConversion(8.3)
 ): RollCopy {
     const midi = read(midiBuffer)
-    const features: RollFeature[] = []
+    const features: Hole[] = []
 
     const copy: RollCopy = {
         type: 'RollCopy',
@@ -266,8 +303,9 @@ export function readFromSpencerMIDI(
         ops: [],
         conditions: [],
         location: '',
+        measurements: {},
+        modifications: [],
         features: [],
-        measurements: {}
     }
 
     const spans = asSpans(midi)
@@ -296,7 +334,8 @@ export function readFromSpencerMIDI(
         }
 
 
-        const feature: RollFeature = {
+        const feature: Hole = {
+            type: 'Hole',
             vertical: {
                 from: trackerHole,
                 unit: 'track'
@@ -313,7 +352,7 @@ export function readFromSpencerMIDI(
 }
 
 export function shiftVertically(
-    features: RollFeature[],
+    features: Hole[],
     amount: number
 ) {
     for (const event of features) {

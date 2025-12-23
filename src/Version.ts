@@ -1,37 +1,18 @@
-import { ActorAssignment, Edit } from "./Edit";
+import { Edit } from "./Edit";
 import { ReferenceAssumption } from "./Assumption";
 import { WithId, WithNote, WithType } from "./utils";
 
 export const versionTypes = [
     /**
-     * The roll is in a state where it is used as 
+     * The roll is in a state where it is (possibly) used as 
      * the master roll for several new reproductions.
      */
     'edition',
 
     /**
-     * This denotes a version which is specific to (early)
-     * Welte-Mignon piano rolls, where rolls inteded to 
-     * be pulished are revised by a controller first. These
-     * rolls typically carry a "controlliert" stamp. The
-     * revision is done on the same date as the perforation 
-     * and the date is written on the roll towards its end.
+     * A version that exists only on one specific copy of a roll.
      */
-    'authorised-revision',
-
-    /**
-     * Unauthorised revisions are those, which cannot be linked
-     * to a specific controller and are likely done by
-     * a later, anonymous hand. 
-     */
-    'unauthorised-revision',
-
-    /**
-     * In the case of Welte Mignon rolls, glosses are
-     * typically comments about the roll's condition, added
-     * e.g. by the collector.
-     */
-    'gloss'
+    'unicum'
 ] as const
 
 export type VersionType = typeof versionTypes[number];
@@ -50,12 +31,6 @@ export interface Version {
      * A short siglum to identify the version, e.g. "A", "B1", B2_rev", etc.
      */
     siglum: string;
-
-    /**
-     * The person who carried out the edits resulting in this version.
-     * This person can be identified only in very rare cases.
-     */
-    actor?: ActorAssignment
 
     /**
      * If no derivation is defined, it is assumed that this version represents the mother roll

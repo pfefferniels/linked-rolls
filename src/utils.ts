@@ -1,11 +1,11 @@
 import { Person } from "./Edition"
 
 export type WithType<T extends string> = {
-    type: T
+    readonly type: T
 }
 
 export type WithId = {
-    id: string
+    readonly id: string
 }
 
 export type WithActor = {
