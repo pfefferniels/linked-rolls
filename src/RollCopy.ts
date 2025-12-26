@@ -12,7 +12,7 @@ import { WithId, WithType } from "./utils";
 import { ActorAssignment } from "./Edit";
 
 /**
- * This condition state is used to describe to roll's 
+ * This condition state is used to describe to roll's
  * paper shrinkage or stretching. It might be calculated
  * on the basis of comparing the vertical or horizontal 
  * extent with other witnesses of the same roll.
@@ -24,6 +24,11 @@ export interface PaperStretch extends ConditionState<'paper-stretch'> {
 export interface GeneralRollCondition extends ConditionState<'general'> { }
 
 export type RollConditionAssignment = ObjectAssumption<GeneralRollCondition | PaperStretch>
+
+export const rollConditions = [
+    'general',
+    'paper-stretch'
+] as const
 
 export interface Shift {
     horizontal: number
@@ -77,34 +82,50 @@ export interface ProductionEvent {
 }
 
 /**
- * This class denotes identifiable activities that modified
+ * This type denotes identifiable activities that modified
  * the roll copy after its production, e.g. annotations, repairs,
  * etc.
- *  
- * This maps to crm:E11 Modification.
+ * Additions map to crm:E79 Part Addition, removals to crm:E80 Part Removal.
  */
-export interface Modification {
+export type Modification = Partial<{
     actor: ActorAssignment
     date: DateAssignment
+}> & ({
+    type: 'Addition',
 
     /**
-     * Maps to crm:P108 has produced.
+     * Maps to crm:P111 added.
      */
-    produced: string[]
+    added: string[],
 
     /**
      * Maps to crm:P21 had general purpose.
      */
-    purpose?:
-        'musical-improvement' |
-        'technical-improvement' |
-        'correction' |
-        'repair' |
-        'labeling' |
-        'control' |
-        'dating' |
-        'glossing'
-}
+    purpose:
+    'musical-improvement' |
+    'technical-improvement' |
+    'repair' |
+    'labeling' |
+    'control' |
+    'dating' |
+    'glossing'
+
+} | {
+    type: 'Removal',
+
+    /**
+     * Maps to crm:P113 removed.
+     */
+    removed: string[],
+
+    /**
+     * Usually, roll features are being added. 
+     * Sometimes however, we may see traces of features
+     * that have been removed, e.g. through bright spots on
+     * the roll.
+     */
+    purpose: 'delabeling'
+})
 
 export interface RollCopy extends WithType<'RollCopy'>, WithId {
     ops: Array<'shifted' | 'stretched'>
@@ -255,12 +276,12 @@ export function readFromStanfordAton(atonString: string, adjustByRewind: boolean
         const column = +hole.ORIGIN_COL.replace('px', '')
         const columnWidth = +hole.WIDTH_COL.replace('px', '')
 
-        const annotates = `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${noteAttack},${columnWidth},${height}/128,/270/default.jpg`
+        const depiction = `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${noteAttack},${columnWidth},${height}/128,/270/default.jpg`
 
         const feature: Hole = {
             type: 'Hole',
             id: v4(),
-            annotates,
+            depiction,
             vertical: {
                 from: trackerHole,
                 unit: 'track'

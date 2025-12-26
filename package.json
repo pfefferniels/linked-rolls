@@ -10,7 +10,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "npm run build:schema && tsc",
     "test": "vitest",
     "build:schema": "npx ts-json-schema-generator --additional-properties --path 'src/**/*.ts' --type 'Edition' > schema_.json && node schema/postprocess.js && rm schema_.json && mv schema.json src/schema.json"
   },

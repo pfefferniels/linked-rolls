@@ -1,4 +1,4 @@
-import { Hole } from "./Feature";
+import { AnyFeature } from "./Feature";
 import { WelteT100 } from "./TrackerBar";
 
 type AlignmentResult = {
@@ -6,8 +6,8 @@ type AlignmentResult = {
     stretch: number; // stretch factor
 };
 
-const isNote = (hole: Hole): boolean => {
-    return new WelteT100().meaningOf(hole.vertical.from).type === 'note';
+const isNote = (feature: AnyFeature): boolean => {
+    return feature.type === 'Hole' && new WelteT100().meaningOf(feature.vertical.from).type === 'note';
 };
 
 /**
@@ -42,7 +42,7 @@ function selectEnds<T>(arr: T[], count: number): T[] {
  * Align two rolls by computing independent linear fits of each roll's note-onset positions
  * using only the first and last segments, then deriving a transform x2 = (x1 + shift) * stretch.
  */
-export function alignFeatures(rollA: Hole[], rollB: Hole[]): AlignmentResult {
+export function alignFeatures(rollA: AnyFeature[], rollB: AnyFeature[]): AlignmentResult {
     // 1. Extract note-onset positions
     const allXA = rollA.filter(isNote).map(f => f.horizontal.from);
     const allXB = rollB.filter(isNote).map(f => f.horizontal.from);

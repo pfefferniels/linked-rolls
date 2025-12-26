@@ -7,12 +7,13 @@ export interface Symbol<T extends string> extends WithId {
 }
 
 export const isSymbol = (object: any): object is AnySymbol => {
-    return 'carriers' in object
+    return (
+        'type' in object
+        && (object.type === 'note' || object.type === 'expression' || object.type === 'text')
+    );
 }
 
-export interface Perforation<T extends string> extends Symbol<T> {
-    accelerating?: boolean;
-}
+export interface Perforation<T extends string> extends Symbol<T> {}
 
 export interface Note extends Perforation<'note'> {
     pitch: number;
@@ -41,7 +42,19 @@ export interface Expression extends Perforation<'expression'> {
     expressionType: ExpressionType;
 }
 
+/**
+ * Maps to crm:E33 Linguistic Object.
+ */
+export interface Text extends Symbol<'text'> {
+    /**
+     * The text content of the symbol. 
+     * Maps to crm:P3 has note.
+     */
+    text: string;
+}
+
 export type AnySymbol =
     | Note
     | Expression
+    | Text
 
