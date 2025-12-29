@@ -1,4 +1,4 @@
-import { ReferenceAssumption } from "./Assumption";
+import { ReferenceAssumption, ValueAssumption } from "./Assumption";
 import { WithId } from "./utils";
 
 export interface Symbol<T extends string> extends WithId {
@@ -13,7 +13,9 @@ export const isSymbol = (object: any): object is AnySymbol => {
     );
 }
 
-export interface Perforation<T extends string> extends Symbol<T> {}
+export interface Perforation<T extends string> extends Symbol<T> {
+    alignedWith?: ValueAssumption<string>;
+}
 
 export interface Note extends Perforation<'note'> {
     pitch: number;
