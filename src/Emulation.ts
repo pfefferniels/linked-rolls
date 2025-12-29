@@ -5,6 +5,7 @@ import { Version } from "./Version";
 import { Hole } from "./Feature";
 import { RollTempo } from "./Edition";
 import { EditionView } from "./EditionView";
+import { ValueAssumption, valueOf } from "./Assumption";
 
 function resize<T>(arr: T[], newSize: number, defaultValue: T) {
     while (newSize > arr.length)
@@ -185,21 +186,17 @@ export class Emulation {
             .sort((a, b) => a.at - b.at)
     }
 
-    emulateFromRoll(events: (Note | Expression)[], view: EditionView) {
-        this.startTempo = 104.331
-        this.endTempo = 104.331
+    applyConstraints() {
+        this.negotiatedEvents
+            .filter((e): e is NegotiatedEvent & { alignedWith: ValueAssumption<string> } => e.alignedWith !== undefined)
+            .forEach(e => {
+                const ref = this.negotiatedEvents.find(ev => ev.id === valueOf(e.alignedWith));
+                if (!ref) return;
 
-        this.negotiatedEvents = events
-            .map(e => view.simplifySymbol(e))
-            .filter(s => s !== null)
-
-        this.applyTrackerBarExtension()
-        this.assignPhysicalTime()
-        this.applyTrackerBarExtension()
-        this.calculateVelocities('treble')
-        this.calculateVelocities('bass')
-        this.convertEventsToMIDI()
-        return this.midiEvents
+                const distance = ref.horizontal.from - e.horizontal.from;
+                e.horizontal.from += distance;
+                e.horizontal.to += distance;
+            })
     }
 
     emulateVersion(
@@ -210,6 +207,7 @@ export class Emulation {
         skipToFirstNote = false
     ) {
         this.source = version.id
+        console.log('emulating version')
 
         this.negotiatedEvents =
             view.snapshot(version.id)
@@ -228,6 +226,7 @@ export class Emulation {
                 .map((e) => view.simplifySymbol(e))
                 .filter(s => s !== null)
 
+        this.applyConstraints();
         this.findRollTempo(rollTempo)
         this.applyTrackerBarExtension()
         this.assignPhysicalTime()
