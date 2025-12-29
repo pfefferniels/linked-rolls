@@ -57,7 +57,7 @@ export const conditions = {
 } as const satisfies Record<FeatureType, readonly string[]>;
 
 export interface Hole extends RollFeature<'Hole', typeof conditions.Hole[number]> {
-    pattern?: 'regular' | 'accelerating';
+    pattern?: 'regular' | 'accelerating' | 'staggering';
 }
 
 export interface Trace<T extends FeatureType> extends RollFeature<T, typeof conditions.Mark[number]> { }
