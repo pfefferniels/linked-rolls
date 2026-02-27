@@ -6,12 +6,12 @@ import { ObjectAssumption } from "./Assumption";
 
 /**
  * A person, e.g. a pianist, editor, publisher, etc.
- * This type refers to crm:E21 Person.
+ * @see crm:E21 Person
  */
 export interface Person extends Partial<WithId> {
     /**
      * The full name of the person.
-     * This property refers to rdfs:label.
+     * @see rdfs:label
      * @example "Grünfeld, Alfred"
      */
     name: string
@@ -19,7 +19,7 @@ export interface Person extends Partial<WithId> {
     /**
      * This property can be used to point to a
      * GND, Wikidata, or similar entry.
-     * This property refers to owl:sameAs.
+     * @see owl:sameAs
      * @example "https://d-nb.info/gnd/116888652"
      */
     sameAs: string[]
@@ -27,14 +27,14 @@ export interface Person extends Partial<WithId> {
     /**
      * The role of the person in the context of the edition,
      * e.g. 'pianist', 'editor', 'publisher', etc.
-     * This property refers to crm:P2 has type.
+     * @see crm:P2 has type
      */
     role?: string
 }
 
 /**
  * A place, e.g. a recording location, publishing location, etc.
- * This type refers to a crm:E53 Place.
+ * @see crm:E53 Place
  */
 export interface Place {
     /**
@@ -53,28 +53,40 @@ export interface Place {
 /**
  * This type describes the creation of an edition,
  * i.e. the editor, publisher, and publication date.
- * This type refers to lrm:F28 Expression Creation.
+ * @see lrm:F28 Expression Creation
  */
 export interface EditionCreation {
+    /**
+     * The person or institution responsible for publishing the edition.
+     * @see crm:P14 carried out by
+     */
     publisher: Person
 
     /**
+     * The date on which the edition was published.
      * @format date
+     * @see crm:P4 has time-span
      */
     publicationDate: Date
-    collationTolerance?: CollationTolerance // L13 used parameters
+
+    /**
+     * The tolerance parameters used when collating (aligning)
+     * the different roll copies for this edition.
+     * @see L13 used parameters
+     */
+    collationTolerance?: CollationTolerance
 }
 
 /**
- * Describes the event of recording and documents 
+ * Describes the event of recording and documents
  * the persons involved in the process (e.g. pianist),
  * the place, and the date of the recording.
- * This type is built on reo:C14 Recording.
+ * @see reo:C14 Recording
  */
 export interface RecordingEvent {
     /**
-     * Documents the performance which was recorded. 
-     * This property is built on lrm:R81 recorded.
+     * Documents the performance which was recorded.
+     * @see lrm:R81 recorded
      */
     recorded: {
         pianist: Person;
@@ -88,7 +100,7 @@ export interface RecordingEvent {
 
     /**
      * The place where the recording took place.
-     * This property is built on crm:P7 took place at.
+     * @see crm:P7 took place at
      */
     place: Place
 
@@ -96,7 +108,7 @@ export interface RecordingEvent {
      * The recording date of the roll. This is a date
      * assignment so that we can state e.g. the catalogue
      * or the roll label which indicates the date of the recording.
-     * This property is a reified version of crm:P4 has time-span.
+     * @see crm:P4 has time-span
      */
     date: DateAssignment
 
@@ -104,7 +116,7 @@ export interface RecordingEvent {
      * The version of the roll which was created in
      * the recording. Since it is usually not handed
      * down, this is an optional property.
-     * This property is built on R17 created.
+     * @see lrm:R17 created
      */
     created?: Version
 }
@@ -112,7 +124,7 @@ export interface RecordingEvent {
 /**
  * The abstract concept of a roll, identified
  * by its catalogue number.
- * This type refers to lrm:F1 Work.
+ * @see lrm:F1 Work
  */
 export interface Roll {
     /**
@@ -122,20 +134,34 @@ export interface Roll {
     catalogueNumber: string
 
     /**
-     * This property refers to lrm:R19i was realized through
+     * @see lrm:R19i was realized through
      */
     recordingEvent: RecordingEvent
 }
 
+/**
+ * The playback tempo of the roll, specified as a starting
+ * and ending speed. The tempo may change over the course
+ * of the roll due to acceleration effects.
+ */
 export interface RollTempo {
+    /**
+     * The tempo at the beginning of the roll.
+     */
     startsWith: number;
+    /**
+     * The tempo at the end of the roll.
+     */
     endsWith: number;
+    /**
+     * The unit of the tempo measurement (e.g. 'ft/min', 'm/min').
+     */
     unit: string;
 }
 
 /**
  * Describes the specific digital edition of a piano roll.
- * This type refers to lrm:F2 Expression.
+ * @see lrm:F2 Expression
  */
 export interface Edition {
     /**
@@ -144,36 +170,49 @@ export interface Edition {
      */
     base: string
 
+    /**
+     * Information about the creation of this edition,
+     * including publisher and publication date.
+     * @see lrm:R17i was created by
+     */
     creation: EditionCreation
 
     /**
      * The title of the edition.
-     * This property refers to crm:P102 has title.
+     * @see crm:P102 has title
      * @example "Alfred Grünfeld spielt Robert Schumann, Träumerei"
      */
     title: string
 
     /**
      * The license under which the edition is published.
-     * This property refers to dcterms:license.
+     * @see dcterms:license
      * @example "https://creativecommons.org/licenses/by/4.0/"
      */
     license: string
 
     /**
      * The roll which is edited in this edition.
-     * This property refers to lrm:R3i realises.
+     * @see lrm:R3i realises
      */
     roll: Roll
 
+    /**
+     * The physical roll copies on which this edition is based.
+     */
     copies: RollCopy[]
 
     /**
      * The different versions of the roll on which
      * this edition is based.
-     * This property refers to lrm:R76 is derivative of.
+     * @see lrm:R76 is derivative of
      */
     versions: Version[]
+
+    /**
+     * An optional tempo adjustment for playback of the roll,
+     * annotatable with a belief about its correctness.
+     */
     tempoAdjustment?: ObjectAssumption<RollTempo>
 }
 

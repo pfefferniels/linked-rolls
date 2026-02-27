@@ -6,7 +6,7 @@ export abstract class PlaceTimeConversion {
 
 export class NoAccelerationConversion implements PlaceTimeConversion {
     get summary() {
-        return `no aceleration (${this.metersPerMinute} m/min)`
+        return `no acceleration (${this.metersPerMinute} m/min)`
     }
 
     metersPerMinute: number = 3; // according to most sources

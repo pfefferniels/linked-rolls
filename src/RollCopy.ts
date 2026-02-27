@@ -12,17 +12,30 @@ import { WithId, WithType } from "./utils";
 import { ActorAssignment } from "./Edit";
 
 /**
- * This condition state is used to describe to roll's
+ * This condition state is used to describe the roll's
  * paper shrinkage or stretching. It might be calculated
- * on the basis of comparing the vertical or horizontal 
+ * on the basis of comparing the vertical or horizontal
  * extent with other witnesses of the same roll.
  */
 export interface PaperStretch extends ConditionState<'paper-stretch'> {
+    /**
+     * The stretch factor, e.g. 1.02 means the paper has
+     * stretched by 2% compared to its original dimensions.
+     */
     factor: number
 }
 
+/**
+ * A general condition description for a roll copy, e.g.
+ * overall wear, discoloration, or other observations.
+ * @see crm:E3 Condition State
+ */
 export interface GeneralRollCondition extends ConditionState<'general'> { }
 
+/**
+ * An assignment of a condition (general or paper-stretch)
+ * to a roll copy, annotatable with a belief about its certainty.
+ */
 export type RollConditionAssignment = ObjectAssumption<GeneralRollCondition | PaperStretch>
 
 export const rollConditions = [
@@ -30,8 +43,20 @@ export const rollConditions = [
     'paper-stretch'
 ] as const
 
+/**
+ * A shift correction applied to a roll copy to align it
+ * with other copies. The shift is defined as horizontal
+ * (along the roll length, in mm) and vertical (across tracks).
+ */
 export interface Shift {
+    /**
+     * Horizontal shift in millimeters (along the roll length).
+     */
     horizontal: number
+
+    /**
+     * Vertical shift in track numbers (across the tracker bar).
+     */
     vertical: number
 }
 
@@ -72,12 +97,41 @@ export const applyStretch = (
     copy.conditions.push(paperStretch)
 }
 
+/**
+ * A date value wrapped as an assumption, so that the date
+ * can be annotated with a belief about its certainty and source.
+ */
 export type DateAssignment = ValueAssumption<Date>
 
+/**
+ * Describes the production of a roll copy, including the
+ * manufacturing company, the roll system, and the paper used.
+ * @see lrm:F33 Reproduction Event
+ */
 export interface ProductionEvent {
+    /**
+     * The company that produced the roll copy
+     * (e.g. "M. Welte & Söhne").
+     * @see crm:P14 carried out by
+     */
     company: string
+
+    /**
+     * The roll system used for production
+     * (e.g. "Welte-Mignon T100", "Welte-Mignon T98").
+     */
     system: string
+
+    /**
+     * The paper type used for the roll copy.
+     * @see P126:employed
+     */
     paper: string
+
+    /**
+     * The date of production, if known.
+     * @see crm:P4 has time-span
+     */
     date?: DateAssignment
 }
 
@@ -85,7 +139,7 @@ export interface ProductionEvent {
  * This type denotes identifiable activities that modified
  * the roll copy after its production, e.g. annotations, repairs,
  * etc.
- * Additions map to crm:E79 Part Addition, removals to crm:E80 Part Removal.
+ * @see crm:E79 Part Addition, crm:E80 Part Removal
  */
 export type Modification = Partial<{
     actor: ActorAssignment
@@ -94,12 +148,12 @@ export type Modification = Partial<{
     type: 'Addition',
 
     /**
-     * Maps to crm:P111 added.
+     * @see crm:P111 added
      */
     added: string[],
 
     /**
-     * Maps to crm:P21 had general purpose.
+     * @see crm:P21 had general purpose
      */
     purpose:
     'musical-improvement' |
@@ -114,7 +168,7 @@ export type Modification = Partial<{
     type: 'Removal',
 
     /**
-     * Maps to crm:P113 removed.
+     * @see crm:P113 removed
      */
     removed: string[],
 
@@ -127,43 +181,130 @@ export type Modification = Partial<{
     purpose: 'delabeling'
 })
 
+/**
+ * A physical copy of a roll, held at a specific location.
+ * Each roll copy has its own set of features, measurements,
+ * conditions, and modifications. Multiple copies of the same
+ * roll may exist across different archives or collections.
+ * @see crm:E22 Human-Made Object
+ */
 export interface RollCopy extends WithType<'RollCopy'>, WithId {
+    /**
+     * A list of operations that have been applied to this copy's features
+     * (e.g. 'shifted', 'stretched') to normalize measurements
+     * for comparison with other copies.
+     */
     ops: Array<'shifted' | 'stretched'>
 
+    /**
+     * Physical measurements of this roll copy, including
+     * dimensions, punch diameter, hole separation, margins,
+     * shift corrections, and information about the measuring software.
+     */
     measurements: Partial<{
+        /**
+         * The physical dimensions of the roll.
+         */
         dimensions: {
+            /**
+             * The width of the roll in the given unit.
+             */
             width: number,
+            /**
+             * The total height (length) of the roll in the given unit.
+             */
             height: number,
+            /**
+             * The unit of measurement (e.g. 'mm').
+             */
             unit: string
         }
 
+        /**
+         * The average diameter of punched holes.
+         */
         punchDiameter: {
+            /**
+             * The measured punch diameter value.
+             */
             value: number
+            /**
+             * The unit of measurement (e.g. 'mm').
+             */
             unit: string
         }
 
+        /**
+         * The distance between adjacent tracker bar holes.
+         */
         holeSeparation: {
+            /**
+             * The measured hole separation value.
+             */
             value: number
+            /**
+             * The unit of measurement (e.g. 'px', 'mm').
+             */
             unit: string
         }
 
+        /**
+         * The margins on the treble and bass sides of the roll.
+         */
         margins: {
+            /**
+             * The margin on the treble side.
+             */
             treble: number
+            /**
+             * The margin on the bass side.
+             */
             bass: number
+            /**
+             * The unit of measurement (e.g. 'px', 'mm').
+             */
             unit: string
         }
 
         shift: Shift
 
+        /**
+         * Information about the software used to take the measurements.
+         */
         measuredBy: {
+            /**
+             * The name of the measurement software.
+             */
             software: string,
+            /**
+             * The version of the measurement software.
+             */
             version: string
+            /**
+             * The date on which the measurements were taken.
+             * @format date
+             */
             date: Date
         }
     }>
 
+    /**
+     * The production event that created this roll copy.
+     * @see lrm:R28i was produced by
+     */
     production?: ProductionEvent
+
+    /**
+     * Condition assessments of this roll copy (e.g. paper stretch,
+     * general wear). Each condition is an assumption annotatable
+     * with a belief.
+     */
     conditions: RollConditionAssignment[]
+
+    /**
+     * The current physical location or archive where this copy is held.
+     * @see crm:P55 has current location
+     */
     location: string
 
     /**
@@ -175,14 +316,13 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
     features: AnyFeature[]
 
     /**
-     * Maps to crm:P31 was modified by.
+     * @see crm:P31 was modified by
      */
     modifications: Modification[]
 
     /**
      * The scan URL or IIIF URL of the roll.
-     * 
-     * This will map to P138i has representation
+     * @see crm:P138i has representation
      */
     scan?: string
 }
