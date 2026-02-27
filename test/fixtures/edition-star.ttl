@@ -1,0 +1,159 @@
+@prefix crm: <http://www.cidoc-crm.org/cidoc-crm/> .
+@prefix crmdig: <http://www.ics.forth.gr/isl/CRMdig/> .
+@prefix crminf: <http://www.cidoc-crm.org/cidoc-crm/CRMinf/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix ed: <https://edition.wm225.org/> .
+@prefix lrmoo: <http://iflastandards.info/ns/lrm/lrmoo/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix reo: <http://linked-rolls.org/reo/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ed:a4f4b5f2-1a6e-4ea3-ad2b-4a87f44192f9 a reo:motivation;
+  reo:note "Bessere dynamische Differenzierung innheralb eines Akkordes";
+  crminf:J4i_is_subject_to ed:d4f8b9a6-0dc6-48fd-a01c-379f561974ca .
+
+ed:c3b9f7a2-0267-4f2f-a2c3-8dc9a4053456 a reo:motivation;
+  reo:note "Verlängerter Bereich ohne Verschiebung";
+  crminf:J4i_is_subject_to ed:51ce5c26-0467-47c5-8315-62e060eaa6e2 .
+
+ed: a lrmoo:F2_Expression;
+  lrmoo:R17i_was_created_by [
+    crm:P14_carried_out_by [rdfs:label "Niels Pfeffer"];
+    crm:P4_has_time-span "2025-09-05"^^xsd:date;
+    crmdig:L13_used_parameters [
+      reo:toleranceEnd 5;
+      reo:toleranceStart 5
+    ]
+  ];
+  lrmoo:R2_is_derivative_of ed:copy\/d229954b-086c-44d6-a589-aaa324d31d88;
+  lrmoo:R3i_realises [
+    lrmoo:R19i_was_realised_through [
+      lrmoo:R81_recorded [
+        reo:playing ed:;
+        crm:P14_carried_out_by [rdfs:label "Grünfeld, Alfred"]
+      ];
+      crm:P4_has_time-span "1905-01-20";
+      crm:P7_took_place_at [rdfs:label "Wien"]
+    ];
+    crm:P1_is_identified_by "WM 225"
+  ];
+  lrmoo:R76_is_derivative_of ed:19fd4209-81cc-4d03-b2c3-fc7518dbba14;
+  dcterms:license <https://creativecommons.org/licenses/by/4.0/>;
+  crm:P102_has_title "Alfred Grünfeld spielt Robert Schumann, Trämerei" .
+
+ed:19fd4209-81cc-4d03-b2c3-fc7518dbba14 a reo:edition;
+  reo:P10i_is_based_on ed:0e5f443d-0dd9-4810-9dbe-7f5007df490f;
+  reo:P16_involved_edit ed:67409255-46a6-4727-9a16-cccdf5402f64,
+    ed:5ab3f742-d6af-4e34-aa2c-5ee0b3184d78;
+  reo:P22_is_identified_by "B" .
+
+ed:22188b8e-0338-40ad-8b31-0a370bdf3e0f crm:P43_has_dimension [
+    reo:from 97;
+    crm:P91_has_unit "track"
+  ], [
+    reo:from 6.839600333055787E2;
+    reo:to 6.892049958368026E2;
+    crm:P91_has_unit "mm"
+  ];
+  crm:P62i_is_depicted_by <https://stacks.stanford.edu/image/iiif/mf320jq4997/mf320jq4997_0001/3784,8085,22,62/128,/270/default.jpg> .
+
+ed:2341a372-a633-4af1-94b0-417bb9e615fe a crminf:I2_Belief;
+  crminf:J2i_was_concluded_by [
+    a reo:meaningComprehension;
+    crminf:J22_interpreted_meaning_of ed:f625c881-d731-4c7d-b256-e55ca03594fc;
+    crm:P14_carried_out_by [rdfs:label ""]
+  ];
+  crminf:J5_holds_to_be "true" .
+
+ed:32e46f8c-fef2-4ebf-8133-b090c6ca637a crm:P43_has_dimension [
+    reo:from 95;
+    crm:P91_has_unit "track"
+  ], [
+    reo:from 6.837908409658618E2;
+    reo:to 6.892049958368026E2;
+    crm:P91_has_unit "mm"
+  ];
+  crm:P62i_is_depicted_by <https://stacks.stanford.edu/image/iiif/mf320jq4997/mf320jq4997_0001/3707,8083,25,64/128,/270/default.jpg> .
+
+ed:51ce5c26-0467-47c5-8315-62e060eaa6e2 a crminf:I2_Belief;
+  crminf:J2i_was_concluded_by [
+    a reo:meaningComprehension;
+    crminf:J22_interpreted_meaning_of ed:3b259b17-0899-482d-a40e-678bba881c60,
+      ed:07348f1c-da95-41e0-9a65-8aafd4e77994,
+      ed:b6344244-ef84-45a5-a947-4d8c32e46a81
+  ];
+  crminf:J5_holds_to_be "true" .
+
+ed:5ab3f742-d6af-4e34-aa2c-5ee0b3184d78 a reo:edit;
+  reo:P7_added ed:symbol_6c99b758-adf4-4734-a537-2b64f86c0029 .
+
+ed:60be9bb9-bbf5-42eb-82a7-9822b6a9a464 crm:P43_has_dimension [
+    reo:from 6;
+    crm:P91_has_unit "track"
+  ], [
+    reo:from 6.853981681931723E2;
+    reo:to 6.904739383846794E2;
+    crm:P91_has_unit "mm"
+  ];
+  crm:P62i_is_depicted_by <https://stacks.stanford.edu/image/iiif/mf320jq4997/mf320jq4997_0001/347,8102,19,60/128,/270/default.jpg> .
+
+ed:67409255-46a6-4727-9a16-cccdf5402f64 a reo:edit;
+  reo:P7_added ed:symbol_8c37d918-d63b-46ae-9649-4fb4fec84d15 .
+
+ed:copy\/d229954b-086c-44d6-a589-aaa324d31d88 a reo:C1_Witness;
+  lrmoo:R28i_was_produced_by [
+    reo:system "";
+    crm:P126_employed "";
+    crm:P14_carried_out_by "";
+    crm:P4_has_time-span "1909-01-18" {| crminf:J4i_is_subject_to ed:2341a372-a633-4af1-94b0-417bb9e615fe |}
+  ];
+  crm:P138i_has_representation <https://stacks.stanford.edu/image/iiif/mf320jq4997%2Fmf320jq4997_0001/>;
+  crm:P39i_was_measured_by [
+    reo:dimensions [
+      reo:height 1.087373788509575E4;
+      reo:width 3.289868909242298E2;
+      crm:P91_has_unit "mm"
+    ];
+    reo:holeSeparation [
+      reo:value 3.77646E1;
+      crm:P91_has_unit "px"
+    ];
+    reo:margins [
+      reo:bass 54;
+      reo:treble 117;
+      crm:P91_has_unit "px"
+    ];
+    reo:punchDiameter [
+      reo:value -1;
+      crm:P91_has_unit "mm"
+    ]
+  ];
+  crm:P55_has_current_location "Stanford";
+  crm:P56_bears_feature ed:32e46f8c-fef2-4ebf-8133-b090c6ca637a,
+    ed:22188b8e-0338-40ad-8b31-0a370bdf3e0f,
+    ed:60be9bb9-bbf5-42eb-82a7-9822b6a9a464 .
+
+ed:d4f8b9a6-0dc6-48fd-a01c-379f561974ca a crminf:I2_Belief;
+  crminf:J2i_was_concluded_by [
+    a reo:meaningComprehension;
+    crminf:J22_interpreted_meaning_of ed:70beb1d4-1429-4578-8f3c-85ec9e2cf838,
+      ed:e75929f4-9504-4628-9faf-2226097b5d69,
+      ed:ed9bec46-9514-4a82-9fe4-69c8606a7324,
+      ed:70bc1946-b084-4ab5-8f60-f870856a8bbd,
+      ed:dd8d17ff-a707-47a0-ae4e-1741245132fe,
+      ed:3433382d-f430-4bb8-a26f-e92b0be49d65
+  ];
+  crminf:J5_holds_to_be "true" .
+
+ed:symbol_6c99b758-adf4-4734-a537-2b64f86c0029 a reo:expression;
+  reo:P6_has_scope "treble";
+  crm:P128i_is_carried_by ed:daa48708-6ef7-47f9-b56f-46f1d2dfb80b,
+    ed:4a6ac8c0-05f8-4537-83cf-95481b05835d;
+  crm:P2_has_type "SlowCrescendoOn" .
+
+ed:symbol_8c37d918-d63b-46ae-9649-4fb4fec84d15 a reo:expression;
+  reo:P6_has_scope "treble";
+  crm:P128i_is_carried_by ed:aa9ae0ec-d3c7-4056-b827-573fffed01c8,
+    ed:46990d77-c41a-4ae0-8ff3-9ba5a07d8e70;
+  crm:P2_has_type "SlowCrescendoOff" .

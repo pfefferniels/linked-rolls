@@ -43,7 +43,9 @@ const asJsonLdEntity = (obj: object) => {
 }
 
 export const asJsonLd = (edition: Edition) => {
-    const result: any = {
+    const { base, copies, ...rest } = asJsonLdEntity(edition)
+
+    return {
         '@context': [
             'https://linked-rolls.org/rollo/1.0/edition.jsonld',
             {
@@ -51,8 +53,11 @@ export const asJsonLd = (edition: Edition) => {
             }
         ],
         '@type': "Edition",
-        ...asJsonLdEntity(edition)
+        '@id': edition.base,
+        ...rest,
+        copies: (copies as any[])?.map(copy => ({
+            ...copy,
+            '@id': `copy/${copy['@id']}`
+        }))
     }
-
-    return result
 }
