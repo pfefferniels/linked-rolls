@@ -44,6 +44,9 @@ jobs:
           generate-schema-doc --config expand_buttons=true --config with_footer=false src/schema.json docs/index.html
           python .github/postprocess-docs.py docs/index.html
 
+      - name: Copy context
+        run: cp src/spec/context.json docs/context.json
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
