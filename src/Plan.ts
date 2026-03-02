@@ -280,6 +280,32 @@ export class CoverPerforation extends BasePlan {
 }
     */
 
+export class DetachVersion extends BasePlan {
+    constructor(private versionId: string) {
+        super();
+    }
+
+    build(): EditionOp[] {
+        if (!this.view) return [];
+        const snapshot = this.view.snapshot(this.versionId);
+
+        const newEdits: Edit[] = snapshot.map((symbol): Edit => ({
+            type: 'edit',
+            id: v4(),
+            insert: [symbol as AnySymbol],
+            delete: [],
+        }));
+
+        return [draft => {
+            const v = draft.versions.find(ver => ver.id === this.versionId);
+            if (!v) return;
+            v.edits = newEdits;
+            delete v.basedOn;
+            v.motivations = [];
+        }];
+    }
+}
+
 export class RemoveFeature extends BasePlan {
     constructor(
         private copyID: string,
