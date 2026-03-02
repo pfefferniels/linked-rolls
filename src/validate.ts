@@ -4,6 +4,7 @@ import { Edition } from "./Edition"
 
 const ajv = new Ajv(
     {
+        strict: false,
         formats: {
             "date": true
         }
