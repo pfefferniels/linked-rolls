@@ -1,5 +1,6 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
-import { AnySymbol, Expression, ExpressionType, Note } from "./Symbol";
+import { AnySymbol, Expression, ExpressionScope, ExpressionType, Note } from "./Symbol";
+import { welteT100 } from "./TrackerBar";
 import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 import { Version } from "./Version";
 import { Hole } from "./Feature";
@@ -58,7 +59,42 @@ export type EmulationOptions = {
     slow_step?: number
     fastC_step?: number
     fastD_step?: number
+
+    /**
+     * The track at which the keyboard is divided, so that notes from
+     * here upwards follow the treble expression and the ones below it
+     * the bass. Which side an expression perforation itself belongs to
+     * is not decided here but read off the tracker bar.
+     */
     division: number
+}
+
+/**
+ * Which stack of valves an expression perforation belongs to. The symbol
+ * usually says so, having been read off the tracker bar already; where it
+ * does not, the bar is asked again, since sending a perforation to neither
+ * side would quietly flatten the dynamics.
+ */
+const scopeOf = (
+    event: { scope?: ExpressionScope } & Pick<Hole, 'vertical'>
+): ExpressionScope | undefined => {
+    if (event.scope) return event.scope
+
+    const meaning = welteT100.meaningOf(event.vertical.from)
+    return meaning?.type === 'expression' ? meaning.scope : undefined
+}
+
+export const defaultEmulationOptions: EmulationOptions = {
+    welte_p: 35,
+    welte_f: 90,
+    welte_mf: 60,
+    welte_loud: 75,
+    trackerBarDiameter: 1.413,
+    punchExtensionFraction: 0.75,
+    slow_decay_rate: 2380, // steps per millisecond
+    fastC_decay_rate: 300,
+    fastD_decay_rate: 400,
+    division: 54
 }
 
 export class Emulation {
@@ -79,18 +115,7 @@ export class Emulation {
 
     options: EmulationOptions
 
-    constructor(options: EmulationOptions = {
-        welte_p: 35,
-        welte_f: 90,
-        welte_mf: 60,
-        welte_loud: 75,
-        trackerBarDiameter: 1.413,
-        punchExtensionFraction: 0.75,
-        slow_decay_rate: 2380, // steps per millisecond
-        fastC_decay_rate: 300,
-        fastD_decay_rate: 400,
-        division: 54
-    }) {
+    constructor(options: EmulationOptions = { ...defaultEmulationOptions }) {
         options.slow_step = (options.welte_mf - options.welte_p) / options.slow_decay_rate
         options.fastC_step = (options.welte_mf - options.welte_p) / options.fastC_decay_rate
         options.fastD_step = -(options.welte_f - options.welte_p) / options.fastD_decay_rate
@@ -280,8 +305,7 @@ export class Emulation {
         for (const negotiatedEvent of this.negotiatedEvents) {
             if (negotiatedEvent.type !== 'expression') continue
 
-            if (scope === 'treble' && negotiatedEvent.vertical.from < this.options.division) continue
-            else if (scope === 'bass' && negotiatedEvent.vertical.from >= this.options.division) continue
+            if (scopeOf(negotiatedEvent) !== scope) continue
 
             const event = negotiatedEvent as unknown as Expression & AssumedPhysicalTimeSpan
 

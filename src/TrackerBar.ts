@@ -1,55 +1,153 @@
-import { Expression, ExpressionType, Note } from "./Symbol"
+import { Expression, ExpressionScope, ExpressionType, Note } from "./Symbol"
 
-export abstract class TrackerBar {
-    abstract meaningOf(track: number): Partial<Note> | Partial<Expression>
+/**
+ * What a tracker bar position does: sound a note, or operate one of
+ * the expression valves on the bass or the treble side.
+ */
+export type TrackRole = 'bass-expression' | 'note' | 'treble-expression'
+
+/**
+ * A contiguous block of tracker bar positions serving one role.
+ * Both bounds are inclusive.
+ */
+export interface TrackArea {
+    readonly role: TrackRole
+    readonly from: number
+    readonly to: number
 }
 
-export class WelteT100 {
-    meaningOf(track: number):
-        Pick<Note, 'type' | 'pitch'> | Pick<Expression, 'type' | 'expressionType' | 'scope'> {
-        if (track <= 0 || track > 100) {
-            throw new Error('Track out of range')
-        }
+export type NoteMeaning = Pick<Note, 'type' | 'pitch'>
+export type ExpressionMeaning = Pick<Expression, 'type' | 'expressionType' | 'scope'>
+export type TrackMeaning = NoteMeaning | ExpressionMeaning
 
-        // Cf. Hagmann, p. 178
-        const expressionMap = new Map<number, ExpressionType>([
-            [1, 'MezzoforteOff'],
-            [2, 'MezzoforteOn'],
-            [3, 'SlowCrescendoOff'],
-            [4, 'SlowCrescendoOn'],
-            [5, 'ForzandoOff'],
-            [6, 'ForzandoOn'],
-            [7, 'SoftPedalOff'],
-            [8, 'SoftPedalOn'],
-            [9, 'MotorOff'],
-            [10, 'MotorOn'],
-            [91, 'Rewind'],
-            [92, 'ElectricCutOff'],
-            [93, 'SustainPedalOn'],
-            [94, 'SustainPedalOff'],
-            [95, 'ForzandoOn'],
-            [96, 'ForzandoOff'],
-            [97, 'SlowCrescendoOn'],
-            [98, 'SlowCrescendoOff'],
-            [99, 'MezzoforteOn'],
-            [100, 'MezzoforteOff']
-        ])
+/**
+ * Describes a tracker bar. Track numbers are 1-based and count from
+ * the bass edge of the roll, which is the numbering used throughout
+ * the edition: a feature's `vertical.from` is a track in this sense.
+ *
+ * This is the only place where track numbers are given a meaning.
+ * Anything that needs to know where the note block ends, which side
+ * an expression belongs to, or how a track maps to a pitch, should
+ * ask the tracker bar rather than repeat the boundaries.
+ */
+export interface TrackerBar {
+    readonly name: string
 
-        if (track <= 10 || track >= 91) {
-            const scope = track <= 10 ? 'bass' : 'treble'
+    /** Width of the roll the bar reads, in mm. */
+    readonly width: number
+
+    /** Number of positions on the bar. Tracks run from 1 to this. */
+    readonly trackCount: number
+
+    /** The blocks of positions, from the bass edge upwards. */
+    readonly areas: readonly TrackArea[]
+
+    /**
+     * The position carrying the rewind perforation, which runs at
+     * the very end of a roll and is the usual landmark for calibrating
+     * a scan against the bar.
+     */
+    readonly rewindTrack: number
+
+    /** `undefined` for a position the bar does not read. */
+    meaningOf(track: number): TrackMeaning | undefined
+
+    /** `undefined` for a position the bar does not read. */
+    roleOf(track: number): TrackRole | undefined
+}
+
+interface TrackerBarSpec {
+    name: string
+    width: number
+    trackCount: number
+    /** The contiguous block of note positions. */
+    notes: { from: number, to: number, lowestPitch: number }
+    /** Every position outside the note block, keyed by track. */
+    expressions: ReadonlyMap<number, ExpressionType>
+}
+
+const areasOf = ({ notes, trackCount }: TrackerBarSpec): TrackArea[] => [
+    { role: 'bass-expression', from: 1, to: notes.from - 1 },
+    { role: 'note', from: notes.from, to: notes.to },
+    { role: 'treble-expression', from: notes.to + 1, to: trackCount }
+]
+
+const scopeOf = (role: TrackRole): ExpressionScope =>
+    role === 'bass-expression' ? 'bass' : 'treble'
+
+const describe = (spec: TrackerBarSpec): TrackerBar => {
+    const areas = areasOf(spec)
+
+    const roleOf = (track: number) =>
+        areas.find(area => track >= area.from && track <= area.to)?.role
+
+    const meaningOf = (track: number): TrackMeaning | undefined => {
+        const role = roleOf(track)
+        if (!role) return undefined
+
+        if (role === 'note') {
             return {
-                expressionType: expressionMap.get(track)!,
-                scope,
-                type: 'expression'
+                type: 'note',
+                pitch: track - spec.notes.from + spec.notes.lowestPitch
             }
         }
 
-        // C1-G4 = track 11-90 = 24-103 in MIDI keys
-        return {
-            pitch: track + 13,
-            type: 'note',
-        }
+        const expressionType = spec.expressions.get(track)
+        if (!expressionType) return undefined
+
+        return { type: 'expression', expressionType, scope: scopeOf(role) }
     }
 
-    width = 328 // in mm, cf. Hagmann, p. 75
+    const rewindTrack = [...spec.expressions]
+        .find(([, type]) => type === 'Rewind')?.[0]
+
+    if (rewindTrack === undefined) {
+        throw new Error(`${spec.name} declares no rewind track`)
+    }
+
+    return {
+        name: spec.name,
+        width: spec.width,
+        trackCount: spec.trackCount,
+        areas,
+        rewindTrack,
+        meaningOf,
+        roleOf
+    }
 }
+
+/**
+ * Welte-Mignon T-100 ("red Welte"), cf. Hagmann, pp. 75 and 178.
+ *
+ * The note block spans 80 positions from C1 to g⁴, i.e. MIDI 24 to 103.
+ * The expression valves are duplicated, bass below the note block and
+ * treble above it, in mirrored order.
+ */
+export const welteT100: TrackerBar = describe({
+    name: 'Welte-Mignon T100',
+    width: 328,
+    trackCount: 100,
+    notes: { from: 11, to: 90, lowestPitch: 24 },
+    expressions: new Map<number, ExpressionType>([
+        [1, 'MezzoforteOff'],
+        [2, 'MezzoforteOn'],
+        [3, 'SlowCrescendoOff'],
+        [4, 'SlowCrescendoOn'],
+        [5, 'ForzandoOff'],
+        [6, 'ForzandoOn'],
+        [7, 'SoftPedalOff'],
+        [8, 'SoftPedalOn'],
+        [9, 'MotorOff'],
+        [10, 'MotorOn'],
+        [91, 'Rewind'],
+        [92, 'ElectricCutOff'],
+        [93, 'SustainPedalOn'],
+        [94, 'SustainPedalOff'],
+        [95, 'ForzandoOn'],
+        [96, 'ForzandoOff'],
+        [97, 'SlowCrescendoOn'],
+        [98, 'SlowCrescendoOff'],
+        [99, 'MezzoforteOn'],
+        [100, 'MezzoforteOff']
+    ])
+})

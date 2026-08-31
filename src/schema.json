@@ -1406,6 +1406,10 @@
             },
             "shift": {
               "$ref": "#/definitions/Shift"
+            },
+            "trackCalibration": {
+              "$ref": "#/definitions/TrackCalibration",
+              "description": "Relates this copy's scan to the tracker bar: how the scanning software's hole numbering was shifted onto the bar, and where the track grid sits in the image."
             }
           },
           "type": "object"
@@ -1507,6 +1511,34 @@
         "@id",
         "text",
         "@type"
+      ],
+      "type": "object"
+    },
+    "TrackCalibration": {
+      "description": "Relates a scan to the tracker bar it was read with.\n\nScanning software numbers the hole columns it finds by their position in the image, so its numbering is offset by however far the roll lay from the edge of the scanner bed. Calibrating means finding that offset, usually from a landmark such as the rewind perforation.\n\n    column      = offset + scannerTrack * separation     trackerBar  = scannerTrack + shift",
+      "properties": {
+        "offset": {
+          "description": "Image column of the scanning software's track 0.",
+          "type": "number"
+        },
+        "separation": {
+          "description": "Distance between the centres of adjacent tracks.",
+          "type": "number"
+        },
+        "shift": {
+          "description": "Added to the scanning software's numbering to reach the tracker bar.",
+          "type": "number"
+        },
+        "unit": {
+          "const": "px",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit",
+        "offset",
+        "separation",
+        "shift"
       ],
       "type": "object"
     },
