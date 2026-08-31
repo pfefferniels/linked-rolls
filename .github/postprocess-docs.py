@@ -91,6 +91,13 @@ def postprocess(filepath):
     # Replace title
     html = html.replace("<title>Schema Docs</title>", "<title>Roll Edition Format</title>")
 
+    # Drop the Overpass webfont: the docs use Arial
+    html = re.sub(
+        r'[ \t]*<link[^>]*fonts\.googleapis\.com[^>]*>\n?',
+        '',
+        html,
+    )
+
     # Inject custom styles and viewport meta before </head>
     custom = """
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -99,7 +106,13 @@ def postprocess(filepath):
         max-width: 960px;
         margin: 0 auto;
         padding: 2rem 1.5rem;
-        background: #fafafa;
+        background: #ffffff;
+        font-family: Arial, Helvetica, sans-serif;
+        font-weight: 400;
+      }
+      .highlight {
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
       }
       .site-header {
         border-bottom: 1px solid #e0e0e0;
@@ -107,7 +120,6 @@ def postprocess(filepath):
         margin-bottom: 2rem;
       }
       .site-header h1 {
-        font-family: "Overpass", sans-serif;
         font-weight: 800;
         font-size: 1.75rem;
         margin: 0 0 0.25rem;
