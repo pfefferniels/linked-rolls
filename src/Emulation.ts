@@ -1,21 +1,42 @@
-import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
-import { AnySymbol, Expression, ExpressionScope, ExpressionType, Note } from "./Symbol";
+import { AnyEvent, MidiFile } from "midifile-ts";
+import {
+    aperturePorts,
+    DAMPER_CC,
+    DEFAULT_PUNCH_MM,
+    geometryInMm,
+    Grid,
+    levelChanges,
+    mezzoforteTravel,
+    noteDensity,
+    paperSeconds,
+    pedalDefaults,
+    playbackParameters,
+    pneumaticModel,
+    ROWS_PER_MM,
+    runPedals,
+    SOFT_CC,
+    TRACKER_BORE_MM,
+    travelBetweenRails,
+    WELTE_SPOOL,
+    Action,
+    Control,
+    Half,
+    Parameters,
+    PedalMode,
+    Punch,
+    Spool,
+} from "welte-t100-emulator";
+import { Expression, ExpressionScope, ExpressionType, Note } from "./Symbol";
 import { welteT100 } from "./TrackerBar";
-import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 import { Version } from "./Version";
 import { Hole } from "./Feature";
-import { RollTempo } from "./Edition";
 import { EditionView } from "./EditionView";
 import { ValueAssumption, valueOf } from "./Assumption";
 
-function resize<T>(arr: T[], newSize: number, defaultValue: T) {
-    while (newSize > arr.length)
-        arr.push(defaultValue);
-}
-
 interface PerformedRollFeature<T> {
     type: T
-    performs: (AnySymbol | NegotiatedEvent)
+    performs: NegotiatedEvent
+    /** Seconds from the start of the emulation. */
     at: number
 }
 
@@ -26,39 +47,66 @@ interface PerformedNoteEvent<T> extends PerformedRollFeature<T> {
 
 export interface PerformedNoteOnEvent extends PerformedNoteEvent<'noteOn'> { }
 export interface PerformedNoteOffEvent extends PerformedNoteEvent<'noteOff'> { }
-export interface PerformedSustainPedalOnEvent extends PerformedRollFeature<'sustainPedalOn'> { }
-export interface PerformedSustainPedalOffEvent extends PerformedRollFeature<'sustainPedalOff'> { }
-export interface PerformedSoftPedalOnEvent extends PerformedRollFeature<'softPedalOn'> { }
-export interface PerformedSoftPedalOffEvent extends PerformedRollFeature<'softPedalOff'> { }
+
+/**
+ * One step of a pedal controller. A pedal is a bellows and takes time to
+ * travel, so a single perforation results in a run of these; `performs` is
+ * the perforation whose reading the step follows from.
+ */
+export interface PerformedPedalEvent extends PerformedRollFeature<'damper' | 'hammerRail'> {
+    /** Controller value, 0 with the pedal up and 127 with it fully down. */
+    value: number
+}
 
 export type AnyPerformedRollFeature =
     PerformedNoteOnEvent |
     PerformedNoteOffEvent |
-    PerformedSustainPedalOnEvent | PerformedSustainPedalOffEvent |
-    PerformedSoftPedalOnEvent | PerformedSoftPedalOffEvent
-
-type AssumedPhysicalTimeSpan = {
-    assumedPhysicalTime?: [number, number]
-}
+    PerformedPedalEvent
 
 export type NegotiatedEvent =
     Omit<Note | Expression, 'carriers'>
     & Pick<Hole, 'horizontal' | 'vertical'>
-    & AssumedPhysicalTimeSpan
+
+/**
+ * MIDI velocity at the open rail of the Nuancierbalg, at the Mezzoforte pin,
+ * and at the closed rail, joined linearly in between. Nothing in the
+ * mechanism determines how bellows travel maps onto hammer velocity, so
+ * these are anchors rather than measurements; the three values are the
+ * ones midi2exp publishes.
+ */
+export type VelocityMap = {
+    piano: number
+    mezzoforte: number
+    forte: number
+}
 
 export type EmulationOptions = {
-    welte_p: number
-    welte_f: number
-    welte_mf: number
-    welte_loud: number
-    slow_decay_rate: number
-    fastC_decay_rate: number
-    fastD_decay_rate: number
-    trackerBarDiameter: number
-    punchExtensionFraction: number
-    slow_step?: number
-    fastC_step?: number
-    fastD_step?: number
+    /**
+     * The take-up spool, which sets the time axis: it is held at a constant
+     * rate of revolution, so the paper runs faster as the spool fills.
+     */
+    spool: Spool
+
+    /** Constants of the nuancing mechanism, one set for each half of the keyboard. */
+    nuance: Record<Half, Parameters>
+
+    /** Constants of the two pedal actions. */
+    pedals: Parameters
+
+    velocity: VelocityMap
+
+    /**
+     * How the pedals go out: as a continuous controller carrying the travel
+     * of the bellows, or thresholded to the two values a switching renderer
+     * understands.
+     */
+    pedalMode: PedalMode
+
+    /** Diameter of the tracker-bar bore, in mm. */
+    trackerBore: number
+
+    /** Punch diameter in mm, for an edition whose copies record none. */
+    punchDiameter: number
 
     /**
      * The track at which the keyboard is divided, so that notes from
@@ -68,6 +116,73 @@ export type EmulationOptions = {
      */
     division: number
 }
+
+export const defaultEmulationOptions: EmulationOptions = {
+    spool: WELTE_SPOOL,
+    nuance: {
+        bass: playbackParameters('bass'),
+        treble: playbackParameters('treble')
+    },
+    pedals: pedalDefaults,
+    velocity: { piano: 35, mezzoforte: 60, forte: 90 },
+    pedalMode: 'continuous',
+    trackerBore: TRACKER_BORE_MM,
+    punchDiameter: DEFAULT_PUNCH_MM,
+    division: 54
+}
+
+/** One curve of the mechanism, sampled along the roll. */
+export type EmulatedCurve = {
+    /** Paper position of each sample, in mm from the beginning of the roll. */
+    readonly place: Float64Array
+    readonly seconds: Float64Array
+    /**
+     * Position between the two ends of the travel: 0 with the bellows open
+     * and 1 with it closed, 0 with a pedal up and 1 with it down.
+     */
+    readonly travel: Float64Array
+}
+
+export type NuanceCurve = EmulatedCurve & {
+    readonly velocity: Float64Array
+}
+
+export type EmulatedCurves = {
+    readonly nuance: Record<Half, NuanceCurve>
+    readonly pedals: {
+        readonly damper: EmulatedCurve
+        readonly hammerRail: EmulatedCurve
+    }
+}
+
+export type EmulationScope = {
+    /** Only notes whose onset lies within this span of the roll, in mm, are played. */
+    range?: [number, number]
+
+    /** Start the clock at the first note rather than at the beginning of the roll. */
+    skipToFirstNote?: boolean
+}
+
+/** What each expression code operates, in the emulator's terms. */
+const CODES: ReadonlyMap<ExpressionType, readonly [Control, Action]> = new Map([
+    ['MezzoforteOn', ['mezzoforte', 'on']],
+    ['MezzoforteOff', ['mezzoforte', 'off']],
+    ['SlowCrescendoOn', ['crescendo', 'on']],
+    ['SlowCrescendoOff', ['crescendo', 'off']],
+    ['ForzandoOn', ['sforzando', 'on']],
+    ['ForzandoOff', ['sforzando', 'off']],
+    ['SustainPedalOn', ['sustainPedal', 'on']],
+    ['SustainPedalOff', ['sustainPedal', 'off']],
+    ['SoftPedalOn', ['hammerRail', 'on']],
+    ['SoftPedalOff', ['hammerRail', 'off']],
+    ['MotorOn', ['windResistance', 'on']],
+    ['MotorOff', ['windResistance', 'off']],
+    ['Rewind', ['rewind', 'on']],
+    ['ElectricCutOff', ['electricCutoff', 'on']]
+])
+
+/** Paper the grid runs on past the last hole, so that a final pedal release completes. */
+const RUN_OUT_MM = 100
 
 /**
  * Which stack of valves an expression perforation belongs to. The symbol
@@ -84,131 +199,72 @@ const scopeOf = (
     return meaning?.type === 'expression' ? meaning.scope : undefined
 }
 
-export const defaultEmulationOptions: EmulationOptions = {
-    welte_p: 35,
-    welte_f: 90,
-    welte_mf: 60,
-    welte_loud: 75,
-    trackerBarDiameter: 1.413,
-    punchExtensionFraction: 0.75,
-    slow_decay_rate: 2380, // steps per millisecond
-    fastC_decay_rate: 300,
-    fastD_decay_rate: 400,
-    division: 54
+const isNote = (event: NegotiatedEvent): event is NegotiatedEvent & Note => event.type === 'note'
+const isExpression = (event: NegotiatedEvent): event is NegotiatedEvent & Expression => event.type === 'expression'
+
+const rowOf = (mm: number) => mm * ROWS_PER_MM
+
+/** A perforation as the tracker bar meets it, kept with the symbol it carries. */
+type Reading = {
+    readonly event: NegotiatedEvent & Expression
+    readonly punch: Punch
+}
+
+const readingOf = (event: NegotiatedEvent & Expression): Reading | undefined => {
+    const code = CODES.get(event.expressionType)
+    const half = scopeOf(event)
+    if (!code || !half) return undefined
+
+    const [control, action] = code
+    return {
+        event,
+        punch: { half, control, action, rowOn: rowOf(event.horizontal.from), rowOff: rowOf(event.horizontal.to) }
+    }
+}
+
+const clamp = (value: number, low: number, high: number) => Math.min(Math.max(value, low), high)
+
+/**
+ * The velocity map joined linearly through its three anchors, with the
+ * middle one at the Mezzoforte pin of the half in question.
+ */
+const velocityOf = (travel: number, hook: number, map: VelocityMap): number => {
+    const position = clamp(travel, 0, 1)
+    if (position <= hook) {
+        return map.piano + (position / hook) * (map.mezzoforte - map.piano)
+    }
+    return map.mezzoforte + ((position - hook) / (1 - hook)) * (map.forte - map.mezzoforte)
+}
+
+/** The punch diameter the edition's copies report, where any of them does. */
+const punchDiameterOf = (view: EditionView, fallback: number): number => {
+    const measured = view.edition.copies
+        .map(copy => copy.measurements.punchDiameter)
+        .filter((diameter): diameter is { value: number, unit: string } => diameter !== undefined && diameter.value > 0)
+        .map(diameter => diameter.value)
+    if (measured.length === 0) return fallback
+    return measured.reduce((sum, value) => sum + value, 0) / measured.length
 }
 
 export class Emulation {
-    placeTimeConversion: PlaceTimeConversion = new KinematicConversion()
-    midiEvents: (AnyPerformedRollFeature)[] = []
+    midiEvents: AnyPerformedRollFeature[] = []
 
     // sorted list of events with the negotiated assumptions already applied
     negotiatedEvents: NegotiatedEvent[] = []
 
-    // stores a velocity for every millisecond
-    trebleVelocities: number[] = []
-    bassVelocities: number[] = []
-
-    startTempo?: number
-    endTempo?: number
+    curves?: EmulatedCurves
 
     source?: string
 
     options: EmulationOptions
 
-    constructor(options: EmulationOptions = { ...defaultEmulationOptions }) {
-        options.slow_step = (options.welte_mf - options.welte_p) / options.slow_decay_rate
-        options.fastC_step = (options.welte_mf - options.welte_p) / options.fastC_decay_rate
-        options.fastD_step = -(options.welte_f - options.welte_p) / options.fastD_decay_rate
+    constructor(options: EmulationOptions = defaultEmulationOptions) {
         this.options = options
     }
 
-    private findRollTempo(tempo?: RollTempo) {
-        if (!tempo) {
-            this.startTempo = 104.331
-            this.endTempo = 104.331
-            return
-        }
-
-        this.startTempo = tempo.startsWith
-        this.endTempo = tempo.endsWith
-    }
-
-    private assignPhysicalTime() {
-        if (this.negotiatedEvents.length === 0) return
-
-        for (const event of this.negotiatedEvents) {
-            if (!event.assumedPhysicalTime) {
-                // convert from mm to cm and then to time
-                event.assumedPhysicalTime = [
-                    this.placeTimeConversion.placeToTime(event.horizontal.from / 10),
-                    this.placeTimeConversion.placeToTime(event.horizontal.to / 10)
-                ]
-            }
-        }
-    }
-
-    private applyTrackerBarExtension() {
-        const correction = this.options.trackerBarDiameter * this.options.punchExtensionFraction + 0.5
-        for (const event of this.negotiatedEvents) {
-            if (event.horizontal.to) {
-                event.horizontal.to += correction
-            }
-        }
-    }
-
-    private convertEventsToMIDI(skipToFirstNote = false) {
-        for (const event of this.negotiatedEvents) {
-            if (event.type === 'expression') {
-                const expression = event as unknown as Expression
-
-                const map = new Map<ExpressionType, string>([
-                    ['SustainPedalOn', 'sustainPedalOn'],
-                    ['SustainPedalOff', 'sustainPedalOff'],
-                    ['SoftPedalOn', 'softPedalOn'],
-                    ['SoftPedalOff', 'softPedalOff']
-                ])
-
-                if (map.has(expression.expressionType)) {
-                    this.midiEvents.push({
-                        type: map.get(expression.expressionType)! as 'sustainPedalOn' | 'sustainPedalOff' | 'softPedalOn' | 'softPedalOff',
-                        performs: event,
-                        at: event.assumedPhysicalTime![0],
-                    })
-                }
-            }
-            else if (event.type === 'note') {
-                const note = event as unknown as Note
-
-                // take velocity from the calculated velocity list
-                const pitch = note.pitch
-                if (event.vertical.from >= this.options.division) {
-                    this.insertNote(
-                        event,
-                        pitch,
-                        this.trebleVelocities[+(event.assumedPhysicalTime![0] * 1000).toFixed()])
-                }
-                else {
-                    this.insertNote(
-                        event,
-                        pitch,
-                        this.bassVelocities[+(event.assumedPhysicalTime![0] * 1000).toFixed()])
-                }
-            }
-        }
-
-        const firstNote = this.negotiatedEvents.find(e => e.type === 'note')
-
-        if (skipToFirstNote && firstNote) {
-            for (const midiEvent of this.midiEvents) {
-                midiEvent.at -= firstNote.assumedPhysicalTime![0]
-                if (midiEvent.at < 0) {
-                    this.midiEvents = this.midiEvents.filter(e => e !== midiEvent)
-                }
-            }
-        }
-
-        this.midiEvents
-            .sort((a, b) => a.at - b.at)
+    /** When the spool brings a place on the roll, in mm, to the tracker bar. */
+    secondsAt(mm: number): number {
+        return paperSeconds(this.options.spool, mm / 10)
     }
 
     applyConstraints() {
@@ -227,12 +283,9 @@ export class Emulation {
     emulateVersion(
         version: Version,
         view: EditionView,
-        rollTempo?: RollTempo,
-        range: [number, number] | undefined = undefined,
-        skipToFirstNote = false
+        { range, skipToFirstNote = false }: EmulationScope = {}
     ) {
         this.source = version.id
-        console.log('emulating version')
 
         this.negotiatedEvents =
             view.snapshot(version.id)
@@ -251,174 +304,138 @@ export class Emulation {
                 .map((e) => view.simplifySymbol(e))
                 .filter(s => s !== null)
 
+        if (this.negotiatedEvents.length === 0) {
+            this.midiEvents = []
+            return this.midiEvents
+        }
+
         this.applyConstraints();
-        this.findRollTempo(rollTempo)
-        this.applyTrackerBarExtension()
-        this.assignPhysicalTime()
-        this.calculateVelocities('treble')
-        this.calculateVelocities('bass')
-        this.convertEventsToMIDI(skipToFirstNote)
+
+        const readings = this.negotiatedEvents
+            .filter(isExpression)
+            .map(readingOf)
+            .filter((reading): reading is Reading => reading !== undefined)
+        const grid = this.gridOver(this.negotiatedEvents)
+        const geometry = geometryInMm(punchDiameterOf(view, this.options.punchDiameter), this.options.trackerBore)
+        const ports = aperturePorts(grid, readings.map(reading => reading.punch), geometry)
+
+        this.curves = {
+            nuance: this.emulateNuance(grid, ports),
+            pedals: this.emulatePedals(grid, ports)
+        }
+
+        const performed = [
+            ...this.performNotes(grid),
+            ...this.performPedal('damper', this.curves.pedals.damper, grid, readings.filter(r => r.punch.control === 'sustainPedal')),
+            ...this.performPedal('hammerRail', this.curves.pedals.hammerRail, grid, readings.filter(r => r.punch.control === 'hammerRail'))
+        ]
+
+        const firstNote = this.negotiatedEvents.find(isNote)
+        const origin = skipToFirstNote && firstNote ? this.secondsAt(firstNote.horizontal.from) : 0
+
+        this.midiEvents = performed
+            .map(event => ({ ...event, at: event.at - origin }))
+            .filter(event => event.at >= 0)
+            .sort((a, b) => a.at - b.at)
         return this.midiEvents
     }
 
     /**
-     * The original code of the calculateVelocities() method,
-     * written by Kitty Shi and Craig Stuart Sapp,
-     * was taken from the midi2exp project (https://github.com/pianoroll/midi2exp)
-     * and adapted to the different data representation.
+     * One sample per row of the scan the constants were fitted on, from the
+     * beginning of the roll to a little past the last hole. The rows are
+     * equally spaced on the paper and not in time, which is what the
+     * emulator expects.
      */
-    calculateVelocities(scope: 'treble' | 'bass') {
-        if (!this.negotiatedEvents.length) return
+    private gridOver(events: readonly NegotiatedEvent[]): Grid {
+        const lastMm = events.reduce((furthest, event) => Math.max(furthest, event.horizontal.to), 0)
+        const length = Math.ceil(rowOf(lastMm + RUN_OUT_MM)) + 1
+        const seconds = Float64Array.from({ length }, (_, row) => this.secondsAt(row / ROWS_PER_MM))
+        return new Grid(0, seconds)
+    }
 
-        const velocities = scope === 'treble' ? this.trebleVelocities : this.bassVelocities
-
-        const isMF: boolean[] = [] // is MF hook on?
-        const isSlowC: boolean[] = [] // is slow crescendo on?
-        const isFastC: boolean[] = [] // is fast crescendo on?
-        const isFastD: boolean[] = [] // is fast decrescendo on?
-
-        let lastOnsetMs = this.negotiatedEvents[this.negotiatedEvents.length - 1].assumedPhysicalTime![0]
-        if (!lastOnsetMs) {
-            console.log('Failed calculating the last onset.')
-            return
+    private emulateNuance(grid: Grid, ports: ReturnType<typeof aperturePorts>): Record<Half, NuanceCurve> {
+        const onsetRows = (half: Half) =>
+            this.negotiatedEvents
+                .filter(isNote)
+                .filter(note => this.halfOf(note) === half)
+                .map(note => rowOf(note.horizontal.from))
+        const density = {
+            bass: noteDensity(grid, onsetRows('bass')),
+            treble: noteDensity(grid, onsetRows('treble')),
         }
-        lastOnsetMs *= 1000
+        const totalNoteDensity = Float64Array.from(density.bass, (value, index) => value + density.treble[index])
+        const place = Float64Array.from(grid.seconds, (_, row) => row / ROWS_PER_MM)
 
-        // set all of the times to piano by default
-        resize(velocities, lastOnsetMs, this.options.welte_p)
-
-        // fill all hook maps with false
-        for (const target of [isMF, isSlowC, isFastC, isFastD]) {
-            resize(target, lastOnsetMs, false)
-        }
-
-        // Lock and Cancel
-        let valve_mf_on = false;
-        let valve_slowc_on = false;
-
-        let valve_mf_starttime = 0;        // 0 for off
-        let valve_slowc_starttime = 0;
-
-        // First pass: For each time section calculate the current boolean
-        // state of each expression.
-
-        for (const negotiatedEvent of this.negotiatedEvents) {
-            if (negotiatedEvent.type !== 'expression') continue
-
-            if (scopeOf(negotiatedEvent) !== scope) continue
-
-            const event = negotiatedEvent as unknown as Expression & AssumedPhysicalTimeSpan
-
-            const startMs = event.assumedPhysicalTime![0] * 1000
-            const endMs = event.assumedPhysicalTime![1] * 1000
-
-            // console.log('encoutering expression', event.expressionType["@id"], 'from', startMs, 'to', endMs)
-
-            if (event.expressionType === 'MezzoforteOn') {
-                // update the mezzoforte start time
-                // only if the mf valve is not on already
-                if (!valve_mf_on) {
-                    valve_mf_on = true
-                    valve_mf_starttime = startMs
-                }
-            }
-            else if (event.expressionType === 'MezzoforteOff') {
-                if (valve_mf_on) {
-                    // fill from the mezzoforte start time to here ...
-                    isMF.fill(true, valve_mf_starttime, startMs)
-                }
-                valve_mf_on = false
-            }
-            else if (event.expressionType === 'SlowCrescendoOn') {
-                // update the slow crescendo start time
-                // only if slow crescendo is not on already
-                if (!valve_slowc_on) {
-                    valve_slowc_on = true;
-                    valve_slowc_starttime = startMs;
-                }
-            }
-            else if (event.expressionType === 'SlowCrescendoOff') {
-                if (valve_slowc_on) {
-                    // fill from the mezzoforte start time to here ...
-                    isSlowC.fill(true, valve_slowc_starttime, startMs)
-                }
-                valve_slowc_on = false;
-            }
-            else if (event.expressionType === 'ForzandoOn') {
-                // Forzando On/Off are a direct operations (length of perforation matters)
-                isFastC.fill(true, startMs, endMs)
-            }
-            else if (event.expressionType === 'ForzandoOff') {
-                // Forzando On/Off are a direct operations (length of perforation matters)
-                isFastD.fill(true, startMs, endMs)
+        const curveOf = (half: Half): NuanceCurve => {
+            const params = this.options.nuance[half]
+            const output = pneumaticModel.run(
+                { grid, half, ports, noteDensity: density[half], totalNoteDensity },
+                params
+            )
+            const travel = travelBetweenRails(output, params)
+            const hook = clamp(mezzoforteTravel(params), 0.01, 0.99)
+            return {
+                place,
+                seconds: grid.seconds,
+                travel,
+                velocity: Float64Array.from(travel, value => velocityOf(value, hook, this.options.velocity))
             }
         }
-        // TODO: deal with the last case (if crescendo OFF is missing)
 
-        // Second pass, update the current velocity according to the previous one
+        return { bass: curveOf('bass'), treble: curveOf('treble') }
+    }
 
-        let amount = 0.0
-        let eps = 0.0001
-
-        for (let i = 1; i < lastOnsetMs; i++) {
-            if (!isSlowC[i] && !isFastC[i] && !isFastD[i]) {
-                // slow decrescendo is always on
-                amount = -this.options.slow_step!;
-            } else {
-                amount =
-                    (isSlowC[i] ? this.options.slow_step! : 0) +
-                    (isFastC[i] ? this.options.fastC_step! : 0) +
-                    (isFastD[i] ? this.options.fastD_step! : 0)
-            }
-
-            velocities[i] = velocities[i - 1] + amount
-
-            if (isMF[i]) {
-                if (velocities[i - 1] > this.options.welte_mf) {
-                    if (amount < 0) {
-                        velocities[i] = Math.max(this.options.welte_mf + eps, velocities[i])
-                    }
-                    else {
-                        velocities[i] = Math.min(this.options.welte_f, velocities[i]);
-                    }
-                }
-                else if (velocities[i - 1] < this.options.welte_mf) {
-                    if (amount > 0) {
-                        velocities[i] = Math.min(this.options.welte_mf - eps, velocities[i]);
-                    }
-                    else {
-                        velocities[i] = Math.max(this.options.welte_p, velocities[i]);
-                    }
-                }
-            }
-            else {
-                // slow crescendo will only reach welte_loud
-                if (isSlowC[i] && !isFastC[i] && velocities[i - 1] < this.options.welte_loud) {
-                    velocities[i] = Math.min(velocities[i], this.options.welte_loud - eps);
-                }
-            }
-            // regulating max and min
-            velocities[i] = Math.max(this.options.welte_p, velocities[i]);
-            velocities[i] = Math.min(this.options.welte_f, velocities[i]);
+    private emulatePedals(grid: Grid, ports: ReturnType<typeof aperturePorts>): EmulatedCurves['pedals'] {
+        const travel = runPedals({ grid, ports }, this.options.pedals)
+        const place = Float64Array.from(grid.seconds, (_, row) => row / ROWS_PER_MM)
+        return {
+            damper: { place, seconds: grid.seconds, travel: travel.damper },
+            hammerRail: { place, seconds: grid.seconds, travel: travel.hammerRail }
         }
     }
 
-    private insertNote(event: NegotiatedEvent, pitch: number, velocity: number) {
-        this.midiEvents.push({
-            type: 'noteOn',
-            performs: event,
-            velocity,
-            at: event.assumedPhysicalTime![0],
-            pitch
-        })
+    private halfOf(note: NegotiatedEvent): Half {
+        return note.vertical.from >= this.options.division ? 'treble' : 'bass'
+    }
 
-        this.midiEvents.push({
-            type: 'noteOff',
-            performs: event,
-            velocity: 127,
-            at: event.assumedPhysicalTime![1],
-            pitch
-        } as PerformedNoteOffEvent)
+    private performNotes(grid: Grid): (PerformedNoteOnEvent | PerformedNoteOffEvent)[] {
+        return this.negotiatedEvents
+            .filter(isNote)
+            .flatMap((note): (PerformedNoteOnEvent | PerformedNoteOffEvent)[] => {
+                const curve = this.curves!.nuance[this.halfOf(note)]
+                const velocity = curve.velocity[grid.indexOfRow(rowOf(note.horizontal.from))]
+                return [
+                    { type: 'noteOn', performs: note, pitch: note.pitch, velocity, at: this.secondsAt(note.horizontal.from) },
+                    { type: 'noteOff', performs: note, pitch: note.pitch, velocity: 127, at: this.secondsAt(note.horizontal.to) }
+                ]
+            })
+    }
+
+    /**
+     * The travel of one pedal as controller steps. Each step is attributed to
+     * the last perforation of that pedal the tracker bar has reached, which is
+     * the one whose reading it follows from.
+     */
+    private performPedal(
+        type: PerformedPedalEvent['type'],
+        curve: EmulatedCurve,
+        grid: Grid,
+        readings: readonly Reading[]
+    ): PerformedPedalEvent[] {
+        if (readings.length === 0) return []
+
+        const ordered = readings.toSorted((a, b) => a.punch.rowOn - b.punch.rowOn)
+        const causeOf = (row: number): NegotiatedEvent =>
+            ordered[Math.max(ordered.findLastIndex(reading => reading.punch.rowOn <= row), 0)].event
+
+        return levelChanges(curve.travel, { mode: this.options.pedalMode })
+            .filter(change => change.index > 0)
+            .map(change => ({
+                type,
+                performs: causeOf(grid.rowAt(change.index)),
+                value: change.value,
+                at: curve.seconds[change.index]
+            }))
     }
 
     findEventsPerforming(id: string) {
@@ -426,43 +443,22 @@ export class Emulation {
     }
 
     asMIDI(): MidiFile {
+        const TICKS_PER_SECOND = 1000
         const events: AnyEvent[] = []
         this.midiEvents.sort((a, b) => a.at - b.at)
 
-        let currentTime = 0
-        // insert metadata first
-        events.push({
-            type: 'meta',
-            subtype: 'text',
-            text: 'linked-rolls (based on midi2exp)',
-            deltaTime: 0
-        })
+        const text = (text: string, deltaTime = 0): AnyEvent => ({ type: 'meta', subtype: 'text', text, deltaTime })
+        const controller = (controllerType: number, value: number, deltaTime = 0): AnyEvent =>
+            ({ type: 'channel', subtype: 'controller', controllerType, value, deltaTime, channel: 0 })
+        const controllerOf = (event: PerformedPedalEvent) => event.type === 'damper' ? DAMPER_CC : SOFT_CC
 
+        events.push(text('linked-rolls (welte-t100-emulator)'))
         if (this.source) {
-            events.push({
-                type: 'meta',
-                subtype: 'text',
-                text: this.source,
-                deltaTime: 0
-            })
+            events.push(text(this.source))
         }
-
-        events.push({
-            type: 'meta',
-            subtype: 'text',
-            text: `place-time-conversion: ${this.placeTimeConversion.summary}`,
-            deltaTime: 0
-        })
-
         for (const [key, value] of Object.entries(this.options)) {
-            events.push({
-                type: 'meta',
-                subtype: 'text',
-                text: `${key}=${value}`,
-                deltaTime: 0
-            })
+            events.push(text(`${key}=${typeof value === 'object' ? JSON.stringify(value) : value}`))
         }
-
 
         events.push({
             type: 'meta',
@@ -470,17 +466,22 @@ export class Emulation {
             microsecondsPerBeat: 1000000,
             deltaTime: 0
         })
+
+        // both pedals start at rest
+        events.push(controller(DAMPER_CC, 0), controller(SOFT_CC, 0))
+
+        // a pedal step is labelled with its perforation only where that
+        // perforation changes, so the file is not swamped with labels
+        const lastCause: Partial<Record<PerformedPedalEvent['type'], string>> = {}
+
+        let currentTick = 0
         for (const event of this.midiEvents) {
-            const deltaTimeMs = (event.at - currentTime) * 1000
+            const tick = Math.round(event.at * TICKS_PER_SECOND)
+            const deltaTime = tick - currentTick
+            currentTick = tick
 
             if (event.type === 'noteOn') {
-                console.log('dealing with note on', event.pitch, event.at, deltaTimeMs)
-                events.push({
-                    type: 'meta',
-                    subtype: 'text',
-                    deltaTime: deltaTimeMs,
-                    text: event.performs.id
-                })
+                events.push(text(event.performs.id, deltaTime))
                 events.push({
                     type: 'channel',
                     subtype: 'noteOn',
@@ -496,80 +497,23 @@ export class Emulation {
                     subtype: 'noteOff',
                     noteNumber: event.pitch,
                     velocity: 127,
-                    deltaTime: deltaTimeMs,
+                    deltaTime,
                     channel: 0
                 })
             }
-            else if (event.type === 'sustainPedalOn') {
-                events.push({
-                    type: 'meta',
-                    subtype: 'text',
-                    deltaTime: deltaTimeMs,
-                    text: event.performs.id
-                })
-                events.push({
-                    type: 'channel',
-                    subtype: 'controller',
-                    controllerType: MIDIControlEvents.SUSTAIN,
-                    deltaTime: 0,
-                    channel: 0,
-                    value: 127
-                })
+            else {
+                const labelled = lastCause[event.type] === event.performs.id
+                lastCause[event.type] = event.performs.id
+                if (!labelled) {
+                    events.push(text(event.performs.id, deltaTime))
+                }
+                events.push(controller(controllerOf(event), event.value, labelled ? deltaTime : 0))
             }
-            else if (event.type === 'sustainPedalOff') {
-                events.push({
-                    type: 'meta',
-                    subtype: 'text',
-                    deltaTime: deltaTimeMs,
-                    text: event.performs.id
-                })
-                events.push({
-                    type: 'channel',
-                    subtype: 'controller',
-                    controllerType: MIDIControlEvents.SUSTAIN,
-                    deltaTime: 0,
-                    channel: 0,
-                    value: 0
-                })
-            }
-            else if (event.type === 'softPedalOn') {
-                events.push({
-                    type: 'meta',
-                    subtype: 'text',
-                    deltaTime: deltaTimeMs,
-                    text: event.performs.id
-                })
-                events.push({
-                    type: 'channel',
-                    subtype: 'controller',
-                    controllerType: MIDIControlEvents.SOFT_PEDAL,
-                    deltaTime: 0,
-                    channel: 0,
-                    value: 127
-                })
-            }
-            else if (event.type === 'softPedalOff') {
-                events.push({
-                    type: 'meta',
-                    subtype: 'text',
-                    deltaTime: deltaTimeMs,
-                    text: event.performs.id
-                })
-                events.push({
-                    type: 'channel',
-                    subtype: 'controller',
-                    controllerType: MIDIControlEvents.SOFT_PEDAL,
-                    deltaTime: 0,
-                    channel: 0,
-                    value: 0
-                })
-            }
-            currentTime = event.at
         }
 
         return {
             header: {
-                ticksPerBeat: 1000,
+                ticksPerBeat: TICKS_PER_SECOND,
                 formatType: 0,
                 trackCount: 1
             },

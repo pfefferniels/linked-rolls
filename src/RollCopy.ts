@@ -4,7 +4,6 @@ import { ConditionState } from "./ConditionState";
 import { AnySymbol } from "./Symbol";
 import { read } from "midifile-ts";
 import { asSpans } from "./asMIDISpans";
-import { KinematicConversion, PlaceTimeConversion } from "./PlaceTimeConversion";
 import { TrackerBar, welteT100 } from "./TrackerBar";
 import { TrackCalibration } from "./TrackCalibration";
 import { AnyFeature, Hole } from "./Feature";
@@ -580,13 +579,22 @@ export const spencerTrackOf = (pitch: number) => {
     return track < 10 ? track - 2 : track
 }
 
+const MM_PER_FOOT = 304.8
+
 /**
  * Spencer Chase's rolls seem to be scanned at a roll speed of
- * 83 (=8.3 feet per minute).
+ * 83 (=8.3 feet per minute). A scanner feeds the paper at one
+ * speed, so time in his files is proportional to place.
  */
+export const SPENCER_FEET_PER_MINUTE = 8.3
+
+/** Place on the roll in mm after `seconds` at a constant `feetPerMinute`. */
+export const atConstantSpeed = (feetPerMinute: number) =>
+    (seconds: number): number => feetPerMinute * MM_PER_FOOT / 60 * seconds
+
 export function readFromSpencerMIDI(
     midiBuffer: ArrayBuffer,
-    conversion: PlaceTimeConversion = new KinematicConversion(8.3),
+    placeAt: (seconds: number) => number = atConstantSpeed(SPENCER_FEET_PER_MINUTE),
     trackOf: (pitch: number) => number = spencerTrackOf
 ): RollCopy {
     const features = asSpans(read(midiBuffer))
@@ -599,8 +607,8 @@ export function readFromSpencerMIDI(
                 unit: 'track'
             },
             horizontal: {
-                from: conversion.timeToPlace(span.onsetMs / 1000) * 10,
-                to: conversion.timeToPlace(span.offsetMs / 1000) * 10,
+                from: placeAt(span.onsetMs / 1000),
+                to: placeAt(span.offsetMs / 1000),
                 unit: 'mm'
             }
         }))
