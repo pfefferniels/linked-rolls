@@ -418,6 +418,25 @@ interface AtonHole {
 /** Values in these files carry their unit as a suffix, e.g. "37.7646px". */
 const px = (value: string) => parseFloat(value)
 
+/** The parser writes one record as an object and several as an array. */
+const listOf = <T,>(value: T | T[] | undefined): T[] =>
+    value === undefined ? [] : Array.isArray(value) ? value : [value]
+
+/**
+ * Holes the parser set aside as suspicious after it had already chained
+ * them into a note: the head of such a chain is usually a punch that
+ * came out a little short, and leaving it out would lose the whole
+ * chain. They carry no track number of their own, so the column says
+ * which track they sit on.
+ */
+const chainedBadHoles = (holes: AtonHole[], calibration: TrackCalibration): AtonHole[] =>
+    holes
+        .filter(hole => hole.NOTE_ATTACK && hole.OFF_TIME)
+        .map(hole => ({
+            ...hole,
+            TRACKER_HOLE: `${Math.round((px(hole.CENTROID_COL) - calibration.offset) / calibration.separation)}`
+        }))
+
 const millimeters = (pixels: number, dpi: number) => pixels / dpi * 25.4
 
 const median = (values: number[]) => {
@@ -476,19 +495,53 @@ export interface StanfordAtonOptions {
     trackShift?: number
 
     bar?: TrackerBar
+
+    /**
+     * Where the scan the analysis was made from can be seen. Stanford's
+     * files name their scan by DRUID, so this is only needed for an
+     * analysis of a scan hosted elsewhere.
+     */
+    scan?: string
+}
+
+/**
+ * The image service Stanford keeps for a scan, and a crop of a
+ * feature from it.
+ */
+const stanfordScan = (druid: string) => ({
+    scan: `https://stacks.stanford.edu/image/iiif/${druid}%2F${druid}_0001/`,
+    depictionOf: (column: number, row: number, width: number, height: number) =>
+        `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${row},${width},${height}/128,/270/default.jpg`
+})
+
+/**
+ * The software behind an analysis and when it was run, as the
+ * analysis file states them.
+ */
+const measuredByOf = (rollinfo: Record<string, string>) => {
+    const date = new Date(rollinfo.ANALYSIS_DATE)
+    if (!rollinfo.HOLE_SOFTWARE || isNaN(date.getTime())) return undefined
+
+    return {
+        software: rollinfo.HOLE_SOFTWARE,
+        version: rollinfo.SOFTWARE_DATE ?? '',
+        date
+    }
 }
 
 export function readFromStanfordAton(
     atonString: string,
-    { trackShift, bar = welteT100 }: StanfordAtonOptions = {}
+    { trackShift, bar = welteT100, scan }: StanfordAtonOptions = {}
 ): RollCopy {
     const parser = new AtonParser()
     const json = parser.parse(atonString)
 
     const holes: AtonHole[] = json.ROLLINFO.HOLES.HOLE
-    const druid = json.ROLLINFO.DRUID
+    const druid: string = json.ROLLINFO.DRUID
+    const stanford = druid ? stanfordScan(druid) : undefined
     const separation = px(json.ROLLINFO.HOLE_SEPARATION)
     const dpi = parseFloat(json.ROLLINFO.LENGTH_DPI)
+    const measuredBy = measuredByOf(json.ROLLINFO)
 
     const rewindTrack = rewindTrackIn(holes)
     const shift = trackShift
@@ -503,8 +556,11 @@ export function readFromStanfordAton(
 
     const punchDiameter = punchDiameterOf(holes, dpi)
 
-    const features = holes
+    const chains = [...holes, ...chainedBadHoles(listOf(json.ROLLINFO.BADHOLES?.HOLE), calibration)]
         .filter(hole => hole.NOTE_ATTACK && hole.OFF_TIME)
+        .sort((a, b) => px(a.NOTE_ATTACK!) - px(b.NOTE_ATTACK!))
+
+    const features = chains
         .map((hole): Hole => {
             const attack = px(hole.NOTE_ATTACK!)
             const release = px(hole.OFF_TIME!)
@@ -514,7 +570,9 @@ export function readFromStanfordAton(
             return {
                 type: 'Hole',
                 id: v4(),
-                depiction: `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${attack},${columnWidth},${release - attack}/128,/270/default.jpg`,
+                ...(stanford && {
+                    depiction: stanford.depictionOf(column, attack, columnWidth, release - attack)
+                }),
                 vertical: {
                     from: +hole.TRACKER_HOLE + shift,
                     unit: 'track'
@@ -534,7 +592,7 @@ export function readFromStanfordAton(
         conditions: [],
         location: '',
         modifications: [],
-        scan: `https://stacks.stanford.edu/image/iiif/${druid}%2F${druid}_0001/`,
+        ...((scan ?? stanford) && { scan: scan ?? stanford?.scan }),
         measurements: {
             dimensions: {
                 width: millimeters(px(json.ROLLINFO.ROLL_WIDTH), dpi),
@@ -553,7 +611,8 @@ export function readFromStanfordAton(
                 bass: px(json.ROLLINFO.HARD_MARGIN_BASS),
                 unit: 'px'
             },
-            trackCalibration: calibration
+            trackCalibration: calibration,
+            ...(measuredBy && { measuredBy })
         },
         features
     }
