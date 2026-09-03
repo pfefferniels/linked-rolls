@@ -29,7 +29,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: pfefferniels/welte-t100
-          token: ${{ secrets.WELTE_T100_TOKEN }}
           path: welte-t100
       - name: Put it where the dependency looks for it
         run: |

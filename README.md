@@ -44,9 +44,10 @@ const midi = emulation.asMIDI()
 ```
 
 The emulator is an optional peer dependency: an application that uses the
-T-100 system installs it itself, and one that only reads editions does not
-need it. It is not on npm, so it has to be checked out beside this
-repository and declared as `file:../welte-t100`.
+T-100 system installs `welte-t100-emulator` itself, and one that only
+reads editions does not need it. For development on both at once, a
+checkout of [welte-t100](https://github.com/pfefferniels/welte-t100)
+beside this repository, declared as `file:../welte-t100`, works too.
 
 ## Building
 ```
@@ -61,5 +62,4 @@ laptop: raise the version in `package.json`, commit, and push a tag
 `v<version>`, or run the workflow by hand from the Actions tab. The
 workflow builds, runs the tests and publishes with provenance through
 npm's trusted publishing, so no token is stored. It checks out the
-emulator beside this repository to build the T-100 entry point, which is
-what the `WELTE_T100_TOKEN` secret is for.
+emulator beside this repository to build the T-100 entry point.
