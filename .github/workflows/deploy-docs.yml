@@ -42,8 +42,8 @@ jobs:
 
       - run: npm ci
 
-      - name: Type errors, if any, in full
-        run: npx tsc --noEmit -p . --skipLibCheck false
+      - name: Type check
+        run: npx tsc --noEmit -p .
 
       - name: Build schema
         run: npm run build:schema

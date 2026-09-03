@@ -30,6 +30,7 @@
     "build:schema": "npx ts-json-schema-generator --additional-properties --validation-keywords see --path 'src/**/*.ts' --type 'Edition' > schema_.json && node schema/postprocess.js && rm schema_.json && mv schema.json src/schema.json"
   },
   "devDependencies": {
+    "@types/node": "^24.13.3",
     "typescript": "^5.6.0-dev.20240809",
     "vite": "^5.4.20",
     "vitest": "^1.2.0",
