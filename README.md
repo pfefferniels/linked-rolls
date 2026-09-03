@@ -53,3 +53,13 @@ repository and declared as `file:../welte-t100`.
    npm i
    npm run build
 ```
+
+## Releasing
+
+Releases go out through `.github/workflows/publish.yml`, never from a
+laptop: raise the version in `package.json`, commit, and push a tag
+`v<version>`, or run the workflow by hand from the Actions tab. The
+workflow builds, runs the tests and publishes with provenance through
+npm's trusted publishing, so no token is stored. It checks out the
+emulator beside this repository to build the T-100 entry point, which is
+what the `WELTE_T100_TOKEN` secret is for.

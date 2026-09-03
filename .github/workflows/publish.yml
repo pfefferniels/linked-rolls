@@ -1,0 +1,54 @@
+# Publishes the package to npm, on a tag v* or by hand from the Actions tab.
+#
+# Two things are set up outside this file:
+#
+#   - npm: linked-rolls has pfefferniels/linked-rolls, workflow publish.yml,
+#     as a trusted publisher, so no token is stored anywhere and every
+#     release carries provenance.
+#   - GitHub: the secret WELTE_T100_TOKEN is a fine-grained personal access
+#     token with read access to the contents of pfefferniels/welte-t100,
+#     which is private. The T-100 entry point cannot be built without it.
+
+name: Publish to npm
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The emulator is a file: dependency, expected one level up under
+      # the name the local checkout still carries.
+      - name: Check out welte-t100
+        uses: actions/checkout@v4
+        with:
+          repository: pfefferniels/welte-t100
+          token: ${{ secrets.WELTE_T100_TOKEN }}
+          path: welte-t100
+      - name: Put it where the dependency looks for it
+        run: |
+          mkdir -p ../roll-nuance-tracer
+          ln -s "$GITHUB_WORKSPACE/welte-t100" ../roll-nuance-tracer/emulator
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+
+      - name: The tag names the version in package.json
+        if: github.ref_type == 'tag'
+        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+
+      # prepublishOnly builds and runs the tests first.
+      - run: npm publish --access public

@@ -1,6 +1,8 @@
 {
   "name": "linked-rolls",
-  "version": "0.0.1",
+  "version": "0.1.0",
+  "description": "Digital editions of piano rolls: import, collation, editorial assumptions, JSON-LD export, and emulation through a reproducing system",
+  "repository": "github:pfefferniels/linked-rolls",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -22,7 +24,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "npm run build:schema && tsc",
+    "build": "npm run build:schema && rm -rf lib && tsc",
+    "prepublishOnly": "npm run build && vitest run",
     "test": "vitest",
     "build:schema": "npx ts-json-schema-generator --additional-properties --validation-keywords see --path 'src/**/*.ts' --type 'Edition' > schema_.json && node schema/postprocess.js && rm schema_.json && mv schema.json src/schema.json"
   },
