@@ -23,9 +23,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The emulator is a file: dependency, expected one level up under the
+      # name the local checkout still carries; see publish.yml.
+      - name: Check out welte-t100
+        uses: actions/checkout@v4
+        with:
+          repository: pfefferniels/welte-t100
+          token: ${{ secrets.WELTE_T100_TOKEN }}
+          path: welte-t100
+      - name: Put it where the dependency looks for it
+        run: |
+          mkdir -p ../roll-nuance-tracer
+          ln -s "$GITHUB_WORKSPACE/welte-t100" ../roll-nuance-tracer/emulator
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - run: npm ci
