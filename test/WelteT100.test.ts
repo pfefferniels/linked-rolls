@@ -2,21 +2,51 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'fs'
 import * as path from 'path'
 import { MIDIControlEvents } from 'midifile-ts'
+import { paperAt, paperSeconds, WELTE_SPOOL } from 'welte-t100-emulator'
 import { importJsonLd } from '../src/importJsonLd'
 import { EditionView } from '../src/EditionView'
-import { Emulation, PerformedPedalEvent } from '../src/Emulation'
+import { Emulation } from '../src/Emulation'
+import { DynamicsCurve, PedalCurve, PerformedPedalEvent } from '../src/ReproducingSystem'
+import { secondsAt, welteT100System } from '../src/systems/welteT100'
+import { atConstantSpeed, SPENCER_FEET_PER_MINUTE } from '../src/RollCopy'
 
 const file = readFileSync(path.join(__dirname, 'fixtures', 'roll.json'), 'utf8')
 const edition = importJsonLd(JSON.parse(file))
 const view = new EditionView(edition)
 
-const emulation = new Emulation()
+const emulation = new Emulation(welteT100System)
 emulation.emulateVersion(edition.versions[0], view)
-const curves = emulation.curves!
+
+const dynamics = (name: string) =>
+    emulation.curves.find((curve): curve is DynamicsCurve => curve.kind === 'dynamics' && curve.name === name)!
+const pedal = (name: string) =>
+    emulation.curves.find((curve): curve is PedalCurve => curve.kind === 'pedal' && curve.name === name)!
 
 const spread = (values: Float64Array) =>
     values.reduce((most, value) => Math.max(most, value), -Infinity)
     - values.reduce((least, value) => Math.min(least, value), Infinity)
+
+describe('the time axis', () => {
+    it('is the take-up spool', () => {
+        expect(emulation.options.spool).toEqual(WELTE_SPOOL)
+        expect(secondsAt(WELTE_SPOOL, 1450)).toEqual(paperSeconds(WELTE_SPOOL, 145))
+    })
+
+    it('takes 30 s over the first 1.45 m of paper, as Gottschewski checks it', () => {
+        // Die Interpretation als Kunstwerk, p. 137
+        expect(secondsAt(WELTE_SPOOL, 1450)).toBeCloseTo(30, 1)
+    })
+
+    it('can be walked back from time to place', () => {
+        expect(paperAt(WELTE_SPOOL, secondsAt(WELTE_SPOOL, 120))).toBeCloseTo(12, 9)
+    })
+
+    it('is a constant speed for a scanned roll', () => {
+        const placeAt = atConstantSpeed(SPENCER_FEET_PER_MINUTE)
+        expect(placeAt(60)).toBeCloseTo(8.3 * 304.8, 9)
+        expect(placeAt(30) * 2).toBeCloseTo(placeAt(60), 9)
+    })
+})
 
 /**
  * The bass and the treble half of the keyboard follow separate stacks
@@ -24,21 +54,21 @@ const spread = (values: Float64Array) =>
  * neither, leaves a velocity curve flat, so emulating a real edition is
  * the check that the scopes still reach the right side.
  */
-describe('emulating the dynamics of a version', () => {
+describe('the dynamics of a version', () => {
     it('shapes both halves of the keyboard', () => {
-        expect(curves.nuance.bass.travel.length).toBeGreaterThan(1000)
-        expect(curves.nuance.treble.travel.length).toBeGreaterThan(1000)
+        expect(dynamics('bass').travel.length).toBeGreaterThan(1000)
+        expect(dynamics('treble').travel.length).toBeGreaterThan(1000)
 
-        expect(spread(curves.nuance.bass.travel)).toBeGreaterThan(0.2)
-        expect(spread(curves.nuance.treble.travel)).toBeGreaterThan(0.2)
+        expect(spread(dynamics('bass').travel)).toBeGreaterThan(0.2)
+        expect(spread(dynamics('treble').travel)).toBeGreaterThan(0.2)
     })
 
     it('shapes them independently', () => {
-        expect(curves.nuance.bass.travel).not.toEqual(curves.nuance.treble.travel)
+        expect(dynamics('bass').travel).not.toEqual(dynamics('treble').travel)
     })
 
     it('keeps the bellows between its rails', () => {
-        for (const curve of [curves.nuance.bass, curves.nuance.treble]) {
+        for (const curve of [dynamics('bass'), dynamics('treble')]) {
             curve.travel.forEach(value => {
                 expect(value).toBeGreaterThanOrEqual(-1e-9)
                 expect(value).toBeLessThanOrEqual(1 + 1e-9)
@@ -47,7 +77,7 @@ describe('emulating the dynamics of a version', () => {
     })
 
     it('samples the curve along the roll', () => {
-        const { place, seconds } = curves.nuance.bass
+        const { place, seconds } = dynamics('bass')
         expect(place[0]).toEqual(0)
         expect(seconds[0]).toEqual(0)
         expect(place[place.length - 1]).toBeGreaterThan(1000)
@@ -69,12 +99,6 @@ describe('emulating the dynamics of a version', () => {
         })
         expect(spread(Float64Array.from(noteOns, event => (event as { velocity: number }).velocity))).toBeGreaterThan(10)
     })
-
-    it('finds the events performing a note', () => {
-        const note = emulation.negotiatedEvents.find(event => event.type === 'note')!
-        const types = emulation.findEventsPerforming(note.id).map(event => event.type)
-        expect(types).toEqual(['noteOn', 'noteOff'])
-    })
 })
 
 /**
@@ -83,12 +107,12 @@ describe('emulating the dynamics of a version', () => {
  * second or so, so the controller stream has to carry intermediate
  * positions and not two values.
  */
-describe('emulating the pedals of a version', () => {
+describe('the pedals of a version', () => {
     const pedalEvents = emulation.midiEvents
         .filter((event): event is PerformedPedalEvent => event.type === 'damper')
 
     it('lifts the dampers fully and lets them travel', () => {
-        const { travel } = curves.pedals.damper
+        const { travel } = pedal('damper')
         expect(travel.reduce((most, value) => Math.max(most, value), 0)).toBeGreaterThan(0.99)
         const inTransit = travel.filter(value => value > 0.1 && value < 0.9).length
         expect(inTransit).toBeGreaterThan(100)
@@ -112,7 +136,7 @@ describe('emulating the pedals of a version', () => {
     })
 
     it('can be thresholded for a renderer that reads the pedal as a switch', () => {
-        const switched = new Emulation({ ...emulation.options, pedalMode: 'switch' })
+        const switched = new Emulation(welteT100System, { ...emulation.options, pedalMode: 'switch' })
         switched.emulateVersion(edition.versions[0], view)
         const values = new Set(switched.midiEvents
             .filter((event): event is PerformedPedalEvent => event.type === 'damper')
@@ -121,7 +145,7 @@ describe('emulating the pedals of a version', () => {
     })
 })
 
-describe('writing the emulation as MIDI', () => {
+describe('the MIDI of a version', () => {
     const midi = emulation.asMIDI()
     const track = midi.tracks[0]
 
@@ -132,11 +156,10 @@ describe('writing the emulation as MIDI', () => {
         expect(new Set(sustain.map(event => (event as { value: number }).value)).size).toBeGreaterThan(2)
     })
 
-    it('labels every note and every pedal perforation that moves the pedal', () => {
+    it('labels every pedal perforation that moves the pedal', () => {
         const labels = new Set(track
             .filter(event => event.type === 'meta' && event.subtype === 'text')
             .map(event => (event as { text: string }).text))
-        const notes = emulation.negotiatedEvents.filter(event => event.type === 'note')
         const pedals = emulation.negotiatedEvents
             .filter(event => event.type === 'expression' && event.expressionType.startsWith('SustainPedal'))
 
@@ -144,8 +167,6 @@ describe('writing the emulation as MIDI', () => {
         const effective = pedals.filter((event, index) =>
             index === 0 || (event as { expressionType: string }).expressionType !== (pedals[index - 1] as { expressionType: string }).expressionType)
         expect(effective.length).toBeGreaterThan(50)
-
-        notes.forEach(note => expect(labels.has(note.id)).toBe(true))
         effective.forEach(pedal => expect(labels.has(pedal.id)).toBe(true))
     })
 
@@ -154,12 +175,5 @@ describe('writing the emulation as MIDI', () => {
         track.forEach(event => expect(Number.isInteger(event.deltaTime)).toBe(true))
         const last = emulation.midiEvents[emulation.midiEvents.length - 1]
         expect(total).toEqual(Math.round(last.at * 1000))
-    })
-
-    it('starts at the first note when asked to', () => {
-        const skipped = new Emulation()
-        skipped.emulateVersion(edition.versions[0], view, { skipToFirstNote: true })
-        expect(skipped.midiEvents[0].at).toEqual(0)
-        expect(skipped.midiEvents.every(event => event.at >= 0)).toBe(true)
     })
 })

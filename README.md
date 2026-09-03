@@ -15,20 +15,38 @@ This library is the foundation of the
 
 ## Emulation
 
-`Emulation` turns a version of the edition into MIDI, running the
-expression code through the mechanism of a Welte-Mignon T-100 as
-[welte-t100-emulator](https://github.com/pfefferniels/roll-nuance-tracer)
-models it: the take-up spool sets the time axis, the Nuancierbälge fill
-through their conduits and are arrested by the Mezzoforte pin, and the two
-pedals travel rather than switch. The constants are those fitted against
-the hand-drawn nuance lines of roll 3309, with the terms that describe the
-drawing apparatus switched off. What the emulator does not determine is
-how bellows travel maps onto MIDI velocity; `EmulationOptions.velocity`
+`Emulation` turns a version of the edition into MIDI. The core of the
+library does the part that belongs to the edition: it negotiates the
+symbols of a version into placed events, hands them to a
+`ReproducingSystem`, and writes the performance out with every note and
+pedal step labelled by the symbol it performs. A reproducing system is a
+tracker bar and a `perform` function; the core does not depend on any one
+instrument's model.
+
+The first system is the red Welte, `linked-rolls/welte-t100`, built on
+[welte-t100-emulator](https://github.com/pfefferniels/welte-t100): the
+take-up spool sets the time axis, the Nuancierbälge fill through their
+conduits and are arrested by the Mezzoforte pin, and the two pedals travel
+rather than switch. The constants are those fitted against the hand-drawn
+nuance lines of roll 3309, with the terms that describe the drawing
+apparatus switched off. What the emulator does not determine is how
+bellows travel maps onto MIDI velocity; `WelteT100Options.velocity`
 anchors that map at the open rail, the Mezzoforte pin and the closed rail,
 and its defaults are midi2exp's.
 
-The dependency is declared as `file:../roll-nuance-tracer/emulator`, so
-that repository has to be checked out beside this one.
+```ts
+import { Emulation } from 'linked-rolls'
+import { welteT100System } from 'linked-rolls/welte-t100'
+
+const emulation = new Emulation(welteT100System)
+emulation.emulateVersion(version, view)
+const midi = emulation.asMIDI()
+```
+
+The emulator is an optional peer dependency: an application that uses the
+T-100 system installs it itself, and one that only reads editions does not
+need it. It is not on npm, so it has to be checked out beside this
+repository and declared as `file:../welte-t100`.
 
 ## Building
 ```

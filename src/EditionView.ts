@@ -3,7 +3,7 @@ import { Edition } from "./Edition";
 import { HorizontalSpan, VerticalSpan, AnyFeature } from "./Feature";
 import { AnySymbol, Expression, Note } from "./Symbol";
 import { Version } from "./Version";
-import { NegotiatedEvent } from "./Emulation";
+import { NegotiatedEvent } from "./ReproducingSystem";
 import { idOf, idsOf } from "./Assumption";
 
 export type Path = (string | number)[];
