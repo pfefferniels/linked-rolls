@@ -2,7 +2,10 @@
   "name": "linked-rolls",
   "version": "0.1.0",
   "description": "Digital editions of piano rolls: import, collation, editorial assumptions, JSON-LD export, and emulation through a reproducing system",
-  "repository": "github:pfefferniels/linked-rolls",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pfefferniels/linked-rolls.git"
+  },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
