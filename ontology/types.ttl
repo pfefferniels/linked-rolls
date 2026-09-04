@@ -38,23 +38,47 @@ reot:staggering a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/r
     rdfs:comment "Holes whose rows do not align across the tracks. Phillips (2016, p. 112) reads this as the mark of an asynchronous perforator: such rolls 'have been cut on an asynchronous perforator as the perforations do not align with each row, showing that this perforator had separate drivers for each punch'."@en .
 
 
-# Kind of an expression perforation (P2 has type on reo:Expression).
-# These are the commands of the Welte-Mignon T-100.
+# Reproducing systems. Each system's expression types form a scheme of
+# their own under https://w3id.org/reo/type/<system>/, since the same
+# command may mean different things on different systems.
 
-reot:SustainPedalOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "sustain pedal on"@en .
-reot:SustainPedalOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "sustain pedal off"@en .
-reot:SoftPedalOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "soft pedal on"@en .
-reot:SoftPedalOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "soft pedal off"@en .
-reot:MezzoforteOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "mezzoforte on"@en .
-reot:MezzoforteOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "mezzoforte off"@en .
-reot:SlowCrescendoOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "slow crescendo on"@en .
-reot:SlowCrescendoOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "slow crescendo off"@en .
-reot:ForzandoOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "forzando on"@en .
-reot:ForzandoOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "forzando off"@en .
-reot:MotorOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "motor on"@en .
-reot:MotorOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "motor off"@en .
-reot:Rewind a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "rewind"@en .
-reot:ElectricCutOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "electric cut-off"@en .
+<https://w3id.org/reo/type/system/welte-t100> a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "Welte-Mignon T-100"@en ;
+    rdfs:comment "The reproducing system of the red Welte rolls, 100 tracks on a roll 328 mm wide; its commands are the scheme at https://w3id.org/reo/type/welte-t100/."@en ;
+    rdfs:seeAlso <https://w3id.org/reo/type/welte-t100/> .
+
+
+# Kind of a version (P2 has type on a version, an F2 Expression)
+
+reot:edition a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "edition"@en ;
+    rdfs:comment "A version of the roll that served, or may have served, as the master for reproductions."@en .
+reot:unicum a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "unicum"@en ;
+    rdfs:comment "A version of the roll found on one copy only."@en .
+
+
+# Kind of a condition state (P2 has type on an E3 Condition State)
+
+reot:general a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "general condition"@en ;
+    rdfs:comment "The overall condition of a copy: wear, discolouration, and other observations."@en .
+reot:paper-stretch a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "paper stretch"@en ;
+    rdfs:comment "The paper of a copy has stretched or shrunk; the factor states by how much."@en .
+reot:partially-torn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "partially torn"@en .
+reot:missing-perforation a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "missing perforation"@en .
+reot:illegible a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "illegible"@en .
+reot:faded a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "faded"@en .
+reot:detaching a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "detaching"@en .
+reot:ripped a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "ripped"@en .
+
+
+# Role of an agent in the edition (P2 has type on an E39 Actor)
+
+reot:pianist a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "pianist"@en .
+reot:editor a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "editor"@en .
+reot:publisher a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "publisher"@en .
 
 
 # Kind of an edit (P2 has type on reo:Edit)

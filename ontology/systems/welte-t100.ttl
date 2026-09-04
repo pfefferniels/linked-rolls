@@ -1,0 +1,36 @@
+@prefix t100:    <https://w3id.org/reo/type/welte-t100/> .
+@prefix crm:     <http://www.cidoc-crm.org/cidoc-crm/> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+# The commands of the Welte-Mignon T-100, as its tracker bar reads them.
+# Each local name is the string the format uses for expressionType; the
+# system's JSON-LD context sends the values here.
+
+<https://w3id.org/reo/type/welte-t100/>
+    a skos:ConceptScheme ;
+    dcterms:title "Welte-Mignon T-100 expression types"@en ;
+    dcterms:description "The expression commands of the Welte-Mignon T-100 (red Welte), cf. Hagmann, pp. 75 and 178. The bass and treble halves of the keyboard have a set each; scope tells them apart."@en ;
+    dcterms:subject <https://w3id.org/reo/type/system/welte-t100> ;
+    dcterms:isPartOf <https://w3id.org/reo/type/> ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> .
+
+t100:SustainPedalOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-t100/> ; rdfs:label "sustain pedal on"@en .
+t100:SustainPedalOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-t100/> ; rdfs:label "sustain pedal off"@en .
+t100:SoftPedalOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-t100/> ; rdfs:label "soft pedal on"@en ;
+    rdfs:comment "Brings the hammer rail forward."@en .
+t100:SoftPedalOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-t100/> ; rdfs:label "soft pedal off"@en .
+t100:MezzoforteOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-t100/> ; rdfs:label "mezzoforte on"@en ;
+    rdfs:comment "Engages the mezzoforte pin, which arrests the expression bellows at its middle position."@en .
+t100:MezzoforteOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-t100/> ; rdfs:label "mezzoforte off"@en .
+t100:SlowCrescendoOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-t100/> ; rdfs:label "slow crescendo on"@en .
+t100:SlowCrescendoOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-t100/> ; rdfs:label "slow crescendo off"@en .
+t100:ForzandoOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-t100/> ; rdfs:label "forzando on"@en ;
+    rdfs:comment "Opens the fast conduit of the expression bellows for a sudden accent."@en .
+t100:ForzandoOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-t100/> ; rdfs:label "forzando off"@en .
+t100:MotorOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-t100/> ; rdfs:label "motor on"@en .
+t100:MotorOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-t100/> ; rdfs:label "motor off"@en .
+t100:Rewind a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-t100/> ; rdfs:label "rewind"@en ;
+    rdfs:comment "Punched at the very end of the roll; the usual landmark for calibrating a scan against the bar."@en .
+t100:ElectricCutOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-t100/> ; rdfs:label "electric cut-off"@en .
