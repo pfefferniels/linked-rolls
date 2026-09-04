@@ -462,7 +462,7 @@
           "description": "Horizontal span of the feature on the roll. [ontology: crm:P43 has dimension]"
         },
         "pattern": {
-          "description": "The punching pattern of the hole. Regular holes have evenly-spaced bridges, accelerating holes have decreasing bridge widths, and staggering holes alternate between adjacent tracks (cf. Phillips).",
+          "description": "The punching pattern of the hole. Regular holes have evenly-spaced bridges, accelerating holes have decreasing bridge widths, and staggering holes do not align in rows across the tracks, the mark of an asynchronous perforator with a separate driver for each punch (Phillips 2016, p. 112).",
           "enum": [
             "regular",
             "accelerating",

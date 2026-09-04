@@ -100,7 +100,9 @@ export interface Hole extends RollFeature<'Hole', typeof conditions.Hole[number]
     /**
      * The punching pattern of the hole. Regular holes have evenly-spaced
      * bridges, accelerating holes have decreasing bridge widths, and
-     * staggering holes alternate between adjacent tracks (cf. Phillips).
+     * staggering holes do not align in rows across the tracks, the mark
+     * of an asynchronous perforator with a separate driver for each
+     * punch (Phillips 2016, p. 112).
      */
     pattern?: 'regular' | 'accelerating' | 'staggering';
 }

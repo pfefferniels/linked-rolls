@@ -114,7 +114,7 @@ reo:pattern
     rdfs:domain crm:E26_Physical_Feature ;
     rdfs:range crm:E55_Type ;
     rdfs:label "pattern"@en ;
-    rdfs:comment """This property states the punching pattern of a hole, that is, how a long perforation is broken into a chain of holes by bridges of paper. The values are the types regular, accelerating and staggering at https://w3id.org/reo/type/, following the distinction drawn by Phillips (2016)."""@en ;
+    rdfs:comment """This property states the punching pattern of a hole: how a long perforation is broken into a chain of holes by bridges of paper, and whether the rows of holes align across the tracks. The values are the types regular, accelerating and staggering at https://w3id.org/reo/type/, following the distinction drawn by Phillips (2016)."""@en ;
     dcterms:bibliographicCitation "Phillips, Peter: Piano Rolls and Contemporary Player Pianos. The Catalogues, Technologies, Archiving and Accessibility. PhD thesis, Sydney Conservatorium of Music, University of Sydney, 2016." ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 

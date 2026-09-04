@@ -35,7 +35,7 @@ reot:accelerating a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org
     rdfs:comment "Holes whose bridges grow narrower along the chain."@en .
 reot:staggering a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "staggering"@en ;
-    rdfs:comment "Holes that alternate between adjacent tracks."@en .
+    rdfs:comment "Holes whose rows do not align across the tracks. Phillips (2016, p. 112) reads this as the mark of an asynchronous perforator: such rolls 'have been cut on an asynchronous perforator as the perforations do not align with each row, showing that this perforator had separate drivers for each punch'."@en .
 
 
 # Kind of an expression perforation (P2 has type on reo:Expression).
