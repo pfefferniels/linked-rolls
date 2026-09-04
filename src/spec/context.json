@@ -1,183 +1,250 @@
 {
   "@context": {
+    "@version": 1.1,
     "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
     "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
     "owl": "http://www.w3.org/2002/07/owl#",
     "dcterms": "http://purl.org/dc/terms/",
     "crm": "http://www.cidoc-crm.org/cidoc-crm/",
-    "crmdig": "http://www.ics.forth.gr/isl/CRMdig/",
-    "crminf": "http://www.cidoc-crm.org/cidoc-crm/CRMinf/",
+    "crmdig": "http://www.cidoc-crm.org/extensions/crmdig/",
+    "crminf": "http://www.cidoc-crm.org/extensions/crminf/",
     "lrmoo": "http://iflastandards.info/ns/lrm/lrmoo/",
-    "reo": "http://linked-rolls.org/reo/",
-    "@vocab": "http://linked-rolls.org/reo/",
+    "reo": "https://w3id.org/reo/",
 
     "Edition": "lrmoo:F2_Expression",
-    "RollCopy": "reo:C1_Witness",
+    "edition": "lrmoo:F2_Expression",
+    "unicum": "lrmoo:F2_Expression",
+    "RollCopy": "lrmoo:F5_Item",
+    "Hole": "crm:E26_Physical_Feature",
+    "Mark": "crm:E25_Human-Made_Feature",
+    "Writing": "crm:E25_Human-Made_Feature",
+    "GluedOn": "crm:E22_Human-Made_Object",
     "Addition": "crm:E79_Part_Addition",
     "Removal": "crm:E80_Part_Removal",
+    "general": "crm:E3_Condition_State",
+    "paper-stretch": "crm:E3_Condition_State",
+    "partially-torn": "crm:E3_Condition_State",
+    "missing-perforation": "crm:E3_Condition_State",
+    "illegible": "crm:E3_Condition_State",
+    "faded": "crm:E3_Condition_State",
+    "detaching": "crm:E3_Condition_State",
+    "ripped": "crm:E3_Condition_State",
+    "note": "reo:Note",
+    "expression": "reo:Expression",
+    "text": {
+      "@id": "crm:E33_Linguistic_Object",
+      "@context": {
+        "text": "crm:P190_has_symbolic_content"
+      }
+    },
+    "edit": {
+      "@id": "reo:Edit",
+      "@context": {
+        "editType": {
+          "@id": "crm:P2_has_type",
+          "@type": "@vocab",
+          "@context": { "@vocab": "https://w3id.org/reo/type/" }
+        },
+        "motivation": {
+          "@id": "crm:P17_was_motivated_by",
+          "@type": "@id"
+        },
+        "insert": "reo:added",
+        "delete": {
+          "@id": "reo:removed",
+          "@type": "@id"
+        }
+      }
+    },
+    "motivation": {
+      "@id": "crm:E33_Linguistic_Object",
+      "@context": {
+        "note": "crm:P3_has_note"
+      }
+    },
+    "simpleArgumentation": {
+      "@id": "crminf:I1_Argumentation",
+      "@context": { "note": "crm:P3_has_note" }
+    },
+    "inference": {
+      "@id": "crminf:I5_Inference_Making",
+      "@context": { "note": "crm:P3_has_note" }
+    },
+    "beliefAdoption": {
+      "@id": "crminf:I7_Belief_Adoption",
+      "@context": { "note": "crm:P3_has_note" }
+    },
+    "meaningComprehension": {
+      "@id": "crminf:I16_Meaning_Comprehension",
+      "@context": { "note": "crm:P3_has_note" }
+    },
 
-    "title": "crm:P102_has_title",
+    "title": "dcterms:title",
     "license": {
       "@id": "dcterms:license",
       "@type": "@id"
     },
+    "creation": "lrmoo:R17i_was_created_by",
+    "publisher": "crm:P14_carried_out_by",
+    "publicationDate": {
+      "@id": "dcterms:date",
+      "@type": "xsd:date"
+    },
+    "collationTolerance": null,
+    "roll": "lrmoo:R3i_realises",
+    "catalogueNumber": "dcterms:identifier",
+    "recordingEvent": "lrmoo:R19i_was_realised_through",
+    "recorded": "lrmoo:R81_recorded",
+    "pianist": "crm:P14_carried_out_by",
+    "playing": {
+      "@id": "lrmoo:R80_performed",
+      "@type": "@id"
+    },
+    "place": "crm:P7_took_place_at",
+    "date": {
+      "@id": "dcterms:date",
+      "@type": "xsd:date"
+    },
+    "created": "lrmoo:R17_created",
+    "copies": "reo:witness",
+    "versions": "lrmoo:R75_incorporates",
+    "tempoAdjustment": {
+      "@id": "reo:tempo",
+      "@context": {
+        "startsWith": "reo:from",
+        "endsWith": "reo:to"
+      }
+    },
+
     "name": "rdfs:label",
     "sameAs": {
       "@id": "owl:sameAs",
       "@type": "@id"
     },
-    "role": "crm:P2_has_type",
-    "date": "crm:P4_has_time-span",
-    "actor": "crm:P14_carried_out_by",
-    "description": "crm:P3_has_note",
-    "depiction": {
-      "@id": "crm:P62i_is_depicted_by",
-      "@type": "@id"
+    "role": {
+      "@id": "crm:P2_has_type",
+      "@type": "@vocab",
+      "@context": { "@vocab": "https://w3id.org/reo/type/" }
     },
-    "horizontal": "crm:P43_has_dimension",
-    "vertical": "crm:P43_has_dimension",
-    "unit": "crm:P91_has_unit",
+
+    "ops": null,
+    "measurements": {
+      "@id": "crm:P39i_was_measured_by",
+      "@context": {
+        "shift": null,
+        "trackCalibration": null,
+        "margins": null,
+        "dimensions": "reo:dimensions",
+        "width": "reo:width",
+        "height": "reo:height",
+        "punchDiameter": "reo:punchDiameter",
+        "holeSeparation": "reo:holeSeparation",
+        "value": "crm:P90_has_value",
+        "measuredBy": "crmdig:L23_used_software_or_firmware",
+        "software": "rdfs:label",
+        "version": "owl:versionInfo"
+      }
+    },
+    "production": "lrmoo:R28i_was_produced_by",
+    "company": "crm:P14_carried_out_by",
+    "system": "crm:P32_used_general_technique",
+    "paper": "crm:P126_employed",
+    "conditions": "crm:P44_has_condition",
+    "condition": "crm:P44_has_condition",
+    "description": "crm:P3_has_note",
+    "factor": "rdf:value",
+    "location": "crm:P55_has_current_location",
+    "features": "crm:P56_bears_feature",
+    "modifications": "crm:P31i_was_modified_by",
     "scan": {
       "@id": "crm:P138i_has_representation",
       "@type": "@id"
     },
-    "carriers": {
-      "@id": "crm:P128i_is_carried_by",
-      "@type": "@id"
-    },
-    "pitch": "reo:P5_has_pitch",
-    "scope": "reo:P6_has_scope",
-    "expressionType": "crm:P2_has_type",
-    "alignedWith": {
-      "@id": "reo:P3_aligned_with",
-      "@type": "@id"
-    },
-    "pairedWith": {
-      "@id": "reo:P23_paired_with",
-      "@type": "@id"
-    },
-    "material": "crm:P45_consists_of",
-    "condition": "crm:P44_has_condition",
 
-    "creation": {
-      "@id": "lrmoo:R17i_was_created_by",
-      "@context": {
-        "publisher": "crm:P14_carried_out_by",
-        "publicationDate": {
-          "@id": "crm:P4_has_time-span",
-          "@type": "xsd:date"
-        },
-        "collationTolerance": "crmdig:L13_used_parameters"
-      }
+    "depiction": {
+      "@id": "crm:P138i_has_representation",
+      "@type": "@id"
     },
-    "roll": {
-      "@id": "lrmoo:R3i_realises",
-      "@context": {
-        "catalogueNumber": "crm:P1_is_identified_by",
-        "recordingEvent": {
-          "@id": "lrmoo:R19i_was_realised_through",
-          "@context": {
-            "recorded": {
-              "@id": "lrmoo:R81_recorded",
-              "@context": {
-                "pianist": "crm:P14_carried_out_by",
-                "playing": {
-                  "@type": "@id"
-                }
-              }
-            },
-            "place": "crm:P7_took_place_at",
-            "created": "lrmoo:R17_created"
-          }
-        }
-      }
+    "horizontal": "crm:P43_has_dimension",
+    "vertical": "crm:P43_has_dimension",
+    "from": "reo:from",
+    "to": "reo:to",
+    "unit": {
+      "@id": "crm:P91_has_unit",
+      "@type": "@vocab",
+      "@context": { "@vocab": "https://w3id.org/reo/type/" }
     },
-    "copies": {
-      "@id": "lrmoo:R2_is_derivative_of",
-      "@context": {
-        "location": "crm:P55_has_current_location",
-        "production": {
-          "@id": "lrmoo:R28i_was_produced_by",
-          "@context": {
-            "company": "crm:P14_carried_out_by",
-            "paper": "crm:P126_employed"
-          }
-        },
-        "conditions": "crm:P44_has_condition",
-        "modifications": {
-          "@id": "crm:P31i_was_modified_by",
-          "@context": {
-            "added": "crm:P111_added",
-            "removed": "crm:P113_removed",
-            "purpose": "crm:P21_had_general_purpose"
-          }
-        },
-        "measurements": {
-          "@id": "crm:P39i_was_measured_by",
-          "@context": {
-            "measuredBy": {
-              "@context": {
-                "software": "crmdig:L23_used_software_or_firmware"
-              }
-            }
-          }
-        },
-        "features": {
-          "@id": "crm:P56_bears_feature",
-          "@context": {
-            "method": "crm:P2_has_type",
-            "transcription": "crm:P128_carries",
-            "pattern": "crm:P2_has_type",
-            "features": "crm:P56_bears_feature"
-          }
-        }
-      }
+    "pattern": {
+      "@id": "reo:pattern",
+      "@type": "@vocab",
+      "@context": { "@vocab": "https://w3id.org/reo/type/" }
     },
-    "versions": {
-      "@id": "lrmoo:R76_is_derivative_of",
-      "@context": {
-        "siglum": "reo:P22_is_identified_by",
-        "basedOn": {
-          "@id": "reo:P10i_is_based_on",
-          "@type": "@id"
-        },
-        "motivations": "@included",
-        "edits": {
-          "@id": "reo:P16_involved_edit",
-          "@context": {
-            "editType": "crm:P2_has_type",
-            "motivation": {
-              "@id": "crm:P17_was_motivated_by",
-              "@type": "@id"
-            },
-            "insert": "reo:P7_added",
-            "delete": {
-              "@id": "reo:P8_removed",
-              "@type": "@id"
-            }
-          }
-        }
-      }
+    "method": {
+      "@id": "crm:P2_has_type",
+      "@type": "@vocab",
+      "@context": { "@vocab": "https://w3id.org/reo/type/" }
     },
+    "transcription": "crm:P128_carries",
+    "material": {
+      "@id": "crm:P45_consists_of",
+      "@type": "@vocab",
+      "@context": { "@vocab": "https://w3id.org/reo/type/" }
+    },
+
+    "actor": "crm:P14_carried_out_by",
+    "added": {
+      "@id": "crm:P111_added",
+      "@type": "@id"
+    },
+    "removed": {
+      "@id": "crm:P113_removed",
+      "@type": "@id"
+    },
+    "purpose": {
+      "@id": "crm:P21_had_general_purpose",
+      "@type": "@vocab",
+      "@context": { "@vocab": "https://w3id.org/reo/type/" }
+    },
+
+    "siglum": "reo:siglum",
+    "basedOn": "lrmoo:R76_is_derivative_of",
+    "edits": "reo:involvedEdit",
+    "motivations": "@included",
+
+    "carriers": "crm:P128i_is_carried_by",
+    "alignedWith": "reo:alignedWith",
+    "pairedWith": "reo:pairedWith",
+    "pitch": {
+      "@id": "reo:pitch",
+      "@type": "xsd:integer"
+    },
+    "scope": {
+      "@id": "reo:scope",
+      "@type": "@vocab",
+      "@context": { "@vocab": "https://w3id.org/reo/type/" }
+    },
+    "expressionType": {
+      "@id": "crm:P2_has_type",
+      "@type": "@vocab",
+      "@context": { "@vocab": "https://w3id.org/reo/type/" }
+    },
+
     "belief": {
-      "@id": "crminf:J4i_is_subject_to",
+      "@id": "crminf:J4i_is_subject_of",
       "@context": {
         "belief": "crminf:I2_Belief",
         "certainty": "crminf:J5_holds_to_be",
-        "reasons": {
-          "@id": "crminf:J2i_was_concluded_by",
-          "@context": {
-            "comprehends": {
-              "@id": "crminf:J22_interpreted_meaning_of",
-              "@type": "@id"
-            },
-            "premises": {
-              "@id": "crminf:J1_used_as_premise",
-              "@type": "@id"
-            }
-          }
-        }
+        "reasons": "crminf:J2i_was_concluded_by"
       }
+    },
+    "comprehends": {
+      "@id": "crminf:J22_interpreted_meaning_of",
+      "@type": "@id"
+    },
+    "premises": {
+      "@id": "crminf:J1_used_as_premise",
+      "@type": "@id"
     }
   }
 }
