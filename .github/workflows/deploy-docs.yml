@@ -52,15 +52,26 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Generate docs
+      - name: Generate the format docs
         run: |
           pip install json-schema-for-humans
           mkdir -p docs
           generate-schema-doc --config expand_buttons=true --config with_footer=false src/schema.json docs/index.html
           python .github/postprocess-docs.py docs/index.html
 
-      - name: Copy context
-        run: cp src/spec/context.json docs/context.json
+      # The ontology lives at /reo/, the type vocabulary at /reo/type/,
+      # which is the layout the w3id.org redirects will point at.
+      - name: Generate the ontology docs
+        run: |
+          pip install pylode
+          mkdir -p docs/reo/type
+          pylode ontology/reo.ttl -o docs/reo/index.html
+          pylode ontology/types.ttl -o docs/reo/type/index.html
+
+      - name: Publish the ontology files and the context
+        run: |
+          cp ontology/reo.ttl ontology/types.ttl docs/reo/
+          cp src/spec/context.json docs/reo/context.jsonld
 
       - uses: actions/configure-pages@v5
 

@@ -9,19 +9,23 @@ import sys
 # ---------------------------------------------------------------------------
 
 # Base URLs for known ontology prefixes.  The fragment (anchor) is the term
-# code, e.g. "E21" for crm or "label" for rdfs.
+# code, e.g. "E21" for crm or "label" for rdfs.  The reo entry is relative
+# to the docs root, where the ontology page is published beside this one.
 ONTOLOGY_URLS = {
     'crm':     'https://cidoc-crm.org/html/cidoc_crm_v7.1.3.html',
-    'lrm':     'https://cidoc-crm.org/extensions/lrmoo/html/LRMoo_v0.9.6.html',
+    'lrmoo':   'https://cidoc-crm.org/extensions/lrmoo/html/LRMoo_v1.0.html',
+    'crminf':  'https://cidoc-crm.org/extensions/crminf/html/CRMinf_v1.0.html',
+    'crmdig':  'https://cidoc-crm.org/crmdig/ModelVersion/version-4.0',
     'rdf':     'https://www.w3.org/1999/02/22-rdf-syntax-ns',
     'rdfs':    'https://www.w3.org/2000/01/rdf-schema',
     'owl':     'https://www.w3.org/2002/07/owl',
     'dcterms': 'https://www.dublincore.org/specifications/dublin-core/dcmi-terms',
+    'reo':     'reo/',
 }
 
-# Regex matching a prefixed ontology term, e.g. crm:E21, lrm:F2, rdfs:label
+# Regex matching a prefixed ontology term, e.g. crm:E21, lrmoo:F2, rdfs:label
 _ONT_TERM_RE = re.compile(
-    r'\b(crm|lrm|rdf|rdfs|owl|dcterms|reo):([A-Za-z]\w*)'
+    r'\b(crm|lrmoo|crminf|crmdig|rdf|rdfs|owl|dcterms|reo):([A-Za-z]\w*)'
 )
 
 
@@ -206,7 +210,9 @@ def postprocess(filepath):
       <p>
         Schema documentation for the
         <a href="https://github.com/pfefferniels/linked-rolls">linked-rolls</a>
-        piano roll edition format.
+        piano roll edition format. The vocabulary behind it is the
+        <a href="reo/">Roll Edition Ontology</a> with its
+        <a href="reo/type/">type vocabulary</a>.
       </p>
     </header>
 """
@@ -224,7 +230,7 @@ def postprocess(filepath):
         '<div class="root-intro">'
         '<p>The root element of this format is an <strong>Edition</strong>, '
         'describing a specific digital edition of a piano roll '
-        '(cf. lrm:F2 Expression). '
+        '(cf. lrmoo:F2 Expression). '
         'It consists of the following properties:</p>'
         '</div>',
         html,

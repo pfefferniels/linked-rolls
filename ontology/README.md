@@ -42,9 +42,23 @@ versioned IRI such as `https://w3id.org/reo/1.0/` and declares it as
 `owl:versionIRI`. A released term is never renamed. A term that falls
 out of use is deprecated and kept.
 
+## Publishing
+
+The docs workflow renders `reo.ttl` and `types.ttl` with pyLODE and
+publishes them, the Turtle files and the context on GitHub Pages:
+
+| | |
+|---|---|
+| Ontology page | https://pfefferniels.github.io/linked-rolls/reo/ |
+| Type vocabulary | https://pfefferniels.github.io/linked-rolls/reo/type/ |
+| Turtle | `…/reo/reo.ttl`, `…/reo/types.ttl` |
+| Context | `…/reo/context.jsonld` |
+
+The w3id.org entry is not registered yet, so the namespace IRIs do not
+resolve at present. Once it is, it redirects to these locations.
+
 ## Status
 
-The w3id.org entry is not registered yet, so the IRIs above do not
-resolve at present. `reo.ttl` is the next step. The OntoMe project
+Version 1.0 is a draft. The OntoMe project
 https://ontome.net/project/168 documents an earlier, numbered draft
 of this vocabulary and is not the source.

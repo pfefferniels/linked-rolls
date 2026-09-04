@@ -18,9 +18,11 @@ This library is the foundation of the
 The JSON-LD export uses the Roll Edition Ontology (REO), namespace
 `https://w3id.org/reo/`, prefix `reo`, alongside CIDOC CRM, LRMoo and
 CRMinf. The ontology lives in `ontology/`, and the context every
-export references is `https://w3id.org/reo/context.jsonld`. Neither
-resolves yet; `ontology/README.md` records the naming decisions and
-what is still missing.
+export references is `https://w3id.org/reo/context.jsonld`. The
+ontology, its type vocabulary and the context are published at
+https://pfefferniels.github.io/linked-rolls/reo/; the w3id.org
+identifiers are not registered yet. `ontology/README.md` records the
+naming decisions.
 
 ## Emulation
 
