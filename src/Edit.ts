@@ -42,12 +42,13 @@ export type ActorAssignment = ObjectAssumption<Person>
  * If an edit is the interpretation of a metamark,
  * such as a pencil mark, this should be made explicit
  * using a meaning comprehension on the `@annotation` field.
- * @see reo:C8 Edit
+ * @see reo:Edit
  */
 export interface Edit extends WithId, Assumption {
     type: 'edit';
     /**
      * The type of editorial change (e.g. 'correct-error', 'additional-accent').
+     * @see crm:P2 has type
      */
     editType?: EditType;
     /**
@@ -58,12 +59,12 @@ export interface Edit extends WithId, Assumption {
     motivation?: string;
     /**
      * The symbols to be inserted by this edit.
-     * @see reo:P7 added
+     * @see reo:added
      */
     insert?: AnySymbol[];
     /**
      * References (by `@id`) to the symbols to be deleted by this edit.
-     * @see reo:P8 removed
+     * @see reo:removed
      */
     delete?: string[];
 }

@@ -85,7 +85,7 @@
           "description": "The level of certainty associated with this belief. [ontology: crminf:J5 holds to be]"
         },
         "reasons": {
-          "description": "The argumentations providing reasons for this belief. [ontology: crminf:J2 was concluded by]",
+          "description": "The argumentations providing reasons for this belief. [ontology: crminf:J2i was concluded by]",
           "items": {
             "$ref": "#/definitions/AnyArgumentation"
           },
@@ -168,13 +168,14 @@
       "description": "A date value wrapped as an assumption, so that the date can be annotated with a belief about its certainty and source."
     },
     "Edit": {
-      "description": "A set of edits transforms a version of a roll into another version. Edits insert or delete symbols, or both (= replace). Edits may be motivated by a given set of reasons, e.g. to add an additional accent or to correct an error. If an edit is the interpretation of a metamark, such as a pencil mark, this should be made explicit using a meaning comprehension on the `@annotation` field. [ontology: reo:C8 Edit]",
+      "description": "A set of edits transforms a version of a roll into another version. Edits insert or delete symbols, or both (= replace). Edits may be motivated by a given set of reasons, e.g. to add an additional accent or to correct an error. If an edit is the interpretation of a metamark, such as a pencil mark, this should be made explicit using a meaning comprehension on the `@annotation` field. [ontology: reo:Edit]",
       "properties": {
         "@annotation": {
           "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
           "properties": {
             "belief": {
-              "$ref": "#/definitions/Belief"
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
             },
             "@id": {
               "description": "A unique identifier for this object.",
@@ -188,7 +189,7 @@
           "type": "object"
         },
         "delete": {
-          "description": "References (by `@id`) to the symbols to be deleted by this edit. [ontology: reo:P8 removed]",
+          "description": "References (by `@id`) to the symbols to be deleted by this edit. [ontology: reo:removed]",
           "items": {
             "type": "string"
           },
@@ -196,10 +197,10 @@
         },
         "editType": {
           "$ref": "#/definitions/EditType",
-          "description": "The type of editorial change (e.g. 'correct-error', 'additional-accent')."
+          "description": "The type of editorial change (e.g. 'correct-error', 'additional-accent'). [ontology: crm:P2 has type]"
         },
         "insert": {
-          "description": "The symbols to be inserted by this edit. [ontology: reo:P7 added]",
+          "description": "The symbols to be inserted by this edit. [ontology: reo:added]",
           "items": {
             "$ref": "#/definitions/AnySymbol"
           },
@@ -242,10 +243,10 @@
       "type": "string"
     },
     "Edition": {
-      "description": "Describes the specific digital edition of a piano roll. [ontology: lrm:F2 Expression]",
+      "description": "Describes the specific digital edition of a piano roll. [ontology: lrmoo:F2 Expression]",
       "properties": {
         "copies": {
-          "description": "The physical roll copies on which this edition is based.",
+          "description": "The physical roll copies on which this edition is based. [ontology: reo:witness]",
           "items": {
             "$ref": "#/definitions/RollCopy"
           },
@@ -253,7 +254,7 @@
         },
         "creation": {
           "$ref": "#/definitions/EditionCreation",
-          "description": "Information about the creation of this edition, including publisher and publication date. [ontology: lrm:R17i was created by]"
+          "description": "Information about the creation of this edition, including publisher and publication date. [ontology: lrmoo:R17i was created by]"
         },
         "license": {
           "description": "The license under which the edition is published. [ontology: dcterms:license]",
@@ -264,21 +265,21 @@
         },
         "roll": {
           "$ref": "#/definitions/Roll",
-          "description": "The roll which is edited in this edition. [ontology: lrm:R3i realises]"
+          "description": "The roll which is edited in this edition. [ontology: lrmoo:R3i realises]"
         },
         "tempoAdjustment": {
           "$ref": "#/definitions/ObjectAssumption%3CRollTempo%3E",
-          "description": "An optional tempo adjustment for playback of the roll, annotatable with a belief about its correctness."
+          "description": "An optional tempo adjustment for playback of the roll, annotatable with a belief about its correctness. [ontology: reo:tempo]"
         },
         "title": {
-          "description": "The title of the edition. [ontology: crm:P102 has title]",
+          "description": "The title of the edition. [ontology: dcterms:title]",
           "examples": [
             "Alfred Grünfeld spielt Robert Schumann, Träumerei"
           ],
           "type": "string"
         },
         "versions": {
-          "description": "The different versions of the roll on which this edition is based. [ontology: lrm:R76 is derivative of]",
+          "description": "The different versions of the roll on which this edition is based. [ontology: lrmoo:R75 incorporates]",
           "items": {
             "$ref": "#/definitions/Version"
           },
@@ -296,14 +297,14 @@
       "type": "object"
     },
     "EditionCreation": {
-      "description": "This type describes the creation of an edition, i.e. the editor, publisher, and publication date. [ontology: lrm:F28 Expression Creation]",
+      "description": "This type describes the creation of an edition, i.e. the editor, publisher, and publication date. [ontology: lrmoo:F28 Expression Creation]",
       "properties": {
         "collationTolerance": {
           "$ref": "#/definitions/CollationTolerance",
-          "description": "The tolerance parameters used when collating (aligning) the different roll copies for this edition. [ontology: L13 used parameters]"
+          "description": "The tolerance parameters used when collating (aligning) the different roll copies for this edition. Not exported to RDF."
         },
         "publicationDate": {
-          "description": "The date on which the edition was published. [ontology: crm:P4 has time-span]",
+          "description": "The date on which the edition was published. [ontology: dcterms:date]",
           "format": "date",
           "type": "string"
         },
@@ -319,11 +320,11 @@
       "type": "object"
     },
     "Expression": {
-      "description": "An expression symbol, representing a perforation on the roll that governs dynamics, pedaling, or mechanical functions of the reproducing piano. Each expression has a scope (bass or treble) and a specific expression type. [ontology: reo:C7 Expression]",
+      "description": "An expression symbol, representing a perforation on the roll that governs dynamics, pedaling, or mechanical functions of the reproducing piano. Each expression has a scope (bass or treble) and a specific expression type. [ontology: reo:Expression]",
       "properties": {
         "alignedWith": {
           "$ref": "#/definitions/ReferenceAssumption",
-          "description": "In piano rolls, perforations are often aligned with other perforations, e.g. a \"crescendo off\" might be logically aligned to the start of a note perforation. This points to the perforation by its `@id`. [ontology: reo:P3 aligned with]"
+          "description": "In piano rolls, perforations are often aligned with other perforations, e.g. a \"crescendo off\" might be logically aligned to the start of a note perforation. This points to the perforation by its `@id`. [ontology: reo:alignedWith]"
         },
         "carriers": {
           "description": "References to the physical features (e.g. holes) on the roll copies that carry this symbol. Since the association might be debatable, it can be annotated. There might be e.g. doubts about the meaning and correct transcription of a feature on a physical roll. This points to a feature by its `@id`. [ontology: crm:P128i is carried by]",
@@ -338,11 +339,11 @@
         },
         "pairedWith": {
           "$ref": "#/definitions/ReferenceAssumption",
-          "description": "The perforation this one forms a pair with, e.g. a \"forzando on\" with its \"forzando off\". Any two perforations may be paired. The distance between the two is fixed: whatever displaces the one displaces the other. The relation is symmetric and is stated on one side only. This points to the perforation by its `@id`. [ontology: reo:P23 paired with]"
+          "description": "The perforation this one forms a pair with, e.g. a \"forzando on\" with its \"forzando off\". Any two perforations may be paired. The distance between the two is fixed: whatever displaces the one displaces the other. The relation is symmetric and is stated on one side only. This points to the perforation by its `@id`. [ontology: reo:pairedWith]"
         },
         "scope": {
           "$ref": "#/definitions/ExpressionScope",
-          "description": "Whether this expression applies to the bass or treble register. [ontology: reo:P6 has scope]"
+          "description": "Whether this expression applies to the bass or treble register. [ontology: reo:scope]"
         },
         "@id": {
           "description": "A unique identifier for this object.",
@@ -365,7 +366,7 @@
       "type": "object"
     },
     "ExpressionScope": {
-      "description": "The scope of an expression perforation, indicating whether it applies to the bass or treble register of the piano. [ontology: reo:P6 has scope]",
+      "description": "The scope of an expression perforation, indicating whether it applies to the bass or treble register of the piano. [ontology: reo:scope]",
       "enum": [
         "bass",
         "treble"
@@ -393,14 +394,14 @@
       "type": "string"
     },
     "GluedOn": {
-      "description": "A piece of material (paper or tape) glued onto the roll surface. Glued-on features are typically used to cover perforations (for corrections) or to reinforce damaged areas. They may themselves carry other features such as writings or additional holes.",
+      "description": "A piece of material (paper or tape) glued onto the roll surface. Glued-on features are typically used to cover perforations (for corrections) or to reinforce damaged areas. They may themselves carry other features such as writings or additional holes. [ontology: crm:E22 Human-Made Object]",
       "properties": {
         "condition": {
           "$ref": "#/definitions/ObjectAssumption%3CConditionState%3C(%22detaching%22%7C%22ripped%22)%3E%3E",
-          "description": "This can be used e.g. to indicate a perforation which is torn out or in any other way damaged."
+          "description": "This can be used e.g. to indicate a perforation which is torn out or in any other way damaged. [ontology: crm:P44 has condition]"
         },
         "depiction": {
-          "description": "IIIF region pointing to a depiction of this feature in the scan. [ontology: crm:P62 is depicted by]",
+          "description": "IIIF region pointing to a depiction of this feature in the scan. [ontology: crm:P138i has representation]",
           "type": "string"
         },
         "features": {
@@ -451,10 +452,10 @@
       "properties": {
         "condition": {
           "$ref": "#/definitions/ObjectAssumption%3CConditionState%3C(%22partially-torn%22%7C%22missing-perforation%22)%3E%3E",
-          "description": "This can be used e.g. to indicate a perforation which is torn out or in any other way damaged."
+          "description": "This can be used e.g. to indicate a perforation which is torn out or in any other way damaged. [ontology: crm:P44 has condition]"
         },
         "depiction": {
-          "description": "IIIF region pointing to a depiction of this feature in the scan. [ontology: crm:P62 is depicted by]",
+          "description": "IIIF region pointing to a depiction of this feature in the scan. [ontology: crm:P138i has representation]",
           "type": "string"
         },
         "horizontal": {
@@ -462,7 +463,7 @@
           "description": "Horizontal span of the feature on the roll. [ontology: crm:P43 has dimension]"
         },
         "pattern": {
-          "description": "The punching pattern of the hole. Regular holes have evenly-spaced bridges, accelerating holes have decreasing bridge widths, and staggering holes do not align in rows across the tracks, the mark of an asynchronous perforator with a separate driver for each punch (Phillips 2016, p. 112).",
+          "description": "The punching pattern of the hole. Regular holes have evenly-spaced bridges, accelerating holes have decreasing bridge widths, and staggering holes do not align in rows across the tracks, the mark of an asynchronous perforator with a separate driver for each punch (Phillips 2016, p. 112). [ontology: reo:pattern]",
           "enum": [
             "regular",
             "accelerating",
@@ -494,14 +495,14 @@
       "type": "object"
     },
     "HorizontalSpan": {
-      "description": "Describes the horizontal extent of a feature on the roll, measured in millimeters from the beginning of the roll. The `from` value is the start position and `to` is the end position.",
+      "description": "Describes the horizontal extent of a feature on the roll, measured in millimeters from the beginning of the roll. The `from` value is the start position and `to` is the end position. [ontology: crm:E54 Dimension]",
       "properties": {
         "from": {
-          "description": "The start position of the feature in millimeters from the beginning of the roll.",
+          "description": "The start position of the feature in millimeters from the beginning of the roll. [ontology: reo:from]",
           "type": "number"
         },
         "to": {
-          "description": "The end position of the feature in millimeters from the beginning of the roll.",
+          "description": "The end position of the feature in millimeters from the beginning of the roll. [ontology: reo:to]",
           "type": "number"
         },
         "unit": {
@@ -549,14 +550,14 @@
       "type": "object"
     },
     "Mark": {
-      "description": "A visible mark on the roll, such as a pencil mark, ink mark, or other non-textual annotation.",
+      "description": "A visible mark on the roll, such as a pencil mark, ink mark, or other non-textual annotation. [ontology: crm:E25 Human-Made Feature]",
       "properties": {
         "condition": {
           "$ref": "#/definitions/ObjectAssumption%3CConditionState%3C(%22faded%22)%3E%3E",
-          "description": "This can be used e.g. to indicate a perforation which is torn out or in any other way damaged."
+          "description": "This can be used e.g. to indicate a perforation which is torn out or in any other way damaged. [ontology: crm:P44 has condition]"
         },
         "depiction": {
-          "description": "IIIF region pointing to a depiction of this feature in the scan. [ontology: crm:P62 is depicted by]",
+          "description": "IIIF region pointing to a depiction of this feature in the scan. [ontology: crm:P138i has representation]",
           "type": "string"
         },
         "horizontal": {
@@ -587,7 +588,7 @@
       "type": "object"
     },
     "MeaningComprehension": {
-      "description": "A meaning comprehension interprets or disambiguates the meaning of symbols or features. For example, interpreting a pencil mark as an instruction to add or remove a perforation or as the dating of the roll.",
+      "description": "A meaning comprehension interprets or disambiguates the meaning of symbols or features. For example, interpreting a pencil mark as an instruction to add or remove a perforation or as the dating of the roll. [ontology: crminf:I16 Meaning Comprehension]",
       "properties": {
         "actor": {
           "$ref": "#/definitions/Person",
@@ -622,7 +623,8 @@
         {
           "properties": {
             "actor": {
-              "$ref": "#/definitions/ActorAssignment"
+              "$ref": "#/definitions/ActorAssignment",
+              "description": "Who carried out the modification. [ontology: crm:P14 carried out by]"
             },
             "added": {
               "items": {
@@ -632,7 +634,8 @@
               "description": "[ontology: crm:P111 added]"
             },
             "date": {
-              "$ref": "#/definitions/DateAssignment"
+              "$ref": "#/definitions/DateAssignment",
+              "description": "When the modification took place. [ontology: dcterms:date]"
             },
             "purpose": {
               "enum": [
@@ -664,14 +667,16 @@
         {
           "properties": {
             "actor": {
-              "$ref": "#/definitions/ActorAssignment"
+              "$ref": "#/definitions/ActorAssignment",
+              "description": "Who carried out the modification. [ontology: crm:P14 carried out by]"
             },
             "date": {
-              "$ref": "#/definitions/DateAssignment"
+              "$ref": "#/definitions/DateAssignment",
+              "description": "When the modification took place. [ontology: dcterms:date]"
             },
             "purpose": {
               "const": "delabeling",
-              "description": "Usually, roll features are being added.  Sometimes however, we may see traces of features that have been removed, e.g. through bright spots on the roll.",
+              "description": "Usually, roll features are being added. Sometimes however, we may see traces of features that have been removed, e.g. through bright spots on the roll. [ontology: crm:P21 had general purpose]",
               "type": "string"
             },
             "removed": {
@@ -699,7 +704,7 @@
       "description": "This type denotes identifiable activities that modified the roll copy after its production, e.g. annotations, repairs, etc. [ontology: crm:E79 Part Addition, crm:E80 Part Removal]"
     },
     "Motivation": {
-      "description": "A motivation provides a reason or rationale for an editorial change. Motivations are defined at the version level and referenced by edits. [ontology: crm:E73 Information Object]",
+      "description": "A motivation provides a reason or rationale for an editorial change. Motivations are defined at the version level and referenced by edits. [ontology: crm:E33 Linguistic Object]",
       "properties": {
         "note": {
           "description": "A free-text note providing additional context. [ontology: crm:P3 has note]",
@@ -723,11 +728,11 @@
       "type": "object"
     },
     "Note": {
-      "description": "A note symbol, representing a single pitched musical event on the roll. The pitch is encoded via the tracker bar position (track number). [ontology: reo:P6 Note]",
+      "description": "A note symbol, representing a single pitched musical event on the roll. The pitch is encoded via the tracker bar position (track number). [ontology: reo:Note]",
       "properties": {
         "alignedWith": {
           "$ref": "#/definitions/ReferenceAssumption",
-          "description": "In piano rolls, perforations are often aligned with other perforations, e.g. a \"crescendo off\" might be logically aligned to the start of a note perforation. This points to the perforation by its `@id`. [ontology: reo:P3 aligned with]"
+          "description": "In piano rolls, perforations are often aligned with other perforations, e.g. a \"crescendo off\" might be logically aligned to the start of a note perforation. This points to the perforation by its `@id`. [ontology: reo:alignedWith]"
         },
         "carriers": {
           "description": "References to the physical features (e.g. holes) on the roll copies that carry this symbol. Since the association might be debatable, it can be annotated. There might be e.g. doubts about the meaning and correct transcription of a feature on a physical roll. This points to a feature by its `@id`. [ontology: crm:P128i is carried by]",
@@ -738,10 +743,10 @@
         },
         "pairedWith": {
           "$ref": "#/definitions/ReferenceAssumption",
-          "description": "The perforation this one forms a pair with, e.g. a \"forzando on\" with its \"forzando off\". Any two perforations may be paired. The distance between the two is fixed: whatever displaces the one displaces the other. The relation is symmetric and is stated on one side only. This points to the perforation by its `@id`. [ontology: reo:P23 paired with]"
+          "description": "The perforation this one forms a pair with, e.g. a \"forzando on\" with its \"forzando off\". Any two perforations may be paired. The distance between the two is fixed: whatever displaces the one displaces the other. The relation is symmetric and is stated on one side only. This points to the perforation by its `@id`. [ontology: reo:pairedWith]"
         },
         "pitch": {
-          "description": "The MIDI pitch number of the note (e.g. 60 for middle C). [ontology: reo:P5 has pitch]",
+          "description": "The MIDI pitch number of the note (e.g. 60 for middle C). [ontology: reo:pitch]",
           "type": "number"
         },
         "@id": {
@@ -771,7 +776,8 @@
               "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
               "properties": {
                 "belief": {
-                  "$ref": "#/definitions/Belief"
+                  "$ref": "#/definitions/Belief",
+                  "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
                 },
                 "@id": {
                   "description": "A unique identifier for this object.",
@@ -806,7 +812,8 @@
               "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
               "properties": {
                 "belief": {
-                  "$ref": "#/definitions/Belief"
+                  "$ref": "#/definitions/Belief",
+                  "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
                 },
                 "@id": {
                   "description": "A unique identifier for this object.",
@@ -824,7 +831,7 @@
               "type": "string"
             },
             "factor": {
-              "description": "The stretch factor, e.g. 1.02 means the paper has stretched by 2% compared to its original dimensions.",
+              "description": "The stretch factor, e.g. 1.02 means the paper has stretched by 2% compared to its original dimensions. [ontology: rdf:value]",
               "type": "number"
             },
             "@type": {
@@ -850,7 +857,8 @@
           "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
           "properties": {
             "belief": {
-              "$ref": "#/definitions/Belief"
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
             },
             "@id": {
               "description": "A unique identifier for this object.",
@@ -889,7 +897,8 @@
           "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
           "properties": {
             "belief": {
-              "$ref": "#/definitions/Belief"
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
             },
             "@id": {
               "description": "A unique identifier for this object.",
@@ -927,7 +936,8 @@
           "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
           "properties": {
             "belief": {
-              "$ref": "#/definitions/Belief"
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
             },
             "@id": {
               "description": "A unique identifier for this object.",
@@ -966,7 +976,8 @@
           "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
           "properties": {
             "belief": {
-              "$ref": "#/definitions/Belief"
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
             },
             "@id": {
               "description": "A unique identifier for this object.",
@@ -1018,7 +1029,8 @@
           "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
           "properties": {
             "belief": {
-              "$ref": "#/definitions/Belief"
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
             },
             "@id": {
               "description": "A unique identifier for this object.",
@@ -1032,15 +1044,15 @@
           "type": "object"
         },
         "endsWith": {
-          "description": "The tempo at the end of the roll.",
+          "description": "The tempo at the end of the roll. [ontology: reo:to]",
           "type": "number"
         },
         "startsWith": {
-          "description": "The tempo at the beginning of the roll.",
+          "description": "The tempo at the beginning of the roll. [ontology: reo:from]",
           "type": "number"
         },
         "unit": {
-          "description": "The unit of the tempo measurement (e.g. 'ft/min', 'm/min').",
+          "description": "The unit of the tempo measurement (e.g. 'ft/min', 'm/min'). [ontology: crm:P91 has unit]",
           "type": "string"
         }
       },
@@ -1051,14 +1063,15 @@
       ],
       "type": "object"
     },
-    "ObjectAssumption<alias-731470504-73739-73887-731470504-0-217694<def-interface-src_Symbol.ts-4370-4630-src_Symbol.ts-0-4838400334313,\"carriers\">>": {
+    "ObjectAssumption<alias-731470504-73739-73887-731470504-0-217694<def-interface-src_Symbol.ts-4363-4727-src_Symbol.ts-0-4935400334313,\"carriers\">>": {
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
           "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
           "properties": {
             "belief": {
-              "$ref": "#/definitions/Belief"
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
             },
             "@id": {
               "description": "A unique identifier for this object.",
@@ -1072,13 +1085,15 @@
           "type": "object"
         },
         "text": {
-          "description": "The text content of the symbol. [ontology: crm:P3 has note]",
+          "description": "The text content of the symbol. [ontology: crm:P190 has symbolic content]",
           "type": "string"
         },
         "@id": {
           "description": "A unique identifier for this object."
         },
         "@type": {
+          "const": "text",
+          "type": "string",
           "description": "The type discriminator for this object.",
           "ontology": "rdf:type"
         }
@@ -1140,14 +1155,14 @@
       "description": "A place, e.g. a recording location, publishing location, etc. [ontology: crm:E53 Place]",
       "properties": {
         "name": {
-          "description": "The name of the place.",
+          "description": "The name of the place. [ontology: rdfs:label]",
           "examples": [
             "Wien"
           ],
           "type": "string"
         },
         "sameAs": {
-          "description": "This property can be used to point to a geonames or wikidata entry.",
+          "description": "This property can be used to point to a geonames or wikidata entry. [ontology: owl:sameAs]",
           "items": {
             "type": "string"
           },
@@ -1161,7 +1176,7 @@
       "type": "object"
     },
     "ProductionEvent": {
-      "description": "Describes the production of a roll copy, including the manufacturing company, the roll system, and the paper used. [ontology: lrm:F33 Reproduction Event]",
+      "description": "Describes the production of a roll copy, including the manufacturing company, the roll system, and the paper used. [ontology: lrmoo:F32 Item Production Event]",
       "properties": {
         "company": {
           "description": "The company that produced the roll copy (e.g. \"M. Welte & Söhne\"). [ontology: crm:P14 carried out by]",
@@ -1169,14 +1184,14 @@
         },
         "date": {
           "$ref": "#/definitions/DateAssignment",
-          "description": "The date of production, if known. [ontology: crm:P4 has time-span]"
+          "description": "The date of production, if known. [ontology: dcterms:date]"
         },
         "paper": {
-          "description": "The paper type used for the roll copy. [ontology: P126:employed]",
+          "description": "The paper type used for the roll copy. [ontology: crm:P126 employed]",
           "type": "string"
         },
         "system": {
-          "description": "The roll system used for production (e.g. \"Welte-Mignon T100\", \"Welte-Mignon T98\").",
+          "description": "The roll system used for production (e.g. \"Welte-Mignon T100\", \"Welte-Mignon T98\"). [ontology: crm:P32 used general technique]",
           "type": "string"
         }
       },
@@ -1188,28 +1203,29 @@
       "type": "object"
     },
     "RecordingEvent": {
-      "description": "Describes the event of recording and documents the persons involved in the process (e.g. pianist), the place, and the date of the recording. [ontology: reo:C14 Recording]",
+      "description": "Describes the event of recording and documents the persons involved in the process (e.g. pianist), the place, and the date of the recording. [ontology: lrmoo:F28 Expression Creation]",
       "properties": {
         "created": {
           "$ref": "#/definitions/Version",
-          "description": "The version of the roll which was created in the recording. Since it is usually not handed down, this is an optional property. [ontology: lrm:R17 created]"
+          "description": "The version of the roll which was created in the recording. Since it is usually not handed down, this is an optional property. [ontology: lrmoo:R17 created]"
         },
         "date": {
           "$ref": "#/definitions/DateAssignment",
-          "description": "The recording date of the roll. This is a date assignment so that we can state e.g. the catalogue or the roll label which indicates the date of the recording. [ontology: crm:P4 has time-span]"
+          "description": "The recording date of the roll. This is a date assignment so that we can state e.g. the catalogue or the roll label which indicates the date of the recording. [ontology: dcterms:date]"
         },
         "place": {
           "$ref": "#/definitions/Place",
           "description": "The place where the recording took place. [ontology: crm:P7 took place at]"
         },
         "recorded": {
-          "description": "Documents the performance which was recorded. [ontology: lrm:R81 recorded]",
+          "description": "Documents the performance which was recorded. [ontology: lrmoo:R81 recorded]",
           "properties": {
             "pianist": {
-              "$ref": "#/definitions/Person"
+              "$ref": "#/definitions/Person",
+              "description": "The pianist who gave the recorded performance. [ontology: crm:P14 carried out by]"
             },
             "playing": {
-              "description": "This property should point to a standard  URI, e.g. the GND.",
+              "description": "This property should point to a standard URI, e.g. the GND. [ontology: lrmoo:R80 performed]",
               "type": "string"
             }
           },
@@ -1234,7 +1250,8 @@
           "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
           "properties": {
             "belief": {
-              "$ref": "#/definitions/Belief"
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
             },
             "@id": {
               "description": "A unique identifier for this object.",
@@ -1258,10 +1275,10 @@
       "type": "object"
     },
     "Roll": {
-      "description": "The abstract concept of a roll, identified by its catalogue number. [ontology: lrm:F1 Work]",
+      "description": "The abstract concept of a roll, identified by its catalogue number. [ontology: lrmoo:F1 Work]",
       "properties": {
         "catalogueNumber": {
-          "description": "The catalogue number of the roll.",
+          "description": "The catalogue number of the roll. [ontology: dcterms:identifier]",
           "examples": [
             "WM 225"
           ],
@@ -1269,7 +1286,7 @@
         },
         "recordingEvent": {
           "$ref": "#/definitions/RecordingEvent",
-          "description": "[ontology: lrm:R19i was realized through]"
+          "description": "[ontology: lrmoo:R19i was realised through]"
         }
       },
       "required": [
@@ -1283,17 +1300,17 @@
       "description": "An assignment of a condition (general or paper-stretch) to a roll copy, annotatable with a belief about its certainty."
     },
     "RollCopy": {
-      "description": "A physical copy of a roll, held at a specific location. Each roll copy has its own set of features, measurements, conditions, and modifications. Multiple copies of the same roll may exist across different archives or collections. [ontology: crm:E22 Human-Made Object]",
+      "description": "A physical copy of a roll, held at a specific location. Each roll copy has its own set of features, measurements, conditions, and modifications. Multiple copies of the same roll may exist across different archives or collections. [ontology: lrmoo:F5 Item]",
       "properties": {
         "conditions": {
-          "description": "Condition assessments of this roll copy (e.g. paper stretch, general wear). Each condition is an assumption annotatable with a belief.",
+          "description": "Condition assessments of this roll copy (e.g. paper stretch, general wear). Each condition is an assumption annotatable with a belief. [ontology: crm:P44 has condition]",
           "items": {
             "$ref": "#/definitions/RollConditionAssignment"
           },
           "type": "array"
         },
         "features": {
-          "description": "Provides a reconstructed version of the roll, with shift, stretch and emendations already taken into account. This property will not be exported in the final JSON.",
+          "description": "The physical features found on this copy, with shift and stretch already applied when `ops` says so. [ontology: crm:P56 bears feature]",
           "items": {
             "$ref": "#/definitions/AnyFeature"
           },
@@ -1304,21 +1321,21 @@
           "type": "string"
         },
         "measurements": {
-          "description": "Physical measurements of this roll copy, including dimensions, punch diameter, hole separation, margins, shift corrections, and information about the measuring software.",
+          "description": "Physical measurements of this roll copy, including dimensions, punch diameter, hole separation, margins, shift corrections, and information about the measuring software. [ontology: crm:P39i was measured by]",
           "properties": {
             "dimensions": {
-              "description": "The physical dimensions of the roll.",
+              "description": "The physical dimensions of the roll. [ontology: reo:dimensions]",
               "properties": {
                 "height": {
-                  "description": "The total height (length) of the roll in the given unit.",
+                  "description": "The total height (length) of the roll in the given unit. [ontology: reo:height]",
                   "type": "number"
                 },
                 "unit": {
-                  "description": "The unit of measurement (e.g. 'mm').",
+                  "description": "The unit of measurement (e.g. 'mm'). [ontology: crm:P91 has unit]",
                   "type": "string"
                 },
                 "width": {
-                  "description": "The width of the roll in the given unit.",
+                  "description": "The width of the roll in the given unit. [ontology: reo:width]",
                   "type": "number"
                 }
               },
@@ -1330,14 +1347,14 @@
               "type": "object"
             },
             "holeSeparation": {
-              "description": "The distance between adjacent tracker bar holes.",
+              "description": "The distance between adjacent tracker bar holes. [ontology: reo:holeSeparation]",
               "properties": {
                 "unit": {
-                  "description": "The unit of measurement (e.g. 'px', 'mm').",
+                  "description": "The unit of measurement (e.g. 'px', 'mm'). [ontology: crm:P91 has unit]",
                   "type": "string"
                 },
                 "value": {
-                  "description": "The measured hole separation value.",
+                  "description": "The measured hole separation value. [ontology: crm:P90 has value]",
                   "type": "number"
                 }
               },
@@ -1348,7 +1365,7 @@
               "type": "object"
             },
             "margins": {
-              "description": "The margins on the treble and bass sides of the roll.",
+              "description": "The margins on the treble and bass sides of the roll. Not exported to RDF.",
               "properties": {
                 "bass": {
                   "description": "The margin on the bass side.",
@@ -1371,19 +1388,19 @@
               "type": "object"
             },
             "measuredBy": {
-              "description": "Information about the software used to take the measurements.",
+              "description": "Information about the software used to take the measurements. [ontology: crmdig:L23 used software or firmware]",
               "properties": {
                 "date": {
-                  "description": "The date on which the measurements were taken.",
+                  "description": "The date on which the measurements were taken. [ontology: dcterms:date]",
                   "format": "date",
                   "type": "string"
                 },
                 "software": {
-                  "description": "The name of the measurement software.",
+                  "description": "The name of the measurement software. [ontology: rdfs:label]",
                   "type": "string"
                 },
                 "version": {
-                  "description": "The version of the measurement software.",
+                  "description": "The version of the measurement software. [ontology: owl:versionInfo]",
                   "type": "string"
                 }
               },
@@ -1395,14 +1412,14 @@
               "type": "object"
             },
             "punchDiameter": {
-              "description": "The average diameter of punched holes.",
+              "description": "The average diameter of punched holes. [ontology: reo:punchDiameter]",
               "properties": {
                 "unit": {
-                  "description": "The unit of measurement (e.g. 'mm').",
+                  "description": "The unit of measurement (e.g. 'mm'). [ontology: crm:P91 has unit]",
                   "type": "string"
                 },
                 "value": {
-                  "description": "The measured punch diameter value.",
+                  "description": "The measured punch diameter value. [ontology: crm:P90 has value]",
                   "type": "number"
                 }
               },
@@ -1413,11 +1430,12 @@
               "type": "object"
             },
             "shift": {
-              "$ref": "#/definitions/Shift"
+              "$ref": "#/definitions/Shift",
+              "description": "The shift applied to align this copy with the others. Not exported to RDF."
             },
             "trackCalibration": {
               "$ref": "#/definitions/TrackCalibration",
-              "description": "Relates this copy's scan to the tracker bar: how the scanning software's hole numbering was shifted onto the bar, and where the track grid sits in the image."
+              "description": "Relates this copy's scan to the tracker bar: how the scanning software's hole numbering was shifted onto the bar, and where the track grid sits in the image. Not exported to RDF."
             }
           },
           "type": "object"
@@ -1427,10 +1445,10 @@
             "$ref": "#/definitions/Modification"
           },
           "type": "array",
-          "description": "[ontology: crm:P31 was modified by]"
+          "description": "[ontology: crm:P31i was modified by]"
         },
         "ops": {
-          "description": "A list of operations that have been applied to this copy's features (e.g. 'shifted', 'stretched') to normalize measurements for comparison with other copies.",
+          "description": "A list of operations that have been applied to this copy's features (e.g. 'shifted', 'stretched') to normalize measurements for comparison with other copies. Not exported to RDF.",
           "items": {
             "enum": [
               "shifted",
@@ -1442,7 +1460,7 @@
         },
         "production": {
           "$ref": "#/definitions/ProductionEvent",
-          "description": "The production event that created this roll copy. [ontology: lrm:R28i was produced by]"
+          "description": "The production event that created this roll copy. [ontology: lrmoo:R28i was produced by]"
         },
         "scan": {
           "description": "The scan URL or IIIF URL of the roll. [ontology: crm:P138i has representation]",
@@ -1500,7 +1518,7 @@
           "type": "array"
         },
         "text": {
-          "description": "The text content of the symbol. [ontology: crm:P3 has note]",
+          "description": "The text content of the symbol. [ontology: crm:P190 has symbolic content]",
           "type": "string"
         },
         "@id": {
@@ -1557,7 +1575,8 @@
           "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
           "properties": {
             "belief": {
-              "$ref": "#/definitions/Belief"
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
             },
             "@id": {
               "description": "A unique identifier for this object.",
@@ -1582,14 +1601,14 @@
       "type": "object"
     },
     "Version": {
-      "description": "A version is defined by the sum of edits applied to the version it is based on. For simple identification, a siglum is given to each version.",
+      "description": "A version is defined by the sum of edits applied to the version it is based on. For simple identification, a siglum is given to each version. [ontology: lrmoo:F2 Expression]",
       "properties": {
         "basedOn": {
           "$ref": "#/definitions/ReferenceAssumption",
-          "description": "If no derivation is defined, it is assumed that this version represents the mother roll."
+          "description": "If no derivation is defined, it is assumed that this version represents the mother roll. [ontology: lrmoo:R76 is derivative of]"
         },
         "edits": {
-          "description": "The list of edits that, applied to the base version, produce this version.",
+          "description": "The list of edits that, applied to the base version, produce this version. [ontology: reo:involvedEdit]",
           "items": {
             "$ref": "#/definitions/Edit"
           },
@@ -1603,7 +1622,7 @@
           "type": "array"
         },
         "siglum": {
-          "description": "A short siglum to identify the version, e.g. \"A\", \"B1\", \"B2_rev\", etc.",
+          "description": "A short siglum to identify the version, e.g. \"A\", \"B1\", \"B2_rev\", etc. [ontology: reo:siglum]",
           "type": "string"
         },
         "@id": {
@@ -1634,19 +1653,19 @@
       "type": "string"
     },
     "VerticalSpan": {
-      "description": "Describes the vertical extent of a feature on the roll, measured in track numbers. Track numbers correspond to positions on the tracker bar.",
+      "description": "Describes the vertical extent of a feature on the roll, measured in track numbers. Track numbers correspond to positions on the tracker bar. [ontology: crm:E54 Dimension]",
       "properties": {
         "from": {
-          "description": "The start track number of the feature.",
+          "description": "The start track number of the feature. [ontology: reo:from]",
           "type": "number"
         },
         "to": {
-          "description": "The end track number, if the feature spans multiple tracks. If omitted, the feature occupies a single track.",
+          "description": "The end track number, if the feature spans multiple tracks. If omitted, the feature occupies a single track. [ontology: reo:to]",
           "type": "number"
         },
         "unit": {
           "const": "track",
-          "description": "The unit of measurement for horizontal positions. [ontology: crm:P91 has unit]",
+          "description": "The unit of measurement for vertical positions. [ontology: crm:P91 has unit]",
           "type": "string"
         }
       },
@@ -1657,14 +1676,14 @@
       "type": "object"
     },
     "Writing": {
-      "description": "A piece of writing found on the roll, such as a label, catalogue number, or annotation. Writings have a method of production and a transcription of their content.",
+      "description": "A piece of writing found on the roll, such as a label, catalogue number, or annotation. Writings have a method of production and a transcription of their content. [ontology: crm:E25 Human-Made Feature]",
       "properties": {
         "condition": {
           "$ref": "#/definitions/ObjectAssumption%3CConditionState%3C(%22faded%22)%3E%3E",
-          "description": "This can be used e.g. to indicate a perforation which is torn out or in any other way damaged."
+          "description": "This can be used e.g. to indicate a perforation which is torn out or in any other way damaged. [ontology: crm:P44 has condition]"
         },
         "depiction": {
-          "description": "IIIF region pointing to a depiction of this feature in the scan. [ontology: crm:P62 is depicted by]",
+          "description": "IIIF region pointing to a depiction of this feature in the scan. [ontology: crm:P138i has representation]",
           "type": "string"
         },
         "horizontal": {
@@ -1673,11 +1692,11 @@
         },
         "method": {
           "$ref": "#/definitions/WritingMethod",
-          "description": "The method by which this writing was produced (e.g. through print, handwriting, or stamping)."
+          "description": "The method by which this writing was produced (e.g. through print, handwriting, or stamping). [ontology: crm:P2 has type]"
         },
         "transcription": {
-          "$ref": "#/definitions/ObjectAssumption%3Calias-731470504-73739-73887-731470504-0-217694%3Cdef-interface-src_Symbol.ts-4370-4630-src_Symbol.ts-0-4838400334313%2C%22carriers%22%3E%3E",
-          "description": "A transcription of the text content of the writing. This is an object assumption so that the transcription can be annotated with a belief about its correctness."
+          "$ref": "#/definitions/ObjectAssumption%3Calias-731470504-73739-73887-731470504-0-217694%3Cdef-interface-src_Symbol.ts-4363-4727-src_Symbol.ts-0-4935400334313%2C%22carriers%22%3E%3E",
+          "description": "A transcription of the text content of the writing. This is an object assumption so that the transcription can be annotated with a belief about its correctness. [ontology: crm:P128 carries]"
         },
         "vertical": {
           "$ref": "#/definitions/VerticalSpan",

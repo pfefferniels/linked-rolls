@@ -40,20 +40,22 @@ export interface Place {
     /**
      * The name of the place.
      * @example "Wien"
+     * @see rdfs:label
      */
     name: string
 
     /**
      * This property can be used to point to a
      * geonames or wikidata entry.
+     * @see owl:sameAs
      */
-    sameAs: string[] // should point e.g. to geoplaces
+    sameAs: string[]
 }
 
 /**
  * This type describes the creation of an edition,
  * i.e. the editor, publisher, and publication date.
- * @see lrm:F28 Expression Creation
+ * @see lrmoo:F28 Expression Creation
  */
 export interface EditionCreation {
     /**
@@ -65,14 +67,14 @@ export interface EditionCreation {
     /**
      * The date on which the edition was published.
      * @format date
-     * @see crm:P4 has time-span
+     * @see dcterms:date
      */
     publicationDate: Date
 
     /**
      * The tolerance parameters used when collating (aligning)
      * the different roll copies for this edition.
-     * @see L13 used parameters
+     * Not exported to RDF.
      */
     collationTolerance?: CollationTolerance
 }
@@ -81,19 +83,24 @@ export interface EditionCreation {
  * Describes the event of recording and documents
  * the persons involved in the process (e.g. pianist),
  * the place, and the date of the recording.
- * @see reo:C14 Recording
+ * @see lrmoo:F28 Expression Creation
  */
 export interface RecordingEvent {
     /**
      * Documents the performance which was recorded.
-     * @see lrm:R81 recorded
+     * @see lrmoo:R81 recorded
      */
     recorded: {
+        /**
+         * The pianist who gave the recorded performance.
+         * @see crm:P14 carried out by
+         */
         pianist: Person;
 
         /**
-         * This property should point to a standard 
+         * This property should point to a standard
          * URI, e.g. the GND.
+         * @see lrmoo:R80 performed
          */
         playing: string;
     }
@@ -108,7 +115,7 @@ export interface RecordingEvent {
      * The recording date of the roll. This is a date
      * assignment so that we can state e.g. the catalogue
      * or the roll label which indicates the date of the recording.
-     * @see crm:P4 has time-span
+     * @see dcterms:date
      */
     date: DateAssignment
 
@@ -116,7 +123,7 @@ export interface RecordingEvent {
      * The version of the roll which was created in
      * the recording. Since it is usually not handed
      * down, this is an optional property.
-     * @see lrm:R17 created
+     * @see lrmoo:R17 created
      */
     created?: Version
 }
@@ -124,17 +131,18 @@ export interface RecordingEvent {
 /**
  * The abstract concept of a roll, identified
  * by its catalogue number.
- * @see lrm:F1 Work
+ * @see lrmoo:F1 Work
  */
 export interface Roll {
     /**
      * The catalogue number of the roll.
      * @example "WM 225"
+     * @see dcterms:identifier
      */
     catalogueNumber: string
 
     /**
-     * @see lrm:R19i was realized through
+     * @see lrmoo:R19i was realised through
      */
     recordingEvent: RecordingEvent
 }
@@ -143,25 +151,29 @@ export interface Roll {
  * The playback tempo of the roll, specified as a starting
  * and ending speed. The tempo may change over the course
  * of the roll due to acceleration effects.
+ * @see crm:E54 Dimension
  */
 export interface RollTempo {
     /**
      * The tempo at the beginning of the roll.
+     * @see reo:from
      */
     startsWith: number;
     /**
      * The tempo at the end of the roll.
+     * @see reo:to
      */
     endsWith: number;
     /**
      * The unit of the tempo measurement (e.g. 'ft/min', 'm/min').
+     * @see crm:P91 has unit
      */
     unit: string;
 }
 
 /**
  * Describes the specific digital edition of a piano roll.
- * @see lrm:F2 Expression
+ * @see lrmoo:F2 Expression
  */
 export interface Edition {
     /**
@@ -173,13 +185,13 @@ export interface Edition {
     /**
      * Information about the creation of this edition,
      * including publisher and publication date.
-     * @see lrm:R17i was created by
+     * @see lrmoo:R17i was created by
      */
     creation: EditionCreation
 
     /**
      * The title of the edition.
-     * @see crm:P102 has title
+     * @see dcterms:title
      * @example "Alfred Grünfeld spielt Robert Schumann, Träumerei"
      */
     title: string
@@ -193,25 +205,27 @@ export interface Edition {
 
     /**
      * The roll which is edited in this edition.
-     * @see lrm:R3i realises
+     * @see lrmoo:R3i realises
      */
     roll: Roll
 
     /**
      * The physical roll copies on which this edition is based.
+     * @see reo:witness
      */
     copies: RollCopy[]
 
     /**
      * The different versions of the roll on which
      * this edition is based.
-     * @see lrm:R76 is derivative of
+     * @see lrmoo:R75 incorporates
      */
     versions: Version[]
 
     /**
      * An optional tempo adjustment for playback of the roll,
      * annotatable with a belief about its correctness.
+     * @see reo:tempo
      */
     tempoAdjustment?: ObjectAssumption<RollTempo>
 }

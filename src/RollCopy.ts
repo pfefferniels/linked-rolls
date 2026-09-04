@@ -21,6 +21,7 @@ export interface PaperStretch extends ConditionState<'paper-stretch'> {
     /**
      * The stretch factor, e.g. 1.02 means the paper has
      * stretched by 2% compared to its original dimensions.
+     * @see rdf:value
      */
     factor: number
 }
@@ -106,7 +107,7 @@ export type DateAssignment = ValueAssumption<Date>
 /**
  * Describes the production of a roll copy, including the
  * manufacturing company, the roll system, and the paper used.
- * @see lrm:F33 Reproduction Event
+ * @see lrmoo:F32 Item Production Event
  */
 export interface ProductionEvent {
     /**
@@ -119,18 +120,19 @@ export interface ProductionEvent {
     /**
      * The roll system used for production
      * (e.g. "Welte-Mignon T100", "Welte-Mignon T98").
+     * @see crm:P32 used general technique
      */
     system: string
 
     /**
      * The paper type used for the roll copy.
-     * @see P126:employed
+     * @see crm:P126 employed
      */
     paper: string
 
     /**
      * The date of production, if known.
-     * @see crm:P4 has time-span
+     * @see dcterms:date
      */
     date?: DateAssignment
 }
@@ -142,7 +144,15 @@ export interface ProductionEvent {
  * @see crm:E79 Part Addition, crm:E80 Part Removal
  */
 export type Modification = Partial<{
+    /**
+     * Who carried out the modification.
+     * @see crm:P14 carried out by
+     */
     actor: ActorAssignment
+    /**
+     * When the modification took place.
+     * @see dcterms:date
+     */
     date: DateAssignment
 }> & ({
     type: 'Addition',
@@ -173,10 +183,11 @@ export type Modification = Partial<{
     removed: string[],
 
     /**
-     * Usually, roll features are being added. 
+     * Usually, roll features are being added.
      * Sometimes however, we may see traces of features
      * that have been removed, e.g. through bright spots on
      * the roll.
+     * @see crm:P21 had general purpose
      */
     purpose: 'delabeling'
 })
@@ -186,13 +197,13 @@ export type Modification = Partial<{
  * Each roll copy has its own set of features, measurements,
  * conditions, and modifications. Multiple copies of the same
  * roll may exist across different archives or collections.
- * @see crm:E22 Human-Made Object
+ * @see lrmoo:F5 Item
  */
 export interface RollCopy extends WithType<'RollCopy'>, WithId {
     /**
      * A list of operations that have been applied to this copy's features
      * (e.g. 'shifted', 'stretched') to normalize measurements
-     * for comparison with other copies.
+     * for comparison with other copies. Not exported to RDF.
      */
     ops: Array<'shifted' | 'stretched'>
 
@@ -200,56 +211,68 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
      * Physical measurements of this roll copy, including
      * dimensions, punch diameter, hole separation, margins,
      * shift corrections, and information about the measuring software.
+     * @see crm:P39i was measured by
      */
     measurements: Partial<{
         /**
          * The physical dimensions of the roll.
+         * @see reo:dimensions
          */
         dimensions: {
             /**
              * The width of the roll in the given unit.
+             * @see reo:width
              */
             width: number,
             /**
              * The total height (length) of the roll in the given unit.
+             * @see reo:height
              */
             height: number,
             /**
              * The unit of measurement (e.g. 'mm').
+             * @see crm:P91 has unit
              */
             unit: string
         }
 
         /**
          * The average diameter of punched holes.
+         * @see reo:punchDiameter
          */
         punchDiameter: {
             /**
              * The measured punch diameter value.
+             * @see crm:P90 has value
              */
             value: number
             /**
              * The unit of measurement (e.g. 'mm').
+             * @see crm:P91 has unit
              */
             unit: string
         }
 
         /**
          * The distance between adjacent tracker bar holes.
+         * @see reo:holeSeparation
          */
         holeSeparation: {
             /**
              * The measured hole separation value.
+             * @see crm:P90 has value
              */
             value: number
             /**
              * The unit of measurement (e.g. 'px', 'mm').
+             * @see crm:P91 has unit
              */
             unit: string
         }
 
         /**
          * The margins on the treble and bass sides of the roll.
+         * Not exported to RDF.
          */
         margins: {
             /**
@@ -266,30 +289,38 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
             unit: string
         }
 
+        /**
+         * The shift applied to align this copy with the others.
+         * Not exported to RDF.
+         */
         shift: Shift
 
         /**
          * Relates this copy's scan to the tracker bar: how the scanning
          * software's hole numbering was shifted onto the bar, and where
-         * the track grid sits in the image.
+         * the track grid sits in the image. Not exported to RDF.
          */
         trackCalibration: TrackCalibration
 
         /**
          * Information about the software used to take the measurements.
+         * @see crmdig:L23 used software or firmware
          */
         measuredBy: {
             /**
              * The name of the measurement software.
+             * @see rdfs:label
              */
             software: string,
             /**
              * The version of the measurement software.
+             * @see owl:versionInfo
              */
             version: string
             /**
              * The date on which the measurements were taken.
              * @format date
+             * @see dcterms:date
              */
             date: Date
         }
@@ -297,7 +328,7 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
 
     /**
      * The production event that created this roll copy.
-     * @see lrm:R28i was produced by
+     * @see lrmoo:R28i was produced by
      */
     production?: ProductionEvent
 
@@ -305,6 +336,7 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
      * Condition assessments of this roll copy (e.g. paper stretch,
      * general wear). Each condition is an assumption annotatable
      * with a belief.
+     * @see crm:P44 has condition
      */
     conditions: RollConditionAssignment[]
 
@@ -315,15 +347,14 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
     location: string
 
     /**
-     * Provides a reconstructed version of the roll,
-     * with shift, stretch and emendations already
-     * taken into account. This property will not be
-     * exported in the final JSON.
+     * The physical features found on this copy, with shift
+     * and stretch already applied when `ops` says so.
+     * @see crm:P56 bears feature
      */
     features: AnyFeature[]
 
     /**
-     * @see crm:P31 was modified by
+     * @see crm:P31i was modified by
      */
     modifications: Modification[]
 

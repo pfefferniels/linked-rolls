@@ -25,7 +25,7 @@ export type VersionType = typeof versionTypes[number];
 /**
  * A motivation provides a reason or rationale for an editorial change.
  * Motivations are defined at the version level and referenced by edits.
- * @see crm:E73 Information Object
+ * @see crm:E33 Linguistic Object
  */
 export type Motivation = WithType<'motivation'> & WithId & WithNote
 
@@ -33,22 +33,26 @@ export type Motivation = WithType<'motivation'> & WithId & WithNote
  * A version is defined by the sum of edits applied
  * to the version it is based on. For simple identification,
  * a siglum is given to each version.
+ * @see lrmoo:F2 Expression
  */
 export interface Version {
     id: string // This is the id of the actual version which is R17 created
 
     /**
      * A short siglum to identify the version, e.g. "A", "B1", "B2_rev", etc.
+     * @see reo:siglum
      */
     siglum: string;
 
     /**
      * If no derivation is defined, it is assumed that this version represents the mother roll.
+     * @see lrmoo:R76 is derivative of
      */
     basedOn?: ReferenceAssumption;
 
     /**
      * The list of edits that, applied to the base version, produce this version.
+     * @see reo:involvedEdit
      */
     edits: Edit[];
 

@@ -7,6 +7,7 @@ import { PartialBy, WithId, WithType } from "./utils";
  * Describes the horizontal extent of a feature on the roll,
  * measured in millimeters from the beginning of the roll.
  * The `from` value is the start position and `to` is the end position.
+ * @see crm:E54 Dimension
  */
 export interface HorizontalSpan {
     /**
@@ -18,11 +19,13 @@ export interface HorizontalSpan {
     /**
      * The start position of the feature in millimeters
      * from the beginning of the roll.
+     * @see reo:from
      */
     from: number;
     /**
      * The end position of the feature in millimeters
      * from the beginning of the roll.
+     * @see reo:to
      */
     to: number;
 }
@@ -31,20 +34,23 @@ export interface HorizontalSpan {
  * Describes the vertical extent of a feature on the roll,
  * measured in track numbers. Track numbers correspond to
  * positions on the tracker bar.
+ * @see crm:E54 Dimension
  */
 export interface VerticalSpan {
     /**
-     * The unit of measurement for horizontal positions.
+     * The unit of measurement for vertical positions.
      * @see crm:P91 has unit
      */
     unit: 'track';
     /**
      * The start track number of the feature.
+     * @see reo:from
      */
     from: number;
     /**
      * The end track number, if the feature spans multiple tracks.
      * If omitted, the feature occupies a single track.
+     * @see reo:to
      */
     to?: number
 }
@@ -56,12 +62,12 @@ export type FeatureType = typeof featureTypes[number];
 /**
  * A physical feature on the roll, e.g. a perforation, a tear, a mark, etc.,
  * defined by its horizontal and vertical position and extent.
- * @see reo:C2 Feature
+ * @see crm:E26 Physical Feature
  */
 export interface RollFeature<T extends FeatureType, DamageT extends string> extends WithId, WithType<T> {
     /**
      * IIIF region pointing to a depiction of this feature in the scan.
-     * @see crm:P62 is depicted by
+     * @see crm:P138i has representation
      */
     depiction?: string;
 
@@ -80,6 +86,7 @@ export interface RollFeature<T extends FeatureType, DamageT extends string> exte
     /**
      * This can be used e.g. to indicate a perforation
      * which is torn out or in any other way damaged.
+     * @see crm:P44 has condition
      */
     condition?: ObjectAssumption<ConditionState<DamageT>>;
 }
@@ -103,6 +110,7 @@ export interface Hole extends RollFeature<'Hole', typeof conditions.Hole[number]
      * staggering holes do not align in rows across the tracks, the mark
      * of an asynchronous perforator with a separate driver for each
      * punch (Phillips 2016, p. 112).
+     * @see reo:pattern
      */
     pattern?: 'regular' | 'accelerating' | 'staggering';
 }
@@ -125,11 +133,13 @@ export type WritingMethod = typeof writingMethods[number];
  * A piece of writing found on the roll, such as a label,
  * catalogue number, or annotation. Writings have a method
  * of production and a transcription of their content.
+ * @see crm:E25 Human-Made Feature
  */
 export interface Writing extends Trace<'Writing'> {
     /**
      * The method by which this writing was produced
      * (e.g. through print, handwriting, or stamping).
+     * @see crm:P2 has type
      */
     method: WritingMethod;
 
@@ -137,6 +147,7 @@ export interface Writing extends Trace<'Writing'> {
      * A transcription of the text content of the writing.
      * This is an object assumption so that the transcription
      * can be annotated with a belief about its correctness.
+     * @see crm:P128 carries
      */
     transcription: ObjectAssumption<Omit<Text, 'carriers'>>;
 }
@@ -144,6 +155,7 @@ export interface Writing extends Trace<'Writing'> {
 /**
  * A visible mark on the roll, such as a pencil mark,
  * ink mark, or other non-textual annotation.
+ * @see crm:E25 Human-Made Feature
  */
 export interface Mark extends Trace<'Mark'> { }
 
@@ -152,6 +164,7 @@ export interface Mark extends Trace<'Mark'> { }
  * Glued-on features are typically used to cover perforations (for corrections)
  * or to reinforce damaged areas. They may themselves carry other features
  * such as writings or additional holes.
+ * @see crm:E22 Human-Made Object
  */
 export interface GluedOn extends RollFeature<'GluedOn', typeof conditions.GluedOn[number]> {
     /**

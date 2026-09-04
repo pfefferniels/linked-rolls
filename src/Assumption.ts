@@ -28,6 +28,7 @@ export interface Argumentation<T extends string = 'simpleArgumentation'> extends
  * symbols or features. For example, interpreting a pencil mark
  * as an instruction to add or remove a perforation or as the dating
  * of the roll.
+ * @see crminf:I16 Meaning Comprehension
  */
 export interface MeaningComprehension extends Argumentation<'meaningComprehension'> {
     /**
@@ -87,7 +88,7 @@ export interface Belief extends WithId {
     certainty: Certainty;
     /**
      * The argumentations providing reasons for this belief.
-     * @see crminf:J2 was concluded by
+     * @see crminf:J2i was concluded by
      */
     reasons: AnyArgumentation[]
 }
@@ -105,6 +106,10 @@ export interface Assumption {
      * epistemic metadata (certainty and reasons) to any triple.
      */
     '@annotation'?: WithId & {
+        /**
+         * The belief held about the annotated statement.
+         * @see crminf:J4i is subject of
+         */
         belief: Belief;
     }
 }

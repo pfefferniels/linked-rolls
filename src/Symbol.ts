@@ -5,6 +5,7 @@ import { WithId } from "./utils";
  * A symbol is an abstract musical or textual entity carried by one or more
  * physical features on the roll. Symbols are the result of interpreting
  * the physical features (holes, writings, etc.) on the roll copies.
+ * @see crm:E90 Symbolic Object
  */
 export interface Symbol<T extends string> extends WithId {
     type: T
@@ -31,7 +32,7 @@ export const isSymbol = (object: any): object is AnySymbol => {
  * A perforation is a symbol that is typically encoded as a single punched
  * hole or a group of punched holes in the physical carrier.
  * However, it might also have different physical appearences.
- * @see reo:C5 Perforation
+ * @see reo:Perforation
  */
 export interface Perforation<T extends string> extends Symbol<T> {
     /**
@@ -39,7 +40,7 @@ export interface Perforation<T extends string> extends Symbol<T> {
      * perforations, e.g. a "crescendo off" might be logically
      * aligned to the start of a note perforation. This points
      * to the perforation by its `@id`.
-     * @see reo:P3 aligned with
+     * @see reo:alignedWith
      */
     alignedWith?: ReferenceAssumption;
 
@@ -49,7 +50,7 @@ export interface Perforation<T extends string> extends Symbol<T> {
      * The distance between the two is fixed: whatever displaces the
      * one displaces the other. The relation is symmetric and is stated
      * on one side only. This points to the perforation by its `@id`.
-     * @see reo:P23 paired with
+     * @see reo:pairedWith
      */
     pairedWith?: ReferenceAssumption;
 }
@@ -71,12 +72,12 @@ export const pairsAmong = <S extends Pairable>(perforations: readonly S[]): [S, 
 /**
  * A note symbol, representing a single pitched musical event on the roll.
  * The pitch is encoded via the tracker bar position (track number).
- * @see reo:P6 Note
+ * @see reo:Note
  */
 export interface Note extends Perforation<'note'> {
     /**
      * The MIDI pitch number of the note (e.g. 60 for middle C).
-     * @see reo:P5 has pitch
+     * @see reo:pitch
      */
     pitch: number;
 }
@@ -84,7 +85,7 @@ export interface Note extends Perforation<'note'> {
 /**
  * The scope of an expression perforation, indicating whether it
  * applies to the bass or treble register of the piano.
- * @see reo:P6 has scope
+ * @see reo:scope
  */
 export type ExpressionScope = 'bass' | 'treble';
 
@@ -115,12 +116,12 @@ export type ExpressionType =
  * that governs dynamics, pedaling, or mechanical functions of the
  * reproducing piano. Each expression has a scope (bass or treble)
  * and a specific expression type.
- * @see reo:C7 Expression
+ * @see reo:Expression
  */
 export interface Expression extends Perforation<'expression'> {
     /**
      * Whether this expression applies to the bass or treble register.
-     * @see reo:P6 has scope
+     * @see reo:scope
      */
     scope: ExpressionScope;
 
@@ -136,9 +137,12 @@ export interface Expression extends Perforation<'expression'> {
  * @see crm:E33 Linguistic Object
  */
 export interface Text extends Symbol<'text'> {
+    // Restated so that Omit<Text, …> keeps the literal in the schema.
+    type: 'text';
+
     /**
      * The text content of the symbol.
-     * @see crm:P3 has note
+     * @see crm:P190 has symbolic content
      */
     text: string;
 }
