@@ -1,4 +1,4 @@
-import { ReferenceAssumption, ValueAssumption } from "./Assumption";
+import { idOf, ReferenceAssumption } from "./Assumption";
 import { WithId } from "./utils";
 
 /**
@@ -37,10 +37,35 @@ export interface Perforation<T extends string> extends Symbol<T> {
     /**
      * In piano rolls, perforations are often aligned with other
      * perforations, e.g. a "crescendo off" might be logically
-     * aligned to the start of a note perforation.
+     * aligned to the start of a note perforation. This points
+     * to the perforation by its `@id`.
      * @see reo:P3 aligned with
      */
-    alignedWith?: ValueAssumption<string>;
+    alignedWith?: ReferenceAssumption;
+
+    /**
+     * The perforation this one forms a pair with, e.g. a "forzando on"
+     * with its "forzando off". Any two perforations may be paired.
+     * The distance between the two is fixed: whatever displaces the
+     * one displaces the other. The relation is symmetric and is stated
+     * on one side only. This points to the perforation by its `@id`.
+     * @see reo:P23 paired with
+     */
+    pairedWith?: ReferenceAssumption;
+}
+
+type Pairable = WithId & { pairedWith?: ReferenceAssumption }
+
+/**
+ * The pairs among the given perforations, each once and in the order
+ * the pairing is stated. A pair whose partner is absent is left out.
+ */
+export const pairsAmong = <S extends Pairable>(perforations: readonly S[]): [S, S][] => {
+    const byId = new Map(perforations.map(p => [p.id, p]))
+    return perforations
+        .filter((p): p is S & Required<Pairable> => p.pairedWith !== undefined)
+        .map((p): [S, S | undefined] => [p, byId.get(idOf(p.pairedWith))])
+        .filter((pair): pair is [S, S] => pair[1] !== undefined)
 }
 
 /**

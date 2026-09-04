@@ -48,7 +48,14 @@
     "pitch": "reo:P5_has_pitch",
     "scope": "reo:P6_has_scope",
     "expressionType": "crm:P2_has_type",
-    "alignedWith": "reo:P3_aligned_with",
+    "alignedWith": {
+      "@id": "reo:P3_aligned_with",
+      "@type": "@id"
+    },
+    "pairedWith": {
+      "@id": "reo:P23_paired_with",
+      "@type": "@id"
+    },
     "material": "crm:P45_consists_of",
     "condition": "crm:P44_has_condition",
 

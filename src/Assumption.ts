@@ -112,7 +112,7 @@ export interface Assumption {
 /**
  * A value assumption wraps a literal value, e.g. a string, a number, a date, with an optional annotation.
  * Used for properties where the value itself may be uncertain,
- * e.g. dates or alignment references.
+ * e.g. dates.
  */
 export interface ValueAssumption<ValueT> extends Assumption {
     /**

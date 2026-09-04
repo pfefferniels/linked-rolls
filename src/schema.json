@@ -322,8 +322,8 @@
       "description": "An expression symbol, representing a perforation on the roll that governs dynamics, pedaling, or mechanical functions of the reproducing piano. Each expression has a scope (bass or treble) and a specific expression type. [ontology: reo:C7 Expression]",
       "properties": {
         "alignedWith": {
-          "$ref": "#/definitions/ValueAssumption%3Cstring%3E",
-          "description": "In piano rolls, perforations are often aligned with other perforations, e.g. a \"crescendo off\" might be logically aligned to the start of a note perforation. [ontology: reo:P3 aligned with]"
+          "$ref": "#/definitions/ReferenceAssumption",
+          "description": "In piano rolls, perforations are often aligned with other perforations, e.g. a \"crescendo off\" might be logically aligned to the start of a note perforation. This points to the perforation by its `@id`. [ontology: reo:P3 aligned with]"
         },
         "carriers": {
           "description": "References to the physical features (e.g. holes) on the roll copies that carry this symbol. Since the association might be debatable, it can be annotated. There might be e.g. doubts about the meaning and correct transcription of a feature on a physical roll. This points to a feature by its `@id`. [ontology: crm:P128i is carried by]",
@@ -335,6 +335,10 @@
         "expressionType": {
           "$ref": "#/definitions/ExpressionType",
           "description": "The specific type of expression (e.g. sustain pedal, forzando, etc.). [ontology: crm:P2 has type]"
+        },
+        "pairedWith": {
+          "$ref": "#/definitions/ReferenceAssumption",
+          "description": "The perforation this one forms a pair with, e.g. a \"forzando on\" with its \"forzando off\". Any two perforations may be paired. The distance between the two is fixed: whatever displaces the one displaces the other. The relation is symmetric and is stated on one side only. This points to the perforation by its `@id`. [ontology: reo:P23 paired with]"
         },
         "scope": {
           "$ref": "#/definitions/ExpressionScope",
@@ -722,8 +726,8 @@
       "description": "A note symbol, representing a single pitched musical event on the roll. The pitch is encoded via the tracker bar position (track number). [ontology: reo:P6 Note]",
       "properties": {
         "alignedWith": {
-          "$ref": "#/definitions/ValueAssumption%3Cstring%3E",
-          "description": "In piano rolls, perforations are often aligned with other perforations, e.g. a \"crescendo off\" might be logically aligned to the start of a note perforation. [ontology: reo:P3 aligned with]"
+          "$ref": "#/definitions/ReferenceAssumption",
+          "description": "In piano rolls, perforations are often aligned with other perforations, e.g. a \"crescendo off\" might be logically aligned to the start of a note perforation. This points to the perforation by its `@id`. [ontology: reo:P3 aligned with]"
         },
         "carriers": {
           "description": "References to the physical features (e.g. holes) on the roll copies that carry this symbol. Since the association might be debatable, it can be annotated. There might be e.g. doubts about the meaning and correct transcription of a feature on a physical roll. This points to a feature by its `@id`. [ontology: crm:P128i is carried by]",
@@ -731,6 +735,10 @@
             "$ref": "#/definitions/ReferenceAssumption"
           },
           "type": "array"
+        },
+        "pairedWith": {
+          "$ref": "#/definitions/ReferenceAssumption",
+          "description": "The perforation this one forms a pair with, e.g. a \"forzando on\" with its \"forzando off\". Any two perforations may be paired. The distance between the two is fixed: whatever displaces the one displaces the other. The relation is symmetric and is stated on one side only. This points to the perforation by its `@id`. [ontology: reo:P23 paired with]"
         },
         "pitch": {
           "description": "The MIDI pitch number of the note (e.g. 60 for middle C). [ontology: reo:P5 has pitch]",
@@ -1043,7 +1051,7 @@
       ],
       "type": "object"
     },
-    "ObjectAssumption<alias-731470504-73739-73887-731470504-0-217694<def-interface-src_Symbol.ts-3288-3548-src_Symbol.ts-0-3756400334313,\"carriers\">>": {
+    "ObjectAssumption<alias-731470504-73739-73887-731470504-0-217694<def-interface-src_Symbol.ts-4370-4630-src_Symbol.ts-0-4838400334313,\"carriers\">>": {
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
@@ -1543,7 +1551,7 @@
       "type": "object"
     },
     "ValueAssumption<string870780834>": {
-      "description": "A value assumption wraps a literal value, e.g. a string, a number, a date, with an optional annotation. Used for properties where the value itself may be uncertain, e.g. dates or alignment references.",
+      "description": "A value assumption wraps a literal value, e.g. a string, a number, a date, with an optional annotation. Used for properties where the value itself may be uncertain, e.g. dates.",
       "properties": {
         "@annotation": {
           "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
@@ -1565,36 +1573,6 @@
         "@value": {
           "description": "The assumed value.",
           "format": "date",
-          "type": "string"
-        }
-      },
-      "required": [
-        "@value"
-      ],
-      "type": "object"
-    },
-    "ValueAssumption<string>": {
-      "description": "A value assumption wraps a literal value, e.g. a string, a number, a date, with an optional annotation. Used for properties where the value itself may be uncertain, e.g. dates or alignment references.",
-      "properties": {
-        "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
-          "properties": {
-            "belief": {
-              "$ref": "#/definitions/Belief"
-            },
-            "@id": {
-              "description": "A unique identifier for this object.",
-              "type": "string"
-            }
-          },
-          "required": [
-            "belief",
-            "@id"
-          ],
-          "type": "object"
-        },
-        "@value": {
-          "description": "The assumed value.",
           "type": "string"
         }
       },
@@ -1698,7 +1676,7 @@
           "description": "The method by which this writing was produced (e.g. through print, handwriting, or stamping)."
         },
         "transcription": {
-          "$ref": "#/definitions/ObjectAssumption%3Calias-731470504-73739-73887-731470504-0-217694%3Cdef-interface-src_Symbol.ts-3288-3548-src_Symbol.ts-0-3756400334313%2C%22carriers%22%3E%3E",
+          "$ref": "#/definitions/ObjectAssumption%3Calias-731470504-73739-73887-731470504-0-217694%3Cdef-interface-src_Symbol.ts-4370-4630-src_Symbol.ts-0-4838400334313%2C%22carriers%22%3E%3E",
           "description": "A transcription of the text content of the writing. This is an object assumption so that the transcription can be annotated with a belief about its correctness."
         },
         "vertical": {

@@ -49,6 +49,21 @@ reads editions does not need it. For development on both at once, a
 checkout of [welte-t100](https://github.com/pfefferniels/welte-t100)
 beside this repository, declared as `file:../welte-t100`, works too.
 
+### Alignment and pairing
+
+A perforation takes its place from the holes that carry it. Two fields
+on a perforation let an editor state where the measurement should give
+way. `alignedWith` names another perforation whose onset this one takes
+in the performance, as a "crescendo off" is meant to fall on the note
+it belongs to. `pairedWith` names a partner whose distance to this one
+is fixed, as a "forzando on" belongs with its "forzando off": whatever
+displaces the one displaces the other. Any two perforations may be
+paired, the relation is symmetric, and it is stated on one side only.
+Both are applied when a version is emulated. `constraintProblems` lists,
+version by version, the cases in which the statements cannot hold: a
+reference or partner that is absent, a perforation claimed by several
+pairs, or a pair whose members are both aligned.
+
 ## Building
 ```
    npm i

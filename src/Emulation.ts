@@ -1,6 +1,7 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
-import { ValueAssumption, valueOf } from "./Assumption";
+import { idOf } from "./Assumption";
 import { EditionView } from "./EditionView";
+import { pairsAmong } from "./Symbol";
 import { Version } from "./Version";
 import {
     AnyPerformedRollFeature,
@@ -34,6 +35,39 @@ const propertiesOf = (view: EditionView): RollProperties => ({
 })
 
 /**
+ * How far each event has to move, in mm, for the alignments to hold:
+ * an aligned event takes the onset of its reference, and a paired
+ * event follows its partner so that the distance between the two
+ * is kept. Events that stay where they are do not appear.
+ */
+const displacementsOf = (events: readonly NegotiatedEvent[]): Map<NegotiatedEvent, number> => {
+    const byId = new Map(events.map(event => [event.id, event]))
+    const referenceOf = (event: NegotiatedEvent) =>
+        event.alignedWith && byId.get(idOf(event.alignedWith))
+
+    const alignedOnsetOf = (event: NegotiatedEvent, visited = new Set<string>()): number => {
+        const reference = referenceOf(event)
+        if (!reference || visited.has(event.id)) return event.horizontal.from
+        return alignedOnsetOf(reference, visited.add(event.id))
+    }
+
+    const displacements = new Map(
+        events
+            .filter(event => referenceOf(event) !== undefined)
+            .map((event): [NegotiatedEvent, number] => [event, alignedOnsetOf(event) - event.horizontal.from])
+    )
+
+    pairsAmong(events).forEach(([one, other]) => {
+        const shared = displacements.get(one) ?? displacements.get(other)
+        if (shared === undefined) return
+        displacements.set(one, shared)
+        displacements.set(other, shared)
+    })
+
+    return displacements
+}
+
+/**
  * A version of the edition, performed: the symbols are negotiated into
  * placed events, the reproducing system plays them, and the result goes
  * out as MIDI in which every note and pedal step is labelled with the
@@ -58,16 +92,10 @@ export class Emulation<Options extends object> {
     }
 
     applyConstraints() {
-        this.negotiatedEvents
-            .filter((e): e is NegotiatedEvent & { alignedWith: ValueAssumption<string> } => e.alignedWith !== undefined)
-            .forEach(e => {
-                const ref = this.negotiatedEvents.find(ev => ev.id === valueOf(e.alignedWith));
-                if (!ref) return;
-
-                const distance = ref.horizontal.from - e.horizontal.from;
-                e.horizontal.from += distance;
-                e.horizontal.to += distance;
-            })
+        displacementsOf(this.negotiatedEvents).forEach((distance, event) => {
+            event.horizontal.from += distance
+            event.horizontal.to += distance
+        })
     }
 
     emulateVersion(
