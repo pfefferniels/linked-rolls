@@ -1,0 +1,255 @@
+@prefix reo:     <https://w3id.org/reo/> .
+@prefix reot:    <https://w3id.org/reo/type/> .
+@prefix crm:     <http://www.cidoc-crm.org/cidoc-crm/> .
+@prefix lrmoo:   <http://iflastandards.info/ns/lrm/lrmoo/> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+<https://w3id.org/reo/>
+    a owl:Ontology ;
+    dcterms:title "Roll Edition Ontology"@en ;
+    dcterms:description """A small extension of CIDOC CRM and LRMoo for digital editions of piano rolls. It adds what those ontologies do not cover: the symbols a reproducing piano reads from a roll (notes and expression commands), the relations between such symbols that an editor states, and the edits by which one version of a roll becomes another. Everything else, from the physical copies and their holes to the recording, the versions and the editorial beliefs, is expressed with CIDOC CRM, LRMoo and CRMinf directly. The closed value lists of the format are the types at https://w3id.org/reo/type/."""@en ;
+    dcterms:creator "Niels Pfeffer" ;
+    dcterms:created "2026-09-04"^^xsd:date ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+    owl:versionInfo "1.0-draft" ;
+    vann:preferredNamespacePrefix "reo" ;
+    vann:preferredNamespaceUri "https://w3id.org/reo/" ;
+    dcterms:hasPart <https://w3id.org/reo/type/> ;
+    rdfs:seeAlso <https://github.com/pfefferniels/linked-rolls> ,
+                 <https://pfefferniels.github.io/linked-rolls/> ;
+    dcterms:references <http://www.cidoc-crm.org/cidoc-crm/7.1.3/> ,
+                       <http://iflastandards.info/ns/lrm/lrmoo/> .
+
+
+#################################################################
+# Classes
+#################################################################
+
+reo:Perforation
+    a owl:Class ;
+    rdfs:subClassOf crm:E90_Symbolic_Object ;
+    rdfs:label "Perforation"@en ;
+    rdfs:comment """This class comprises the symbols a reproducing piano reads from a roll: the notes it sounds and the commands that govern its mechanism. A perforation is what a hole or a group of holes means once it is read against a tracker bar. The hole itself is an instance of E26 Physical Feature borne by a copy of the roll (P56 bears feature) and carrying the perforation (P128 carries). One perforation may be carried by holes on several copies of the same roll. A version of the roll, an instance of F2 Expression, is composed of its perforations (P106 is composed of). The measured position of a perforation is that of the holes carrying it; the properties aligned with and paired with let an editor state where that measurement should give way."""@en ;
+    skos:example "the first note of Grünfeld's Träumerei on the Welte-Mignon roll WM 225, recorded in Wien in 1905"@en ,
+                 "the sustain pedal command that opens the same roll"@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:Note
+    a owl:Class ;
+    rdfs:subClassOf reo:Perforation ;
+    rdfs:label "Note"@en ;
+    rdfs:comment """This class comprises perforations that sound a pitch. The pitch is stated as a MIDI note number (pitch). Its duration follows from the extent of the carrying hole along the roll and is not stated separately."""@en ;
+    skos:example "the note c′ (MIDI 60) with which Grünfeld's Träumerei begins on WM 225"@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:Expression
+    a owl:Class ;
+    rdfs:subClassOf reo:Perforation ;
+    rdfs:label "Expression"@en ;
+    rdfs:comment """This class comprises perforations that act on the reproducing mechanism rather than sound a note: dynamic commands such as crescendo, forzando and mezzoforte, the pedals, and motor functions such as rewind. The kind of command is given by P2 has type with one of the expression types at https://w3id.org/reo/type/; the half of the keyboard it acts on by scope. The name follows the vocabulary of the reproducing piano, where these are the expression perforations read by the expression box. It is unrelated to F2 Expression in LRMoo, which is the class of the roll's versions."""@en ;
+    skos:example "a 'slow crescendo off' on a Welte-Mignon T-100 roll, aligned with the note it belongs to"@en ,
+                 "the 'forzando on' and 'forzando off' pair that accents a single chord"@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:Edit
+    a owl:Class ;
+    rdfs:subClassOf crm:E7_Activity ;
+    rdfs:label "Edit"@en ;
+    rdfs:comment """This class comprises the single changes by which one version of a roll is turned into another: adding symbols, removing them, or both, which amounts to replacing. The creation of the new version, an instance of F28 Expression Creation, consists of its edits (P9 consists of). The kind of change is given by P2 has type, the reason by P17 was motivated by. Uncertainty about an edit, for instance whether a pencil mark on a copy was meant as an instruction to punch, is expressed with CRMinf on the statement, not by a property of this class."""@en ;
+    skos:example "the prolongation of a crescendo perforation between versions A and B of WM 225, motivated by 'Verlängerter Bereich ohne Verschiebung'"@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+
+#################################################################
+# Properties of perforations
+#################################################################
+
+reo:alignedWith
+    a owl:ObjectProperty ;
+    rdfs:domain reo:Perforation ;
+    rdfs:range reo:Perforation ;
+    rdfs:label "aligned with"@en ;
+    rdfs:comment """This property associates a perforation with another perforation whose onset it takes when the roll is performed. It records the editorial statement that the measured offset between the two is not meant: a 'crescendo off' falls on the note it belongs to. The property is not symmetric. The aligned perforation follows, the one it is aligned with keeps its measured place."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:pairedWith
+    a owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:domain reo:Perforation ;
+    rdfs:range reo:Perforation ;
+    rdfs:label "paired with"@en ;
+    rdfs:comment """This property associates two perforations whose distance from one another is fixed: whatever displaces the one displaces the other, as a 'forzando on' belongs with its 'forzando off'. Any two perforations may be paired. The property is symmetric and is stated on one side only. A perforation belongs to at most one pair, and the members of a pair are not themselves aligned with anything."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:pitch
+    a owl:DatatypeProperty ;
+    rdfs:domain reo:Note ;
+    rdfs:range xsd:integer ;
+    rdfs:label "pitch"@en ;
+    rdfs:comment """This property states the pitch of a note as a MIDI note number, 60 for middle C. It is a shortcut of the path P43 has dimension, E54 Dimension typed 'pitch', P90 has value."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:scope
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf crm:P2_has_type ;
+    rdfs:domain reo:Expression ;
+    rdfs:range crm:E55_Type ;
+    rdfs:label "scope"@en ;
+    rdfs:comment """This property states which half of the keyboard an expression perforation acts on. On rolls for the Welte-Mignon and most other reproducing systems the expression is split at a fixed point into a bass and a treble half, each with its own set of commands. The values are the types bass and treble at https://w3id.org/reo/type/."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+
+#################################################################
+# Properties of holes
+#################################################################
+
+reo:pattern
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf crm:P2_has_type ;
+    rdfs:domain crm:E26_Physical_Feature ;
+    rdfs:range crm:E55_Type ;
+    rdfs:label "pattern"@en ;
+    rdfs:comment """This property states the punching pattern of a hole, that is, how a long perforation is broken into a chain of holes by bridges of paper. The values are the types regular, accelerating and staggering at https://w3id.org/reo/type/, following the distinction drawn by Phillips (2016)."""@en ;
+    dcterms:bibliographicCitation "Phillips, Peter: Piano Rolls and Contemporary Player Pianos. The Catalogues, Technologies, Archiving and Accessibility. PhD thesis, Sydney Conservatorium of Music, University of Sydney, 2016." ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+
+#################################################################
+# Properties of edits
+#################################################################
+
+reo:added
+    a owl:ObjectProperty ;
+    rdfs:domain reo:Edit ;
+    rdfs:range crm:E90_Symbolic_Object ;
+    rdfs:label "added"@en ;
+    rdfs:comment """This property associates an edit with a symbol it adds to the version being created: a perforation, or a text written onto the roll."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:removed
+    a owl:ObjectProperty ;
+    rdfs:domain reo:Edit ;
+    rdfs:range crm:E90_Symbolic_Object ;
+    rdfs:label "removed"@en ;
+    rdfs:comment """This property associates an edit with a symbol of the version it is based on that is absent from the version being created."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+
+#################################################################
+# Shortcuts
+#
+# Each of these stands for a path through CRM and LRMoo that the
+# JSON-LD serialisation does not spell out.
+#################################################################
+
+reo:involvedEdit
+    a owl:ObjectProperty ;
+    rdfs:domain lrmoo:F2_Expression ;
+    rdfs:range reo:Edit ;
+    rdfs:label "involved edit"@en ;
+    rdfs:comment """This property associates a version of a roll with an edit by which it was made from the version it is based on. It is a shortcut of the path R17i was created by, F28 Expression Creation, P9 consists of."""@en ;
+    owl:propertyChainAxiom ( lrmoo:R17i_was_created_by crm:P9_consists_of ) ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:witness
+    a owl:ObjectProperty ;
+    rdfs:domain lrmoo:F2_Expression ;
+    rdfs:range lrmoo:F5_Item ;
+    rdfs:label "witness"@en ;
+    rdfs:comment """This property associates a digital edition with a physical copy of the roll on which it is based. It is a shortcut of the path R17i was created by, F28 Expression Creation, P16 used specific object."""@en ;
+    owl:propertyChainAxiom ( lrmoo:R17i_was_created_by crm:P16_used_specific_object ) ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:siglum
+    a owl:DatatypeProperty ;
+    rdfs:domain lrmoo:F2_Expression ;
+    rdfs:range xsd:string ;
+    rdfs:label "siglum"@en ;
+    rdfs:comment """This property states the short label by which an edition refers to a version of the roll, such as A, B1 or B2. It is a shortcut of the path P1 is identified by, E42 Identifier typed 'siglum', P190 has symbolic content."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+
+#################################################################
+# Dimensions
+#
+# Intervals and measured quantities of the format, as
+# specialisations of P43 has dimension, P40 observed dimension
+# and P90 has value.
+#################################################################
+
+reo:from
+    a owl:DatatypeProperty ;
+    rdfs:subPropertyOf crm:P90_has_value ;
+    rdfs:domain crm:E54_Dimension ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "from"@en ;
+    rdfs:comment """This property states the lower bound of a dimension that is an interval, as the extent of a hole along the roll (in millimetres from its beginning) or across it (in tracks of the tracker bar), or the speed at the beginning of a roll. The unit is given by P91 has unit."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:to
+    a owl:DatatypeProperty ;
+    rdfs:subPropertyOf crm:P90_has_value ;
+    rdfs:domain crm:E54_Dimension ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "to"@en ;
+    rdfs:comment """This property states the upper bound of a dimension that is an interval. A hole that occupies a single track has no upper bound across the roll."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:tempo
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf crm:P43_has_dimension ;
+    rdfs:domain lrmoo:F2_Expression ;
+    rdfs:range crm:E54_Dimension ;
+    rdfs:label "tempo"@en ;
+    rdfs:comment """This property associates an edition with the speed at which it lets the roll run. Since the take-up spool accelerates as paper winds onto it, the speed is an interval from the beginning of the roll (from) to its end (to), in the unit given by P91 has unit, as feet or metres per minute."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:dimensions
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf crm:P40_observed_dimension ;
+    rdfs:domain crm:E16_Measurement ;
+    rdfs:range crm:E54_Dimension ;
+    rdfs:label "dimensions"@en ;
+    rdfs:comment """This property associates the measurement of a copy with its measured extent: the width across the roll (width) and the length along it (height), in the unit given by P91 has unit."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:width
+    a owl:DatatypeProperty ;
+    rdfs:subPropertyOf crm:P90_has_value ;
+    rdfs:domain crm:E54_Dimension ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "width"@en ;
+    rdfs:comment "This property states the extent of a copy across the roll."@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:height
+    a owl:DatatypeProperty ;
+    rdfs:subPropertyOf crm:P90_has_value ;
+    rdfs:domain crm:E54_Dimension ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "height"@en ;
+    rdfs:comment "This property states the extent of a copy along the roll, from its beginning to its end."@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:punchDiameter
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf crm:P40_observed_dimension ;
+    rdfs:domain crm:E16_Measurement ;
+    rdfs:range crm:E54_Dimension ;
+    rdfs:label "punch diameter"@en ;
+    rdfs:comment """This property associates the measurement of a copy with the mean diameter of its punched holes, stated with P90 has value and P91 has unit."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:holeSeparation
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf crm:P40_observed_dimension ;
+    rdfs:domain crm:E16_Measurement ;
+    rdfs:range crm:E54_Dimension ;
+    rdfs:label "hole separation"@en ;
+    rdfs:comment """This property associates the measurement of a copy with the distance between adjacent tracks as found on it, stated with P90 has value and P91 has unit."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .

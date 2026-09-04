@@ -1,0 +1,109 @@
+@prefix reot:    <https://w3id.org/reo/type/> .
+@prefix crm:     <http://www.cidoc-crm.org/cidoc-crm/> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+# The closed value lists of the Roll Edition Format as CRM types. Each
+# local name is the string the format uses, so the JSON-LD context can
+# turn a value into its IRI without a lookup table.
+
+<https://w3id.org/reo/type/>
+    a skos:ConceptScheme ;
+    dcterms:title "Roll Edition Ontology types"@en ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+    dcterms:isPartOf <https://w3id.org/reo/> .
+
+
+# Scope of an expression perforation (reo:scope)
+
+reot:bass a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "bass"@en ;
+    rdfs:comment "The lower half of the keyboard, as controlled by the bass expression perforations."@en .
+reot:treble a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "treble"@en ;
+    rdfs:comment "The upper half of the keyboard, as controlled by the treble expression perforations."@en .
+
+
+# Punching pattern of a hole (reo:pattern)
+
+reot:regular a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "regular"@en ;
+    rdfs:comment "Holes with evenly spaced bridges."@en .
+reot:accelerating a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "accelerating"@en ;
+    rdfs:comment "Holes whose bridges grow narrower along the chain."@en .
+reot:staggering a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "staggering"@en ;
+    rdfs:comment "Holes that alternate between adjacent tracks."@en .
+
+
+# Kind of an expression perforation (P2 has type on reo:Expression).
+# These are the commands of the Welte-Mignon T-100.
+
+reot:SustainPedalOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "sustain pedal on"@en .
+reot:SustainPedalOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "sustain pedal off"@en .
+reot:SoftPedalOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "soft pedal on"@en .
+reot:SoftPedalOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "soft pedal off"@en .
+reot:MezzoforteOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "mezzoforte on"@en .
+reot:MezzoforteOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "mezzoforte off"@en .
+reot:SlowCrescendoOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "slow crescendo on"@en .
+reot:SlowCrescendoOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "slow crescendo off"@en .
+reot:ForzandoOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "forzando on"@en .
+reot:ForzandoOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "forzando off"@en .
+reot:MotorOn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "motor on"@en .
+reot:MotorOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "motor off"@en .
+reot:Rewind a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "rewind"@en .
+reot:ElectricCutOff a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "electric cut-off"@en .
+
+
+# Kind of an edit (P2 has type on reo:Edit)
+
+reot:short-dynamic-differentation a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "short dynamic differentiation"@en ;
+    rdfs:comment "An additional accent that can only be encoded with forzando on and off, because the space between the notes to be differentiated is too short for anything else."@en .
+reot:additional-accent a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "additional accent"@en .
+reot:add-redundancy a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "add redundancy"@en .
+reot:remove-redundancy a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "remove redundancy"@en .
+reot:replace-with-equivalent a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "replace with equivalent"@en .
+reot:shift a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "shift"@en .
+reot:correct-error a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "correct error"@en .
+reot:shorten a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "shorten"@en .
+reot:prolong a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "prolong"@en .
+
+
+# Purpose of a modification of a copy (P21 had general purpose)
+
+reot:musical-improvement a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "musical improvement"@en .
+reot:technical-improvement a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "technical improvement"@en .
+reot:repair a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "repair"@en .
+reot:labeling a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "labeling"@en .
+reot:delabeling a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "delabeling"@en .
+reot:control a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "control"@en .
+reot:dating a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "dating"@en .
+reot:glossing a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "glossing"@en .
+
+
+# Method by which a writing was put on the roll (P2 has type on the feature)
+
+reot:Print a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "print"@en .
+reot:Handwriting a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "handwriting"@en .
+reot:Stamp a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "stamp"@en .
+
+
+# Material of a glued-on patch (P45 consists of)
+
+reot:Paper a crm:E57_Material, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "paper"@en .
+reot:Tape a crm:E57_Material, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "tape"@en .
+
+
+# Units (P91 has unit)
+
+reot:mm a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "millimetre"@en .
+reot:track a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "track"@en ;
+    rdfs:comment "A position across the roll counted in openings of the tracker bar, from the bass side."@en .
+reot:px a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "pixel"@en ;
+    rdfs:comment "A pixel of the scan the measurement was taken from."@en .
