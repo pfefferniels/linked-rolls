@@ -5,7 +5,7 @@ import { readFileSync } from 'fs';
 
 describe('Import', () => {
     it('imports a roll edition', async () => {
-        const file = readFileSync(path.join(__dirname, 'fixtures', 'roll.json'), 'utf8')
+        const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')
 
         const edition = importJsonLd(JSON.parse(file));
 

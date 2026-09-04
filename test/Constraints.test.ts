@@ -9,7 +9,7 @@ import { Expression, Note } from '../src/Symbol'
 import { constraintProblems } from '../src/validate'
 import { flat } from './flat'
 
-const file = readFileSync(path.join(__dirname, 'fixtures', 'roll.json'), 'utf8')
+const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')
 
 /**
  * A fresh edition for every test, with the first version's placed

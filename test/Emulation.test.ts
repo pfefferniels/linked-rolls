@@ -6,7 +6,7 @@ import { EditionView } from '../src/EditionView'
 import { Emulation } from '../src/Emulation'
 import { flat } from './flat'
 
-const file = readFileSync(path.join(__dirname, 'fixtures', 'roll.json'), 'utf8')
+const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')
 const edition = importJsonLd(JSON.parse(file))
 const view = new EditionView(edition)
 const version = edition.versions[0]

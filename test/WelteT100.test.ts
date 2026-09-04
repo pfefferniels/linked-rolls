@@ -10,7 +10,7 @@ import { DynamicsCurve, PedalCurve, PerformedPedalEvent } from '../src/Reproduci
 import { secondsAt, welteT100System } from '../src/systems/welteT100'
 import { atConstantSpeed, SPENCER_FEET_PER_MINUTE } from '../src/RollCopy'
 
-const file = readFileSync(path.join(__dirname, 'fixtures', 'roll.json'), 'utf8')
+const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')
 const edition = importJsonLd(JSON.parse(file))
 const view = new EditionView(edition)
 

@@ -5,7 +5,7 @@ import { readFileSync } from 'fs';
 import { asJsonLd } from '../src/asJsonLd';
 
 const edition = () =>
-    importJsonLd(JSON.parse(readFileSync(path.join(__dirname, 'fixtures', 'roll.json'), 'utf8')))
+    importJsonLd(JSON.parse(readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')))
 
 describe('Export', () => {
     it('serialises an edition', () => {
