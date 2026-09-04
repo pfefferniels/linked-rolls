@@ -1,14 +1,14 @@
 {
   "@context": [
-    "https://wm225.org/context.jsonld",
+    "https://welte225.org/context.jsonld",
     {
-      "@base": "https://wm225.org/"
+      "@base": "https://welte225.org/"
     }
   ],
   "@type": "Edition",
   "title": "Alfred Gr\u00fcnfeld spielt Robert Schumann, Tr\u00e4umerei",
   "license": "https://creativecommons.org/licenses/by/4.0/",
-  "base": "https://edition.wm225.org/",
+  "base": "https://edition.welte225.org/",
   "creation": {
     "publisher": {
       "name": "Niels Pfeffer",
