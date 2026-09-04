@@ -39,6 +39,10 @@ const asJsonLdEntity = (obj: object) => {
         }
     }
 
+    if ('@value' in obj && obj['@value'] instanceof Date) {
+        result['@type'] = 'xsd:date'
+    }
+
     return result
 }
 

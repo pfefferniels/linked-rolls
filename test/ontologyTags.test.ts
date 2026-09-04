@@ -39,6 +39,7 @@ const lookup = (term: string, scopes: Json[]): Json => {
 }
 
 const typeValues = (node: Json): string[] => {
+    if (node.properties?.['@value']) return []   // a datatype, not a class
     const values: string[] = []
     const collect = (t: Json) => {
         t = resolve(t)

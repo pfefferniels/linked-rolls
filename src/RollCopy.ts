@@ -102,7 +102,13 @@ export const applyStretch = (
  * A date value wrapped as an assumption, so that the date
  * can be annotated with a belief about its certainty and source.
  */
-export type DateAssignment = ValueAssumption<Date>
+export type DateAssignment = ValueAssumption<Date> & {
+    /**
+     * The datatype of the value. Written on export so that
+     * RDF reads the value as a date rather than a string.
+     */
+    '@type'?: 'xsd:date'
+}
 
 /**
  * Describes the production of a roll copy, including the

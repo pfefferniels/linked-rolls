@@ -20,7 +20,11 @@ const fromJsonLdEntity = (json: any): any => {
 
     let result: any = json;
 
-    if ('@type' in json) {
+    if ('@value' in json) {
+        // the datatype of a value object, not a class
+        delete result['@type'];
+    }
+    else if ('@type' in json) {
         result['type'] = json['@type'];
         delete result['@type'];
     }

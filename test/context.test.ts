@@ -59,7 +59,8 @@ const typeValues = (): string[] => {
         node = resolve(node)
         if (!node || typeof node !== 'object' || seen.has(node)) return
         seen.add(node)
-        const type = resolve(node.properties?.['@type'])
+        // On a value object, @type is a datatype rather than a class.
+        const type = node.properties?.['@value'] ? undefined : resolve(node.properties?.['@type'])
         if (type) {
             const collect = (t: Json) => {
                 t = resolve(t)

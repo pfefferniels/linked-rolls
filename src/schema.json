@@ -164,8 +164,42 @@
       "type": "object"
     },
     "DateAssignment": {
-      "$ref": "#/definitions/ValueAssumption%3Cstring870780834%3E",
-      "description": "A date value wrapped as an assumption, so that the date can be annotated with a belief about its certainty and source."
+      "description": "A date value wrapped as an assumption, so that the date can be annotated with a belief about its certainty and source.",
+      "properties": {
+        "@annotation": {
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "@type": {
+          "const": "xsd:date",
+          "description": "The datatype of the value. Written on export so that RDF reads the value as a date rather than a string.",
+          "type": "string",
+          "ontology": "rdf:type"
+        },
+        "@value": {
+          "description": "The assumed value.",
+          "format": "date",
+          "type": "string"
+        }
+      },
+      "required": [
+        "@value"
+      ],
+      "type": "object"
     },
     "Edit": {
       "description": "A set of edits transforms a version of a roll into another version. Edits insert or delete symbols, or both (= replace). Edits may be motivated by a given set of reasons, e.g. to add an additional accent or to correct an error. If an edit is the interpretation of a metamark, such as a pencil mark, this should be made explicit using a meaning comprehension on the `@annotation` field. [ontology: reo:Edit]",
@@ -1565,38 +1599,6 @@
         "offset",
         "separation",
         "shift"
-      ],
-      "type": "object"
-    },
-    "ValueAssumption<string870780834>": {
-      "description": "A value assumption wraps a literal value, e.g. a string, a number, a date, with an optional annotation. Used for properties where the value itself may be uncertain, e.g. dates.",
-      "properties": {
-        "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
-          "properties": {
-            "belief": {
-              "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
-            },
-            "@id": {
-              "description": "A unique identifier for this object.",
-              "type": "string"
-            }
-          },
-          "required": [
-            "belief",
-            "@id"
-          ],
-          "type": "object"
-        },
-        "@value": {
-          "description": "The assumed value.",
-          "format": "date",
-          "type": "string"
-        }
-      },
-      "required": [
-        "@value"
       ],
       "type": "object"
     },
