@@ -44,8 +44,7 @@ reot:staggering a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/r
 
 <https://w3id.org/reo/type/system/welte-t100> a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "Welte-Mignon T-100"@en ;
-    rdfs:comment "The reproducing system of the red Welte rolls, 100 tracks on a roll 328 mm wide; its commands are the scheme at https://w3id.org/reo/type/welte-t100/."@en ;
-    rdfs:seeAlso <https://w3id.org/reo/type/welte-t100/> .
+    rdfs:comment "The reproducing system of the red Welte rolls, 100 tracks on a roll 328 mm wide; its commands are the scheme at https://w3id.org/reo/type/welte-t100/."@en .
 
 
 # Kind of a version (P2 has type on a version, an F2 Expression)
