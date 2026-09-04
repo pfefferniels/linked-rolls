@@ -47,7 +47,7 @@ export const asJsonLd = (edition: Edition) => {
 
     return {
         '@context': [
-            'https://linked-rolls.org/rollo/1.0/edition.jsonld',
+            'https://w3id.org/reo/context.jsonld',
             {
                 '@base': edition.base
             }

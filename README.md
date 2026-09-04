@@ -13,6 +13,15 @@ and exporting digital editions of piano roll. In particular it allows to:
 This library is the foundation of the
 [Roll Desk](https://github.com/pfefferniels/roll-desk).
 
+## Vocabulary
+
+The JSON-LD export uses the Roll Edition Ontology (REO), namespace
+`https://w3id.org/reo/`, prefix `reo`, alongside CIDOC CRM, LRMoo and
+CRMinf. The ontology lives in `ontology/`, and the context every
+export references is `https://w3id.org/reo/context.jsonld`. Neither
+resolves yet; `ontology/README.md` records the naming decisions and
+what is still missing.
+
 ## Emulation
 
 `Emulation` turns a version of the edition into MIDI. The core of the
