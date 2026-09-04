@@ -35,14 +35,19 @@ export type Motivation = WithType<'motivation'> & WithId & WithNote
  * a siglum is given to each version.
  * @see lrmoo:F2 Expression
  */
-export interface Version {
-    id: string // This is the id of the actual version which is R17 created
-
+export interface Version extends WithId, WithType<'Version'> {
     /**
      * A short siglum to identify the version, e.g. "A", "B1", "B2_rev", etc.
      * @see reo:siglum
      */
     siglum: string;
+
+    /**
+     * Whether the version served as a master for reproductions
+     * or exists on one copy only.
+     * @see crm:P2 has type
+     */
+    versionType: VersionType
 
     /**
      * If no derivation is defined, it is assumed that this version represents the mother roll.
@@ -60,6 +65,4 @@ export interface Version {
      * A collection of motivations used in this version's edits.
      */
     motivations: Motivation[]
-    type: VersionType
 }
-

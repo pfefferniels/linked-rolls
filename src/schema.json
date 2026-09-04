@@ -6,6 +6,47 @@
       "$ref": "#/definitions/ObjectAssumption%3CPerson%3E",
       "description": "An actor assignment associates a person with an action. It is an object assumption so that the attribution can be annotated with a belief about its certainty."
     },
+    "Agent": {
+      "description": "A person or a group: a pianist, an editor, a publisher, a manufacturer, a library. [ontology: crm:E39 Actor]",
+      "properties": {
+        "name": {
+          "description": "The name, e.g. \"Grünfeld, Alfred\", \"Wien\", \"M. Welte & Söhne\". [ontology: rdfs:label]",
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/definitions/AgentRole",
+          "description": "The role of the agent in the context of the edition. [ontology: crm:P2 has type]"
+        },
+        "sameAs": {
+          "description": "Authority records for the same thing: GND, Wikidata, geonames or similar. [ontology: owl:sameAs]",
+          "examples": [
+            "https://d-nb.info/gnd/116888652"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "@id": {
+          "description": "A unique identifier for this object.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "sameAs"
+      ],
+      "type": "object"
+    },
+    "AgentRole": {
+      "description": "The role an agent plays in the context of the edition.",
+      "enum": [
+        "pianist",
+        "editor",
+        "publisher"
+      ],
+      "type": "string"
+    },
     "AnyArgumentation": {
       "anyOf": [
         {
@@ -160,6 +201,34 @@
       "required": [
         "toleranceStart",
         "toleranceEnd"
+      ],
+      "type": "object"
+    },
+    "Concept": {
+      "description": "A term from a vocabulary, such as a roll system or a kind of paper. A term the type vocabulary knows carries its IRI as `id`. [ontology: crm:E55 Type]",
+      "properties": {
+        "name": {
+          "description": "The name, e.g. \"Grünfeld, Alfred\", \"Wien\", \"M. Welte & Söhne\". [ontology: rdfs:label]",
+          "type": "string"
+        },
+        "sameAs": {
+          "description": "Authority records for the same thing: GND, Wikidata, geonames or similar. [ontology: owl:sameAs]",
+          "examples": [
+            "https://d-nb.info/gnd/116888652"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "@id": {
+          "description": "A unique identifier for this object.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "sameAs"
       ],
       "type": "object"
     },
@@ -368,8 +437,8 @@
           "type": "array"
         },
         "expressionType": {
-          "$ref": "#/definitions/ExpressionType",
-          "description": "The specific type of expression (e.g. sustain pedal, forzando, etc.). [ontology: crm:P2 has type]"
+          "description": "The command the perforation gives, named as the reproducing system of the roll names it: \"SustainPedalOn\", \"ForzandoOff\" and so on for the Welte-Mignon T-100. The tracker bar of the system lists the values it reads. [ontology: crm:P2 has type]",
+          "type": "string"
         },
         "pairedWith": {
           "$ref": "#/definitions/ReferenceAssumption",
@@ -404,26 +473,6 @@
       "enum": [
         "bass",
         "treble"
-      ],
-      "type": "string"
-    },
-    "ExpressionType": {
-      "description": "The type of expression encoded by a perforation on the roll, e.g. \"crescendo on\", \"crescendo off\", etc. on Welte T-100 rolls. [ontology: crm:P2 has type]",
-      "enum": [
-        "SustainPedalOn",
-        "SustainPedalOff",
-        "SoftPedalOn",
-        "SoftPedalOff",
-        "MezzoforteOff",
-        "MezzoforteOn",
-        "SlowCrescendoOn",
-        "SlowCrescendoOff",
-        "ForzandoOn",
-        "ForzandoOff",
-        "MotorOff",
-        "MotorOn",
-        "Rewind",
-        "ElectricCutOff"
       ],
       "type": "string"
     },
@@ -824,18 +873,24 @@
               ],
               "type": "object"
             },
+            "conditionType": {
+              "const": "general",
+              "description": "The kind of condition, from the list the roll or the kind of feature allows. [ontology: crm:P2 has type]",
+              "type": "string"
+            },
             "description": {
               "description": "A free-text description of the condition, providing details beyond the type classification. [ontology: crm:P3 has note]",
               "type": "string"
             },
             "@type": {
-              "const": "general",
+              "const": "ConditionState",
               "description": "The type discriminator for this object. [ontology: rdf:type]",
               "type": "string",
               "ontology": "rdf:type"
             }
           },
           "required": [
+            "conditionType",
             "@type"
           ],
           "type": "object"
@@ -860,6 +915,11 @@
               ],
               "type": "object"
             },
+            "conditionType": {
+              "const": "paper-stretch",
+              "description": "The kind of condition, from the list the roll or the kind of feature allows. [ontology: crm:P2 has type]",
+              "type": "string"
+            },
             "description": {
               "description": "A free-text description of the condition, providing details beyond the type classification. [ontology: crm:P3 has note]",
               "type": "string"
@@ -869,13 +929,14 @@
               "type": "number"
             },
             "@type": {
-              "const": "paper-stretch",
+              "const": "ConditionState",
               "description": "The type discriminator for this object. [ontology: rdf:type]",
               "type": "string",
               "ontology": "rdf:type"
             }
           },
           "required": [
+            "conditionType",
             "factor",
             "@type"
           ],
@@ -905,21 +966,27 @@
           ],
           "type": "object"
         },
+        "conditionType": {
+          "description": "The kind of condition, from the list the roll or the kind of feature allows. [ontology: crm:P2 has type]",
+          "enum": [
+            "detaching",
+            "ripped"
+          ],
+          "type": "string"
+        },
         "description": {
           "description": "A free-text description of the condition, providing details beyond the type classification. [ontology: crm:P3 has note]",
           "type": "string"
         },
         "@type": {
+          "const": "ConditionState",
           "description": "The type discriminator for this object. [ontology: rdf:type]",
-          "enum": [
-            "detaching",
-            "ripped"
-          ],
           "type": "string",
           "ontology": "rdf:type"
         }
       },
       "required": [
+        "conditionType",
         "@type"
       ],
       "type": "object"
@@ -945,20 +1012,26 @@
           ],
           "type": "object"
         },
+        "conditionType": {
+          "description": "The kind of condition, from the list the roll or the kind of feature allows. [ontology: crm:P2 has type]",
+          "enum": [
+            "faded"
+          ],
+          "type": "string"
+        },
         "description": {
           "description": "A free-text description of the condition, providing details beyond the type classification. [ontology: crm:P3 has note]",
           "type": "string"
         },
         "@type": {
+          "const": "ConditionState",
           "description": "The type discriminator for this object. [ontology: rdf:type]",
-          "enum": [
-            "faded"
-          ],
           "type": "string",
           "ontology": "rdf:type"
         }
       },
       "required": [
+        "conditionType",
         "@type"
       ],
       "type": "object"
@@ -984,21 +1057,27 @@
           ],
           "type": "object"
         },
+        "conditionType": {
+          "description": "The kind of condition, from the list the roll or the kind of feature allows. [ontology: crm:P2 has type]",
+          "enum": [
+            "partially-torn",
+            "missing-perforation"
+          ],
+          "type": "string"
+        },
         "description": {
           "description": "A free-text description of the condition, providing details beyond the type classification. [ontology: crm:P3 has note]",
           "type": "string"
         },
         "@type": {
+          "const": "ConditionState",
           "description": "The type discriminator for this object. [ontology: rdf:type]",
-          "enum": [
-            "partially-torn",
-            "missing-perforation"
-          ],
           "type": "string",
           "ontology": "rdf:type"
         }
       },
       "required": [
+        "conditionType",
         "@type"
       ],
       "type": "object"
@@ -1025,18 +1104,15 @@
           "type": "object"
         },
         "name": {
-          "description": "The full name of the person. [ontology: rdfs:label]",
-          "examples": [
-            "Grünfeld, Alfred"
-          ],
+          "description": "The name, e.g. \"Grünfeld, Alfred\", \"Wien\", \"M. Welte & Söhne\". [ontology: rdfs:label]",
           "type": "string"
         },
         "role": {
-          "description": "The role of the person in the context of the edition, e.g. 'pianist', 'editor', 'publisher', etc. [ontology: crm:P2 has type]",
-          "type": "string"
+          "$ref": "#/definitions/AgentRole",
+          "description": "The role of the agent in the context of the edition. [ontology: crm:P2 has type]"
         },
         "sameAs": {
-          "description": "This property can be used to point to a GND, Wikidata, or similar entry. [ontology: owl:sameAs]",
+          "description": "Authority records for the same thing: GND, Wikidata, geonames or similar. [ontology: owl:sameAs]",
           "examples": [
             "https://d-nb.info/gnd/116888652"
           ],
@@ -1097,7 +1173,7 @@
       ],
       "type": "object"
     },
-    "ObjectAssumption<alias-731470504-73739-73887-731470504-0-217694<def-interface-src_Symbol.ts-4363-4727-src_Symbol.ts-0-4935400334313,\"carriers\">>": {
+    "ObjectAssumption<alias-731470504-73739-73887-731470504-0-217694<def-interface-src_Symbol.ts-4034-4398-src_Symbol.ts-0-4606400334313,\"carriers\">>": {
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
@@ -1151,52 +1227,21 @@
       "type": "object"
     },
     "Person": {
-      "description": "A person, e.g. a pianist, editor, publisher, etc. [ontology: crm:E21 Person]",
-      "properties": {
-        "name": {
-          "description": "The full name of the person. [ontology: rdfs:label]",
-          "examples": [
-            "Grünfeld, Alfred"
-          ],
-          "type": "string"
-        },
-        "role": {
-          "description": "The role of the person in the context of the edition, e.g. 'pianist', 'editor', 'publisher', etc. [ontology: crm:P2 has type]",
-          "type": "string"
-        },
-        "sameAs": {
-          "description": "This property can be used to point to a GND, Wikidata, or similar entry. [ontology: owl:sameAs]",
-          "examples": [
-            "https://d-nb.info/gnd/116888652"
-          ],
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "@id": {
-          "description": "A unique identifier for this object.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "name",
-        "sameAs"
-      ],
-      "type": "object"
+      "$ref": "#/definitions/Agent",
+      "description": "An agent that is a person."
     },
     "Place": {
       "description": "A place, e.g. a recording location, publishing location, etc. [ontology: crm:E53 Place]",
       "properties": {
         "name": {
-          "description": "The name of the place. [ontology: rdfs:label]",
-          "examples": [
-            "Wien"
-          ],
+          "description": "The name, e.g. \"Grünfeld, Alfred\", \"Wien\", \"M. Welte & Söhne\". [ontology: rdfs:label]",
           "type": "string"
         },
         "sameAs": {
-          "description": "This property can be used to point to a geonames or wikidata entry. [ontology: owl:sameAs]",
+          "description": "Authority records for the same thing: GND, Wikidata, geonames or similar. [ontology: owl:sameAs]",
+          "examples": [
+            "https://d-nb.info/gnd/116888652"
+          ],
           "items": {
             "type": "string"
           },
@@ -1210,30 +1255,21 @@
       "type": "object"
     },
     "ProductionEvent": {
-      "description": "Describes the production of a roll copy, including the manufacturing company, the roll system, and the paper used. [ontology: lrmoo:F32 Item Production Event]",
+      "description": "Describes the production of a roll copy: the manufacturer, the paper used, and the date. [ontology: lrmoo:F32 Item Production Event]",
       "properties": {
         "company": {
-          "description": "The company that produced the roll copy (e.g. \"M. Welte & Söhne\"). [ontology: crm:P14 carried out by]",
-          "type": "string"
+          "$ref": "#/definitions/Agent",
+          "description": "The company that produced the roll copy (e.g. \"M. Welte & Söhne\"). [ontology: crm:P14 carried out by]"
         },
         "date": {
           "$ref": "#/definitions/DateAssignment",
           "description": "The date of production, if known. [ontology: dcterms:date]"
         },
         "paper": {
-          "description": "The paper type used for the roll copy. [ontology: crm:P126 employed]",
-          "type": "string"
-        },
-        "system": {
-          "description": "The roll system used for production (e.g. \"Welte-Mignon T100\", \"Welte-Mignon T98\"). [ontology: crm:P32 used general technique]",
-          "type": "string"
+          "$ref": "#/definitions/Concept",
+          "description": "The paper the roll copy was cut on. [ontology: crm:P126 employed]"
         }
       },
-      "required": [
-        "company",
-        "system",
-        "paper"
-      ],
       "type": "object"
     },
     "RecordingEvent": {
@@ -1321,10 +1357,15 @@
         "recordingEvent": {
           "$ref": "#/definitions/RecordingEvent",
           "description": "[ontology: lrmoo:R19i was realised through]"
+        },
+        "system": {
+          "$ref": "#/definitions/Concept",
+          "description": "The reproducing system the roll was cut for. A system the type vocabulary knows carries the IRI of its concept as `id`, from which the export takes the system's own context, so that the expression types are read as that system's. [ontology: crm:P2 has type]"
         }
       },
       "required": [
         "catalogueNumber",
+        "system",
         "recordingEvent"
       ],
       "type": "object"
@@ -1350,9 +1391,9 @@
           },
           "type": "array"
         },
-        "location": {
-          "description": "The current physical location or archive where this copy is held. [ontology: crm:P55 has current location]",
-          "type": "string"
+        "keeper": {
+          "$ref": "#/definitions/Agent",
+          "description": "The institution or person holding this copy. [ontology: crm:P50 has current keeper]"
         },
         "measurements": {
           "description": "Physical measurements of this roll copy, including dimensions, punch diameter, hole separation, margins, shift corrections, and information about the measuring software. [ontology: crm:P39i was measured by]",
@@ -1515,7 +1556,7 @@
         "conditions",
         "features",
         "@id",
-        "location",
+        "keeper",
         "measurements",
         "modifications",
         "ops",
@@ -1627,22 +1668,28 @@
           "description": "A short siglum to identify the version, e.g. \"A\", \"B1\", \"B2_rev\", etc. [ontology: reo:siglum]",
           "type": "string"
         },
+        "versionType": {
+          "$ref": "#/definitions/VersionType",
+          "description": "Whether the version served as a master for reproductions or exists on one copy only. [ontology: crm:P2 has type]"
+        },
         "@id": {
-          "type": "string",
-          "description": "A unique identifier for this object."
+          "description": "A unique identifier for this object.",
+          "type": "string"
         },
         "@type": {
-          "$ref": "#/definitions/VersionType",
-          "description": "The type discriminator for this object.",
+          "const": "Version",
+          "description": "The type discriminator for this object. [ontology: rdf:type]",
+          "type": "string",
           "ontology": "rdf:type"
         }
       },
       "required": [
-        "@id",
-        "siglum",
         "edits",
+        "@id",
         "motivations",
-        "@type"
+        "siglum",
+        "@type",
+        "versionType"
       ],
       "type": "object"
     },
@@ -1697,7 +1744,7 @@
           "description": "The method by which this writing was produced (e.g. through print, handwriting, or stamping). [ontology: crm:P2 has type]"
         },
         "transcription": {
-          "$ref": "#/definitions/ObjectAssumption%3Calias-731470504-73739-73887-731470504-0-217694%3Cdef-interface-src_Symbol.ts-4363-4727-src_Symbol.ts-0-4935400334313%2C%22carriers%22%3E%3E",
+          "$ref": "#/definitions/ObjectAssumption%3Calias-731470504-73739-73887-731470504-0-217694%3Cdef-interface-src_Symbol.ts-4034-4398-src_Symbol.ts-0-4606400334313%2C%22carriers%22%3E%3E",
           "description": "A transcription of the text content of the writing. This is an object assumption so that the transcription can be annotated with a belief about its correctness. [ontology: crm:P128 carries]"
         },
         "vertical": {

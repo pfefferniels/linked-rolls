@@ -14,6 +14,19 @@ describe('Export', () => {
         expect(serialized.copies).toHaveLength(3)
     })
 
+    it('adds the context of the roll system', () => {
+        expect(asJsonLd(edition())['@context']).toEqual([
+            'https://w3id.org/reo/context.jsonld',
+            'https://w3id.org/reo/welte-t100/context.jsonld',
+            { '@base': edition().base }
+        ])
+    })
+
+    it('reads its own export back unchanged', () => {
+        const exported = asJsonLd(edition())
+        expect(asJsonLd(importJsonLd(JSON.parse(JSON.stringify(exported))))).toEqual(exported)
+    })
+
     it('types annotated dates as xsd:date and reads them back', () => {
         const exported = asJsonLd(edition())
         expect(exported.roll.recordingEvent.date).toMatchObject({

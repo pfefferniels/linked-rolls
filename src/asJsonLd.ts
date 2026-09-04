@@ -1,4 +1,5 @@
 import { Edition } from "./Edition";
+import { systemIdOf } from "./TrackerBar";
 
 export const exportDate = (date: Date) => {
     const year = date.getFullYear();
@@ -46,12 +47,23 @@ const asJsonLdEntity = (obj: object) => {
     return result
 }
 
+/**
+ * The context of the roll's reproducing system, which reads the
+ * expression types as that system's terms.
+ */
+const systemContextOf = (edition: Edition): string[] => {
+    const system = systemIdOf(edition.roll?.system)
+    return system ? [`https://w3id.org/reo/${system}/context.jsonld`] : []
+}
+
 export const asJsonLd = (edition: Edition) => {
-    const { base, copies, ...rest } = asJsonLdEntity(edition)
+    // The context is the export's own; one carried in from an import must not override it.
+    const { base, copies, '@context': carried, ...rest } = asJsonLdEntity(edition)
 
     return {
         '@context': [
             'https://w3id.org/reo/context.jsonld',
+            ...systemContextOf(edition),
             {
                 '@base': edition.base
             }

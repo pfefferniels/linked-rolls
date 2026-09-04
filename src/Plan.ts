@@ -1,7 +1,7 @@
 import { Draft } from "immer";
 import { EditionView, getAt } from "./EditionView";
 import { Edition } from "./Edition";
-import { AnySymbol, ExpressionType } from "./Symbol";
+import { AnySymbol } from "./Symbol";
 import { CollationTolerance } from "./Collation";
 import { Edit, EditType } from "./Edit";
 import { v4 } from "uuid";
@@ -150,6 +150,7 @@ export class CreateVersion extends BasePlan {
             draft.copies.push(this.copy)
 
             const newVersion: Version = {
+                type: 'Version',
                 siglum: this.siglum,
                 id: v4(),
                 edits: asSymbols(this.copy.features).map((symbol): Edit => {
@@ -160,7 +161,7 @@ export class CreateVersion extends BasePlan {
                         delete: [],
                     }
                 }),
-                type: 'edition',
+                versionType: 'edition',
                 motivations: []
             }
             draft.versions.push(newVersion)
@@ -384,19 +385,19 @@ export class MergeEdits extends BasePlan {
             deletes.filter(e => e.type === 'expression').map(e => e.expressionType)
         ]
 
-        if (arraysIdentical<ExpressionType[]>(
+        if (arraysIdentical<string[]>(
             types, [['SlowCrescendoOn', 'SlowCrescendoOff'], []]
         )) {
             return 'additional-accent'
         }
-        else if (arraysIdentical<ExpressionType[]>(
+        else if (arraysIdentical<string[]>(
             types, [['ForzandoOn', 'ForzandoOff'], []]
         )) {
             // TODO: check if the inserts are very close
             // and return 'short-dynamic-differentation'
             return 'additional-accent'
         }
-        else if (types.every(t => t.length > 1) && arraysIdentical<ExpressionType>(
+        else if (types.every(t => t.length > 1) && arraysIdentical<string>(
             types[0],
             types[1]
         )) {

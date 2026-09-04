@@ -13,7 +13,7 @@ const legacyCopy = {
     id: 'legacy',
     ops: [],
     conditions: [],
-    location: '',
+    keeper: { name: '', sameAs: [] },
     modifications: [],
     features: [],
     measurements: {

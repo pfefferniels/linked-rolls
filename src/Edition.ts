@@ -5,52 +5,61 @@ import { CollationTolerance } from "./Collation";
 import { ObjectAssumption } from "./Assumption";
 
 /**
- * A person, e.g. a pianist, editor, publisher, etc.
- * @see crm:E21 Person
+ * Something with a name and, where one exists, an authority record.
  */
-export interface Person extends Partial<WithId> {
+export interface Named {
     /**
-     * The full name of the person.
+     * The name, e.g. "Grünfeld, Alfred", "Wien", "M. Welte & Söhne".
      * @see rdfs:label
-     * @example "Grünfeld, Alfred"
      */
     name: string
 
     /**
-     * This property can be used to point to a
-     * GND, Wikidata, or similar entry.
+     * Authority records for the same thing: GND, Wikidata,
+     * geonames or similar.
      * @see owl:sameAs
      * @example "https://d-nb.info/gnd/116888652"
      */
     sameAs: string[]
+}
 
+export const agentRoles = ['pianist', 'editor', 'publisher'] as const
+
+/**
+ * The role an agent plays in the context of the edition.
+ */
+export type AgentRole = typeof agentRoles[number]
+
+/**
+ * A person or a group: a pianist, an editor, a publisher,
+ * a manufacturer, a library.
+ * @see crm:E39 Actor
+ */
+export interface Agent extends Named, Partial<WithId> {
     /**
-     * The role of the person in the context of the edition,
-     * e.g. 'pianist', 'editor', 'publisher', etc.
+     * The role of the agent in the context of the edition.
      * @see crm:P2 has type
      */
-    role?: string
+    role?: AgentRole
 }
+
+/**
+ * An agent that is a person.
+ */
+export type Person = Agent
 
 /**
  * A place, e.g. a recording location, publishing location, etc.
  * @see crm:E53 Place
  */
-export interface Place {
-    /**
-     * The name of the place.
-     * @example "Wien"
-     * @see rdfs:label
-     */
-    name: string
+export interface Place extends Named { }
 
-    /**
-     * This property can be used to point to a
-     * geonames or wikidata entry.
-     * @see owl:sameAs
-     */
-    sameAs: string[]
-}
+/**
+ * A term from a vocabulary, such as a roll system or a kind of
+ * paper. A term the type vocabulary knows carries its IRI as `id`.
+ * @see crm:E55 Type
+ */
+export interface Concept extends Named, Partial<WithId> { }
 
 /**
  * This type describes the creation of an edition,
@@ -140,6 +149,15 @@ export interface Roll {
      * @see dcterms:identifier
      */
     catalogueNumber: string
+
+    /**
+     * The reproducing system the roll was cut for. A system the
+     * type vocabulary knows carries the IRI of its concept as `id`,
+     * from which the export takes the system's own context, so that
+     * the expression types are read as that system's.
+     * @see crm:P2 has type
+     */
+    system: Concept
 
     /**
      * @see lrmoo:R19i was realised through

@@ -4,6 +4,7 @@ import { Edition } from "./Edition"
 import { EditionView } from "./EditionView"
 import { idOf } from "./Assumption"
 import { AnySymbol, Expression, Note, pairsAmong } from "./Symbol"
+import { TrackerBar } from "./TrackerBar"
 
 const ajv = new Ajv(
     {
@@ -70,3 +71,25 @@ const problemsIn = (version: string, perforations: readonly (Note | Expression)[
 export const constraintProblems = (view: EditionView): ConstraintProblem[] =>
     view.edition.versions.flatMap(version =>
         problemsIn(version.id, view.snapshot(version.id).filter(isPerforation)))
+
+export type UnknownExpressionType = {
+    version: string
+    symbol: string
+    expressionType: string
+}
+
+const isExpression = (symbol: AnySymbol): symbol is Expression => symbol.type === 'expression'
+
+/**
+ * The expressions of the edition whose type the tracker bar does not
+ * read, version by version. The roll names its system; a type from
+ * another system, or a misspelt one, means nothing on it.
+ */
+export const unknownExpressionTypes = (view: EditionView, bar: TrackerBar): UnknownExpressionType[] => {
+    const known = new Set(bar.expressionTypes)
+    return view.edition.versions.flatMap(version =>
+        view.snapshot(version.id)
+            .filter(isExpression)
+            .filter(symbol => !known.has(symbol.expressionType))
+            .map(symbol => ({ version: version.id, symbol: symbol.id, expressionType: symbol.expressionType })))
+}

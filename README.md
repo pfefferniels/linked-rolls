@@ -24,6 +24,15 @@ https://pfefferniels.github.io/linked-rolls/reo/; the w3id.org
 identifiers are not registered yet. `ontology/README.md` records the
 naming decisions.
 
+## Format revisions
+
+Files written by linked-rolls 0.1 load unchanged: `importJsonLd`
+recognises their shapes and brings them to the current format, in
+which versions and conditions carry a typology key beside their type,
+the keeper and the production metadata are nodes with a name and
+authority links, and the roll names its reproducing system. Exports
+are always in the current format.
+
 ## Emulation
 
 `Emulation` turns a version of the edition into MIDI. The core of the

@@ -1,4 +1,5 @@
 import { Edition } from "./Edition";
+import { migrate } from "./migrate";
 
 const isDate = (value: string) => {
     const datePattern = /^\d{4}-\d{1,2}-\d{1,2}$/;
@@ -62,11 +63,21 @@ const fromJsonLdEntity = (json: any): any => {
     return result;
 }
 
+// The export prefixes copy identifiers with `copy/`; this is its inverse.
+const withPlainCopyIds = (json: any) => ({
+    ...json,
+    copies: (json.copies ?? []).map((copy: any) => ({
+        ...copy,
+        '@id': typeof copy['@id'] === 'string' ? copy['@id'].replace(/^copy\//, '') : copy['@id']
+    }))
+})
+
 export const importJsonLd = (json: any): Edition => {
-    const edition = fromJsonLdEntity(json) as Edition;
-    if (Array.isArray(json['@context'])) {
-        edition.base = json['@context'].find((c: any) => c['@base'])?.['@base'] || '';
-    }
+    const { '@context': context, ...document } = withPlainCopyIds(migrate(json))
+    const edition = fromJsonLdEntity(document) as Edition;
+    edition.base = Array.isArray(context)
+        ? context.find((c: any) => c['@base'])?.['@base'] || ''
+        : '';
 
     return edition;
 }

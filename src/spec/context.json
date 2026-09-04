@@ -13,8 +13,7 @@
     "reo": "https://w3id.org/reo/",
 
     "Edition": "lrmoo:F2_Expression",
-    "edition": "lrmoo:F2_Expression",
-    "unicum": "lrmoo:F2_Expression",
+    "Version": "lrmoo:F2_Expression",
     "RollCopy": "lrmoo:F5_Item",
     "Hole": "crm:E26_Physical_Feature",
     "Mark": "crm:E25_Human-Made_Feature",
@@ -22,14 +21,7 @@
     "GluedOn": "crm:E22_Human-Made_Object",
     "Addition": "crm:E79_Part_Addition",
     "Removal": "crm:E80_Part_Removal",
-    "general": "crm:E3_Condition_State",
-    "paper-stretch": "crm:E3_Condition_State",
-    "partially-torn": "crm:E3_Condition_State",
-    "missing-perforation": "crm:E3_Condition_State",
-    "illegible": "crm:E3_Condition_State",
-    "faded": "crm:E3_Condition_State",
-    "detaching": "crm:E3_Condition_State",
-    "ripped": "crm:E3_Condition_State",
+    "ConditionState": "crm:E3_Condition_State",
     "note": "reo:Note",
     "expression": "reo:Expression",
     "text": {
@@ -94,6 +86,7 @@
     "collationTolerance": null,
     "roll": "lrmoo:R3i_realises",
     "catalogueNumber": "dcterms:identifier",
+    "system": "crm:P2_has_type",
     "recordingEvent": "lrmoo:R19i_was_realised_through",
     "recorded": "lrmoo:R81_recorded",
     "pianist": "crm:P14_carried_out_by",
@@ -148,13 +141,17 @@
     },
     "production": "lrmoo:R28i_was_produced_by",
     "company": "crm:P14_carried_out_by",
-    "system": "crm:P32_used_general_technique",
     "paper": "crm:P126_employed",
     "conditions": "crm:P44_has_condition",
     "condition": "crm:P44_has_condition",
+    "conditionType": {
+      "@id": "crm:P2_has_type",
+      "@type": "@vocab",
+      "@context": { "@vocab": "https://w3id.org/reo/type/" }
+    },
     "description": "crm:P3_has_note",
     "factor": "rdf:value",
-    "location": "crm:P55_has_current_location",
+    "keeper": "crm:P50_has_current_keeper",
     "features": "crm:P56_bears_feature",
     "modifications": "crm:P31i_was_modified_by",
     "scan": {
@@ -208,6 +205,11 @@
     },
 
     "siglum": "reo:siglum",
+    "versionType": {
+      "@id": "crm:P2_has_type",
+      "@type": "@vocab",
+      "@context": { "@vocab": "https://w3id.org/reo/type/" }
+    },
     "basedOn": "lrmoo:R76_is_derivative_of",
     "edits": "reo:involvedEdit",
     "motivations": "@included",

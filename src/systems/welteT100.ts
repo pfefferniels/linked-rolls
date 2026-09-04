@@ -23,8 +23,8 @@ import {
     Punch,
     Spool,
 } from "welte-t100-emulator";
-import { Expression, ExpressionScope, ExpressionType, Note } from "../Symbol";
-import { welteT100 } from "../TrackerBar";
+import { Expression, ExpressionScope, Note } from "../Symbol";
+import { welteT100, WelteT100ExpressionType } from "../TrackerBar";
 import { Hole } from "../Feature";
 import {
     DynamicsCurve,
@@ -103,22 +103,28 @@ export const defaultWelteT100Options: WelteT100Options = {
 }
 
 /** What each expression code operates, in the emulator's terms. */
-const CODES: ReadonlyMap<ExpressionType, readonly [Control, Action]> = new Map([
-    ['MezzoforteOn', ['mezzoforte', 'on']],
-    ['MezzoforteOff', ['mezzoforte', 'off']],
-    ['SlowCrescendoOn', ['crescendo', 'on']],
-    ['SlowCrescendoOff', ['crescendo', 'off']],
-    ['ForzandoOn', ['sforzando', 'on']],
-    ['ForzandoOff', ['sforzando', 'off']],
-    ['SustainPedalOn', ['sustainPedal', 'on']],
-    ['SustainPedalOff', ['sustainPedal', 'off']],
-    ['SoftPedalOn', ['hammerRail', 'on']],
-    ['SoftPedalOff', ['hammerRail', 'off']],
-    ['MotorOn', ['windResistance', 'on']],
-    ['MotorOff', ['windResistance', 'off']],
-    ['Rewind', ['rewind', 'on']],
-    ['ElectricCutOff', ['electricCutoff', 'on']]
-])
+const CODES: Record<WelteT100ExpressionType, readonly [Control, Action]> = {
+    MezzoforteOn: ['mezzoforte', 'on'],
+    MezzoforteOff: ['mezzoforte', 'off'],
+    SlowCrescendoOn: ['crescendo', 'on'],
+    SlowCrescendoOff: ['crescendo', 'off'],
+    ForzandoOn: ['sforzando', 'on'],
+    ForzandoOff: ['sforzando', 'off'],
+    SustainPedalOn: ['sustainPedal', 'on'],
+    SustainPedalOff: ['sustainPedal', 'off'],
+    SoftPedalOn: ['hammerRail', 'on'],
+    SoftPedalOff: ['hammerRail', 'off'],
+    MotorOn: ['windResistance', 'on'],
+    MotorOff: ['windResistance', 'off'],
+    Rewind: ['rewind', 'on'],
+    ElectricCutOff: ['electricCutoff', 'on']
+}
+
+const isWelteT100ExpressionType = (type: string): type is WelteT100ExpressionType =>
+    Object.hasOwn(CODES, type)
+
+const codeOf = (expressionType: string) =>
+    isWelteT100ExpressionType(expressionType) ? CODES[expressionType] : undefined
 
 /** Paper the grid runs on past the last hole, so that a final pedal release completes. */
 const RUN_OUT_MM = 100
@@ -156,7 +162,7 @@ type Reading = {
 }
 
 const readingOf = (event: NegotiatedEvent & Expression): Reading | undefined => {
-    const code = CODES.get(event.expressionType)
+    const code = codeOf(event.expressionType)
     const half = scopeOf(event)
     if (!code || !half) return undefined
 

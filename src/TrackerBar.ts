@@ -1,4 +1,5 @@
-import { Expression, ExpressionScope, ExpressionType, Note } from "./Symbol"
+import type { Concept } from "./Edition"
+import { Expression, ExpressionScope, Note } from "./Symbol"
 
 /**
  * What a tracker bar position does: sound a note, or operate one of
@@ -31,6 +32,13 @@ export type TrackMeaning = NoteMeaning | ExpressionMeaning
  * ask the tracker bar rather than repeat the boundaries.
  */
 export interface TrackerBar {
+    /**
+     * Names the reproducing system in the type vocabulary:
+     * the system is `https://w3id.org/reo/type/system/<id>` and its
+     * expression types live under `https://w3id.org/reo/type/<id>/`.
+     */
+    readonly id: string
+
     readonly name: string
 
     /** Width of the roll the bar reads, in mm. */
@@ -41,6 +49,9 @@ export interface TrackerBar {
 
     /** The blocks of positions, from the bass edge upwards. */
     readonly areas: readonly TrackArea[]
+
+    /** The expression types the bar reads, each a term of the system. */
+    readonly expressionTypes: readonly string[]
 
     /**
      * The position carrying the rewind perforation, which runs at
@@ -56,14 +67,25 @@ export interface TrackerBar {
     roleOf(track: number): TrackRole | undefined
 }
 
+const SYSTEM_IRI = 'https://w3id.org/reo/type/system/'
+
+/** The roll system a tracker bar belongs to, as the roll metadata states it. */
+export const systemOf = (bar: TrackerBar): Concept =>
+    ({ id: SYSTEM_IRI + bar.id, name: bar.name, sameAs: [] })
+
+/** The identifier of a system the type vocabulary knows, from its concept. */
+export const systemIdOf = (system: Concept | undefined): string | undefined =>
+    system?.id?.startsWith(SYSTEM_IRI) ? system.id.slice(SYSTEM_IRI.length) : undefined
+
 interface TrackerBarSpec {
+    id: string
     name: string
     width: number
     trackCount: number
     /** The contiguous block of note positions. */
     notes: { from: number, to: number, lowestPitch: number }
     /** Every position outside the note block, keyed by track. */
-    expressions: ReadonlyMap<number, ExpressionType>
+    expressions: ReadonlyMap<number, string>
 }
 
 const areasOf = ({ notes, trackCount }: TrackerBarSpec): TrackArea[] => [
@@ -106,15 +128,39 @@ const describe = (spec: TrackerBarSpec): TrackerBar => {
     }
 
     return {
+        id: spec.id,
         name: spec.name,
         width: spec.width,
         trackCount: spec.trackCount,
         areas,
+        expressionTypes: [...new Set(spec.expressions.values())],
         rewindTrack,
         meaningOf,
         roleOf
     }
 }
+
+/**
+ * The commands of the Welte-Mignon T-100, as its tracker bar reads them.
+ */
+export const welteT100ExpressionTypes = [
+    'SustainPedalOn',
+    'SustainPedalOff',
+    'SoftPedalOn',
+    'SoftPedalOff',
+    'MezzoforteOff',
+    'MezzoforteOn',
+    'SlowCrescendoOn',
+    'SlowCrescendoOff',
+    'ForzandoOn',
+    'ForzandoOff',
+    'MotorOff',
+    'MotorOn',
+    'Rewind',
+    'ElectricCutOff'
+] as const
+
+export type WelteT100ExpressionType = typeof welteT100ExpressionTypes[number]
 
 /**
  * Welte-Mignon T-100 ("red Welte"), cf. Hagmann, pp. 75 and 178.
@@ -124,11 +170,12 @@ const describe = (spec: TrackerBarSpec): TrackerBar => {
  * treble above it, in mirrored order.
  */
 export const welteT100: TrackerBar = describe({
+    id: 'welte-t100',
     name: 'Welte-Mignon T100',
     width: 328,
     trackCount: 100,
     notes: { from: 11, to: 90, lowestPitch: 24 },
-    expressions: new Map<number, ExpressionType>([
+    expressions: new Map<number, WelteT100ExpressionType>([
         [1, 'MezzoforteOff'],
         [2, 'MezzoforteOn'],
         [3, 'SlowCrescendoOff'],

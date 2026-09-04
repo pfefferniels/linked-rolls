@@ -10,6 +10,7 @@ import { AnyFeature, Hole } from "./Feature";
 import { assignReference, idsOf, ObjectAssumption, ValueAssumption } from "./Assumption";
 import { WithId, WithType } from "./utils";
 import { ActorAssignment } from "./Edit";
+import { Agent, Concept } from "./Edition";
 
 /**
  * This condition state is used to describe the roll's
@@ -111,8 +112,8 @@ export type DateAssignment = ValueAssumption<Date> & {
 }
 
 /**
- * Describes the production of a roll copy, including the
- * manufacturing company, the roll system, and the paper used.
+ * Describes the production of a roll copy: the manufacturer,
+ * the paper used, and the date.
  * @see lrmoo:F32 Item Production Event
  */
 export interface ProductionEvent {
@@ -121,20 +122,13 @@ export interface ProductionEvent {
      * (e.g. "M. Welte & Söhne").
      * @see crm:P14 carried out by
      */
-    company: string
+    company?: Agent
 
     /**
-     * The roll system used for production
-     * (e.g. "Welte-Mignon T100", "Welte-Mignon T98").
-     * @see crm:P32 used general technique
-     */
-    system: string
-
-    /**
-     * The paper type used for the roll copy.
+     * The paper the roll copy was cut on.
      * @see crm:P126 employed
      */
-    paper: string
+    paper?: Concept
 
     /**
      * The date of production, if known.
@@ -347,10 +341,10 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
     conditions: RollConditionAssignment[]
 
     /**
-     * The current physical location or archive where this copy is held.
-     * @see crm:P55 has current location
+     * The institution or person holding this copy.
+     * @see crm:P50 has current keeper
      */
-    location: string
+    keeper: Agent
 
     /**
      * The physical features found on this copy, with shift
@@ -627,7 +621,7 @@ export function readFromStanfordAton(
         id: v4(),
         ops: [],
         conditions: [],
-        location: '',
+        keeper: { name: '', sameAs: [] },
         modifications: [],
         ...((scan ?? stanford) && { scan: scan ?? stanford?.scan }),
         measurements: {
@@ -714,7 +708,7 @@ export function readFromSpencerMIDI(
         id: v4(),
         ops: [],
         conditions: [],
-        location: '',
+        keeper: { name: '', sameAs: [] },
         measurements: {},
         modifications: [],
         features

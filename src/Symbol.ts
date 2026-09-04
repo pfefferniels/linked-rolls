@@ -90,28 +90,6 @@ export interface Note extends Perforation<'note'> {
 export type ExpressionScope = 'bass' | 'treble';
 
 /**
- * The type of expression encoded by a perforation on the roll,
- * e.g. "crescendo on", "crescendo off", etc. on Welte T-100
- * rolls.
- * @see crm:P2 has type
- */
-export type ExpressionType =
-    | 'SustainPedalOn'
-    | 'SustainPedalOff'
-    | 'SoftPedalOn'
-    | 'SoftPedalOff'
-    | 'MezzoforteOff'
-    | 'MezzoforteOn'
-    | 'SlowCrescendoOn'
-    | 'SlowCrescendoOff'
-    | 'ForzandoOn'
-    | 'ForzandoOff'
-    | 'MotorOff'
-    | 'MotorOn'
-    | 'Rewind'
-    | 'ElectricCutOff';
-
-/**
  * An expression symbol, representing a perforation on the roll
  * that governs dynamics, pedaling, or mechanical functions of the
  * reproducing piano. Each expression has a scope (bass or treble)
@@ -126,10 +104,13 @@ export interface Expression extends Perforation<'expression'> {
     scope: ExpressionScope;
 
     /**
-     * The specific type of expression (e.g. sustain pedal, forzando, etc.).
+     * The command the perforation gives, named as the reproducing
+     * system of the roll names it: "SustainPedalOn", "ForzandoOff"
+     * and so on for the Welte-Mignon T-100. The tracker bar of the
+     * system lists the values it reads.
      * @see crm:P2 has type
      */
-    expressionType: ExpressionType;
+    expressionType: string;
 }
 
 /**
