@@ -35,7 +35,7 @@ reo:Perforation
     a owl:Class ;
     rdfs:subClassOf crm:E90_Symbolic_Object ;
     rdfs:label "Perforation"@en ;
-    rdfs:comment """This class comprises the symbols a reproducing piano reads from a roll: the notes it sounds and the commands that govern its mechanism. A perforation is what a hole or a group of holes means once it is read against a tracker bar. The hole itself is an instance of E26 Physical Feature borne by a copy of the roll (P56 bears feature) and carrying the perforation (P128 carries). One perforation may be carried by holes on several copies of the same roll. A version of the roll, an instance of F2 Expression, is composed of its perforations (P106 is composed of). The measured position of a perforation is that of the holes carrying it; the properties aligned with and paired with let an editor state where that measurement should give way."""@en ;
+    rdfs:comment """This class comprises the symbols a reproducing piano reads from a roll: the notes it sounds and the commands that govern its mechanism. A perforation is what a hole or a group of holes means once it is read against a tracker bar. The hole itself is an instance of E26 Physical Feature borne by a copy of the roll (P56 bears feature) and carrying the perforation (P128 carries). One perforation may be carried by holes on several copies of the same roll. A version of the roll, an instance of F2 Expression, is composed of its perforations (P106 is composed of). The measured position of a perforation is that of the holes carrying it; the properties aligned with, before, after and paired with let an editor state where that measurement should give way."""@en ;
     skos:example "the first note of Grünfeld's Träumerei on the Welte-Mignon roll WM 225, recorded in Wien in 1905"@en ,
                  "the sustain pedal command that opens the same roll"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
@@ -78,12 +78,28 @@ reo:alignedWith
     rdfs:comment """This property associates a perforation with another perforation whose onset it takes when the roll is performed. It records the editorial statement that the measured offset between the two is not meant: a 'crescendo off' falls on the note it belongs to. The property is not symmetric. The aligned perforation follows, the one it is aligned with keeps its measured place."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
+reo:before
+    a owl:ObjectProperty ;
+    rdfs:domain reo:Perforation ;
+    rdfs:range reo:Perforation ;
+    rdfs:label "before"@en ;
+    rdfs:comment """This property associates a perforation with another perforation whose onset it precedes when the roll is performed, without saying by how much. It records the editorial statement that the order of the two is meant even where the copies disagree on it: a 'crescendo off' ends before the note it leads to begins. The property is not symmetric. A perforation the measurement already has before its reference keeps its place; one it does not is put before the reference as far as the copies that agree with the statement put it."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:after
+    a owl:ObjectProperty ;
+    rdfs:domain reo:Perforation ;
+    rdfs:range reo:Perforation ;
+    rdfs:label "after"@en ;
+    rdfs:comment """This property associates a perforation with another perforation whose onset it follows when the roll is performed, without saying by how much: the counterpart of before. A perforation is placed by one of aligned with, before and after at most."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
 reo:pairedWith
     a owl:ObjectProperty , owl:SymmetricProperty ;
     rdfs:domain reo:Perforation ;
     rdfs:range reo:Perforation ;
     rdfs:label "paired with"@en ;
-    rdfs:comment """This property associates two perforations whose distance from one another is fixed: whatever displaces the one displaces the other, as a 'forzando on' belongs with its 'forzando off'. Any two perforations may be paired. The property is symmetric and is stated on one side only. A perforation belongs to at most one pair, and the members of a pair are not themselves aligned with anything."""@en ;
+    rdfs:comment """This property associates two perforations whose distance from one another is fixed: whatever displaces the one displaces the other, as a 'forzando on' belongs with its 'forzando off'. Any two perforations may be paired. The property is symmetric and is stated on one side only. A perforation belongs to at most one pair, and the members of a pair are not themselves placed relative to anything, whether aligned with it, before it or after it."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:pitch

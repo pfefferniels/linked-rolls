@@ -1,7 +1,7 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { idOf } from "./Assumption";
 import { EditionView } from "./EditionView";
-import { pairsAmong } from "./Symbol";
+import { AnySymbol, pairsAmong, placementsOf } from "./Symbol";
 import { Version } from "./Version";
 import {
     AnyPerformedRollFeature,
@@ -34,27 +34,87 @@ const propertiesOf = (view: EditionView): RollProperties => ({
     tempo: view.edition.tempoAdjustment
 })
 
-/**
- * How far each event has to move, in mm, for the alignments to hold:
- * an aligned event takes the onset of its reference, and a paired
- * event follows its partner so that the distance between the two
- * is kept. Events that stay where they are do not appear.
- */
-const displacementsOf = (events: readonly NegotiatedEvent[]): Map<NegotiatedEvent, number> => {
-    const byId = new Map(events.map(event => [event.id, event]))
-    const referenceOf = (event: NegotiatedEvent) =>
-        event.alignedWith && byId.get(idOf(event.alignedWith))
+const mean = (values: readonly number[]): number =>
+    values.reduce((sum, value) => sum + value, 0) / values.length
 
-    const alignedOnsetOf = (event: NegotiatedEvent, visited = new Set<string>()): number => {
-        const reference = referenceOf(event)
-        if (!reference || visited.has(event.id)) return event.horizontal.from
-        return alignedOnsetOf(reference, visited.add(event.id))
+/** The onset a symbol has on each copy carrying it, by the copy's index, as the mean of its holes there. */
+const onsetsByCopy = (view: EditionView, symbolId: string): Map<number, number> => {
+    const symbol = view.get<AnySymbol>(symbolId)
+    if (!symbol) return new Map()
+
+    const onsets = view.carriersOf(symbol).flatMap((carrier): [number, number][] => {
+        const copy = view.getPath(carrier.id)?.[1]
+        return typeof copy === 'number' ? [[copy, carrier.horizontal.from]] : []
+    })
+    const copies = new Set(onsets.map(([copy]) => copy))
+    return new Map(
+        [...copies].map(copy => [copy, mean(onsets.filter(([at]) => at === copy).map(([, onset]) => onset))])
+    )
+}
+
+/**
+ * The measured distance from the onset of the reference to the onset of
+ * the follower on each copy carrying both, negative where the follower
+ * comes first there.
+ */
+const offsetsBetween = (view: EditionView, followerId: string, referenceId: string): number[] => {
+    const references = onsetsByCopy(view, referenceId)
+    return [...onsetsByCopy(view, followerId)].flatMap(([copy, onset]) => {
+        const reference = references.get(copy)
+        return reference === undefined ? [] : [onset - reference]
+    })
+}
+
+type Offsets = (followerId: string, referenceId: string) => number[]
+
+/**
+ * How far before or after its reference a follower is put when the
+ * measurement does not already have it there: as far as the copies
+ * that agree with the statement put it, and one gap where none does.
+ */
+const distanceOnSide = (side: 'before' | 'after', offsets: readonly number[], gap: number): number => {
+    const agreeing = offsets
+        .filter(offset => side === 'before' ? offset < 0 : offset > 0)
+        .map(Math.abs)
+    return agreeing.length > 0 ? mean(agreeing) : gap
+}
+
+/**
+ * How far each event has to move, in mm, for the placements to hold:
+ * an aligned event takes the onset of its reference, one placed before
+ * or after its reference keeps its place where the measurement has it
+ * on that side and is moved there where it does not, and a paired
+ * event follows its partner so that the distance between the two is
+ * kept. Events that stay where they are do not appear.
+ */
+const displacementsOf = (
+    events: readonly NegotiatedEvent[],
+    offsetsBetween: Offsets,
+    gap: number
+): Map<NegotiatedEvent, number> => {
+    const byId = new Map(events.map(event => [event.id, event]))
+
+    /** Where an event comes to lie once its statement and those of its references hold. */
+    const placedOnsetOf = (event: NegotiatedEvent, visited: ReadonlySet<string> = new Set()): number => {
+        const measured = event.horizontal.from
+        const placement = placementsOf(event)[0]
+        const reference = placement && byId.get(idOf(placement.reference))
+        if (!placement || !reference || reference.id === event.id || visited.has(event.id)) return measured
+
+        const referenceOnset = placedOnsetOf(reference, new Set([...visited, event.id]))
+        const distance = (side: 'before' | 'after') =>
+            distanceOnSide(side, offsetsBetween(event.id, reference.id), gap)
+        switch (placement.relation) {
+            case 'alignedWith': return referenceOnset
+            case 'before': return measured < referenceOnset ? measured : referenceOnset - distance('before')
+            case 'after': return measured > referenceOnset ? measured : referenceOnset + distance('after')
+        }
     }
 
     const displacements = new Map(
         events
-            .filter(event => referenceOf(event) !== undefined)
-            .map((event): [NegotiatedEvent, number] => [event, alignedOnsetOf(event) - event.horizontal.from])
+            .map((event): [NegotiatedEvent, number] => [event, placedOnsetOf(event) - event.horizontal.from])
+            .filter(([, distance]) => distance !== 0)
     )
 
     pairsAmong(events).forEach(([one, other]) => {
@@ -91,8 +151,16 @@ export class Emulation<Options extends object> {
         this.options = options
     }
 
-    applyConstraints() {
-        displacementsOf(this.negotiatedEvents).forEach((distance, event) => {
+    /**
+     * Moves the negotiated events to where their statements put them.
+     * The view supplies the copies, whose measurements decide how far
+     * before or after its reference a perforation goes, and a punch
+     * diameter, or a millimetre, where no copy agrees with a statement.
+     */
+    applyConstraints(view: EditionView) {
+        const gap = punchDiameterOf(view) ?? 1
+        const offsets: Offsets = (follower, reference) => offsetsBetween(view, follower, reference)
+        displacementsOf(this.negotiatedEvents, offsets, gap).forEach((distance, event) => {
             event.horizontal.from += distance
             event.horizontal.to += distance
         })
@@ -128,7 +196,7 @@ export class Emulation<Options extends object> {
             return this.midiEvents
         }
 
-        this.applyConstraints();
+        this.applyConstraints(view);
 
         const performance = this.system.perform(this.negotiatedEvents, this.options, propertiesOf(view))
         this.curves = performance.curves

@@ -216,6 +216,8 @@
 
     "carriers": "crm:P128i_is_carried_by",
     "alignedWith": "reo:alignedWith",
+    "before": "reo:before",
+    "after": "reo:after",
     "pairedWith": "reo:pairedWith",
     "pitch": {
       "@id": "reo:pitch",

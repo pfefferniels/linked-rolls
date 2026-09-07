@@ -33,7 +33,36 @@ const setUp = () => {
         const placedAs = (symbol: Note | Expression) => emulation.negotiatedEvents.find(e => e.id === symbol.id)!.horizontal
         return placedAs
     }
-    return { edition, view, version, first, second, third, note, onsetOf, lengthOf, emulate }
+
+    const copyOf = (featureId: string) => view.getPath(featureId)?.[1]
+    const onsetOn = (symbol: Note | Expression, copy: number | string | undefined) => {
+        const carrier = view.carriersOf(symbol).find(c => copyOf(c.id) === copy)
+        if (!carrier) throw new Error(`${symbol.id} has no carrier on copy ${copy}`)
+        return carrier.horizontal.from
+    }
+    /**
+     * Moves every hole carrying a symbol so that on each copy it starts
+     * the given distance, by the copy's index, from the reference's
+     * onset there, keeping each hole's length.
+     */
+    const placeBeside = (symbol: Note | Expression, reference: Note | Expression, distances: readonly number[]) => {
+        view.carriersOf(symbol).forEach(({ id, horizontal }) => {
+            const copy = copyOf(id)
+            const distance = typeof copy === 'number' ? distances[copy] : undefined
+            if (distance === undefined) throw new Error(`no distance for copy ${copy}`)
+            const length = horizontal.to - horizontal.from
+            horizontal.from = onsetOn(reference, copy) + distance
+            horizontal.to = horizontal.from + length
+        })
+    }
+
+    const punchDiameters = edition.copies
+        .map(copy => copy.measurements.punchDiameter?.value)
+        .filter((value): value is number => value !== undefined && value > 0)
+    /** What the performance falls back on where no copy agrees with a statement. */
+    const gap = punchDiameters.reduce((sum, value) => sum + value, 0) / punchDiameters.length
+
+    return { edition, view, version, first, second, third, note, onsetOf, lengthOf, placeBeside, gap, emulate }
 }
 
 describe('aligning a perforation with another', () => {
@@ -62,6 +91,54 @@ describe('aligning a perforation with another', () => {
         first.alignedWith = assignReference('nowhere')
 
         expect(emulate()(first).from).toEqual(onsetOf(first))
+    })
+})
+
+describe('placing a perforation before or after another', () => {
+    it('leaves it where the measurement already has it on that side', () => {
+        const { first, note, onsetOf, placeBeside, emulate } = setUp()
+        placeBeside(first, note, [-5, -3, -4])
+        first.before = assignReference(note.id)
+
+        expect(emulate()(first).from).toEqual(onsetOf(first))
+    })
+
+    it('puts it on that side as far as the copies that agree put it', () => {
+        const { first, note, onsetOf, placeBeside, emulate } = setUp()
+        placeBeside(first, note, [-2, 6, 8])
+        first.before = assignReference(note.id)
+
+        expect(onsetOf(first)).toBeGreaterThan(onsetOf(note))
+        expect(emulate()(first).from).toBeCloseTo(onsetOf(note) - 2)
+    })
+
+    it('does the same after', () => {
+        const { first, note, onsetOf, placeBeside, emulate } = setUp()
+        placeBeside(first, note, [2, -6, -8])
+        first.after = assignReference(note.id)
+
+        expect(onsetOf(first)).toBeLessThan(onsetOf(note))
+        expect(emulate()(first).from).toBeCloseTo(onsetOf(note) + 2)
+    })
+
+    it('puts it a punch diameter away where no copy agrees', () => {
+        const { first, note, onsetOf, placeBeside, gap, emulate } = setUp()
+        placeBeside(first, note, [3, 6, 4])
+        first.before = assignReference(note.id)
+
+        expect(gap).toBeGreaterThan(0)
+        expect(emulate()(first).from).toBeCloseTo(onsetOf(note) - gap)
+    })
+
+    it('judges the side against where the reference comes to lie', () => {
+        const { first, second, note, onsetOf, placeBeside, gap, emulate } = setUp()
+        second.alignedWith = assignReference(note.id)
+        placeBeside(first, note, [4, 4, 4])
+        first.before = assignReference(second.id)
+
+        const placedAs = emulate()
+        expect(placedAs(second).from).toEqual(onsetOf(note))
+        expect(placedAs(first).from).toBeCloseTo(onsetOf(note) - gap)
     })
 })
 
@@ -117,6 +194,25 @@ describe('reporting constraints that cannot hold', () => {
         expect(problemsWith(view, version.id, second.id)).toEqual(['partner-missing'])
     })
 
+    it('reports a missing reference of an order as well', () => {
+        const { view, version, first, second } = setUp()
+        first.before = assignReference('nowhere')
+        second.after = assignReference('nowhere')
+
+        expect(problemsWith(view, version.id, first.id)).toEqual(['before-reference-missing'])
+        expect(problemsWith(view, version.id, second.id)).toEqual(['after-reference-missing'])
+    })
+
+    it('reports a perforation placed relative to itself or in several ways', () => {
+        const { view, version, first, second, note } = setUp()
+        first.before = assignReference(first.id)
+        second.alignedWith = assignReference(note.id)
+        second.after = assignReference(note.id)
+
+        expect(problemsWith(view, version.id, first.id)).toEqual(['placed-relative-to-itself'])
+        expect(problemsWith(view, version.id, second.id)).toEqual(['placed-several-ways'])
+    })
+
     it('reports a perforation paired with itself', () => {
         const { view, version, first } = setUp()
         first.pairedWith = assignReference(first.id)
@@ -133,13 +229,13 @@ describe('reporting constraints that cannot hold', () => {
         expect(problemsWith(view, version.id, first.id)).toEqual([])
     })
 
-    it('reports a pair whose members are both aligned', () => {
+    it('reports a pair whose members are both placed', () => {
         const { view, version, first, second, note } = setUp()
         first.alignedWith = assignReference(note.id)
-        second.alignedWith = assignReference(note.id)
+        second.after = assignReference(note.id)
         first.pairedWith = assignReference(second.id)
 
-        expect(problemsWith(view, version.id, first.id)).toEqual(['pair-aligned-on-both-sides'])
-        expect(problemsWith(view, version.id, second.id)).toEqual(['pair-aligned-on-both-sides'])
+        expect(problemsWith(view, version.id, first.id)).toEqual(['pair-placed-on-both-sides'])
+        expect(problemsWith(view, version.id, second.id)).toEqual(['pair-placed-on-both-sides'])
     })
 })

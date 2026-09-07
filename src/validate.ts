@@ -3,7 +3,7 @@ import * as schema from "./schema.json"
 import { Edition } from "./Edition"
 import { EditionView } from "./EditionView"
 import { idOf } from "./Assumption"
-import { AnySymbol, Expression, Note, pairsAmong } from "./Symbol"
+import { AnySymbol, Expression, Note, PlacementRelation, pairsAmong, placementsOf } from "./Symbol"
 import { TrackerBar } from "./TrackerBar"
 
 const ajv = new Ajv(
@@ -23,10 +23,20 @@ export type ConstraintProblem = {
     symbol: string
     problem:
         | 'alignment-reference-missing'
+        | 'before-reference-missing'
+        | 'after-reference-missing'
+        | 'placed-relative-to-itself'
+        | 'placed-several-ways'
         | 'partner-missing'
         | 'paired-with-itself'
         | 'in-several-pairs'
-        | 'pair-aligned-on-both-sides'
+        | 'pair-placed-on-both-sides'
+}
+
+const missingReference: Record<PlacementRelation, ConstraintProblem['problem']> = {
+    alignedWith: 'alignment-reference-missing',
+    before: 'before-reference-missing',
+    after: 'after-reference-missing'
 }
 
 const isPerforation = (symbol: AnySymbol): symbol is Note | Expression => symbol.type !== 'text'
@@ -37,8 +47,17 @@ const problemsIn = (version: string, perforations: readonly (Note | Expression)[
         ({ version, symbol, problem })
 
     const missingReferences = perforations
-        .filter(p => p.alignedWith && !ids.has(idOf(p.alignedWith)))
-        .map(p => report(p.id, 'alignment-reference-missing'))
+        .flatMap(p => placementsOf(p)
+            .filter(({ reference }) => !ids.has(idOf(reference)))
+            .map(({ relation }) => report(p.id, missingReference[relation])))
+
+    const selfPlaced = perforations
+        .filter(p => placementsOf(p).some(({ reference }) => idOf(reference) === p.id))
+        .map(p => report(p.id, 'placed-relative-to-itself'))
+
+    const placedSeveralWays = perforations
+        .filter(p => placementsOf(p).length > 1)
+        .map(p => report(p.id, 'placed-several-ways'))
 
     const missingPartners = perforations
         .filter(p => p.pairedWith && !ids.has(idOf(p.pairedWith)))
@@ -54,19 +73,23 @@ const problemsIn = (version: string, perforations: readonly (Note | Expression)[
         .filter(p => pairsOf(p).length > 1)
         .map(p => report(p.id, 'in-several-pairs'))
 
-    const alignedOnBothSides = pairs
-        .filter(([one, other]) => one.alignedWith && other.alignedWith)
-        .flatMap(pair => pair.map(p => report(p.id, 'pair-aligned-on-both-sides')))
+    const placedOnBothSides = pairs
+        .filter(([one, other]) => placementsOf(one).length > 0 && placementsOf(other).length > 0)
+        .flatMap(pair => pair.map(p => report(p.id, 'pair-placed-on-both-sides')))
 
-    return [...missingReferences, ...missingPartners, ...selfPaired, ...inSeveralPairs, ...alignedOnBothSides]
+    return [
+        ...missingReferences, ...selfPlaced, ...placedSeveralWays,
+        ...missingPartners, ...selfPaired, ...inSeveralPairs, ...placedOnBothSides
+    ]
 }
 
 /**
- * Where the alignments and pairings of the edition cannot hold as
+ * Where the placements and pairings of the edition cannot hold as
  * stated, version by version: a reference or partner absent from the
- * version, a perforation claimed by several pairs, or a pair whose
- * members are both aligned and so cannot keep their distance and
- * follow their references at once.
+ * version, a perforation placed relative to itself or in several ways
+ * at once, one claimed by several pairs, or a pair whose members are
+ * both placed and so cannot keep their distance and follow their
+ * references at once.
  */
 export const constraintProblems = (view: EditionView): ConstraintProblem[] =>
     view.edition.versions.flatMap(version =>

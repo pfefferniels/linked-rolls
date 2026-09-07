@@ -45,6 +45,26 @@ export interface Perforation<T extends string> extends Symbol<T> {
     alignedWith?: ReferenceAssumption;
 
     /**
+     * A perforation whose onset this one precedes when the roll is
+     * performed, without saying by how much: a "crescendo off" ends
+     * before the note it leads to begins, even where the copies
+     * disagree on it. Where the measurement has it so, nothing moves;
+     * where it does not, this one is placed before the reference as
+     * far as the copies that agree put it. This points to the
+     * perforation by its `@id`.
+     * @see reo:before
+     */
+    before?: ReferenceAssumption;
+
+    /**
+     * A perforation whose onset this one follows when the roll is
+     * performed, the counterpart of `before`. This points to the
+     * perforation by its `@id`.
+     * @see reo:after
+     */
+    after?: ReferenceAssumption;
+
+    /**
      * The perforation this one forms a pair with, e.g. a "forzando on"
      * with its "forzando off". Any two perforations may be paired.
      * The distance between the two is fixed: whatever displaces the
@@ -54,6 +74,26 @@ export interface Perforation<T extends string> extends Symbol<T> {
      */
     pairedWith?: ReferenceAssumption;
 }
+
+export const placementRelations = ['alignedWith', 'before', 'after'] as const
+
+/** The ways a perforation may be placed relative to another. */
+export type PlacementRelation = typeof placementRelations[number]
+
+type Placeable = Partial<Record<PlacementRelation, ReferenceAssumption>>
+
+export type Placement = { relation: PlacementRelation; reference: ReferenceAssumption }
+
+/**
+ * The statements placing a perforation relative to others, alignment
+ * first. A perforation is meant to make one at most; the first is the
+ * one a performance applies.
+ */
+export const placementsOf = (perforation: Placeable): Placement[] =>
+    placementRelations.flatMap(relation => {
+        const reference = perforation[relation]
+        return reference ? [{ relation, reference }] : []
+    })
 
 type Pairable = WithId & { pairedWith?: ReferenceAssumption }
 
