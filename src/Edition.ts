@@ -2,7 +2,7 @@ import { RollCopy } from "./RollCopy";
 import { Version } from "./Version";
 import { CollationTolerance } from "./Collation";
 import { DateAssignment, ObjectAssumption } from "./Assumption";
-import { Concept, Person, Place } from "./Agent";
+import { Concept, Editor, Person, Place } from "./Agent";
 import { RollTempo } from "./ReproducingSystem";
 
 /**
@@ -11,6 +11,14 @@ import { RollTempo } from "./ReproducingSystem";
  * @see lrmoo:F28 Expression Creation
  */
 export interface EditionCreation {
+    /**
+     * The persons who prepared the edition, each with the part
+     * they took in the editorial work. An edition written before
+     * this field existed carries none.
+     * @see crm:P14 carried out by
+     */
+    editors?: Editor[]
+
     /**
      * The person or institution responsible for publishing the edition.
      * @see crm:P14 carried out by

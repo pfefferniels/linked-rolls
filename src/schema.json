@@ -39,13 +39,20 @@
       "type": "object"
     },
     "AgentRole": {
-      "description": "The role an agent plays in the context of the edition.",
-      "enum": [
-        "pianist",
-        "editor",
-        "publisher"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/EditorialRole"
+        },
+        {
+          "const": "pianist",
+          "type": "string"
+        },
+        {
+          "const": "publisher",
+          "type": "string"
+        }
       ],
-      "type": "string"
+      "description": "The role an agent plays in the context of the edition."
     },
     "AnyArgumentation": {
       "anyOf": [
@@ -406,6 +413,13 @@
           "$ref": "#/definitions/CollationTolerance",
           "description": "The tolerance parameters used when collating (aligning) the different roll copies for this edition. Not exported to RDF."
         },
+        "editors": {
+          "description": "The persons who prepared the edition, each with the part they took in the editorial work. An edition written before this field existed carries none. [ontology: crm:P14 carried out by]",
+          "items": {
+            "$ref": "#/definitions/Editor"
+          },
+          "type": "array"
+        },
         "publicationDate": {
           "description": "The date on which the edition was published. [ontology: dcterms:date]",
           "format": "date",
@@ -421,6 +435,51 @@
         "publicationDate"
       ],
       "type": "object"
+    },
+    "Editor": {
+      "description": "A person who took part in preparing the edition.",
+      "properties": {
+        "name": {
+          "description": "The name, e.g. \"Grünfeld, Alfred\", \"Wien\", \"M. Welte & Söhne\". [ontology: rdfs:label]",
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/definitions/EditorialRole",
+          "description": "The part this person took in the editorial work. [ontology: crm:P2 has type]"
+        },
+        "sameAs": {
+          "description": "Authority records for the same thing: GND, Wikidata, geonames or similar. [ontology: owl:sameAs]",
+          "examples": [
+            "https://d-nb.info/gnd/116888652"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "@id": {
+          "description": "A unique identifier for this object.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "role",
+        "sameAs"
+      ],
+      "type": "object"
+    },
+    "EditorialRole": {
+      "description": "The part an editor took in the editorial work.",
+      "enum": [
+        "editor",
+        "transcription",
+        "collation",
+        "encoding",
+        "commentary",
+        "proofreading"
+      ],
+      "type": "string"
     },
     "Expression": {
       "description": "An expression symbol, representing a perforation on the roll that governs dynamics, pedaling, or mechanical functions of the reproducing piano. Each expression has a scope (bass or treble) and a specific expression type. [ontology: reo:Expression]",

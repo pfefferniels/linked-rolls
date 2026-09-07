@@ -101,4 +101,10 @@ const withRollSystem = (edition: Json): Json => {
     return { ...edition, roll: { ...edition.roll, system } }
 }
 
-export const migrate = (edition: Json): Json => walk(withRollSystem(edition))
+/** An edition written before the editors were carried names none. */
+const withEditors = (edition: Json): Json =>
+    !edition.creation || edition.creation.editors
+        ? edition
+        : { ...edition, creation: { ...edition.creation, editors: [] } }
+
+export const migrate = (edition: Json): Json => walk(withRollSystem(withEditors(edition)))

@@ -19,12 +19,28 @@ export interface Named {
     sameAs: string[]
 }
 
-export const agentRoles = ['pianist', 'editor', 'publisher'] as const
+export const editorialRoles = [
+    'editor',
+    'transcription',
+    'collation',
+    'encoding',
+    'commentary',
+    'proofreading'
+] as const
+
+/**
+ * The part an editor took in the editorial work.
+ */
+export type EditorialRole = typeof editorialRoles[number]
+
+const nonEditorialRoles = ['pianist', 'publisher'] as const
 
 /**
  * The role an agent plays in the context of the edition.
  */
-export type AgentRole = typeof agentRoles[number]
+export type AgentRole = EditorialRole | typeof nonEditorialRoles[number]
+
+export const agentRoles: readonly AgentRole[] = [...nonEditorialRoles, ...editorialRoles]
 
 /**
  * A person or a group: a pianist, an editor, a publisher,
@@ -43,6 +59,17 @@ export interface Agent extends Named, Partial<WithId> {
  * An agent that is a person.
  */
 export type Person = Agent
+
+/**
+ * A person who took part in preparing the edition.
+ */
+export interface Editor extends Person {
+    /**
+     * The part this person took in the editorial work.
+     * @see crm:P2 has type
+     */
+    role: EditorialRole
+}
 
 export type WithActor = {
     /**

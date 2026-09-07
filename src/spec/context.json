@@ -78,6 +78,7 @@
       "@type": "@id"
     },
     "creation": "lrmoo:R17i_was_created_by",
+    "editors": "crm:P14_carried_out_by",
     "publisher": "crm:P14_carried_out_by",
     "publicationDate": {
       "@id": "dcterms:date",
