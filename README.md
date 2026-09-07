@@ -70,9 +70,9 @@ const midi = emulation.asMIDI()
 
 The emulator is an optional peer dependency: an application that uses the
 T-100 system installs `welte-t100-emulator` itself, and one that only
-reads editions does not need it. For development on both at once, a
-checkout of [welte-t100](https://github.com/pfefferniels/welte-t100)
-beside this repository, declared as `file:../welte-t100`, works too.
+reads editions does not need it. For development on both at once, `npm
+link` a checkout of [welte-t100](https://github.com/pfefferniels/welte-t100)
+into this repository.
 
 ### Alignment, order and pairing
 
