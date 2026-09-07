@@ -49,10 +49,13 @@ take-up spool sets the time axis, the Nuancierbälge fill through their
 conduits and are arrested by the Mezzoforte pin, and the two pedals travel
 rather than switch. The constants are those fitted against the hand-drawn
 nuance lines of roll 3309, with the terms that describe the drawing
-apparatus switched off. What the emulator does not determine is how
-bellows travel maps onto MIDI velocity; `WelteT100Options.velocity`
-anchors that map at the open rail, the Mezzoforte pin and the closed rail,
-and its defaults are midi2exp's.
+apparatus switched off. The pedals leave no drawn line, so their constants
+come as two readings, `pedalPresets.damping`, under which every lift the
+rolls punch damps, and `pedalPresets.brushing`, under which the quick runs
+of latch changes brush the strings without damping. What the emulator does
+not determine is how bellows travel maps onto MIDI velocity;
+`WelteT100Options.velocity` anchors that map at the open rail, the
+Mezzoforte pin and the closed rail, and its defaults are midi2exp's.
 
 ```ts
 import { Emulation } from 'linked-rolls'

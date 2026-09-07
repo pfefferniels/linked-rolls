@@ -41,7 +41,7 @@
     "welte-t100-emulator": "file:../welte-t100"
   },
   "peerDependencies": {
-    "welte-t100-emulator": "^0.3.0"
+    "welte-t100-emulator": "^0.4.0"
   },
   "peerDependenciesMeta": {
     "welte-t100-emulator": {

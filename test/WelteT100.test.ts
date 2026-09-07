@@ -7,7 +7,7 @@ import { importJsonLd } from '../src/importJsonLd'
 import { EditionView } from '../src/EditionView'
 import { Emulation } from '../src/Emulation'
 import { DynamicsCurve, PedalCurve, PerformedPedalEvent } from '../src/ReproducingSystem'
-import { secondsAt, welteT100System } from '../src/systems/welteT100/system'
+import { pedalPresetOf, pedalPresets, secondsAt, welteT100System } from '../src/systems/welteT100/system'
 import { atConstantSpeed, SPENCER_FEET_PER_MINUTE } from '../src/readers/spencerMidi'
 
 const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')
@@ -133,6 +133,21 @@ describe('the pedals of a version', () => {
             .map(event => event.id))
         pedalEvents.forEach(event => expect(pedals.has(event.performs.id)).toBe(true))
         expect(new Set(pedalEvents.map(event => event.performs.id)).size).toBeGreaterThan(10)
+    })
+
+    it('names the reading of the mechanism the constants belong to', () => {
+        expect(pedalPresetOf(emulation.options.pedals)).toEqual('damping')
+        expect(pedalPresetOf(pedalPresets.brushing)).toEqual('brushing')
+        expect(pedalPresetOf({ ...pedalPresets.brushing, fallMs: 1 })).toBeUndefined()
+    })
+
+    it('lets the dampers fall more slowly under the brushing preset', () => {
+        const brushing = new Emulation(welteT100System, { ...emulation.options, pedals: pedalPresets.brushing })
+        brushing.emulateVersion(edition.versions[0], view)
+        const inTransit = (of: Emulation<WelteT100Options>) => of.curves
+            .find((curve): curve is PedalCurve => curve.kind === 'pedal' && curve.name === 'damper')!
+            .travel.filter(value => value > 0.1 && value < 0.9).length
+        expect(inTransit(brushing)).toBeGreaterThan(inTransit(emulation))
     })
 
     it('can be thresholded for a renderer that reads the pedal as a switch', () => {

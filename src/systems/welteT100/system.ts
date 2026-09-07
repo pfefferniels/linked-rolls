@@ -6,6 +6,7 @@ import {
     levelChanges,
     mezzoforteTravel,
     paperSeconds,
+    pedalBrushing,
     pedalDefaults,
     playbackParameters,
     pneumaticModel,
@@ -50,6 +51,29 @@ export type VelocityMap = {
     forte: number
 }
 
+/**
+ * The two readings of the pedal mechanism the emulator offers, by name.
+ * Under `damping` the dampers reach the strings within the shortest lift
+ * the rolls punch, so every lift damps. Under `brushing` their fall is
+ * slowed until the quick runs of latch changes in the SUPRA corpus dip
+ * without damping, at the price that lifts shorter than about 265 ms brush
+ * as well.
+ */
+export const pedalPresets = {
+    damping: pedalDefaults,
+    brushing: pedalBrushing
+} satisfies Record<string, Parameters>
+
+export type PedalPreset = keyof typeof pedalPresets
+
+const sameParameters = (a: Parameters, b: Parameters): boolean =>
+    Object.keys(a).length === Object.keys(b).length
+    && Object.entries(a).every(([name, value]) => b[name] === value)
+
+/** The preset a set of pedal constants is, if it is one. */
+export const pedalPresetOf = (pedals: Parameters): PedalPreset | undefined =>
+    (Object.keys(pedalPresets) as PedalPreset[]).find(name => sameParameters(pedalPresets[name], pedals))
+
 export type WelteT100Options = {
     /**
      * The take-up spool, which sets the time axis: it is held at a constant
@@ -60,7 +84,7 @@ export type WelteT100Options = {
     /** Constants of the nuancing mechanism, one set for each half of the keyboard. */
     nuance: Record<Half, Parameters>
 
-    /** Constants of the two pedal actions. */
+    /** Constants of the two pedal actions, one of `pedalPresets` or a set of one's own. */
     pedals: Parameters
 
     velocity: VelocityMap
@@ -93,7 +117,7 @@ export const defaultWelteT100Options: WelteT100Options = {
         bass: playbackParameters('bass'),
         treble: playbackParameters('treble')
     },
-    pedals: pedalDefaults,
+    pedals: pedalPresets.damping,
     velocity: { piano: 35, mezzoforte: 60, forte: 90 },
     pedalMode: 'continuous',
     trackerBore: TRACKER_BORE_MM,
