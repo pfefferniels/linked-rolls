@@ -84,6 +84,9 @@ export const inSeconds = (time: Milliseconds): Seconds => seconds(time / 1000)
 
 const METERS_PER_FOOT = 0.3048
 
+/** A speed as a record states it, in feet or metres per minute. */
+export type SpeedMeasure = Measure<'ft/min'> | Measure<'m/min'>
+
 /** A speed in metres per minute, whichever unit it was stated in. */
-export const inMetersPerMinute = (speed: Measure<'ft/min'> | Measure<'m/min'>): MetersPerMinute =>
+export const inMetersPerMinute = (speed: SpeedMeasure): MetersPerMinute =>
     speed.unit === 'm/min' ? speed.value : metersPerMinute(speed.value * METERS_PER_FOOT)

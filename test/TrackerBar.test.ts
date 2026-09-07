@@ -50,6 +50,11 @@ describe('WelteT100 tracker bar', () => {
     it('knows where the rewind perforation runs', () => {
         expect(welteT100.rewindTrack).toEqual(91)
     })
+
+    it('runs its rolls at three metres a minute, while the Licensee states no speed', () => {
+        expect(welteT100.paperSpeed).toEqual({ value: 3, unit: 'm/min' })
+        expect(welteLicensee.paperSpeed).toBeUndefined()
+    })
 })
 
 describe('Welte Licensee tracker bar', () => {

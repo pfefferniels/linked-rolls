@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readFromSpencerBar, SPENCER_ROWS_PER_INCH } from '../src/readers/spencerBar'
+import { paperSpeedOfSpencerAnn, readFromSpencerBar, readSpencerAnn, SPENCER_ROWS_PER_INCH } from '../src/readers/spencerBar'
 import { asSymbols, unreadTracks } from '../src/RollCopy'
 import { Expression, Note } from '../src/Symbol'
 import { welteT100 } from '../src/systems/welteT100/bar'
@@ -118,5 +118,33 @@ describe('reading a Spencer e-roll file', () => {
         const cutOff = new Uint8Array(spencerBar(events)).slice(0, -2).buffer
         expect(() => readFromSpencerBar(cutOff)).toThrow(/ends early/)
         expect(() => readFromSpencerBar(spencerBar([[10, 45], [5, 46], [5, 45]]))).toThrow(/never end/)
+    })
+})
+
+describe('reading the .ann beside a Spencer e-roll file', () => {
+    const ann = readSpencerAnn([
+        '/title:        Kinderscenen (Childhood Scenes) Op. 15',
+        '/composer:     Schumann',
+        '/roll_class:  Licensee',
+        '/roll_number:  225',
+        '/roll_tempo:   83',
+        '/play_tempo:   83',
+        '/sample_rate:  664',
+        ''
+    ].join('\r\n'))
+
+    it('reads its lines as keys and values', () => {
+        expect(ann.get('roll_class')).toEqual('Licensee')
+        expect(ann.get('title')).toEqual('Kinderscenen (Childhood Scenes) Op. 15')
+        expect(ann.size).toBe(7)
+    })
+
+    it('reads the roll tempo as tenths of a foot per minute', () => {
+        expect(paperSpeedOfSpencerAnn(ann)).toEqual({ value: 8.3, unit: 'ft/min' })
+    })
+
+    it('states no speed where the file states no tempo', () => {
+        expect(paperSpeedOfSpencerAnn(readSpencerAnn('/title: x'))).toBeUndefined()
+        expect(paperSpeedOfSpencerAnn(readSpencerAnn('/roll_tempo: fast'))).toBeUndefined()
     })
 })

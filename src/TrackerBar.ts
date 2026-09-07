@@ -1,6 +1,6 @@
 import type { Concept } from "./Agent"
 import { Expression, ExpressionScope, Note } from "./Symbol"
-import { Millimeters, Track, track } from "./Quantity"
+import { Millimeters, SpeedMeasure, Track, track } from "./Quantity"
 
 /**
  * What a tracker bar position does: sound a note, or operate one of
@@ -61,6 +61,13 @@ export interface TrackerBar {
      */
     readonly rewindTrack: Track
 
+    /**
+     * The paper speed the system runs its rolls at, where the
+     * literature states one. A system whose rolls each carry a tempo
+     * of their own, as the Licensee's do, states none.
+     */
+    readonly paperSpeed?: SpeedMeasure
+
     /** `undefined` for a position the bar does not read. */
     meaningOf(position: Track): TrackMeaning | undefined
 
@@ -92,6 +99,8 @@ export interface TrackerBarSpec {
     notes: { from: number, to: number, lowestPitch: number }
     /** Every position outside the note block, keyed by track. */
     expressions: ReadonlyMap<number, string>
+    /** The speed the system runs its rolls at, where the literature states one. */
+    paperSpeed?: SpeedMeasure
 }
 
 const areasOf = ({ notes, trackCount }: TrackerBarSpec): TrackArea[] => [
@@ -141,6 +150,7 @@ export const describeTrackerBar = (spec: TrackerBarSpec): TrackerBar => {
         areas,
         expressionTypes: [...new Set(spec.expressions.values())],
         rewindTrack: track(rewind),
+        ...(spec.paperSpeed && { paperSpeed: spec.paperSpeed }),
         meaningOf,
         roleOf
     }

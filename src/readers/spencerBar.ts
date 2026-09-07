@@ -1,10 +1,10 @@
 import { v4 } from "uuid";
 import { Hole } from "../Feature";
-import { RollCopy } from "../RollCopy";
+import { PaperSpeed, RollCopy } from "../RollCopy";
 import { systemOf, TrackerBar, translationBetween } from "../TrackerBar";
 import { welteT100 } from "../systems/welteT100/bar";
 import { welteLicensee } from "../systems/welteLicensee/bar";
-import { inMillimeters, px, track } from "../Quantity";
+import { feetPerMinute, inMillimeters, px, track } from "../Quantity";
 
 /**
  * Spencer Chase's e-roll file (`.bar`, "eRoll Tracker Bar Image") holds
@@ -156,4 +156,27 @@ export function readFromSpencerBar(
         modifications: [],
         features
     }
+}
+
+/**
+ * The `.ann` file beside a `.bar` holds the player's settings for the
+ * roll as lines of "/key:   value": title, composer, pianist, roll
+ * number and class, and the tempo the roll is played at.
+ */
+export const readSpencerAnn = (text: string): ReadonlyMap<string, string> =>
+    new Map(
+        text.split(/\r?\n/)
+            .map(line => line.match(/^\/(\w+):\s*(.*?)\s*$/))
+            .filter((match): match is RegExpMatchArray => match !== null)
+            .map(([, key, value]): [string, string] => [key, value])
+    )
+
+/** A roll tempo counts tenths of a foot per minute: tempo 83 runs the roll at 8.3 feet a minute. */
+const TEMPO_PER_FOOT_PER_MINUTE = 10
+
+/** The paper speed a `.ann` states through its roll tempo, where it states one. */
+export const paperSpeedOfSpencerAnn = (ann: ReadonlyMap<string, string>): PaperSpeed | undefined => {
+    const tempo = parseFloat(ann.get('roll_tempo') ?? '')
+    if (isNaN(tempo) || tempo <= 0) return undefined
+    return { value: feetPerMinute(tempo / TEMPO_PER_FOOT_PER_MINUTE), unit: 'ft/min' }
 }
