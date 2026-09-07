@@ -2,6 +2,7 @@ import { ObjectAssumption } from "./Assumption";
 import { ConditionState } from "./ConditionState";
 import { Text } from "./Symbol";
 import { PartialBy, WithId, WithType } from "./utils";
+import { Millimeters, Track } from "./Quantity";
 
 /**
  * Describes the horizontal extent of a feature on the roll,
@@ -21,13 +22,13 @@ export interface HorizontalSpan {
      * from the beginning of the roll.
      * @see reo:from
      */
-    from: number;
+    from: Millimeters;
     /**
      * The end position of the feature in millimeters
      * from the beginning of the roll.
      * @see reo:to
      */
-    to: number;
+    to: Millimeters;
 }
 
 /**
@@ -46,13 +47,13 @@ export interface VerticalSpan {
      * The start track number of the feature.
      * @see reo:from
      */
-    from: number;
+    from: Track;
     /**
      * The end track number, if the feature spans multiple tracks.
      * If omitted, the feature occupies a single track.
      * @see reo:to
      */
-    to?: number
+    to?: Track
 }
 
 export const featureTypes = ['Hole', 'Writing', 'Mark', 'GluedOn'] as const;

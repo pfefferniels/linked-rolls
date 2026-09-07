@@ -1,4 +1,5 @@
 import { MidiFile, AnyEvent, MIDIControlEvents, NoteOnEvent, NoteOffEvent } from "midifile-ts";
+import { Milliseconds, milliseconds } from "../Quantity";
 
 const isNoteOn = (event: AnyEvent) => event.type === 'channel' && event.subtype === 'noteOn'
 const isNoteOff = (event: AnyEvent) => event.type === 'channel' && event.subtype === 'noteOff'
@@ -31,19 +32,20 @@ const isSoftPedalOff = (event: AnyEvent) => {
         && event.value <= 63
 }
 
-export function midiTickToMilliseconds(ticks: number, microsecondsPerBeat: number, ppq: number): number {
+export function midiTickToMilliseconds(ticks: number, microsecondsPerBeat: number, ppq: number): Milliseconds {
     const beats = ticks / ppq;
-    return (beats * microsecondsPerBeat) / 1000;
+    return milliseconds((beats * microsecondsPerBeat) / 1000);
 }
 
 interface Span<T extends string> {
     type: T
     id: string
+    /** In ticks of the file. */
     onset: number
     offset: number
 
-    onsetMs: number
-    offsetMs: number
+    onsetMs: Milliseconds
+    offsetMs: Milliseconds
 
     link?: string
 }
@@ -104,7 +106,7 @@ export const asSpans = (file: MidiFile, readLinks = false): AnySpan[] => {
                         pitch,
                         channel: i,
                         onsetMs,
-                        offsetMs: 0,
+                        offsetMs: milliseconds(0),
                         link
                     });
                 }
@@ -115,7 +117,7 @@ export const asSpans = (file: MidiFile, readLinks = false): AnySpan[] => {
                         onset: currentTime,
                         offset: 0,
                         onsetMs,
-                        offsetMs: 0,
+                        offsetMs: milliseconds(0),
                         link
                     });
                 }

@@ -8,6 +8,7 @@ import { AnyFeature } from "./Feature";
 import { ActorAssignment, assignReference, DateAssignment, ObjectAssumption } from "./Assumption";
 import { WithId, WithType } from "./utils";
 import { Agent, Concept } from "./Agent";
+import { Measure, Millimeters, Quantity, px, Track, track } from "./Quantity";
 
 /**
  * This condition state is used to describe the roll's
@@ -48,15 +49,18 @@ export const rollConditions = [
  * (along the roll length, in mm) and vertical (across tracks).
  */
 export interface Shift {
-    /**
-     * Horizontal shift in millimeters (along the roll length).
-     */
-    horizontal: number
+    /** Along the roll. */
+    horizontal: Millimeters
 
-    /**
-     * Vertical shift in track numbers (across the tracker bar).
-     */
-    vertical: number
+    /** Across the tracker bar. */
+    vertical: Track
+}
+
+/** The margins on the treble and bass sides of the roll, in the unit the scan was measured in. */
+export interface Margins<U extends 'px' | 'mm'> {
+    treble: Quantity<U>
+    bass: Quantity<U>
+    unit: U
 }
 
 /**
@@ -168,74 +172,40 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
          */
         dimensions: {
             /**
-             * The width of the roll in the given unit.
+             * The width of the roll.
              * @see reo:width
              */
-            width: number,
+            width: Millimeters,
             /**
-             * The total height (length) of the roll in the given unit.
+             * The total height (length) of the roll.
              * @see reo:height
              */
-            height: number,
+            height: Millimeters,
             /**
-             * The unit of measurement (e.g. 'mm').
+             * The unit of measurement.
              * @see crm:P91 has unit
              */
-            unit: string
+            unit: 'mm'
         }
 
         /**
          * The average diameter of punched holes.
          * @see reo:punchDiameter
          */
-        punchDiameter: {
-            /**
-             * The measured punch diameter value.
-             * @see crm:P90 has value
-             */
-            value: number
-            /**
-             * The unit of measurement (e.g. 'mm').
-             * @see crm:P91 has unit
-             */
-            unit: string
-        }
+        punchDiameter: Measure<'mm'>
 
         /**
-         * The distance between adjacent tracker bar holes.
+         * The distance between adjacent tracker bar holes, in the
+         * unit the scan was measured in.
          * @see reo:holeSeparation
          */
-        holeSeparation: {
-            /**
-             * The measured hole separation value.
-             * @see crm:P90 has value
-             */
-            value: number
-            /**
-             * The unit of measurement (e.g. 'px', 'mm').
-             * @see crm:P91 has unit
-             */
-            unit: string
-        }
+        holeSeparation: Measure<'px'> | Measure<'mm'>
 
         /**
          * The margins on the treble and bass sides of the roll.
          * Not exported to RDF.
          */
-        margins: {
-            /**
-             * The margin on the treble side.
-             */
-            treble: number
-            /**
-             * The margin on the bass side.
-             */
-            bass: number
-            /**
-             * The unit of measurement (e.g. 'px', 'mm').
-             */
-            unit: string
-        }
+        margins: Margins<'px'> | Margins<'mm'>
 
         /**
          * The shift applied to align this copy with the others.
@@ -343,14 +313,14 @@ export function asSymbols(
 export function unreadTracks(
     features: AnyFeature[],
     bar: TrackerBar = welteT100
-): Map<number, number> {
-    const counts = new Map<number, number>()
+): Map<Track, number> {
+    const counts = new Map<Track, number>()
     features
         .filter(feature => feature.type === 'Hole')
         .filter(feature => !bar.meaningOf(feature.vertical.from))
         .forEach(feature => {
-            const track = feature.vertical.from
-            counts.set(track, (counts.get(track) || 0) + 1)
+            const position = feature.vertical.from
+            counts.set(position, (counts.get(position) || 0) + 1)
         })
     return counts
 }
@@ -370,15 +340,14 @@ export const calibrationOf = (copy: RollCopy): TrackCalibration | undefined => {
         return copy.measurements.trackCalibration
     }
 
-    const separation = copy.measurements.holeSeparation?.value
-    const bassMargin = copy.measurements.margins?.bass
-    if (separation === undefined || bassMargin === undefined) return undefined
+    const { holeSeparation, margins } = copy.measurements
+    if (holeSeparation?.unit !== 'px' || margins?.unit !== 'px') return undefined
 
     return {
         unit: 'px',
-        offset: bassMargin + 1.5 * separation,
-        separation,
-        shift: 0
+        offset: px(margins.bass + 1.5 * holeSeparation.value),
+        separation: holeSeparation.value,
+        shift: track(0)
     }
 }
 

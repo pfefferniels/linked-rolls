@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { calibrationOf, RollCopy } from '../src/RollCopy'
 import { columnsOf } from '../src/TrackCalibration'
 import { welteT100 } from '../src/systems/welteT100/bar'
+import { px, track } from '../src/Quantity'
 
 /**
  * Copies imported before the calibration was recorded have to keep
@@ -51,7 +52,7 @@ describe('a copy imported before the calibration was recorded', () => {
             ...legacyCopy,
             measurements: {
                 ...legacyCopy.measurements,
-                trackCalibration: { unit: 'px' as const, offset: 6.71627, separation: 37.7646, shift: -3 }
+                trackCalibration: { unit: 'px' as const, offset: px(6.71627), separation: px(37.7646), shift: track(-3) }
             }
         }
         expect(calibrationOf(measured)?.shift).toEqual(-3)

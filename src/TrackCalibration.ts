@@ -1,3 +1,5 @@
+import { Pixels, px, subtract, Track, track } from "./Quantity"
+
 /**
  * Relates a scan to the tracker bar it was read with.
  *
@@ -13,34 +15,34 @@ export interface TrackCalibration {
     unit: 'px'
 
     /** Image column of the scanning software's track 0. */
-    offset: number
+    offset: Pixels
 
     /** Distance between the centres of adjacent tracks. */
-    separation: number
+    separation: Pixels
 
     /** Added to the scanning software's numbering to reach the tracker bar. */
-    shift: number
+    shift: Track
 }
 
 /** Image column at the centre of a tracker bar track. */
-export const columnOf = (track: number, calibration: TrackCalibration) =>
-    calibration.offset + (track - calibration.shift) * calibration.separation
+export const columnOf = (position: Track, calibration: TrackCalibration): Pixels =>
+    px(calibration.offset + (position - calibration.shift) * calibration.separation)
 
 /** Tracker bar track covering an image column, unrounded. */
-export const trackAt = (column: number, calibration: TrackCalibration) =>
-    (column - calibration.offset) / calibration.separation + calibration.shift
+export const trackAt = (column: Pixels, calibration: TrackCalibration): Track =>
+    track((column - calibration.offset) / calibration.separation + calibration.shift)
 
 /**
  * The columns covered by a run of tracks, from the outer edge of the
  * first to the outer edge of the last.
  */
 export const columnsOf = (
-    from: number,
-    to: number,
+    from: Track,
+    to: Track,
     calibration: TrackCalibration
-) => {
+): { from: Pixels, to: Pixels, width: Pixels } => {
     const [lower, upper] = from <= to ? [from, to] : [to, from]
-    const start = columnOf(lower, calibration) - calibration.separation / 2
-    const end = columnOf(upper, calibration) + calibration.separation / 2
-    return { from: start, to: end, width: end - start }
+    const start = px(columnOf(lower, calibration) - calibration.separation / 2)
+    const end = px(columnOf(upper, calibration) + calibration.separation / 2)
+    return { from: start, to: end, width: subtract(end, start) }
 }

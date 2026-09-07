@@ -4,12 +4,13 @@ import { RollCopy } from '../src/RollCopy'
 import { Expression, Note, Text } from '../src/Symbol'
 import { Version } from '../src/Version'
 import { assignReference, assignValue } from '../src/Assumption'
+import { mm, track } from '../src/Quantity'
 
-export const hole = (id: string, from: number, to: number, track: number): Hole => ({
+export const hole = (id: string, from: number, to: number, position: number): Hole => ({
     type: 'Hole',
     id,
-    horizontal: { unit: 'mm', from, to },
-    vertical: { unit: 'track', from: track }
+    horizontal: { unit: 'mm', from: mm(from), to: mm(to) },
+    vertical: { unit: 'track', from: track(position) }
 })
 
 export const copy = (id: string, features: Hole[]): RollCopy => ({

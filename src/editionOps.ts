@@ -9,6 +9,8 @@ import { Version } from "./Version"
 import { asSymbols, PaperStretch, RollCopy, Shift } from "./RollCopy"
 import { applyShift, applyStretch, revertShift, revertStretch } from "./alignment"
 import { AnyArgumentation, Assumption, Belief, Certainty, ObjectAssumption, assignReference, idOf } from "./Assumption"
+import { HorizontalSpan } from "./Feature"
+import { distance, Millimeters, mm, subtract } from "./Quantity"
 
 /**
  * A change to an edition, written onto an immer draft of it. One
@@ -279,13 +281,16 @@ const expressionTypesOf = (symbols: readonly AnySymbol[]) =>
 
 const accents = [['SlowCrescendoOn', 'SlowCrescendoOff'], ['ForzandoOn', 'ForzandoOff']]
 
-const lengthOf = (span: { from: number, to: number }) => span.to - span.from
+const lengthOf = (span: HorizontalSpan): Millimeters => subtract(span.to, span.from)
+
+/** How far apart two onsets may lie for the one symbol to count as a replacement of the other. */
+const REPLACEMENT_TOLERANCE = mm(5)
 
 /** Shorten or prolong, where the inserted symbol starts about where the deleted one did. */
 const replacementType = (view: EditionView, inserted: AnySymbol, deleted: AnySymbol): EditType | undefined => {
     const after = view.dimensionOf(inserted)?.horizontal
     const before = view.dimensionOf(deleted)?.horizontal
-    if (!after || !before || Math.abs(after.from - before.from) >= 5) return undefined
+    if (!after || !before || distance(after.from, before.from) >= REPLACEMENT_TOLERANCE) return undefined
 
     return lengthOf(after) < lengthOf(before) ? 'shorten' : 'prolong'
 }

@@ -9,6 +9,7 @@ import { Emulation } from '../src/Emulation'
 import { DynamicsCurve, PedalCurve, PerformedPedalEvent } from '../src/ReproducingSystem'
 import { instrumentNameOf, instrumentNames, instruments, nuanceOf, pedalPresetOf, pedalPresets, secondsAt, welteT100System } from '../src/systems/welteT100/system'
 import { atConstantSpeed, SPENCER_FEET_PER_MINUTE } from '../src/readers/spencerMidi'
+import { mm, seconds } from '../src/Quantity'
 
 const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')
 const edition = importJsonLd(JSON.parse(file))
@@ -29,22 +30,22 @@ const spread = (values: Float64Array) =>
 describe('the time axis', () => {
     it('is the take-up spool', () => {
         expect(emulation.options.spool).toEqual(WELTE_SPOOL)
-        expect(secondsAt(WELTE_SPOOL, 1450)).toEqual(paperSeconds(WELTE_SPOOL, 145))
+        expect(secondsAt(WELTE_SPOOL, mm(1450))).toEqual(paperSeconds(WELTE_SPOOL, 145))
     })
 
     it('takes 30 s over the first 1.45 m of paper, as Gottschewski checks it', () => {
         // Die Interpretation als Kunstwerk, p. 137
-        expect(secondsAt(WELTE_SPOOL, 1450)).toBeCloseTo(30, 1)
+        expect(secondsAt(WELTE_SPOOL, mm(1450))).toBeCloseTo(30, 1)
     })
 
     it('can be walked back from time to place', () => {
-        expect(paperAt(WELTE_SPOOL, secondsAt(WELTE_SPOOL, 120))).toBeCloseTo(12, 9)
+        expect(paperAt(WELTE_SPOOL, secondsAt(WELTE_SPOOL, mm(120)))).toBeCloseTo(12, 9)
     })
 
     it('is a constant speed for a scanned roll', () => {
         const placeAt = atConstantSpeed(SPENCER_FEET_PER_MINUTE)
-        expect(placeAt(60)).toBeCloseTo(8.3 * 304.8, 9)
-        expect(placeAt(30) * 2).toBeCloseTo(placeAt(60), 9)
+        expect(placeAt(seconds(60))).toBeCloseTo(8.3 * 304.8, 9)
+        expect(placeAt(seconds(30)) * 2).toBeCloseTo(placeAt(seconds(60)), 9)
     })
 })
 

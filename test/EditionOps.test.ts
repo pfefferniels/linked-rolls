@@ -13,6 +13,7 @@ import {
     removeVersion, setCertainty, splitEdit, unalignCopy, unpairPerforation, unplacePerforation
 } from '../src/editionOps'
 import { copy, edition, editionOf, expression, hole, note, version } from './editionFixture'
+import { mm, track } from '../src/Quantity'
 
 const viewOf = (edition: Edition) => new EditionView(edition)
 const noteIn = (edition: Edition) => viewOf(edition).get<Note>('note')!
@@ -87,7 +88,7 @@ describe('creating a version from a copy', () => {
 
 describe('aligning a copy', () => {
     const stretch = assignObject<PaperStretch>({ type: 'ConditionState', conditionType: 'paper-stretch', factor: 1.5 })
-    const shift = { horizontal: 2, vertical: 1 }
+    const shift = { horizontal: mm(2), vertical: track(1) }
     const holeOf = (edition: Edition) => edition.copies[1].features[0]
 
     it('shifts and then stretches its features, recording both', () => {

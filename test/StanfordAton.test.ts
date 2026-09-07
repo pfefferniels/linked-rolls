@@ -6,6 +6,7 @@ import { readFromStanfordAton } from '../src/readers/stanfordAton'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { columnOf } from '../src/TrackCalibration'
 import { Expression } from '../src/Symbol'
+import { track } from '../src/Quantity'
 
 /**
  * mf320jq4997, a red Welte roll scanned at Stanford, reduced to its
@@ -70,7 +71,7 @@ describe('reading a Stanford analysis file', () => {
      * the check above evidence rather than a restatement of the input.
      */
     it.each([-2, -4])('breaks the pairing at a shift of %i', shift => {
-        const counts = countByExpression(readFromStanfordAton(aton, { trackShift: shift }))
+        const counts = countByExpression(readFromStanfordAton(aton, { trackShift: track(shift) }))
 
         expect(counts.get('treble Rewind')).toBeUndefined()
         expect(counts.get('bass ForzandoOn')).not.toEqual(15)
@@ -93,7 +94,7 @@ describe('reading a Stanford analysis file', () => {
     })
 
     it('takes an explicit shift when the rewind is not to be trusted', () => {
-        const uncalibrated = readFromStanfordAton(aton, { trackShift: 0 })
+        const uncalibrated = readFromStanfordAton(aton, { trackShift: track(0) })
         expect(uncalibrated.measurements.trackCalibration?.shift).toEqual(0)
         expect(uncalibrated.features[0].vertical.from)
             .toEqual(copy.features[0].vertical.from + 3)

@@ -3,20 +3,31 @@ import { AnyFeature } from "./Feature";
 import { PaperStretch, RollConditionAssignment, RollCopy, Shift } from "./RollCopy";
 import { TrackerBar } from "./TrackerBar";
 import { welteT100 } from "./systems/welteT100/bar";
+import { add, Millimeters, mm, Quantity, scale, Unit } from "./Quantity";
+
+type Ends<U extends Unit> = { from: Quantity<U>, to?: Quantity<U> }
+
+/** Moves both ends of a span, the far end only where the span has one. */
+const move = <U extends Unit>(span: Ends<U>, by: Quantity<NoInfer<U>>) => {
+    span.from = add(span.from, by)
+    if (span.to !== undefined) span.to = add(span.to, by)
+}
+
+/** Stretches both ends of a span away from the beginning of the roll. */
+const stretch = <U extends Unit>(span: Ends<U>, factor: number) => {
+    span.from = scale(span.from, factor)
+    if (span.to !== undefined) span.to = scale(span.to, factor)
+}
+
+const back = (shift: Shift): Shift =>
+    ({ horizontal: scale(shift.horizontal, -1), vertical: scale(shift.vertical, -1) })
 
 export const applyShift = (shift: Shift, copy: RollCopy) => {
     if (copy.ops.includes('shifted')) return
 
     copy.features.forEach(feature => {
-        feature.horizontal.from += shift.horizontal
-        if (feature.horizontal.to) {
-            feature.horizontal.to += shift.horizontal
-        }
-
-        feature.vertical.from += shift.vertical
-        if (feature.vertical.to) {
-            feature.vertical.to += shift.vertical
-        }
+        move(feature.horizontal, shift.horizontal)
+        move(feature.vertical, shift.vertical)
     })
     copy.ops = [...copy.ops, 'shifted']
     copy.measurements.shift = shift
@@ -28,13 +39,7 @@ export const applyStretch = (
 ) => {
     if (copy.ops.includes('stretched')) return
 
-    const stretch = paperStretch.factor
-    copy.features.forEach(feature => {
-        feature.horizontal.from *= stretch
-        if (feature.horizontal.to) {
-            feature.horizontal.to *= stretch
-        }
-    })
+    copy.features.forEach(feature => stretch(feature.horizontal, paperStretch.factor))
     copy.ops = [...copy.ops, 'stretched']
     copy.conditions.push(paperStretch)
 }
@@ -44,16 +49,10 @@ export const revertShift = (copy: RollCopy) => {
     const shift = copy.measurements.shift
     if (!copy.ops.includes('shifted') || !shift) return
 
+    const reversed = back(shift)
     copy.features.forEach(feature => {
-        feature.horizontal.from -= shift.horizontal
-        if (feature.horizontal.to) {
-            feature.horizontal.to -= shift.horizontal
-        }
-
-        feature.vertical.from -= shift.vertical
-        if (feature.vertical.to) {
-            feature.vertical.to -= shift.vertical
-        }
+        move(feature.horizontal, reversed.horizontal)
+        move(feature.vertical, reversed.vertical)
     })
     copy.ops = copy.ops.filter(op => op !== 'shifted')
     delete copy.measurements.shift
@@ -64,22 +63,17 @@ const isPaperStretch = (condition: RollConditionAssignment): condition is Object
 
 /** Takes the stretch off the copy's features again, as far as one was applied. */
 export const revertStretch = (copy: RollCopy) => {
-    const stretch = copy.conditions.find(isPaperStretch)
-    if (!copy.ops.includes('stretched') || !stretch) return
+    const applied = copy.conditions.find(isPaperStretch)
+    if (!copy.ops.includes('stretched') || !applied) return
 
-    copy.features.forEach(feature => {
-        feature.horizontal.from /= stretch.factor
-        if (feature.horizontal.to) {
-            feature.horizontal.to /= stretch.factor
-        }
-    })
+    copy.features.forEach(feature => stretch(feature.horizontal, 1 / applied.factor))
     copy.ops = copy.ops.filter(op => op !== 'stretched')
     copy.conditions = copy.conditions.filter(condition => !isPaperStretch(condition))
 }
 
 type AlignmentResult = {
-    /** Shift in mm, applied before the stretch. */
-    shift: number;
+    /** Applied before the stretch. */
+    shift: Millimeters;
     stretch: number;
 };
 
@@ -144,7 +138,7 @@ export function alignFeatures(
 
     // 5. Derive stretch and shift such that x2 = (x1 + shift) * stretch
     const stretch = alphaB / alphaA;
-    const shift = betaB / stretch - betaA;
+    const shift = mm(betaB / stretch - betaA);
 
     return { stretch, shift };
 }

@@ -8,6 +8,7 @@ import { assignReference } from '../src/Assumption'
 import { Expression, Note } from '../src/Symbol'
 import { constraintProblems } from '../src/constraints'
 import { flat } from './flat'
+import { mean, Millimeters, mm } from '../src/Quantity'
 
 const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')
 
@@ -51,16 +52,16 @@ const setUp = () => {
             const distance = typeof copy === 'number' ? distances[copy] : undefined
             if (distance === undefined) throw new Error(`no distance for copy ${copy}`)
             const length = horizontal.to - horizontal.from
-            horizontal.from = onsetOn(reference, copy) + distance
-            horizontal.to = horizontal.from + length
+            horizontal.from = mm(onsetOn(reference, copy) + distance)
+            horizontal.to = mm(horizontal.from + length)
         })
     }
 
     const punchDiameters = edition.copies
         .map(copy => copy.measurements.punchDiameter?.value)
-        .filter((value): value is number => value !== undefined && value > 0)
+        .filter((value): value is Millimeters => value !== undefined && value > 0)
     /** What the performance falls back on where no copy agrees with a statement. */
-    const gap = punchDiameters.reduce((sum, value) => sum + value, 0) / punchDiameters.length
+    const gap = mean(punchDiameters)
 
     return { edition, view, version, first, second, third, note, onsetOf, lengthOf, placeBeside, gap, emulate }
 }

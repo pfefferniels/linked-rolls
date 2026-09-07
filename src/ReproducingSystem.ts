@@ -1,30 +1,35 @@
 import { Hole } from "./Feature";
 import { Expression, Note } from "./Symbol";
 import { TrackerBar } from "./TrackerBar";
+import { Millimeters, Quantity, Seconds } from "./Quantity";
+
+export type SpeedUnit = 'ft/min' | 'm/min'
 
 /**
- * The playback tempo of the roll, specified as a starting
- * and ending speed. The tempo may change over the course
- * of the roll due to acceleration effects.
+ * The playback tempo of the roll as a paper speed, stated at the
+ * beginning and at the end, since the speed may change over the
+ * course of the roll through acceleration.
  * @see crm:E54 Dimension
  */
-export interface RollTempo {
+export interface RollTempoIn<U extends SpeedUnit> {
     /**
      * The tempo at the beginning of the roll.
      * @see reo:from
      */
-    startsWith: number;
+    startsWith: Quantity<U>;
     /**
      * The tempo at the end of the roll.
      * @see reo:to
      */
-    endsWith: number;
+    endsWith: Quantity<U>;
     /**
-     * The unit of the tempo measurement (e.g. 'ft/min', 'm/min').
+     * The unit of the tempo measurement.
      * @see crm:P91 has unit
      */
-    unit: string;
+    unit: U;
 }
+
+export type RollTempo = RollTempoIn<'ft/min'> | RollTempoIn<'m/min'>
 
 /**
  * A note or expression of a version with the dimensions of its carriers
@@ -38,8 +43,8 @@ export type NegotiatedEvent =
 interface PerformedRollFeature<T> {
     type: T
     performs: NegotiatedEvent
-    /** Seconds from the beginning of the roll. */
-    at: number
+    /** Time from the beginning of the roll. */
+    at: Seconds
 }
 
 interface PerformedNoteEvent<T> extends PerformedRollFeature<T> {
@@ -94,8 +99,8 @@ export type EmulatedCurve = DynamicsCurve | PedalCurve
 
 /** What the edition records about the roll that a mechanism may want to know. */
 export type RollProperties = {
-    /** Diameter of the punches in mm, where the copies record it. */
-    punchDiameter?: number
+    /** Diameter of the punches, where the copies record it. */
+    punchDiameter?: Millimeters
 
     /** The tempo the edition adjusts the roll to, where it states one. */
     tempo?: RollTempo
