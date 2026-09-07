@@ -81,3 +81,9 @@ export const inMillimeters = (place: Pixels, dpi: number): Millimeters => mm(pla
 export const inCentimeters = (length: Millimeters): Centimeters => cm(length / 10)
 
 export const inSeconds = (time: Milliseconds): Seconds => seconds(time / 1000)
+
+const METERS_PER_FOOT = 0.3048
+
+/** A speed in metres per minute, whichever unit it was stated in. */
+export const inMetersPerMinute = (speed: Measure<'ft/min'> | Measure<'m/min'>): MetersPerMinute =>
+    speed.unit === 'm/min' ? speed.value : metersPerMinute(speed.value * METERS_PER_FOOT)
