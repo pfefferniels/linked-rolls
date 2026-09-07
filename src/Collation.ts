@@ -1,6 +1,7 @@
 import { HorizontalSpan } from "./Feature"
 import { AnySymbol } from "./Symbol"
 import { distance, Millimeters, mm } from "./Quantity"
+import { partitionPoint } from "./sorted"
 
 /**
  * Tolerance used in collation of roll copies: the acceptable deviation
@@ -20,6 +21,22 @@ export const defaultCollationTolerance: CollationTolerance = { toleranceStart: m
 export type Locate = (symbol: AnySymbol) => Readonly<{ horizontal: HorizontalSpan }> | undefined
 
 /**
+ * What a symbol says, as a key: the pitch of a note, the type and scope
+ * of an expression. Symbols collate within one key only.
+ */
+const kindOf = (symbol: AnySymbol): string => {
+    switch (symbol.type) {
+        case 'note': return `note ${symbol.pitch}`
+        case 'expression': return `expression ${symbol.scope} ${symbol.expressionType}`
+        case 'text': return 'text'
+    }
+}
+
+const nearby = (here: HorizontalSpan, there: HorizontalSpan, tolerance: CollationTolerance): boolean =>
+    distance(here.from, there.from) <= tolerance.toleranceStart
+    && distance(here.to, there.to) <= tolerance.toleranceEnd
+
+/**
  * Two symbols collate when they are of one kind, say the same thing
  * (pitch, or expression type and scope), and lie at about the same
  * place along the roll.
@@ -30,29 +47,64 @@ export const isCollatable = (
     locate: Locate,
     tolerance: CollationTolerance = defaultCollationTolerance
 ): boolean => {
-    if (a.type !== b.type) return false
-    if (a.type === 'note' && b.type === 'note' && a.pitch !== b.pitch) return false
-    if (a.type === 'expression' && b.type === 'expression'
-        && (a.expressionType !== b.expressionType || a.scope !== b.scope)) return false
+    if (kindOf(a) !== kindOf(b)) return false
 
     const here = locate(a)?.horizontal
     const there = locate(b)?.horizontal
-    if (!here || !there) return false
-
-    return distance(here.from, there.from) <= tolerance.toleranceStart
-        && distance(here.to, there.to) <= tolerance.toleranceEnd
+    return here !== undefined && there !== undefined && nearby(here, there, tolerance)
 }
 
 export type Collation = { symbol: Readonly<AnySymbol>, counterpart: Readonly<AnySymbol> }
 
-/** Each of the own symbols with every inherited symbol it collates with. */
+/** A symbol that has a place, with its place and its position in the list it came from. */
+type Placed = { symbol: Readonly<AnySymbol>, index: number, horizontal: HorizontalSpan }
+
+const placed = (symbols: readonly Readonly<AnySymbol>[], locate: Locate): Placed[] =>
+    symbols.flatMap((symbol, index) => {
+        const horizontal = locate(symbol)?.horizontal
+        return horizontal ? [{ symbol, index, horizontal }] : []
+    })
+
+const groupBy = <T,>(items: readonly T[], keyOf: (item: T) => string): Map<string, T[]> =>
+    items.reduce((groups, item) => {
+        const key = keyOf(item)
+        const group = groups.get(key)
+        if (group) group.push(item)
+        else groups.set(key, [item])
+        return groups
+    }, new Map<string, T[]>())
+
+/** The placed symbols by kind, each kind in order of onset. */
+const byKindInOrderOfOnset = (symbols: readonly Placed[]): Map<string, Placed[]> => {
+    const groups = groupBy(symbols, ({ symbol }) => kindOf(symbol))
+    groups.forEach(group => group.sort((a, b) => a.horizontal.from - b.horizontal.from))
+    return groups
+}
+
+/** Widens the onset window by a hair, so that rounding in its bounds cannot leave out what `nearby` accepts. */
+const WINDOW_SLACK = 1e-9
+
+/** The symbols of a kind whose onset lies within the start tolerance of the span. */
+const nearOnsetOf = (kind: readonly Placed[], span: HorizontalSpan, tolerance: CollationTolerance): Placed[] => {
+    const lowest = span.from - tolerance.toleranceStart - WINDOW_SLACK
+    const highest = span.from + tolerance.toleranceStart + WINDOW_SLACK
+    const first = partitionPoint(kind, candidate => candidate.horizontal.from < lowest)
+    const end = partitionPoint(kind, candidate => candidate.horizontal.from <= highest)
+    return kind.slice(first, end)
+}
+
+/** Each of the own symbols with every inherited symbol it collates with, both in the order given. */
 export const collationsOf = (
     own: readonly Readonly<AnySymbol>[],
     inherited: readonly Readonly<AnySymbol>[],
     locate: Locate,
     tolerance: CollationTolerance = defaultCollationTolerance
-): Collation[] =>
-    own.flatMap(symbol =>
-        inherited
-            .filter(candidate => isCollatable(symbol, candidate, locate, tolerance))
-            .map(counterpart => ({ symbol, counterpart })))
+): Collation[] => {
+    const kinds = byKindInOrderOfOnset(placed(inherited, locate))
+
+    return placed(own, locate).flatMap(({ symbol, horizontal }) =>
+        nearOnsetOf(kinds.get(kindOf(symbol)) ?? [], horizontal, tolerance)
+            .filter(candidate => nearby(horizontal, candidate.horizontal, tolerance))
+            .sort((a, b) => a.index - b.index)
+            .map(({ symbol: counterpart }) => ({ symbol, counterpart })))
+}

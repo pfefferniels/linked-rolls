@@ -1,11 +1,11 @@
-import { Draft } from "immer"
+import { current, Draft, isDraft } from "immer"
 import { v4 } from "uuid"
 import { EditionView, getAt, Path } from "./EditionView"
 import { Edition } from "./Edition"
 import { AnyPerforation, AnySymbol, Expression, PlacementRelation, isPerforation, placementRelations } from "./Symbol"
 import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance } from "./Collation"
 import { Edit, EditType } from "./Edit"
-import { Version } from "./Version"
+import { insertedBy, Version } from "./Version"
 import { asSymbols, PaperStretch, RollCopy, Shift } from "./RollCopy"
 import { applyShift, applyStretch, revertShift, revertStretch } from "./alignment"
 import { AnyArgumentation, Assumption, Belief, Certainty, ObjectAssumption, assignReference, idOf } from "./Assumption"
@@ -34,9 +34,21 @@ const onVersion = (versionId: string, op: (version: Draft<Version>, draft: Draft
         if (version) op(version, draft)
     }
 
+/**
+ * The state a draft stands at, as plain data. Reading a draft proxies
+ * everything it touches, so what is only read is read from this.
+ */
+const stateOf = <T,>(draft: Draft<T>): T => isDraft(draft) ? current(draft) : draft as T
+
 /** The items that do not match, or the very same array when none does, so that a draft stays untouched. */
 const without = <T,>(items: T[], matches: (item: T) => boolean): T[] =>
     items.some(matches) ? items.filter(item => !matches(item)) : items
+
+/** The items each changed, or the very same array when the change left every one as it was. */
+const mapped = <T,>(items: T[], change: (item: T) => T): T[] => {
+    const changed = items.map(change)
+    return changed.every((item, i) => item === items[i]) ? items : changed
+}
 
 type Ids = ReadonlySet<string>
 
@@ -46,21 +58,24 @@ const deletion = (symbolId: string): Edit => ({ type: 'edit', id: v4(), delete: 
 
 const isEmpty = (edit: Edit): boolean => !edit.insert?.length && !edit.delete?.length
 
-const insertedIn = (versions: readonly Version[]): AnySymbol[] =>
-    versions.flatMap(version => version.edits).flatMap(edit => edit.insert ?? [])
+const insertedIn = (versions: readonly Version[]): AnySymbol[] => versions.flatMap(insertedBy)
 
-/** Runs the change over the version's edits and drops those it emptied, leaving edits that were empty before alone. */
-const editing = (version: Draft<Version>, change: (edit: Draft<Edit>) => void) => {
-    const emptyBefore = new Set(version.edits.filter(isEmpty).map(edit => edit.id))
-    version.edits.forEach(change)
-    version.edits = without(version.edits, edit => isEmpty(edit) && !emptyBefore.has(edit.id))
+/** The edits with the change applied, less those it emptied; the very same array where it changed none. */
+const edited = (edits: Edit[], change: (edit: Edit) => Edit): Edit[] => {
+    const changed = mapped(edits, change)
+    return changed === edits ? edits : changed.filter((edit, i) => edit === edits[i] || !isEmpty(edit))
 }
 
-/** Takes the symbols out of the version's own insertions. */
-const dropInsertions = (version: Draft<Version>, symbolIds: Ids) =>
-    editing(version, edit => {
-        if (edit.insert) edit.insert = without(edit.insert, symbol => symbolIds.has(symbol.id))
-    })
+/** The edit without the symbols among its insertions, or the very same edit where it inserts none of them. */
+const droppingInsertions = (symbolIds: Ids) => (edit: Edit): Edit => {
+    const insert = edit.insert && without(edit.insert, symbol => symbolIds.has(symbol.id))
+    return insert === edit.insert ? edit : { ...edit, insert }
+}
+
+/** Takes the symbols out of the version's own insertions, and the edits that had nothing else. */
+const dropInsertions = (version: Draft<Version>, symbolIds: Ids) => {
+    version.edits = edited(stateOf<Version>(version).edits, droppingInsertions(symbolIds))
+}
 
 /**
  * Puts the copy into the edition with a version of its own, which
@@ -111,26 +126,34 @@ export const symbolsCarriedOnlyBy = (edition: Edition, copyId: string): AnySymbo
 
 const references = [...placementRelations, 'pairedWith'] as const
 
-const forgetPerforations = (perforation: Draft<AnyPerforation>, dropped: Ids) =>
-    references
-        .filter(relation => {
-            const reference = perforation[relation]
-            return reference && dropped.has(idOf(reference))
-        })
-        .forEach(relation => { delete perforation[relation] })
+/** The perforation without its references to the dropped symbols, or the very same one where it makes none. */
+const forgettingReferences = (perforation: AnyPerforation, dropped: Ids): AnyPerforation => {
+    const stale = references.filter(relation => {
+        const reference = perforation[relation]
+        return reference !== undefined && dropped.has(idOf(reference))
+    })
+    if (stale.length === 0) return perforation
 
-const forgetCarriers = (symbol: Draft<AnySymbol>, features: Ids, dropped: Ids) => {
-    symbol.carriers = without(symbol.carriers, carrier => features.has(idOf(carrier)))
-    if (isPerforation(symbol)) forgetPerforations(symbol, dropped)
+    const kept = { ...perforation }
+    stale.forEach(relation => { delete kept[relation] })
+    return kept
 }
 
-const forgetFeaturesInEdit = (edit: Draft<Edit>, features: Ids, dropped: Ids) => {
-    if (edit.insert) {
-        edit.insert = without(edit.insert, symbol => dropped.has(symbol.id))
-        edit.insert.forEach(symbol => forgetCarriers(symbol, features, dropped))
-    }
-    if (edit.delete) {
-        edit.delete = without(edit.delete, id => dropped.has(id))
+/** The symbol without the features among its carriers, and without references to what went with them. */
+const forgettingCarriers = (features: Ids, dropped: Ids) => (symbol: AnySymbol): AnySymbol => {
+    const carriers = without(symbol.carriers, carrier => features.has(idOf(carrier)))
+    const relieved: AnySymbol = carriers === symbol.carriers ? symbol : { ...symbol, carriers }
+    return isPerforation(relieved) ? forgettingReferences(relieved, dropped) : relieved
+}
+
+/** The edit without the dropped symbols and the features, or the very same edit where it had none of them. */
+const forgettingFeatures = (features: Ids, dropped: Ids) => {
+    const forgetCarriers = forgettingCarriers(features, dropped)
+    return (edit: Edit): Edit => {
+        const insert = edit.insert && mapped(without(edit.insert, symbol => dropped.has(symbol.id)), forgetCarriers)
+        const deleted = edit.delete && without(edit.delete, id => dropped.has(id))
+        if (insert === edit.insert && deleted === edit.delete) return edit
+        return { ...edit, ...(insert && { insert }), ...(deleted && { delete: deleted }) }
     }
 }
 
@@ -140,9 +163,12 @@ const forgetFeaturesInEdit = (edit: Draft<Edit>, features: Ids, dropped: Ids) =>
  * reference the versions made to such a symbol.
  */
 const forgetFeatures = (draft: Draft<Edition>, features: Ids) => {
-    const dropped = new Set(insertedIn(draft.versions).filter(carriedOnlyOn(features)).map(symbol => symbol.id))
-    draft.versions.forEach(version =>
-        editing(version, edit => forgetFeaturesInEdit(edit, features, dropped)))
+    const versions = stateOf<Version[]>(draft.versions)
+    const dropped = new Set(insertedIn(versions).filter(carriedOnlyOn(features)).map(symbol => symbol.id))
+    const forget = forgettingFeatures(features, dropped)
+    draft.versions.forEach((version, i) => {
+        version.edits = edited(versions[i].edits, forget)
+    })
 }
 
 /** Takes the features off the copy, and out of the versions with what only they carried. */

@@ -79,6 +79,15 @@ const gridOffsetOf = (holes: AtonHole[], separation: Pixels, stated?: string): P
     return px(median(holes.map(hole => readPx(hole.CENTROID_COL) - +hole.TRACKER_HOLE * separation)))
 }
 
+/** The head of a chain of holes, with the attack and the off time it carries read once. */
+type Chain = { hole: AtonHole, attack: Pixels, release: Pixels }
+
+const chainsAmong = (holes: AtonHole[]): Chain[] =>
+    holes
+        .filter(hole => hole.NOTE_ATTACK && hole.OFF_TIME)
+        .map(hole => ({ hole, attack: readPx(hole.NOTE_ATTACK!), release: readPx(hole.OFF_TIME!) }))
+        .sort((a, b) => a.attack - b.attack)
+
 const punchDiameterOf = (holes: AtonHole[], dpi: number): Millimeters | undefined => {
     const circular = holes
         .filter(hole => parseFloat(hole.CIRCULARITY) > 0.95)
@@ -157,14 +166,10 @@ export function readFromStanfordAton(
 
     const punchDiameter = punchDiameterOf(holes, dpi)
 
-    const chains = [...holes, ...chainedBadHoles(listOf(json.ROLLINFO.BADHOLES?.HOLE), calibration)]
-        .filter(hole => hole.NOTE_ATTACK && hole.OFF_TIME)
-        .sort((a, b) => readPx(a.NOTE_ATTACK!) - readPx(b.NOTE_ATTACK!))
+    const chains = chainsAmong([...holes, ...chainedBadHoles(listOf(json.ROLLINFO.BADHOLES?.HOLE), calibration)])
 
     const features = chains
-        .map((hole): Hole => {
-            const attack = readPx(hole.NOTE_ATTACK!)
-            const release = readPx(hole.OFF_TIME!)
+        .map(({ hole, attack, release }): Hole => {
             const column = readPx(hole.ORIGIN_COL)
             const columnWidth = readPx(hole.WIDTH_COL)
 

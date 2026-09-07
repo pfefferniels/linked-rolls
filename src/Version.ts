@@ -1,5 +1,6 @@
 import { Edit } from "./Edit";
 import { ReferenceAssumption } from "./Assumption";
+import { AnySymbol } from "./Symbol";
 import { WithId, WithNote, WithType } from "./utils";
 
 export const versionTypes = [
@@ -66,3 +67,11 @@ export interface Version extends WithId, WithType<'Version'> {
      */
     motivations: Motivation[]
 }
+
+/** The symbols the version's edits insert. */
+export const insertedBy = (version: Readonly<Version>): AnySymbol[] =>
+    version.edits.flatMap(edit => edit.insert ?? [])
+
+/** The ids of the symbols the version's edits delete. */
+export const deletedBy = (version: Readonly<Version>): string[] =>
+    version.edits.flatMap(edit => edit.delete ?? [])

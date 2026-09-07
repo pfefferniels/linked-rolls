@@ -1,7 +1,7 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { idOf } from "./Assumption";
 import { EditionView } from "./EditionView";
-import { AnySymbol, pairsAmong, placementsOf } from "./Symbol";
+import { AnySymbol, isPerforation, pairsAmong, placementsOf } from "./Symbol";
 import { Version } from "./Version";
 import {
     AnyPerformedRollFeature,
@@ -11,7 +11,7 @@ import {
     ReproducingSystem,
     RollProperties
 } from "./ReproducingSystem";
-import { add, mean, Millimeters, mm, seconds, subtract } from "./Quantity";
+import { add, mean, Millimeters, mm, Seconds, seconds, subtract } from "./Quantity";
 
 export type EmulationScope = {
     /** Only notes whose onset lies within this span of the roll are played. */
@@ -122,6 +122,10 @@ const displacementsOf = (
     return displacements
 }
 
+/** The earliest of the times, or the beginning of the roll where there are none. */
+const earliestOf = (times: readonly Seconds[]): Seconds =>
+    times.length === 0 ? seconds(0) : times.reduce((soonest, at) => at < soonest ? at : soonest)
+
 /**
  * A version of the edition, performed: the symbols are negotiated into
  * placed events, the reproducing system plays them, and the result goes
@@ -168,22 +172,16 @@ export class Emulation<Options extends object> {
     ) {
         this.source = version.id
 
+        /** A note plays only where its onset falls in the range; expressions play throughout. */
+        const inScope = (event: NegotiatedEvent): boolean =>
+            !range || event.type !== 'note' || (event.horizontal.from > range[0] && event.horizontal.from < range[1])
+
         this.negotiatedEvents =
             view.snapshot(version.id)
-                .filter(s => s.type === 'note' || s.type === 'expression')
-                .filter(s => {
-                    if (range && s.type === 'note') {
-                        const dimensions = view.dimensionOf(s)
-                        if (!dimensions) return true // in case of doubt, include the note
-
-                        // check if the note onset is within the specified range
-                        const onset = dimensions.horizontal.from
-                        return onset > range[0] && onset < range[1]
-                    }
-                    return true
-                })
-                .map((e) => view.simplifySymbol(e))
-                .filter(s => s !== null)
+                .filter(isPerforation)
+                .map(symbol => view.simplifySymbol(symbol))
+                .filter(event => event !== null)
+                .filter(inScope)
 
         if (this.negotiatedEvents.length === 0) {
             this.midiEvents = []
@@ -197,7 +195,7 @@ export class Emulation<Options extends object> {
         this.curves = performance.curves
 
         const onsets = performance.events.filter(event => event.type === 'noteOn').map(event => event.at)
-        const origin = seconds(skipToFirstNote && onsets.length > 0 ? Math.min(...onsets) : 0)
+        const origin = skipToFirstNote ? earliestOf(onsets) : seconds(0)
 
         this.midiEvents = performance.events
             .map(event => ({ ...event, at: subtract(event.at, origin) }))

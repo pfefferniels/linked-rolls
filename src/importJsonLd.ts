@@ -14,69 +14,43 @@ export const importDate = (str: string): Date => {
     return new Date(y, m - 1, d)
 }
 
-const fromJsonLdEntity = (json: any): any => {
-    if (typeof json !== 'object') {
-        return json
-    }
+type Json = any
 
-    let result: any = json;
+/** A value as the edition holds it: a date read, an entity converted, anything else as it stands. */
+const fromJsonLdValue = (value: Json): Json => {
+    if (typeof value === 'string') return isDate(value) ? importDate(value) : value
+    if (Array.isArray(value)) return value.map(fromJsonLdValue)
+    if (value !== null && typeof value === 'object') return fromJsonLdEntity(value)
+    return value
+}
 
-    if ('@value' in json) {
-        // the datatype of a value object, not a class
-        delete result['@type'];
-    }
-    else if ('@type' in json) {
-        result['type'] = json['@type'];
-        delete result['@type'];
-    }
-
-    for (const [key, value] of Object.entries(json)) {
-        if (key === '@id') {
-            // console.log("deleting @id", value);
-            result['id'] = value;
-            delete result['@id'];
-        }
-        else if (typeof value === 'string' && isDate(value)) {
-            result[key] = importDate(value);
-        }
-        else if (Array.isArray(value)) {
-            result[key] = value.map(v => {
-                if (typeof v === 'string') {
-                    if (isDate(v)) {
-                        return importDate(v);
-                    }
-                    return v;
-                }
-                else {
-                    return fromJsonLdEntity(v)
-                }
-            })
-        }
-        else if (typeof value === 'object') {
-            result[key] = fromJsonLdEntity(value);
-        }
-        else {
-            result[key] = value;
-        }
-    }
-
-    return result;
+/**
+ * An entity with its keywords read as plain keys. The input is left as
+ * it is. The `@type` of a value object names the datatype of the value,
+ * not a class, and is dropped.
+ */
+const fromJsonLdEntity = (json: Record<string, Json>): Record<string, Json> => {
+    const { '@type': type, '@id': id, ...rest } = json
+    const entity = Object.fromEntries(Object.entries(rest).map(([key, value]) => [key, fromJsonLdValue(value)]))
+    if (type !== undefined && !('@value' in json)) entity.type = type
+    if (id !== undefined) entity.id = id
+    return entity
 }
 
 // The export prefixes copy identifiers with `copy/`; this is its inverse.
-const withPlainCopyIds = (json: any) => ({
+const withPlainCopyIds = (json: Json) => ({
     ...json,
-    copies: (json.copies ?? []).map((copy: any) => ({
+    copies: (json.copies ?? []).map((copy: Json) => ({
         ...copy,
         '@id': typeof copy['@id'] === 'string' ? copy['@id'].replace(/^copy\//, '') : copy['@id']
     }))
 })
 
-export const importJsonLd = (json: any): Edition => {
+export const importJsonLd = (json: Json): Edition => {
     const { '@context': context, ...document } = withPlainCopyIds(migrate(json))
     const edition = fromJsonLdEntity(document) as Edition;
     edition.base = Array.isArray(context)
-        ? context.find((c: any) => c['@base'])?.['@base'] || ''
+        ? context.find((c: Json) => c['@base'])?.['@base'] || ''
         : '';
 
     return edition;

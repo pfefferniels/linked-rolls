@@ -51,9 +51,11 @@ const problemsIn = (version: string, perforations: readonly AnyPerforation[]): C
         .map(p => report(p.id, 'paired-with-itself'))
 
     const pairs = pairsAmong(perforations)
-    const pairsOf = (p: AnyPerforation) => pairs.filter(pair => pair.includes(p))
+    const pairsPerId = pairs
+        .flatMap(([one, other]) => one === other ? [one] : [one, other])
+        .reduce((counts, p) => counts.set(p.id, (counts.get(p.id) ?? 0) + 1), new Map<string, number>())
     const inSeveralPairs = perforations
-        .filter(p => pairsOf(p).length > 1)
+        .filter(p => (pairsPerId.get(p.id) ?? 0) > 1)
         .map(p => report(p.id, 'in-several-pairs'))
 
     const placedOnBothSides = pairs

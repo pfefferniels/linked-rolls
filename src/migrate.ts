@@ -32,7 +32,9 @@ const referenceKeys = ['alignedWith', 'pairedWith', 'basedOn']
 const named = (name: string) => ({ name, sameAs: [] })
 
 const withRenamedKeys = (node: Json): Json =>
-    Object.fromEntries(Object.entries(node).map(([key, value]) => [renamedKeys[key] ?? key, value]))
+    Object.keys(node).some(key => Object.hasOwn(renamedKeys, key))
+        ? Object.fromEntries(Object.entries(node).map(([key, value]) => [renamedKeys[key] ?? key, value]))
+        : node
 
 const withTypology = (node: Json): Json => {
     if (versionTypeValues.has(node['@type'])) {
@@ -78,11 +80,22 @@ const migrateNode = (node: Json): Json =>
     [withRenamedKeys, withTypology, withReferences, withKeeper, withProductionNodes]
         .reduce((result, step) => step(result), node)
 
+/** The items each walked, or the very same list where the walk changed none. */
+const walked = (items: Json[]): Json[] => {
+    const result = items.map(walk)
+    return result.every((item, i) => item === items[i]) ? items : result
+}
+
+/** The node with each child walked, or the very same node where the walk changed none. */
+const withWalkedChildren = (node: Json): Json => {
+    const entries = Object.entries(node)
+    const result = entries.map(([key, child]) => [key, walk(child)])
+    return result.every(([, child], i) => child === entries[i][1]) ? node : Object.fromEntries(result)
+}
+
 const walk = (value: Json): Json => {
-    if (Array.isArray(value)) return value.map(walk)
-    if (value && typeof value === 'object') {
-        return Object.fromEntries(Object.entries(migrateNode(value)).map(([key, child]) => [key, walk(child)]))
-    }
+    if (Array.isArray(value)) return walked(value)
+    if (value && typeof value === 'object') return withWalkedChildren(migrateNode(value))
     return value
 }
 

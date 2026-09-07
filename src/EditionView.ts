@@ -1,10 +1,10 @@
 import { Edition } from "./Edition";
 import { HorizontalSpan, VerticalSpan, AnyFeature } from "./Feature";
 import { AnySymbol, Expression, Note } from "./Symbol";
-import { Version } from "./Version";
+import { deletedBy, insertedBy, Version } from "./Version";
 import { NegotiatedEvent } from "./ReproducingSystem";
 import { idOf, idsOf } from "./Assumption";
-import { mean } from "./Quantity";
+import { mean, Millimeters } from "./Quantity";
 
 export type Path = (string | number)[];
 
@@ -17,11 +17,27 @@ export const getAt = <T,>(path: Path, obj: unknown): T | undefined => {
     return node as T;
 }
 
-const referenceKeys = new Set([
-    'delete',
-    'comprehends',
-    'motivation'
-]);
+/** Keys under which an object names others by id, singly or in a list. */
+const referenceKeys = ['delete', 'comprehends', 'motivation'] as const;
+
+const isObject = (v: unknown): v is object => v !== null && typeof v === "object";
+
+/** An object that names another by its id and says nothing else, save perhaps a belief about the reference. */
+const isReferenceOnly = (keys: readonly string[]): boolean =>
+    keys.every(key => key === 'id' || key === '@annotation');
+
+/**
+ * A path as the walk over the edition grows it, one link per step and
+ * shared with the steps above, so that a step costs no copy. It is laid
+ * out as a `Path` only when one is asked for.
+ */
+type Trail = { readonly key: string | number, readonly up: Trail } | null
+
+const pathOf = (trail: Trail): Path => {
+    const path: Path = []
+    for (let link = trail; link !== null; link = link.up) path.push(link.key)
+    return path.reverse()
+}
 
 export class EditionView {
     readonly edition: Edition
@@ -34,12 +50,12 @@ export class EditionView {
     /**
      * Map from id to its path within the edition
      */
-    private readonly paths: Map<string, Path> = new Map()
+    private readonly paths: Map<string, Trail> = new Map()
 
     /**
      * Map from id to paths where it is referenced
      */
-    private readonly links: Map<string, Set<Path>> = new Map()
+    private readonly links: Map<string, Trail[]> = new Map()
 
     constructor(edition: Edition) {
         this.edition = edition;
@@ -54,64 +70,47 @@ export class EditionView {
     indexObjects() {
         const visited = new WeakSet<object>();
 
-        const isObject = (v: unknown): v is object => v !== null && typeof v === "object";
+        const link = (id: string, trail: Trail) => {
+            const trails = this.links.get(id);
+            if (trails) trails.push(trail);
+            else this.links.set(id, [trail]);
+        };
 
-        const traverse = (node: unknown, path: Path) => {
-            if (!isObject(node)) return;
-            if (visited.has(node)) return;
-            visited.add(node);
-
-            const anyNode = node as any;
-            if (typeof anyNode.id === "string") {
-                if (Object.keys(anyNode).filter(k => k !== '@annotation').length === 1) {
-                    // this is a reference-only object, store link
-                    if (!this.links.has(anyNode.id)) {
-                        this.links.set(anyNode.id, new Set());
-                    }
-                    this.links.get(anyNode.id)!.add([...path, 'id']);
-                }
-                else {
-                    if (!this.byId.has(anyNode.id)) {
-                        this.byId.set(anyNode.id, node);
-                        this.paths.set(anyNode.id, [...path]);
-                    }
-                }
-            }
-
-            Object
-                .keys(anyNode)
-                .filter(k => referenceKeys.has(k))
-                .forEach(key => {
-                    const ref = anyNode[key];
-                    if (typeof ref === "string") {
-                        if (!this.links.has(ref)) {
-                            this.links.set(ref, new Set());
-                        }
-                        this.links.get(ref)!.add([...path, key]);
-                    } else if (Array.isArray(ref)) {
-                        for (const r of ref) {
-                            if (typeof r === "string") {
-                                if (!this.links.has(anyNode.id)) {
-                                    this.links.set(anyNode.id, new Set());
-                                }
-                                this.links.get(anyNode.id)!.add([...path, key]);
-                            }
-                        }
-                    }
-                })
-
-            if (Array.isArray(node)) {
-                for (let i = 0; i < node.length; i++) {
-                    traverse(node[i], [...path, i]);
-                }
-            } else {
-                for (const key of Object.keys(node)) {
-                    traverse(anyNode[key], [...path, key]);
-                }
+        const index = (record: Record<string, unknown>, keys: readonly string[], trail: Trail) => {
+            if (typeof record.id !== "string") return;
+            if (isReferenceOnly(keys)) link(record.id, { key: 'id', up: trail });
+            else if (!this.byId.has(record.id)) {
+                this.byId.set(record.id, record);
+                this.paths.set(record.id, trail);
             }
         };
 
-        traverse(this.edition, []);
+        const linkReferences = (record: Record<string, unknown>, trail: Trail) =>
+            referenceKeys.forEach(key => {
+                const ref = record[key];
+                if (typeof ref === "string") link(ref, { key, up: trail });
+                else if (Array.isArray(ref)) ref.forEach((r, i) => {
+                    if (typeof r === "string") link(r, { key: i, up: { key, up: trail } });
+                });
+            });
+
+        const traverse = (node: unknown, trail: Trail) => {
+            if (!isObject(node) || visited.has(node)) return;
+            visited.add(node);
+
+            if (Array.isArray(node)) {
+                node.forEach((item, i) => traverse(item, { key: i, up: trail }));
+                return;
+            }
+
+            const record = node as Record<string, unknown>;
+            const keys = Object.keys(record);
+            index(record, keys, trail);
+            linkReferences(record, trail);
+            keys.forEach(key => traverse(record[key], { key, up: trail }));
+        };
+
+        traverse(this.edition, null);
     }
 
     get<T,>(anyId: string): T | undefined {
@@ -123,11 +122,12 @@ export class EditionView {
     }
 
     getPath(anyId: string): Path | undefined {
-        return this.paths.get(anyId);
+        const trail = this.paths.get(anyId);
+        return trail === undefined ? undefined : pathOf(trail);
     }
 
     linksTo(anyId: string): Path[] {
-        return Array.from(this.links.get(anyId) || []);
+        return (this.links.get(anyId) ?? []).map(pathOf);
     }
 
     travelUp(versionId: string, callback: (version: Readonly<Version>) => void) {
@@ -138,6 +138,13 @@ export class EditionView {
         if (v.basedOn) {
             this.travelUp(idOf(v.basedOn), callback);
         }
+    }
+
+    /** The version and its ancestors, from the version up to the root. */
+    private lineageOf(versionId: string): Readonly<Version>[] {
+        const lineage: Readonly<Version>[] = []
+        this.travelUp(versionId, version => lineage.push(version))
+        return lineage
     }
 
     carriersOf(symbol: AnySymbol): Readonly<AnyFeature>[] {
@@ -172,36 +179,31 @@ export class EditionView {
         };
     }
 
+    /** Where the symbol begins, as the mean onset of its carriers, or nothing for a symbol without a place. */
+    onsetOf(symbol: AnySymbol): Millimeters | undefined {
+        const carriers = this.carriersOf(symbol)
+        return carriers.length > 0 ? mean(carriers.map(carrier => carrier.horizontal.from)) : undefined
+    }
+
+    /** The symbols by onset, those without a place first; symbols at one place keep their order. */
+    private inOrderOfPlace(symbols: readonly Readonly<AnySymbol>[]): Readonly<AnySymbol>[] {
+        return symbols
+            .map(symbol => ({ symbol, at: this.onsetOf(symbol) || 0 }))
+            .sort((a, b) => a.at - b.at)
+            .map(({ symbol }) => symbol)
+    }
+
+    /**
+     * The symbols the version shows: what it and its ancestors insert,
+     * each version's deletions striking what it or its ancestors inserted.
+     */
     snapshot(versionId: string): readonly Readonly<AnySymbol>[] {
-        const snapshot: AnySymbol[] = [];
-        const toDelete: string[] = [];
-
-        this.travelUp(versionId, s => {
-            snapshot.push(...s.edits.flatMap(edit => edit.insert || []));
-
-            // as we travel further up, remove symbols that are 
-            // deleted in the versions further down
-            const deleted: string[] = []
-            for (const toRemove of toDelete) {
-                const index = snapshot.findIndex(s => s.id === toRemove);
-                if (index !== -1) {
-                    snapshot.splice(index, 1);
-                    deleted.push(toRemove)
-                }
-            }
-            for (const del of deleted) {
-                toDelete.splice(toDelete.indexOf(del), 1);
-            }
-
-            // collect symbols that are deleted in the current version
-            toDelete.push(...s.edits.flatMap(edit => edit.delete || []));
-        });
-
-        return snapshot.sort((a, b) => {
-            const aDimension = this.dimensionOf(a)
-            const bDimension = this.dimensionOf(b)
-            return (aDimension?.horizontal.from || 0) - (bDimension?.horizontal.from || 0);
+        const deleted = new Set<string>()
+        const symbols = this.lineageOf(versionId).flatMap(version => {
+            deletedBy(version).forEach(id => deleted.add(id))
+            return insertedBy(version).filter(symbol => !deleted.has(symbol.id))
         })
+        return this.inOrderOfPlace(symbols)
     }
 
     /**
@@ -263,4 +265,3 @@ export class EditionView {
         }
     }
 }
-

@@ -41,6 +41,7 @@ import {
     RollProperties
 } from "../../ReproducingSystem";
 import { add, inCentimeters, Millimeters, mm, Seconds, seconds, Track, track } from "../../Quantity";
+import { partitionPoint } from "../../sorted";
 
 /**
  * MIDI velocity at the open rail of the Nuancierbalg, at the Mezzoforte pin,
@@ -248,7 +249,7 @@ const velocityOf = (travel: number, hook: number, map: VelocityMap): number => {
 const gridOver = (events: readonly NegotiatedEvent[], spool: Spool): Grid => {
     const last = mm(events.reduce((furthest, event) => Math.max(furthest, event.horizontal.to), 0))
     const length = Math.ceil(rowOf(add(last, RUN_OUT))) + 1
-    const times = Float64Array.from({ length }, (_, row) => secondsAt(spool, placeOfRow(row)))
+    const times = new Float64Array(length).map((_, row) => secondsAt(spool, placeOfRow(row)))
     return new Grid(0, times)
 }
 
@@ -271,7 +272,7 @@ const nuanceCurves = (
             name: half,
             kind: 'dynamics',
             travel,
-            velocity: Float64Array.from(travel, value => velocityOf(value, hook, options.velocity))
+            velocity: travel.map(value => velocityOf(value, hook, options.velocity))
         }
     }
 
@@ -324,7 +325,7 @@ const performPedal = (
 
     const ordered = readings.toSorted((a, b) => a.punch.rowOn - b.punch.rowOn)
     const causeOf = (row: number): NegotiatedEvent =>
-        ordered[Math.max(ordered.findLastIndex(reading => reading.punch.rowOn <= row), 0)].event
+        ordered[Math.max(partitionPoint(ordered, reading => reading.punch.rowOn <= row) - 1, 0)].event
 
     return levelChanges(curve.travel, { mode })
         .filter(change => change.index > 0)
@@ -354,7 +355,7 @@ const perform = (
     const geometry = geometryInMm(roll.punchDiameter ?? options.punchDiameter, options.trackerBore)
     const ports = aperturePorts(grid, readings.map(reading => reading.punch), geometry)
     const samples: Samples = {
-        place: Float64Array.from(grid.seconds, (_, row) => placeOfRow(row)),
+        place: grid.seconds.map((_, row) => placeOfRow(row)),
         seconds: grid.seconds
     }
 
