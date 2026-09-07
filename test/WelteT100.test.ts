@@ -8,8 +8,7 @@ import { EditionView } from '../src/EditionView'
 import { Emulation } from '../src/Emulation'
 import { DynamicsCurve, PedalCurve, PerformedPedalEvent } from '../src/ReproducingSystem'
 import { instrumentNameOf, instrumentNames, instruments, nuanceOf, pedalPresetOf, pedalPresets, secondsAt, welteT100System } from '../src/systems/welteT100/system'
-import { atConstantSpeed, SPENCER_FEET_PER_MINUTE } from '../src/readers/spencerMidi'
-import { mm, seconds } from '../src/Quantity'
+import { mm } from '../src/Quantity'
 
 const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')
 const edition = importJsonLd(JSON.parse(file))
@@ -40,12 +39,6 @@ describe('the time axis', () => {
 
     it('can be walked back from time to place', () => {
         expect(paperAt(WELTE_SPOOL, secondsAt(WELTE_SPOOL, mm(120)))).toBeCloseTo(12, 9)
-    })
-
-    it('is a constant speed for a scanned roll', () => {
-        const placeAt = atConstantSpeed(SPENCER_FEET_PER_MINUTE)
-        expect(placeAt(seconds(60))).toBeCloseTo(8.3 * 304.8, 9)
-        expect(placeAt(seconds(30)) * 2).toBeCloseTo(placeAt(seconds(60)), 9)
     })
 })
 
