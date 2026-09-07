@@ -129,6 +129,9 @@ export const writingMethods = ['Print', 'Handwriting', 'Stamp'] as const;
  */
 export type WritingMethod = typeof writingMethods[number];
 
+/** The text a writing carries. It names no carriers of its own, the writing being its carrier. */
+export type Transcription = Omit<Text, 'carriers'>
+
 /**
  * A piece of writing found on the roll, such as a label,
  * catalogue number, or annotation. Writings have a method
@@ -149,7 +152,7 @@ export interface Writing extends Trace<'Writing'> {
      * can be annotated with a belief about its correctness.
      * @see crm:P128 carries
      */
-    transcription: ObjectAssumption<Omit<Text, 'carriers'>>;
+    transcription: ObjectAssumption<Transcription>;
 }
 
 /**

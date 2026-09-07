@@ -1189,7 +1189,7 @@
       ],
       "type": "object"
     },
-    "ObjectAssumption<alias-731470504-73739-73887-731470504-0-217694<def-interface-src_Symbol.ts-5565-5929-src_Symbol.ts-0-6137400334313,\"carriers\">>": {
+    "ObjectAssumption<Transcription>": {
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
@@ -1760,7 +1760,7 @@
           "description": "The method by which this writing was produced (e.g. through print, handwriting, or stamping). [ontology: crm:P2 has type]"
         },
         "transcription": {
-          "$ref": "#/definitions/ObjectAssumption%3Calias-731470504-73739-73887-731470504-0-217694%3Cdef-interface-src_Symbol.ts-5565-5929-src_Symbol.ts-0-6137400334313%2C%22carriers%22%3E%3E",
+          "$ref": "#/definitions/ObjectAssumption%3CTranscription%3E",
           "description": "A transcription of the text content of the writing. This is an object assumption so that the transcription can be annotated with a belief about its correctness. [ontology: crm:P128 carries]"
         },
         "vertical": {
