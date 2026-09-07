@@ -28,6 +28,8 @@ export const isSymbol = (object: any): object is AnySymbol => {
     );
 }
 
+export const isPerforation = (symbol: AnySymbol): symbol is Note | Expression => symbol.type !== 'text'
+
 /**
  * A perforation is a symbol that is typically encoded as a single punched
  * hole or a group of punched holes in the physical carrier.

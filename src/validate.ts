@@ -3,7 +3,7 @@ import * as schema from "./schema.json"
 import { Edition } from "./Edition"
 import { EditionView } from "./EditionView"
 import { idOf } from "./Assumption"
-import { AnySymbol, Expression, Note, PlacementRelation, pairsAmong, placementsOf } from "./Symbol"
+import { AnySymbol, Expression, Note, PlacementRelation, isPerforation, pairsAmong, placementsOf } from "./Symbol"
 import { TrackerBar } from "./TrackerBar"
 
 const ajv = new Ajv(
@@ -38,8 +38,6 @@ const missingReference: Record<PlacementRelation, ConstraintProblem['problem']> 
     before: 'before-reference-missing',
     after: 'after-reference-missing'
 }
-
-const isPerforation = (symbol: AnySymbol): symbol is Note | Expression => symbol.type !== 'text'
 
 const problemsIn = (version: string, perforations: readonly (Note | Expression)[]): ConstraintProblem[] => {
     const ids = new Set(perforations.map(p => p.id))

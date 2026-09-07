@@ -1,7 +1,7 @@
 import { Draft } from "immer";
 import { EditionView, getAt } from "./EditionView";
 import { Edition } from "./Edition";
-import { AnySymbol } from "./Symbol";
+import { AnySymbol, Expression, Note, isPerforation, placementRelations } from "./Symbol";
 import { CollationTolerance } from "./Collation";
 import { Edit, EditType } from "./Edit";
 import { v4 } from "uuid";
@@ -364,6 +364,77 @@ export class RemoveFeature extends BasePlan {
         ]
     }
 }
+
+type Ids = ReadonlySet<string>
+
+const featureIdsOf = (copy: RollCopy): Ids => new Set(copy.features.map(feature => feature.id))
+
+const insertedIn = (versions: readonly Version[]): AnySymbol[] =>
+    versions.flatMap(version => version.edits).flatMap(edit => edit.insert ?? [])
+
+/**
+ * A symbol every carrier of which lies on the copy loses its evidence
+ * with the copy. A symbol without carriers, such as a label, stands
+ * on its own.
+ */
+const carriedOnlyOn = (features: Ids) => (symbol: AnySymbol): boolean =>
+    symbol.carriers.length > 0 && symbol.carriers.every(carrier => features.has(idOf(carrier)))
+
+/** The symbols of the versions that no other copy carries. */
+export const symbolsCarriedOnlyBy = (edition: Edition, copyId: string): AnySymbol[] => {
+    const copy = edition.copies.find(c => c.id === copyId)
+    return copy ? insertedIn(edition.versions).filter(carriedOnlyOn(featureIdsOf(copy))) : []
+}
+
+const references = [...placementRelations, 'pairedWith'] as const
+
+const forgetPerforations = (perforation: Draft<Note | Expression>, dropped: Ids) =>
+    references
+        .filter(relation => {
+            const reference = perforation[relation]
+            return reference && dropped.has(idOf(reference))
+        })
+        .forEach(relation => { delete perforation[relation] })
+
+const forgetFeatures = (symbol: Draft<AnySymbol>, features: Ids, dropped: Ids) => {
+    symbol.carriers = symbol.carriers.filter(carrier => !features.has(idOf(carrier)))
+    if (isPerforation(symbol)) forgetPerforations(symbol, dropped)
+}
+
+const forgetCopy = (edit: Draft<Edit>, features: Ids, dropped: Ids) => {
+    if (edit.insert) {
+        edit.insert = edit.insert.filter(symbol => !dropped.has(symbol.id))
+        edit.insert.forEach(symbol => forgetFeatures(symbol, features, dropped))
+    }
+    if (edit.delete) {
+        edit.delete = edit.delete.filter(id => !dropped.has(id))
+    }
+}
+
+const isEmpty = (edit: Edit): boolean => !edit.insert?.length && !edit.delete?.length
+
+/** Drops the edits the removal has emptied and leaves those that were empty before alone. */
+const forgetCopyIn = (version: Draft<Version>, features: Ids, dropped: Ids) => {
+    const emptyBefore = new Set(version.edits.filter(isEmpty).map(edit => edit.id))
+    version.edits.forEach(edit => forgetCopy(edit, features, dropped))
+    version.edits = version.edits.filter(edit => !isEmpty(edit) || emptyBefore.has(edit.id))
+}
+
+/**
+ * Takes the copy out of the edition together with the symbols only it
+ * carries, and with every reference the versions made to those symbols.
+ */
+export const removeCopy = (copyId: string): EditionOp =>
+    draft => {
+        const copy = draft.copies.find(c => c.id === copyId)
+        if (!copy) return
+
+        const features = featureIdsOf(copy)
+        const dropped = new Set(insertedIn(draft.versions).filter(carriedOnlyOn(features)).map(symbol => symbol.id))
+
+        draft.copies = draft.copies.filter(c => c.id !== copyId)
+        draft.versions.forEach(version => forgetCopyIn(version, features, dropped))
+    }
 
 export class MergeEdits extends BasePlan {
     constructor(
