@@ -1,5 +1,6 @@
 import {
     aperturePorts,
+    CONSENSUS,
     DEFAULT_PUNCH_MM,
     geometryInMm,
     Grid,
@@ -8,8 +9,8 @@ import {
     paperSeconds,
     pedalBrushing,
     pedalDefaults,
-    playbackParameters,
     pneumaticModel,
+    PRESETS,
     ROWS_PER_MM,
     runPedals,
     TRACKER_BORE_MM,
@@ -18,9 +19,11 @@ import {
     Action,
     Control,
     Half,
+    Instrument,
     Parameters,
     PedalMode,
     Punch,
+    RollNumber,
     Spool,
 } from "welte-t100-emulator";
 import { Expression, ExpressionScope, Note } from "../../Symbol";
@@ -51,6 +54,34 @@ export type VelocityMap = {
     forte: number
 }
 
+export type { Instrument } from "welte-t100-emulator";
+
+export type InstrumentName = 'consensus' | RollNumber
+
+/**
+ * The instruments the emulator was fitted as: the consensus over the six
+ * rolls with drawn nuance lines, and the setting that drew each of them,
+ * named by the roll's Welte number. The provenance beside each says what
+ * it was fitted to and how well.
+ */
+export const instruments: Readonly<Record<InstrumentName, Instrument>> = { consensus: CONSENSUS, ...PRESETS }
+
+/** The instruments by name, the consensus first. */
+export const instrumentNames: readonly InstrumentName[] = ['consensus', ...Object.keys(PRESETS) as RollNumber[]]
+
+const sameParameters = (a: Parameters, b: Parameters): boolean =>
+    Object.keys(a).length === Object.keys(b).length
+    && Object.entries(a).every(([name, value]) => b[name] === value)
+
+/** The nuancing constants of an instrument, one set for each half of the keyboard. */
+export const nuanceOf = (instrument: Instrument): Record<Half, Parameters> =>
+    ({ bass: instrument.bass, treble: instrument.treble })
+
+/** The instrument a pair of nuancing constants belongs to, if it is one. */
+export const instrumentNameOf = (nuance: Record<Half, Parameters>): InstrumentName | undefined =>
+    instrumentNames.find(name =>
+        sameParameters(instruments[name].bass, nuance.bass) && sameParameters(instruments[name].treble, nuance.treble))
+
 /**
  * The two readings of the pedal mechanism the emulator offers, by name.
  * Under `damping` the dampers reach the strings within the shortest lift
@@ -66,10 +97,6 @@ export const pedalPresets = {
 
 export type PedalPreset = keyof typeof pedalPresets
 
-const sameParameters = (a: Parameters, b: Parameters): boolean =>
-    Object.keys(a).length === Object.keys(b).length
-    && Object.entries(a).every(([name, value]) => b[name] === value)
-
 /** The preset a set of pedal constants is, if it is one. */
 export const pedalPresetOf = (pedals: Parameters): PedalPreset | undefined =>
     (Object.keys(pedalPresets) as PedalPreset[]).find(name => sameParameters(pedalPresets[name], pedals))
@@ -81,7 +108,7 @@ export type WelteT100Options = {
      */
     spool: Spool
 
-    /** Constants of the nuancing mechanism, one set for each half of the keyboard. */
+    /** Constants of the nuancing mechanism, one set for each half of the keyboard: `nuanceOf` an instrument, or a set of one's own. */
     nuance: Record<Half, Parameters>
 
     /** Constants of the two pedal actions, one of `pedalPresets` or a set of one's own. */
@@ -113,10 +140,7 @@ export type WelteT100Options = {
 
 export const defaultWelteT100Options: WelteT100Options = {
     spool: WELTE_SPOOL,
-    nuance: {
-        bass: playbackParameters('bass'),
-        treble: playbackParameters('treble')
-    },
+    nuance: nuanceOf(instruments.consensus),
     pedals: pedalPresets.damping,
     velocity: { piano: 35, mezzoforte: 60, forte: 90 },
     pedalMode: 'continuous',
@@ -347,9 +371,9 @@ const perform = (
  * The red Welte, as welte-t100-emulator models it: the take-up spool sets
  * the time axis, the Nuancierbälge fill through their conduits and are
  * arrested by the Mezzoforte pin, and the two pedals travel rather than
- * switch. The constants are those fitted against the hand-drawn nuance
- * lines of roll 3309, with the terms that describe the drawing apparatus
- * switched off.
+ * switch. The constants are the consensus fitted across the hand-drawn
+ * nuance lines of six rolls, with the terms that describe the drawing
+ * apparatus switched off; `instruments` offers each roll's own setting.
  */
 export const welteT100System: ReproducingSystem<WelteT100Options> = {
     name: 'Welte-Mignon T100',

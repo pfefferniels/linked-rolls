@@ -47,9 +47,11 @@ The first system is the red Welte, `linked-rolls/welte-t100`, built on
 [welte-t100-emulator](https://github.com/pfefferniels/welte-t100): the
 take-up spool sets the time axis, the Nuancierbälge fill through their
 conduits and are arrested by the Mezzoforte pin, and the two pedals travel
-rather than switch. The constants are those fitted against the hand-drawn
-nuance lines of roll 3309, with the terms that describe the drawing
-apparatus switched off. The pedals leave no drawn line, so their constants
+rather than switch. The nuancing constants come as `instruments`: the
+consensus fitted across the hand-drawn nuance lines of six rolls, which
+is the default, and the setting that drew each of those rolls, named by
+its Welte number, all with the terms that describe the drawing apparatus
+switched off. The pedals leave no drawn line, so their constants
 come as two readings, `pedalPresets.damping`, under which every lift the
 rolls punch damps, and `pedalPresets.brushing`, under which the quick runs
 of latch changes brush the strings without damping. What the emulator does

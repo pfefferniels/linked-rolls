@@ -7,7 +7,7 @@ import { importJsonLd } from '../src/importJsonLd'
 import { EditionView } from '../src/EditionView'
 import { Emulation } from '../src/Emulation'
 import { DynamicsCurve, PedalCurve, PerformedPedalEvent } from '../src/ReproducingSystem'
-import { pedalPresetOf, pedalPresets, secondsAt, welteT100System } from '../src/systems/welteT100/system'
+import { instrumentNameOf, instrumentNames, instruments, nuanceOf, pedalPresetOf, pedalPresets, secondsAt, welteT100System } from '../src/systems/welteT100/system'
 import { atConstantSpeed, SPENCER_FEET_PER_MINUTE } from '../src/readers/spencerMidi'
 
 const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')
@@ -85,6 +85,23 @@ describe('the dynamics of a version', () => {
         const early = seconds[1000] - seconds[0]
         const late = seconds[seconds.length - 1] - seconds[seconds.length - 1001]
         expect(late).toBeLessThan(early)
+    })
+
+    it('runs on the consensus instrument unless another is chosen', () => {
+        expect(instrumentNameOf(emulation.options.nuance)).toEqual('consensus')
+        expect(instrumentNames[0]).toEqual('consensus')
+        expect(instrumentNames).toContain('3309')
+        expect(instrumentNames).toHaveLength(Object.keys(instruments).length)
+        expect(instrumentNameOf(nuanceOf(instruments['3309']))).toEqual('3309')
+        const { nuance } = emulation.options
+        expect(instrumentNameOf({ ...nuance, bass: { ...nuance.bass, alpha: 0 } })).toBeUndefined()
+    })
+
+    it('shapes the dynamics differently on another instrument', () => {
+        const other = new Emulation(welteT100System, { ...emulation.options, nuance: nuanceOf(instruments['3309']) })
+        other.emulateVersion(edition.versions[0], view)
+        const treble = other.curves.find((curve): curve is DynamicsCurve => curve.kind === 'dynamics' && curve.name === 'treble')!
+        expect(treble.travel).not.toEqual(dynamics('treble').travel)
     })
 
     it('gives every note a velocity within the map', () => {
