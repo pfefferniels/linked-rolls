@@ -1172,10 +1172,8 @@
           "type": "object"
         },
         "conditionType": {
+          "const": "faded",
           "description": "The kind of condition, from the list the roll or the kind of feature allows. [ontology: crm:P2 has type]",
-          "enum": [
-            "faded"
-          ],
           "type": "string"
         },
         "description": {

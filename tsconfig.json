@@ -4,6 +4,7 @@
     "useDefineForClassFields": true,
     "module": "esnext",
     "lib": ["ESNext"],
+    "types": ["node"],
     "skipLibCheck": true,
     "esModuleInterop": true,
 
@@ -17,6 +18,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    "rootDir": "src",
     "outDir": "lib",
     "declaration": true
   },
