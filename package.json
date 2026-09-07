@@ -1,6 +1,6 @@
 {
   "name": "linked-rolls",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Digital editions of piano rolls: import, collation, editorial assumptions, JSON-LD export, and emulation through a reproducing system",
   "license": "MIT",
   "repository": {
@@ -41,7 +41,7 @@
     "welte-t100-emulator": "file:../welte-t100"
   },
   "peerDependencies": {
-    "welte-t100-emulator": "*"
+    "welte-t100-emulator": "^0.3.0"
   },
   "peerDependenciesMeta": {
     "welte-t100-emulator": {
