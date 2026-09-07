@@ -28,7 +28,8 @@ export const isSymbol = (object: any): object is AnySymbol => {
     );
 }
 
-export const isPerforation = (symbol: AnySymbol): symbol is Note | Expression => symbol.type !== 'text'
+export const isPerforation = (symbol: object | undefined): symbol is AnyPerforation =>
+    symbol !== undefined && 'type' in symbol && (symbol.type === 'note' || symbol.type === 'expression')
 
 /**
  * A perforation is a symbol that is typically encoded as a single punched
@@ -178,4 +179,6 @@ export type AnySymbol =
     | Note
     | Expression
     | Text
+
+export type AnyPerforation = Note | Expression
 

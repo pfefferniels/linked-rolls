@@ -99,6 +99,44 @@ export const applyStretch = (
     copy.conditions.push(paperStretch)
 }
 
+/** Takes the shift off the copy's features again, as far as one was applied. */
+export const revertShift = (copy: RollCopy) => {
+    const shift = copy.measurements.shift
+    if (!copy.ops.includes('shifted') || !shift) return
+
+    copy.features.forEach(feature => {
+        feature.horizontal.from -= shift.horizontal
+        if (feature.horizontal.to) {
+            feature.horizontal.to -= shift.horizontal
+        }
+
+        feature.vertical.from -= shift.vertical
+        if (feature.vertical.to) {
+            feature.vertical.to -= shift.vertical
+        }
+    })
+    copy.ops = copy.ops.filter(op => op !== 'shifted')
+    delete copy.measurements.shift
+}
+
+const isPaperStretch = (condition: RollConditionAssignment): condition is ObjectAssumption<PaperStretch> =>
+    condition.conditionType === 'paper-stretch'
+
+/** Takes the stretch off the copy's features again, as far as one was applied. */
+export const revertStretch = (copy: RollCopy) => {
+    const stretch = copy.conditions.find(isPaperStretch)
+    if (!copy.ops.includes('stretched') || !stretch) return
+
+    copy.features.forEach(feature => {
+        feature.horizontal.from /= stretch.factor
+        if (feature.horizontal.to) {
+            feature.horizontal.to /= stretch.factor
+        }
+    })
+    copy.ops = copy.ops.filter(op => op !== 'stretched')
+    copy.conditions = copy.conditions.filter(condition => !isPaperStretch(condition))
+}
+
 /**
  * A date value wrapped as an assumption, so that the date
  * can be annotated with a belief about its certainty and source.

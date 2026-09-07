@@ -3,7 +3,7 @@ import * as schema from "./schema.json"
 import { Edition } from "./Edition"
 import { EditionView } from "./EditionView"
 import { idOf } from "./Assumption"
-import { AnySymbol, Expression, Note, PlacementRelation, isPerforation, pairsAmong, placementsOf } from "./Symbol"
+import { AnyPerforation, AnySymbol, Expression, PlacementRelation, isPerforation, pairsAmong, placementsOf } from "./Symbol"
 import { TrackerBar } from "./TrackerBar"
 
 const ajv = new Ajv(
@@ -39,7 +39,7 @@ const missingReference: Record<PlacementRelation, ConstraintProblem['problem']> 
     after: 'after-reference-missing'
 }
 
-const problemsIn = (version: string, perforations: readonly (Note | Expression)[]): ConstraintProblem[] => {
+const problemsIn = (version: string, perforations: readonly AnyPerforation[]): ConstraintProblem[] => {
     const ids = new Set(perforations.map(p => p.id))
     const report = (symbol: string, problem: ConstraintProblem['problem']): ConstraintProblem =>
         ({ version, symbol, problem })
@@ -66,7 +66,7 @@ const problemsIn = (version: string, perforations: readonly (Note | Expression)[
         .map(p => report(p.id, 'paired-with-itself'))
 
     const pairs = pairsAmong(perforations)
-    const pairsOf = (p: Note | Expression) => pairs.filter(pair => pair.includes(p))
+    const pairsOf = (p: AnyPerforation) => pairs.filter(pair => pair.includes(p))
     const inSeveralPairs = perforations
         .filter(p => pairsOf(p).length > 1)
         .map(p => report(p.id, 'in-several-pairs'))
