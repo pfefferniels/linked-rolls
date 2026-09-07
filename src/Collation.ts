@@ -1,24 +1,20 @@
 import { HorizontalSpan } from "./Feature"
 import { AnySymbol } from "./Symbol"
+import { distance, Millimeters, mm } from "./Quantity"
 
 /**
- * Tolerance used in collation of roll copies.
- * The start and end tolerances define the acceptable
- * deviation (in mm) when aligning features across copies.
+ * Tolerance used in collation of roll copies: the acceptable deviation
+ * at either end when aligning features across copies.
  */
 export interface CollationTolerance {
-    /**
-     * Tolerance at the start position of a feature (in mm).
-     */
-    toleranceStart: number
+    /** Tolerance at the start position of a feature. */
+    toleranceStart: Millimeters
 
-    /**
-     * Tolerance at the end position of a feature (in mm).
-     */
-    toleranceEnd: number
+    /** Tolerance at the end position of a feature. */
+    toleranceEnd: Millimeters
 }
 
-export const defaultCollationTolerance: CollationTolerance = { toleranceStart: 5, toleranceEnd: 5 }
+export const defaultCollationTolerance: CollationTolerance = { toleranceStart: mm(5), toleranceEnd: mm(5) }
 
 /** Where a symbol lies along the roll, as its carriers put it, or nothing for a symbol without a place. */
 export type Locate = (symbol: AnySymbol) => Readonly<{ horizontal: HorizontalSpan }> | undefined
@@ -43,8 +39,8 @@ export const isCollatable = (
     const there = locate(b)?.horizontal
     if (!here || !there) return false
 
-    return Math.abs(here.from - there.from) <= tolerance.toleranceStart
-        && Math.abs(here.to - there.to) <= tolerance.toleranceEnd
+    return distance(here.from, there.from) <= tolerance.toleranceStart
+        && distance(here.to, there.to) <= tolerance.toleranceEnd
 }
 
 export type Collation = { symbol: Readonly<AnySymbol>, counterpart: Readonly<AnySymbol> }

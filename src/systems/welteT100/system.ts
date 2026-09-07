@@ -40,6 +40,7 @@ import {
     ReproducingSystem,
     RollProperties
 } from "../../ReproducingSystem";
+import { add, inCentimeters, Millimeters, mm, Seconds, seconds, Track, track } from "../../Quantity";
 
 /**
  * MIDI velocity at the open rail of the Nuancierbalg, at the Mezzoforte pin,
@@ -123,11 +124,11 @@ export type WelteT100Options = {
      */
     pedalMode: PedalMode
 
-    /** Diameter of the tracker-bar bore, in mm. */
-    trackerBore: number
+    /** Diameter of the tracker-bar bore. */
+    trackerBore: Millimeters
 
-    /** Punch diameter in mm, for an edition whose copies record none. */
-    punchDiameter: number
+    /** Punch diameter for an edition whose copies record none. */
+    punchDiameter: Millimeters
 
     /**
      * The track at which the keyboard is divided, so that notes from
@@ -135,7 +136,7 @@ export type WelteT100Options = {
      * the bass. Which side an expression perforation itself belongs to
      * is not decided here but read off the tracker bar.
      */
-    division: number
+    division: Track
 }
 
 export const defaultWelteT100Options: WelteT100Options = {
@@ -144,9 +145,9 @@ export const defaultWelteT100Options: WelteT100Options = {
     pedals: pedalPresets.damping,
     velocity: { piano: 35, mezzoforte: 60, forte: 90 },
     pedalMode: 'continuous',
-    trackerBore: TRACKER_BORE_MM,
-    punchDiameter: DEFAULT_PUNCH_MM,
-    division: 54
+    trackerBore: mm(TRACKER_BORE_MM),
+    punchDiameter: mm(DEFAULT_PUNCH_MM),
+    division: track(54)
 }
 
 /** What each expression code operates, in the emulator's terms. */
@@ -174,7 +175,7 @@ const codeOf = (expressionType: string) =>
     isWelteT100ExpressionType(expressionType) ? CODES[expressionType] : undefined
 
 /** Paper the grid runs on past the last hole, so that a final pedal release completes. */
-const RUN_OUT_MM = 100
+const RUN_OUT = mm(100)
 
 /**
  * Which stack of valves an expression perforation belongs to. The symbol
@@ -194,12 +195,16 @@ const scopeOf = (
 const isNote = (event: NegotiatedEvent): event is NegotiatedEvent & Note => event.type === 'note'
 const isExpression = (event: NegotiatedEvent): event is NegotiatedEvent & Expression => event.type === 'expression'
 
-const rowOf = (mm: number) => mm * ROWS_PER_MM
+/** The row of the scan the constants were fitted on that a place on the roll falls in. */
+const rowOf = (place: Millimeters): number => place * ROWS_PER_MM
 
-/** When the spool brings a place on the roll, in mm, to the tracker bar. */
-export const secondsAt = (spool: Spool, mm: number): number => paperSeconds(spool, mm / 10)
+const placeOfRow = (row: number): Millimeters => mm(row / ROWS_PER_MM)
 
-const halfOf = (note: NegotiatedEvent, division: number): Half =>
+/** When the spool brings a place on the roll to the tracker bar. */
+export const secondsAt = (spool: Spool, place: Millimeters): Seconds =>
+    seconds(paperSeconds(spool, inCentimeters(place)))
+
+const halfOf = (note: NegotiatedEvent, division: Track): Half =>
     note.vertical.from >= division ? 'treble' : 'bass'
 
 /** A perforation as the tracker bar meets it, kept with the symbol it carries. */
@@ -241,10 +246,10 @@ const velocityOf = (travel: number, hook: number, map: VelocityMap): number => {
  * emulator expects.
  */
 const gridOver = (events: readonly NegotiatedEvent[], spool: Spool): Grid => {
-    const lastMm = events.reduce((furthest, event) => Math.max(furthest, event.horizontal.to), 0)
-    const length = Math.ceil(rowOf(lastMm + RUN_OUT_MM)) + 1
-    const seconds = Float64Array.from({ length }, (_, row) => secondsAt(spool, row / ROWS_PER_MM))
-    return new Grid(0, seconds)
+    const last = mm(events.reduce((furthest, event) => Math.max(furthest, event.horizontal.to), 0))
+    const length = Math.ceil(rowOf(add(last, RUN_OUT))) + 1
+    const times = Float64Array.from({ length }, (_, row) => secondsAt(spool, placeOfRow(row)))
+    return new Grid(0, times)
 }
 
 type Ports = ReturnType<typeof aperturePorts>
@@ -327,7 +332,7 @@ const performPedal = (
             type,
             performs: causeOf(grid.rowAt(change.index)),
             value: change.value,
-            at: curve.seconds[change.index]
+            at: seconds(curve.seconds[change.index])
         }))
 }
 
@@ -349,7 +354,7 @@ const perform = (
     const geometry = geometryInMm(roll.punchDiameter ?? options.punchDiameter, options.trackerBore)
     const ports = aperturePorts(grid, readings.map(reading => reading.punch), geometry)
     const samples: Samples = {
-        place: Float64Array.from(grid.seconds, (_, row) => row / ROWS_PER_MM),
+        place: Float64Array.from(grid.seconds, (_, row) => placeOfRow(row)),
         seconds: grid.seconds
     }
 

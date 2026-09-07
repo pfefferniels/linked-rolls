@@ -1,5 +1,6 @@
 import type { Concept } from "./Agent"
 import { Expression, ExpressionScope, Note } from "./Symbol"
+import { Millimeters, Track, track } from "./Quantity"
 
 /**
  * What a tracker bar position does: sound a note, or operate one of
@@ -13,8 +14,8 @@ export type TrackRole = 'bass-expression' | 'note' | 'treble-expression'
  */
 export interface TrackArea {
     readonly role: TrackRole
-    readonly from: number
-    readonly to: number
+    readonly from: Track
+    readonly to: Track
 }
 
 export type NoteMeaning = Pick<Note, 'type' | 'pitch'>
@@ -41,8 +42,8 @@ export interface TrackerBar {
 
     readonly name: string
 
-    /** Width of the roll the bar reads, in mm. */
-    readonly width: number
+    /** Width of the roll the bar reads. */
+    readonly width: Millimeters
 
     /** Number of positions on the bar. Tracks run from 1 to this. */
     readonly trackCount: number
@@ -58,13 +59,13 @@ export interface TrackerBar {
      * the very end of a roll and is the usual landmark for calibrating
      * a scan against the bar.
      */
-    readonly rewindTrack: number
+    readonly rewindTrack: Track
 
     /** `undefined` for a position the bar does not read. */
-    meaningOf(track: number): TrackMeaning | undefined
+    meaningOf(position: Track): TrackMeaning | undefined
 
     /** `undefined` for a position the bar does not read. */
-    roleOf(track: number): TrackRole | undefined
+    roleOf(position: Track): TrackRole | undefined
 }
 
 const SYSTEM_IRI = 'https://w3id.org/reo/type/system/'
@@ -77,10 +78,15 @@ export const systemOf = (bar: TrackerBar): Concept =>
 export const systemIdOf = (system: Concept | undefined): string | undefined =>
     system?.id?.startsWith(SYSTEM_IRI) ? system.id.slice(SYSTEM_IRI.length) : undefined
 
+/**
+ * A tracker bar as written down, with its positions as plain numbers
+ * in the bar's own 1-based numbering; `describeTrackerBar` gives them
+ * their type.
+ */
 export interface TrackerBarSpec {
     id: string
     name: string
-    width: number
+    width: Millimeters
     trackCount: number
     /** The contiguous block of note positions. */
     notes: { from: number, to: number, lowestPitch: number }
@@ -89,9 +95,9 @@ export interface TrackerBarSpec {
 }
 
 const areasOf = ({ notes, trackCount }: TrackerBarSpec): TrackArea[] => [
-    { role: 'bass-expression', from: 1, to: notes.from - 1 },
-    { role: 'note', from: notes.from, to: notes.to },
-    { role: 'treble-expression', from: notes.to + 1, to: trackCount }
+    { role: 'bass-expression', from: track(1), to: track(notes.from - 1) },
+    { role: 'note', from: track(notes.from), to: track(notes.to) },
+    { role: 'treble-expression', from: track(notes.to + 1), to: track(trackCount) }
 ]
 
 const scopeOf = (role: TrackRole): ExpressionScope =>
@@ -100,30 +106,30 @@ const scopeOf = (role: TrackRole): ExpressionScope =>
 export const describeTrackerBar = (spec: TrackerBarSpec): TrackerBar => {
     const areas = areasOf(spec)
 
-    const roleOf = (track: number) =>
-        areas.find(area => track >= area.from && track <= area.to)?.role
+    const roleOf = (position: Track) =>
+        areas.find(area => position >= area.from && position <= area.to)?.role
 
-    const meaningOf = (track: number): TrackMeaning | undefined => {
-        const role = roleOf(track)
+    const meaningOf = (position: Track): TrackMeaning | undefined => {
+        const role = roleOf(position)
         if (!role) return undefined
 
         if (role === 'note') {
             return {
                 type: 'note',
-                pitch: track - spec.notes.from + spec.notes.lowestPitch
+                pitch: position - spec.notes.from + spec.notes.lowestPitch
             }
         }
 
-        const expressionType = spec.expressions.get(track)
+        const expressionType = spec.expressions.get(position)
         if (!expressionType) return undefined
 
         return { type: 'expression', expressionType, scope: scopeOf(role) }
     }
 
-    const rewindTrack = [...spec.expressions]
+    const rewind = [...spec.expressions]
         .find(([, type]) => type === 'Rewind')?.[0]
 
-    if (rewindTrack === undefined) {
+    if (rewind === undefined) {
         throw new Error(`${spec.name} declares no rewind track`)
     }
 
@@ -134,7 +140,7 @@ export const describeTrackerBar = (spec: TrackerBarSpec): TrackerBar => {
         trackCount: spec.trackCount,
         areas,
         expressionTypes: [...new Set(spec.expressions.values())],
-        rewindTrack,
+        rewindTrack: track(rewind),
         meaningOf,
         roleOf
     }

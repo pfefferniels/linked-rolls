@@ -1,4 +1,5 @@
 export * from './utils'
+export * from './Quantity'
 export * from './Agent'
 export * from './Assumption'
 export * from './ConditionState'

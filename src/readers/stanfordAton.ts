@@ -5,6 +5,7 @@ import { RollCopy } from "../RollCopy";
 import { TrackCalibration } from "../TrackCalibration";
 import { TrackerBar } from "../TrackerBar";
 import { welteT100 } from "../systems/welteT100/bar";
+import { inMillimeters, mean, Millimeters, mm, Pixels, px, subtract, Track, track } from "../Quantity";
 
 /** A hole record as the Stanford analysis files spell it. */
 interface AtonHole {
@@ -19,7 +20,7 @@ interface AtonHole {
 }
 
 /** Values in these files carry their unit as a suffix, e.g. "37.7646px". */
-const px = (value: string) => parseFloat(value)
+const readPx = (value: string): Pixels => px(parseFloat(value))
 
 /** The parser writes one record as an object and several as an array. */
 const listOf = <T,>(value: T | T[] | undefined): T[] =>
@@ -37,10 +38,8 @@ const chainedBadHoles = (holes: AtonHole[], calibration: TrackCalibration): Aton
         .filter(hole => hole.NOTE_ATTACK && hole.OFF_TIME)
         .map(hole => ({
             ...hole,
-            TRACKER_HOLE: `${Math.round((px(hole.CENTROID_COL) - calibration.offset) / calibration.separation)}`
+            TRACKER_HOLE: `${Math.round((readPx(hole.CENTROID_COL) - calibration.offset) / calibration.separation)}`
         }))
-
-const millimeters = (pixels: number, dpi: number) => pixels / dpi * 25.4
 
 const median = (values: number[]) => {
     const sorted = [...values].sort((a, b) => a - b)
@@ -60,7 +59,8 @@ const mostFrequent = (values: number[]) => {
  * Only the first hole of a chain carries an attack and an off time;
  * the rest continue it. The rewind perforation carries neither, and it
  * is the last thing punched on the roll, so whatever the holes past the
- * final musical attack sit on is the rewind track.
+ * final musical attack sit on is the rewind track, in the scanner's
+ * own numbering.
  */
 const rewindTrackIn = (holes: AtonHole[]) => {
     const lastMusical = holes.findLastIndex(hole => hole.NOTE_ATTACK)
@@ -73,20 +73,18 @@ const rewindTrackIn = (holes: AtonHole[]) => {
  * usually states it; where it does not, the holes themselves give it away,
  * since each sits close to the centre of its column.
  */
-const gridOffsetOf = (holes: AtonHole[], separation: number, stated?: string) => {
-    if (stated !== undefined) return px(stated)
+const gridOffsetOf = (holes: AtonHole[], separation: Pixels, stated?: string): Pixels => {
+    if (stated !== undefined) return readPx(stated)
 
-    return median(holes.map(hole => px(hole.CENTROID_COL) - +hole.TRACKER_HOLE * separation))
+    return px(median(holes.map(hole => readPx(hole.CENTROID_COL) - +hole.TRACKER_HOLE * separation)))
 }
 
-const punchDiameterOf = (holes: AtonHole[], dpi: number) => {
+const punchDiameterOf = (holes: AtonHole[], dpi: number): Millimeters | undefined => {
     const circular = holes
-        .filter(hole => px(hole.CIRCULARITY) > 0.95)
-        .map(hole => millimeters(px(hole.PERIMETER), dpi) / Math.PI)
+        .filter(hole => parseFloat(hole.CIRCULARITY) > 0.95)
+        .map(hole => mm(inMillimeters(readPx(hole.PERIMETER), dpi) / Math.PI))
 
-    if (!circular.length) return undefined
-
-    return circular.reduce((sum, diameter) => sum + diameter, 0) / circular.length
+    return circular.length > 0 ? mean(circular) : undefined
 }
 
 export interface StanfordAtonOptions {
@@ -95,7 +93,7 @@ export interface StanfordAtonOptions {
      * tracker bar. Left out, it is inferred by putting the rewind
      * perforation on the bar's rewind track.
      */
-    trackShift?: number
+    trackShift?: Track
 
     bar?: TrackerBar
 
@@ -113,7 +111,7 @@ export interface StanfordAtonOptions {
  */
 const stanfordScan = (druid: string) => ({
     scan: `https://stacks.stanford.edu/image/iiif/${druid}%2F${druid}_0001/`,
-    depictionOf: (column: number, row: number, width: number, height: number) =>
+    depictionOf: (column: Pixels, row: Pixels, width: Pixels, height: Pixels) =>
         `https://stacks.stanford.edu/image/iiif/${druid}/${druid}_0001/${column},${row},${width},${height}/128,/270/default.jpg`
 })
 
@@ -142,13 +140,13 @@ export function readFromStanfordAton(
     const holes: AtonHole[] = json.ROLLINFO.HOLES.HOLE
     const druid: string = json.ROLLINFO.DRUID
     const stanford = druid ? stanfordScan(druid) : undefined
-    const separation = px(json.ROLLINFO.HOLE_SEPARATION)
+    const separation = readPx(json.ROLLINFO.HOLE_SEPARATION)
     const dpi = parseFloat(json.ROLLINFO.LENGTH_DPI)
     const measuredBy = measuredByOf(json.ROLLINFO)
 
     const rewindTrack = rewindTrackIn(holes)
     const shift = trackShift
-        ?? (rewindTrack === undefined ? 0 : bar.rewindTrack - rewindTrack)
+        ?? (rewindTrack === undefined ? track(0) : track(bar.rewindTrack - rewindTrack))
 
     const calibration: TrackCalibration = {
         unit: 'px',
@@ -161,29 +159,29 @@ export function readFromStanfordAton(
 
     const chains = [...holes, ...chainedBadHoles(listOf(json.ROLLINFO.BADHOLES?.HOLE), calibration)]
         .filter(hole => hole.NOTE_ATTACK && hole.OFF_TIME)
-        .sort((a, b) => px(a.NOTE_ATTACK!) - px(b.NOTE_ATTACK!))
+        .sort((a, b) => readPx(a.NOTE_ATTACK!) - readPx(b.NOTE_ATTACK!))
 
     const features = chains
         .map((hole): Hole => {
-            const attack = px(hole.NOTE_ATTACK!)
-            const release = px(hole.OFF_TIME!)
-            const column = px(hole.ORIGIN_COL)
-            const columnWidth = px(hole.WIDTH_COL)
+            const attack = readPx(hole.NOTE_ATTACK!)
+            const release = readPx(hole.OFF_TIME!)
+            const column = readPx(hole.ORIGIN_COL)
+            const columnWidth = readPx(hole.WIDTH_COL)
 
             return {
                 type: 'Hole',
                 id: v4(),
                 ...(stanford && {
-                    depiction: stanford.depictionOf(column, attack, columnWidth, release - attack)
+                    depiction: stanford.depictionOf(column, attack, columnWidth, subtract(release, attack))
                 }),
                 vertical: {
-                    from: +hole.TRACKER_HOLE + shift,
+                    from: track(+hole.TRACKER_HOLE + shift),
                     unit: 'track'
                 },
                 horizontal: {
                     unit: 'mm',
-                    from: millimeters(attack, dpi),
-                    to: millimeters(release, dpi)
+                    from: inMillimeters(attack, dpi),
+                    to: inMillimeters(release, dpi)
                 }
             }
         })
@@ -198,8 +196,8 @@ export function readFromStanfordAton(
         ...((scan ?? stanford) && { scan: scan ?? stanford?.scan }),
         measurements: {
             dimensions: {
-                width: millimeters(px(json.ROLLINFO.ROLL_WIDTH), dpi),
-                height: millimeters(px(json.ROLLINFO.IMAGE_LENGTH), dpi),
+                width: inMillimeters(readPx(json.ROLLINFO.ROLL_WIDTH), dpi),
+                height: inMillimeters(readPx(json.ROLLINFO.IMAGE_LENGTH), dpi),
                 unit: 'mm'
             },
             ...(punchDiameter !== undefined && {
@@ -210,8 +208,8 @@ export function readFromStanfordAton(
                 unit: 'px'
             },
             margins: {
-                treble: px(json.ROLLINFO.HARD_MARGIN_TREBLE),
-                bass: px(json.ROLLINFO.HARD_MARGIN_BASS),
+                treble: readPx(json.ROLLINFO.HARD_MARGIN_TREBLE),
+                bass: readPx(json.ROLLINFO.HARD_MARGIN_BASS),
                 unit: 'px'
             },
             trackCalibration: calibration,
@@ -220,4 +218,3 @@ export function readFromStanfordAton(
         features
     }
 }
-

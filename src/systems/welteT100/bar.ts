@@ -1,4 +1,5 @@
 import { describeTrackerBar, TrackerBar } from "../../TrackerBar"
+import { mm } from "../../Quantity"
 
 /**
  * The commands of the Welte-Mignon T-100, as its tracker bar reads them.
@@ -32,7 +33,7 @@ export type WelteT100ExpressionType = typeof welteT100ExpressionTypes[number]
 export const welteT100: TrackerBar = describeTrackerBar({
     id: 'welte-t100',
     name: 'Welte-Mignon T100',
-    width: 328,
+    width: mm(328),
     trackCount: 100,
     notes: { from: 11, to: 90, lowestPitch: 24 },
     expressions: new Map<number, WelteT100ExpressionType>([

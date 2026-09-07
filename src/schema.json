@@ -187,15 +187,15 @@
       "type": "string"
     },
     "CollationTolerance": {
-      "description": "Tolerance used in collation of roll copies. The start and end tolerances define the acceptable deviation (in mm) when aligning features across copies.",
+      "description": "Tolerance used in collation of roll copies: the acceptable deviation at either end when aligning features across copies.",
       "properties": {
         "toleranceEnd": {
-          "description": "Tolerance at the end position of a feature (in mm).",
-          "type": "number"
+          "$ref": "#/definitions/Millimeters",
+          "description": "Tolerance at the end position of a feature."
         },
         "toleranceStart": {
-          "description": "Tolerance at the start position of a feature (in mm).",
-          "type": "number"
+          "$ref": "#/definitions/Millimeters",
+          "description": "Tolerance at the start position of a feature."
         }
       },
       "required": [
@@ -589,12 +589,12 @@
       "description": "Describes the horizontal extent of a feature on the roll, measured in millimeters from the beginning of the roll. The `from` value is the start position and `to` is the end position. [ontology: crm:E54 Dimension]",
       "properties": {
         "from": {
-          "description": "The start position of the feature in millimeters from the beginning of the roll. [ontology: reo:from]",
-          "type": "number"
+          "$ref": "#/definitions/Millimeters",
+          "description": "The start position of the feature in millimeters from the beginning of the roll. [ontology: reo:from]"
         },
         "to": {
-          "description": "The end position of the feature in millimeters from the beginning of the roll. [ontology: reo:to]",
-          "type": "number"
+          "$ref": "#/definitions/Millimeters",
+          "description": "The end position of the feature in millimeters from the beginning of the roll. [ontology: reo:to]"
         },
         "unit": {
           "const": "mm",
@@ -637,6 +637,48 @@
       "required": [
         "premises",
         "@type"
+      ],
+      "type": "object"
+    },
+    "Margins<\"mm\">": {
+      "description": "The margins on the treble and bass sides of the roll, in the unit the scan was measured in.",
+      "properties": {
+        "bass": {
+          "$ref": "#/definitions/Quantity%3C%22mm%22%3E"
+        },
+        "treble": {
+          "$ref": "#/definitions/Quantity%3C%22mm%22%3E"
+        },
+        "unit": {
+          "const": "mm",
+          "type": "string"
+        }
+      },
+      "required": [
+        "treble",
+        "bass",
+        "unit"
+      ],
+      "type": "object"
+    },
+    "Margins<\"px\">": {
+      "description": "The margins on the treble and bass sides of the roll, in the unit the scan was measured in.",
+      "properties": {
+        "bass": {
+          "$ref": "#/definitions/Quantity%3C%22px%22%3E"
+        },
+        "treble": {
+          "$ref": "#/definitions/Quantity%3C%22px%22%3E"
+        },
+        "unit": {
+          "const": "px",
+          "type": "string"
+        }
+      },
+      "required": [
+        "treble",
+        "bass",
+        "unit"
       ],
       "type": "object"
     },
@@ -708,6 +750,48 @@
         "@type"
       ],
       "type": "object"
+    },
+    "Measure<\"mm\">": {
+      "description": "A value together with the unit it was measured in, as a record states it. [ontology: crm:E54 Dimension]",
+      "properties": {
+        "unit": {
+          "const": "mm",
+          "description": "The unit of measurement. [ontology: crm:P91 has unit]",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/definitions/Quantity%3C%22mm%22%3E",
+          "description": "The measured value. [ontology: crm:P90 has value]"
+        }
+      },
+      "required": [
+        "value",
+        "unit"
+      ],
+      "type": "object"
+    },
+    "Measure<\"px\">": {
+      "description": "A value together with the unit it was measured in, as a record states it. [ontology: crm:E54 Dimension]",
+      "properties": {
+        "unit": {
+          "const": "px",
+          "description": "The unit of measurement. [ontology: crm:P91 has unit]",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/definitions/Quantity%3C%22px%22%3E",
+          "description": "The measured value. [ontology: crm:P90 has value]"
+        }
+      },
+      "required": [
+        "value",
+        "unit"
+      ],
+      "type": "object"
+    },
+    "Millimeters": {
+      "$ref": "#/definitions/Quantity%3C%22mm%22%3E",
+      "description": "A place along the roll, or any length on the paper."
     },
     "Modification": {
       "anyOf": [
@@ -1149,45 +1233,91 @@
       "type": "object"
     },
     "ObjectAssumption<RollTempo>": {
-      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
-      "properties": {
-        "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+      "anyOf": [
+        {
           "properties": {
-            "belief": {
-              "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
+            "@annotation": {
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+              "properties": {
+                "belief": {
+                  "$ref": "#/definitions/Belief",
+                  "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
+                },
+                "@id": {
+                  "description": "A unique identifier for this object.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "belief",
+                "@id"
+              ],
+              "type": "object"
             },
-            "@id": {
-              "description": "A unique identifier for this object.",
+            "endsWith": {
+              "$ref": "#/definitions/Quantity%3C%22ft%2Fmin%22%3E",
+              "description": "The tempo at the end of the roll. [ontology: reo:to]"
+            },
+            "startsWith": {
+              "$ref": "#/definitions/Quantity%3C%22ft%2Fmin%22%3E",
+              "description": "The tempo at the beginning of the roll. [ontology: reo:from]"
+            },
+            "unit": {
+              "const": "ft/min",
+              "description": "The unit of the tempo measurement. [ontology: crm:P91 has unit]",
               "type": "string"
             }
           },
           "required": [
-            "belief",
-            "@id"
+            "endsWith",
+            "startsWith",
+            "unit"
           ],
           "type": "object"
         },
-        "endsWith": {
-          "description": "The tempo at the end of the roll. [ontology: reo:to]",
-          "type": "number"
-        },
-        "startsWith": {
-          "description": "The tempo at the beginning of the roll. [ontology: reo:from]",
-          "type": "number"
-        },
-        "unit": {
-          "description": "The unit of the tempo measurement (e.g. 'ft/min', 'm/min'). [ontology: crm:P91 has unit]",
-          "type": "string"
+        {
+          "properties": {
+            "@annotation": {
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+              "properties": {
+                "belief": {
+                  "$ref": "#/definitions/Belief",
+                  "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
+                },
+                "@id": {
+                  "description": "A unique identifier for this object.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "belief",
+                "@id"
+              ],
+              "type": "object"
+            },
+            "endsWith": {
+              "$ref": "#/definitions/Quantity%3C%22m%2Fmin%22%3E",
+              "description": "The tempo at the end of the roll. [ontology: reo:to]"
+            },
+            "startsWith": {
+              "$ref": "#/definitions/Quantity%3C%22m%2Fmin%22%3E",
+              "description": "The tempo at the beginning of the roll. [ontology: reo:from]"
+            },
+            "unit": {
+              "const": "m/min",
+              "description": "The unit of the tempo measurement. [ontology: crm:P91 has unit]",
+              "type": "string"
+            }
+          },
+          "required": [
+            "endsWith",
+            "startsWith",
+            "unit"
+          ],
+          "type": "object"
         }
-      },
-      "required": [
-        "endsWith",
-        "startsWith",
-        "unit"
       ],
-      "type": "object"
+      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain."
     },
     "ObjectAssumption<Transcription>": {
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
@@ -1246,6 +1376,10 @@
       "$ref": "#/definitions/Agent",
       "description": "An agent that is a person."
     },
+    "Pixels": {
+      "$ref": "#/definitions/Quantity%3C%22px%22%3E",
+      "description": "A place in a scan. Comparable within one scan only, since the resolution is the scan's."
+    },
     "Place": {
       "description": "A place, e.g. a recording location, publishing location, etc. [ontology: crm:E53 Place]",
       "properties": {
@@ -1287,6 +1421,21 @@
         }
       },
       "type": "object"
+    },
+    "Quantity<\"ft/min\">": {
+      "type": "number"
+    },
+    "Quantity<\"m/min\">": {
+      "type": "number"
+    },
+    "Quantity<\"mm\">": {
+      "type": "number"
+    },
+    "Quantity<\"px\">": {
+      "type": "number"
+    },
+    "Quantity<\"track\">": {
+      "type": "number"
     },
     "RecordingEvent": {
       "description": "Describes the event of recording and documents the persons involved in the process (e.g. pianist), the place, and the date of the recording. [ontology: lrmoo:F28 Expression Creation]",
@@ -1418,16 +1567,17 @@
               "description": "The physical dimensions of the roll. [ontology: reo:dimensions]",
               "properties": {
                 "height": {
-                  "description": "The total height (length) of the roll in the given unit. [ontology: reo:height]",
-                  "type": "number"
+                  "$ref": "#/definitions/Millimeters",
+                  "description": "The total height (length) of the roll. [ontology: reo:height]"
                 },
                 "unit": {
-                  "description": "The unit of measurement (e.g. 'mm'). [ontology: crm:P91 has unit]",
+                  "const": "mm",
+                  "description": "The unit of measurement. [ontology: crm:P91 has unit]",
                   "type": "string"
                 },
                 "width": {
-                  "description": "The width of the roll in the given unit. [ontology: reo:width]",
-                  "type": "number"
+                  "$ref": "#/definitions/Millimeters",
+                  "description": "The width of the roll. [ontology: reo:width]"
                 }
               },
               "required": [
@@ -1438,45 +1588,26 @@
               "type": "object"
             },
             "holeSeparation": {
-              "description": "The distance between adjacent tracker bar holes. [ontology: reo:holeSeparation]",
-              "properties": {
-                "unit": {
-                  "description": "The unit of measurement (e.g. 'px', 'mm'). [ontology: crm:P91 has unit]",
-                  "type": "string"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Measure%3C%22px%22%3E"
                 },
-                "value": {
-                  "description": "The measured hole separation value. [ontology: crm:P90 has value]",
-                  "type": "number"
+                {
+                  "$ref": "#/definitions/Measure%3C%22mm%22%3E"
                 }
-              },
-              "required": [
-                "value",
-                "unit"
               ],
-              "type": "object"
+              "description": "The distance between adjacent tracker bar holes, in the unit the scan was measured in. [ontology: reo:holeSeparation]"
             },
             "margins": {
-              "description": "The margins on the treble and bass sides of the roll. Not exported to RDF.",
-              "properties": {
-                "bass": {
-                  "description": "The margin on the bass side.",
-                  "type": "number"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Margins%3C%22px%22%3E"
                 },
-                "treble": {
-                  "description": "The margin on the treble side.",
-                  "type": "number"
-                },
-                "unit": {
-                  "description": "The unit of measurement (e.g. 'px', 'mm').",
-                  "type": "string"
+                {
+                  "$ref": "#/definitions/Margins%3C%22mm%22%3E"
                 }
-              },
-              "required": [
-                "treble",
-                "bass",
-                "unit"
               ],
-              "type": "object"
+              "description": "The margins on the treble and bass sides of the roll. Not exported to RDF."
             },
             "measuredBy": {
               "description": "Information about the software used to take the measurements. [ontology: crmdig:L23 used software or firmware]",
@@ -1503,22 +1634,8 @@
               "type": "object"
             },
             "punchDiameter": {
-              "description": "The average diameter of punched holes. [ontology: reo:punchDiameter]",
-              "properties": {
-                "unit": {
-                  "description": "The unit of measurement (e.g. 'mm'). [ontology: crm:P91 has unit]",
-                  "type": "string"
-                },
-                "value": {
-                  "description": "The measured punch diameter value. [ontology: crm:P90 has value]",
-                  "type": "number"
-                }
-              },
-              "required": [
-                "value",
-                "unit"
-              ],
-              "type": "object"
+              "$ref": "#/definitions/Measure%3C%22mm%22%3E",
+              "description": "The average diameter of punched holes. [ontology: reo:punchDiameter]"
             },
             "shift": {
               "$ref": "#/definitions/Shift",
@@ -1584,12 +1701,12 @@
       "description": "A shift correction applied to a roll copy to align it with other copies. The shift is defined as horizontal (along the roll length, in mm) and vertical (across tracks).",
       "properties": {
         "horizontal": {
-          "description": "Horizontal shift in millimeters (along the roll length).",
-          "type": "number"
+          "$ref": "#/definitions/Millimeters",
+          "description": "Along the roll."
         },
         "vertical": {
-          "description": "Vertical shift in track numbers (across the tracker bar).",
-          "type": "number"
+          "$ref": "#/definitions/Track",
+          "description": "Across the tracker bar."
         }
       },
       "required": [
@@ -1631,20 +1748,24 @@
       ],
       "type": "object"
     },
+    "Track": {
+      "$ref": "#/definitions/Quantity%3C%22track%22%3E",
+      "description": "A position across the roll, numbered as the tracker bar does."
+    },
     "TrackCalibration": {
       "description": "Relates a scan to the tracker bar it was read with.\n\nScanning software numbers the hole columns it finds by their position in the image, so its numbering is offset by however far the roll lay from the edge of the scanner bed. Calibrating means finding that offset, usually from a landmark such as the rewind perforation.\n\n    column      = offset + scannerTrack * separation     trackerBar  = scannerTrack + shift",
       "properties": {
         "offset": {
-          "description": "Image column of the scanning software's track 0.",
-          "type": "number"
+          "$ref": "#/definitions/Pixels",
+          "description": "Image column of the scanning software's track 0."
         },
         "separation": {
-          "description": "Distance between the centres of adjacent tracks.",
-          "type": "number"
+          "$ref": "#/definitions/Pixels",
+          "description": "Distance between the centres of adjacent tracks."
         },
         "shift": {
-          "description": "Added to the scanning software's numbering to reach the tracker bar.",
-          "type": "number"
+          "$ref": "#/definitions/Track",
+          "description": "Added to the scanning software's numbering to reach the tracker bar."
         },
         "unit": {
           "const": "px",
@@ -1721,12 +1842,12 @@
       "description": "Describes the vertical extent of a feature on the roll, measured in track numbers. Track numbers correspond to positions on the tracker bar. [ontology: crm:E54 Dimension]",
       "properties": {
         "from": {
-          "description": "The start track number of the feature. [ontology: reo:from]",
-          "type": "number"
+          "$ref": "#/definitions/Track",
+          "description": "The start track number of the feature. [ontology: reo:from]"
         },
         "to": {
-          "description": "The end track number, if the feature spans multiple tracks. If omitted, the feature occupies a single track. [ontology: reo:to]",
-          "type": "number"
+          "$ref": "#/definitions/Track",
+          "description": "The end track number, if the feature spans multiple tracks. If omitted, the feature occupies a single track. [ontology: reo:to]"
         },
         "unit": {
           "const": "track",

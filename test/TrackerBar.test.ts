@@ -1,43 +1,44 @@
 import { describe, expect, it } from 'vitest'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { columnOf, columnsOf, trackAt, TrackCalibration } from '../src/TrackCalibration'
+import { px, track } from '../src/Quantity'
 
 describe('WelteT100 tracker bar', () => {
     it('reads 100 positions and nothing outside them', () => {
-        expect(welteT100.roleOf(0)).toBeUndefined()
-        expect(welteT100.roleOf(101)).toBeUndefined()
-        expect(welteT100.meaningOf(0)).toBeUndefined()
-        expect(welteT100.meaningOf(101)).toBeUndefined()
+        expect(welteT100.roleOf(track(0))).toBeUndefined()
+        expect(welteT100.roleOf(track(101))).toBeUndefined()
+        expect(welteT100.meaningOf(track(0))).toBeUndefined()
+        expect(welteT100.meaningOf(track(101))).toBeUndefined()
     })
 
     it('puts the block boundaries where Hagmann does', () => {
-        expect(welteT100.roleOf(1)).toEqual('bass-expression')
-        expect(welteT100.roleOf(10)).toEqual('bass-expression')
-        expect(welteT100.roleOf(11)).toEqual('note')
-        expect(welteT100.roleOf(90)).toEqual('note')
-        expect(welteT100.roleOf(91)).toEqual('treble-expression')
-        expect(welteT100.roleOf(100)).toEqual('treble-expression')
+        expect(welteT100.roleOf(track(1))).toEqual('bass-expression')
+        expect(welteT100.roleOf(track(10))).toEqual('bass-expression')
+        expect(welteT100.roleOf(track(11))).toEqual('note')
+        expect(welteT100.roleOf(track(90))).toEqual('note')
+        expect(welteT100.roleOf(track(91))).toEqual('treble-expression')
+        expect(welteT100.roleOf(track(100))).toEqual('treble-expression')
     })
 
     it('spans the T100 compass from C1 to g⁴', () => {
-        expect(welteT100.meaningOf(11)).toEqual({ type: 'note', pitch: 24 })
-        expect(welteT100.meaningOf(90)).toEqual({ type: 'note', pitch: 103 })
+        expect(welteT100.meaningOf(track(11))).toEqual({ type: 'note', pitch: 24 })
+        expect(welteT100.meaningOf(track(90))).toEqual({ type: 'note', pitch: 103 })
     })
 
     it('mirrors the expression valves around the note block', () => {
-        expect(welteT100.meaningOf(9)).toEqual({
+        expect(welteT100.meaningOf(track(9))).toEqual({
             type: 'expression', expressionType: 'MotorOff', scope: 'bass'
         })
-        expect(welteT100.meaningOf(95)).toEqual({
+        expect(welteT100.meaningOf(track(95))).toEqual({
             type: 'expression', expressionType: 'ForzandoOn', scope: 'treble'
         })
-        expect(welteT100.meaningOf(5)).toEqual({
+        expect(welteT100.meaningOf(track(5))).toEqual({
             type: 'expression', expressionType: 'ForzandoOff', scope: 'bass'
         })
     })
 
     it('covers every position exactly once', () => {
-        const tracks = Array.from({ length: 100 }, (_, i) => i + 1)
+        const tracks = Array.from({ length: 100 }, (_, i) => track(i + 1))
         expect(tracks.filter(t => !welteT100.meaningOf(t))).toEqual([])
 
         const areaSizes = welteT100.areas.map(a => a.to - a.from + 1)
@@ -57,32 +58,32 @@ describe('track calibration', () => {
      */
     const calibration: TrackCalibration = {
         unit: 'px',
-        offset: 6.71627,
-        separation: 37.7646,
-        shift: -3
+        offset: px(6.71627),
+        separation: px(37.7646),
+        shift: track(-3)
     }
 
     it('places a track where the scan has its column', () => {
         // mean centroid of the holes measured on the scanner's track 94
-        expect(columnOf(91, calibration)).toBeCloseTo(3556.6, 0)
+        expect(columnOf(track(91), calibration)).toBeCloseTo(3556.6, 0)
         // ... and on its track 24, the lowest note used on that roll
-        expect(columnOf(21, calibration)).toBeCloseTo(913.1, 0)
+        expect(columnOf(track(21), calibration)).toBeCloseTo(913.1, 0)
     })
 
     it('inverts', () => {
-        const tracks = Array.from({ length: 100 }, (_, i) => i + 1)
-        tracks.forEach(track => {
-            expect(trackAt(columnOf(track, calibration), calibration)).toBeCloseTo(track, 9)
+        const tracks = Array.from({ length: 100 }, (_, i) => track(i + 1))
+        tracks.forEach(position => {
+            expect(trackAt(columnOf(position, calibration), calibration)).toBeCloseTo(position, 9)
         })
     })
 
     it('spans a run of tracks from outer edge to outer edge', () => {
-        const span = columnsOf(11, 13, calibration)
+        const span = columnsOf(track(11), track(13), calibration)
         expect(span.width).toBeCloseTo(3 * calibration.separation, 9)
-        expect(span.from).toBeCloseTo(columnOf(11, calibration) - calibration.separation / 2, 9)
+        expect(span.from).toBeCloseTo(columnOf(track(11), calibration) - calibration.separation / 2, 9)
     })
 
     it('does not care which way round the run is given', () => {
-        expect(columnsOf(13, 11, calibration)).toEqual(columnsOf(11, 13, calibration))
+        expect(columnsOf(track(13), track(11), calibration)).toEqual(columnsOf(track(11), track(13), calibration))
     })
 })

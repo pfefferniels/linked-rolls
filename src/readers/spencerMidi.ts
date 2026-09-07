@@ -3,6 +3,7 @@ import { read } from "midifile-ts";
 import { asSpans } from "./midiSpans";
 import { Hole } from "../Feature";
 import { RollCopy } from "../RollCopy";
+import { FeetPerMinute, feetPerMinute, inSeconds, Millimeters, mm, Seconds, Track, track } from "../Quantity";
 
 /**
  * How a MIDI key number in one of Spencer Chase's roll files names a
@@ -19,28 +20,29 @@ import { RollCopy } from "../RollCopy";
  * approximate. Settling it needs a Spencer file whose expression holes
  * can be checked against the roll, hence the option to override.
  */
-export const spencerTrackOf = (pitch: number) => {
-    const track = pitch - 13
-    return track < 10 ? track - 2 : track
+export const spencerTrackOf = (pitch: number): Track => {
+    const position = pitch - 13
+    return track(position < 10 ? position - 2 : position)
 }
 
 const MM_PER_FOOT = 304.8
+const SECONDS_PER_MINUTE = 60
 
 /**
  * Spencer Chase's rolls seem to be scanned at a roll speed of
  * 83 (=8.3 feet per minute). A scanner feeds the paper at one
  * speed, so time in his files is proportional to place.
  */
-export const SPENCER_FEET_PER_MINUTE = 8.3
+export const SPENCER_FEET_PER_MINUTE = feetPerMinute(8.3)
 
-/** Place on the roll in mm after `seconds` at a constant `feetPerMinute`. */
-export const atConstantSpeed = (feetPerMinute: number) =>
-    (seconds: number): number => feetPerMinute * MM_PER_FOOT / 60 * seconds
+/** Place on the roll after `time` at a constant `speed`. */
+export const atConstantSpeed = (speed: FeetPerMinute) =>
+    (time: Seconds): Millimeters => mm(speed * MM_PER_FOOT / SECONDS_PER_MINUTE * time)
 
 export function readFromSpencerMIDI(
     midiBuffer: ArrayBuffer,
-    placeAt: (seconds: number) => number = atConstantSpeed(SPENCER_FEET_PER_MINUTE),
-    trackOf: (pitch: number) => number = spencerTrackOf
+    placeAt: (time: Seconds) => Millimeters = atConstantSpeed(SPENCER_FEET_PER_MINUTE),
+    trackOf: (pitch: number) => Track = spencerTrackOf
 ): RollCopy {
     const features = asSpans(read(midiBuffer))
         .filter(span => span.type === 'note')
@@ -52,8 +54,8 @@ export function readFromSpencerMIDI(
                 unit: 'track'
             },
             horizontal: {
-                from: placeAt(span.onsetMs / 1000),
-                to: placeAt(span.offsetMs / 1000),
+                from: placeAt(inSeconds(span.onsetMs)),
+                to: placeAt(inSeconds(span.offsetMs)),
                 unit: 'mm'
             }
         }))
@@ -69,4 +71,3 @@ export function readFromSpencerMIDI(
         features
     }
 }
-

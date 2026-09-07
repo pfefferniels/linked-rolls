@@ -4,6 +4,7 @@ import { AnySymbol, Expression, Note } from "./Symbol";
 import { Version } from "./Version";
 import { NegotiatedEvent } from "./ReproducingSystem";
 import { idOf, idsOf } from "./Assumption";
+import { mean } from "./Quantity";
 
 export type Path = (string | number)[];
 
@@ -155,20 +156,19 @@ export class EditionView {
             return
         }
 
-        const horizontalFrom = carriers.reduce((hAcc, h) => hAcc + h.horizontal.from, 0) / carriers.length;
-        const horizontalTo = carriers.reduce((hAcc, h) => hAcc + h.horizontal.to, 0) / carriers.length;
-        const verticalFrom = carriers.reduce((vAcc, v) => vAcc + v.vertical.from, 0) / carriers.length;
-
-        const definedVerticalTo = carriers.filter(v => v.vertical.to !== undefined)
-        let verticalTo: number | undefined = undefined
-        if (definedVerticalTo.length > 0) {
-            verticalTo = definedVerticalTo
-                .reduce((vAcc, v) => vAcc + v.vertical.to!, 0) / definedVerticalTo.length;
-        }
+        const farEnds = carriers.flatMap(carrier => carrier.vertical.to === undefined ? [] : [carrier.vertical.to])
 
         return {
-            horizontal: { unit: 'mm', from: horizontalFrom, to: horizontalTo },
-            vertical: { unit: 'track', from: verticalFrom, to: verticalTo }
+            horizontal: {
+                unit: 'mm',
+                from: mean(carriers.map(carrier => carrier.horizontal.from)),
+                to: mean(carriers.map(carrier => carrier.horizontal.to))
+            },
+            vertical: {
+                unit: 'track',
+                from: mean(carriers.map(carrier => carrier.vertical.from)),
+                ...(farEnds.length > 0 && { to: mean(farEnds) })
+            }
         };
     }
 

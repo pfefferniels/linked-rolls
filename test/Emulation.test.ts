@@ -5,6 +5,7 @@ import { importJsonLd } from '../src/importJsonLd'
 import { EditionView } from '../src/EditionView'
 import { Emulation } from '../src/Emulation'
 import { flat } from './flat'
+import { mm } from '../src/Quantity'
 
 const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')
 const edition = importJsonLd(JSON.parse(file))
@@ -36,7 +37,7 @@ describe('emulating a version through a reproducing system', () => {
 
     it('restricts the notes to a range of the roll', () => {
         const part = new Emulation(flat)
-        part.emulateVersion(version, view, { range: [2000, 3000] })
+        part.emulateVersion(version, view, { range: [mm(2000), mm(3000)] })
         const noteOns = part.midiEvents.filter(event => event.type === 'noteOn')
         expect(noteOns.length).toBeGreaterThan(0)
         expect(noteOns.length).toBeLessThan(emulation.midiEvents.filter(event => event.type === 'noteOn').length)
