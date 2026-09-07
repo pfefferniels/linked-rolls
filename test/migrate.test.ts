@@ -74,6 +74,23 @@ describe('migrating a 0.1 edition', () => {
         expect(migrate(once)).toEqual(once)
     })
 
+    it('records the scale of an aligned copy beside its paper-stretch condition', () => {
+        const migrated = migrate({
+            copies: [{
+                ops: ['shifted', 'stretched'],
+                measurements: { shift: { horizontal: 1, vertical: 0 } },
+                conditions: [{ '@type': 'paper-stretch', factor: 1.02 }]
+            }, {
+                ops: [],
+                measurements: {},
+                conditions: []
+            }]
+        })
+        expect(migrated.copies[0].measurements).toEqual({ shift: { horizontal: 1, vertical: 0 }, scale: 1.02 })
+        expect(migrated.copies[0].conditions[0]).toMatchObject({ '@type': 'ConditionState', conditionType: 'paper-stretch', factor: 1.02 })
+        expect(migrated.copies[1].measurements).toEqual({})
+    })
+
     it('imports a 0.1 edition as the current model', () => {
         const imported = importJsonLd(edition01())
         expect(imported.versions[0]).toMatchObject({ type: 'Version', versionType: 'edition' })

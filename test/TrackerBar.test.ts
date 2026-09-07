@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { welteT100 } from '../src/systems/welteT100/bar'
+import { welteLicensee } from '../src/systems/welteLicensee/bar'
+import { translationBetween } from '../src/TrackerBar'
 import { columnOf, columnsOf, trackAt, TrackCalibration } from '../src/TrackCalibration'
 import { px, track } from '../src/Quantity'
 
@@ -47,6 +49,54 @@ describe('WelteT100 tracker bar', () => {
 
     it('knows where the rewind perforation runs', () => {
         expect(welteT100.rewindTrack).toEqual(91)
+    })
+})
+
+describe('Welte Licensee tracker bar', () => {
+    it('reads 98 positions, the notes from 9 to 88', () => {
+        expect(welteLicensee.trackCount).toBe(98)
+        expect(welteLicensee.areas.map(a => a.to - a.from + 1)).toEqual([8, 80, 10])
+        expect(welteLicensee.meaningOf(track(9))).toEqual({ type: 'note', pitch: 24 })
+        expect(welteLicensee.meaningOf(track(88))).toEqual({ type: 'note', pitch: 103 })
+        expect(welteLicensee.meaningOf(track(99))).toBeUndefined()
+
+        const tracks = Array.from({ length: 98 }, (_, i) => track(i + 1))
+        expect(tracks.filter(t => !welteLicensee.meaningOf(t))).toEqual([])
+    })
+
+    it('has no motor tracks and keeps the rest of the T-100 layout', () => {
+        expect(welteLicensee.expressionTypes).not.toContain('MotorOn')
+        expect(welteLicensee.meaningOf(track(8))).toEqual(welteT100.meaningOf(track(8)))
+        expect(welteLicensee.meaningOf(track(91))).toEqual(welteT100.meaningOf(track(93)))
+        expect(welteLicensee.meaningOf(track(98))).toEqual(welteT100.meaningOf(track(100)))
+        expect(welteLicensee.rewindTrack).toEqual(89)
+    })
+})
+
+describe('translating positions between bars', () => {
+    const onT100 = translationBetween(welteLicensee, welteT100)
+
+    it('puts a position onto the one that reads the same thing', () => {
+        expect(onT100(track(8))).toBe(8)
+        expect(onT100(track(9))).toBe(11)
+        expect(onT100(track(88))).toBe(90)
+        expect(onT100(track(89))).toBe(91)
+        expect(onT100(track(98))).toBe(100)
+    })
+
+    it('leaves out what the other bar does not read', () => {
+        const onLicensee = translationBetween(welteT100, welteLicensee)
+        expect(onLicensee(track(9))).toBeUndefined()
+        expect(onLicensee(track(10))).toBeUndefined()
+        expect(onLicensee(track(11))).toBe(9)
+        expect(onT100(track(0))).toBeUndefined()
+        expect(onT100(track(99))).toBeUndefined()
+    })
+
+    it('is the identity on a bar itself', () => {
+        const same = translationBetween(welteT100, welteT100)
+        Array.from({ length: 100 }, (_, i) => track(i + 1))
+            .forEach(position => expect(same(position)).toBe(position))
     })
 })
 

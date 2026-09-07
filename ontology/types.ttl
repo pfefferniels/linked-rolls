@@ -46,6 +46,10 @@ reot:staggering a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/r
     rdfs:label "Welte-Mignon T-100"@en ;
     rdfs:comment "The reproducing system of the red Welte rolls, 100 tracks on a roll 328 mm wide; its commands are the scheme at https://w3id.org/reo/type/welte-t100/."@en .
 
+<https://w3id.org/reo/type/system/welte-licensee> a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "Welte-Mignon (Licensee)"@en ;
+    rdfs:comment "The reproducing system of the American Welte-Mignon (Licensee) rolls, 98 tracks at nine to the inch on a roll 11¼ inches wide, re-cut from the T-100 masters for a slower paper speed. It reads the commands of the T-100, laid out the same way minus the two motor tracks, so its commands are the scheme at https://w3id.org/reo/type/welte-t100/."@en .
+
 
 # Kind of a version (P2 has type on a version, an F2 Expression)
 
@@ -130,3 +134,8 @@ reot:track a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3i
 reot:px a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "pixel"@en ;
     rdfs:comment "A pixel of the scan the measurement was taken from."@en .
+<https://w3id.org/reo/type/ft/min> a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "feet per minute"@en ;
+    rdfs:comment "A paper speed, as roll tempos are stated: tempo 80 is eight feet per minute."@en .
+<https://w3id.org/reo/type/m/min> a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "metres per minute"@en .

@@ -3,6 +3,11 @@ import { importJsonLd } from '../src/importJsonLd';
 import * as path from 'path'
 import { readFileSync } from 'fs';
 import { asJsonLd } from '../src/asJsonLd';
+import { assignObject } from '../src/Assumption';
+import { PaperSpeed } from '../src/RollCopy';
+import { systemOf } from '../src/TrackerBar';
+import { welteLicensee } from '../src/systems/welteLicensee/bar';
+import { feetPerMinute } from '../src/Quantity';
 
 const edition = () =>
     importJsonLd(JSON.parse(readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')))
@@ -39,5 +44,30 @@ describe('Export', () => {
         expect(date['@value']).toBeInstanceOf(Date)
         expect(date).not.toHaveProperty('type')
         expect(date).not.toHaveProperty('@type')
+    })
+
+    it('carries the system and the speed a copy was cut for, and the scale of its alignment only in the features', () => {
+        const withLicensee = edition()
+        withLicensee.copies[0].production = {
+            ...withLicensee.copies[0].production,
+            system: systemOf(welteLicensee),
+            speed: assignObject<PaperSpeed>({ value: feetPerMinute(8), unit: 'ft/min' })
+        }
+        withLicensee.copies[0].measurements.scale = 1.3
+
+        const exported = asJsonLd(withLicensee)
+        const production = exported.copies[0].production
+        expect(production.system).toEqual({
+            '@id': 'https://w3id.org/reo/type/system/welte-licensee',
+            name: welteLicensee.name,
+            sameAs: []
+        })
+        expect(production.speed).toEqual({ value: 8, unit: 'ft/min' })
+        expect(exported.copies[0].measurements.scale).toBe(1.3)
+
+        const reimported = importJsonLd(JSON.parse(JSON.stringify(exported)))
+        expect(reimported.copies[0].production?.speed).toEqual({ value: 8, unit: 'ft/min' })
+        expect(reimported.copies[0].production?.system?.id).toEqual('https://w3id.org/reo/type/system/welte-licensee')
+        expect(reimported.copies[0].measurements.scale).toBe(1.3)
     })
 })

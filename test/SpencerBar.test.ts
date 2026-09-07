@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { licenseeOnT100, readFromSpencerBar, SPENCER_ROWS_PER_INCH } from '../src/readers/spencerBar'
+import { readFromSpencerBar, SPENCER_ROWS_PER_INCH } from '../src/readers/spencerBar'
 import { asSymbols, unreadTracks } from '../src/RollCopy'
 import { Expression, Note } from '../src/Symbol'
-import { track } from '../src/Quantity'
+import { welteT100 } from '../src/systems/welteT100/bar'
+import { welteLicensee } from '../src/systems/welteLicensee/bar'
 
 const leb128 = (value: number): number[] =>
     value < 128 ? [value] : [(value % 128) | 0x80, ...leb128(Math.floor(value / 128))]
@@ -68,13 +69,7 @@ describe('reading a Spencer e-roll file', () => {
      * The Licensee bar has no motor tracks, so its note block begins
      * two tracks below the T-100's while the bass controls coincide.
      */
-    it('puts the Licensee positions on the T-100 bar', () => {
-        expect(licenseeOnT100(8)).toEqual(8)
-        expect(licenseeOnT100(9)).toEqual(11)
-        expect(licenseeOnT100(88)).toEqual(90)
-        expect(licenseeOnT100(91)).toEqual(93)
-        expect(licenseeOnT100(98)).toEqual(100)
-
+    it('puts the Licensee positions onto the T-100 bar', () => {
         const symbols = asSymbols(copy.features)
         const pitches = symbols.filter((symbol): symbol is Note => symbol.type === 'note').map(symbol => symbol.pitch)
         expect(pitches).toEqual([24, 103, 60])
@@ -85,11 +80,28 @@ describe('reading a Spencer e-roll file', () => {
         expect(expressions).toEqual(['bass MezzoforteOn', 'bass SoftPedalOn', 'bass ForzandoOff', 'treble SustainPedalOn'])
     })
 
-    it('takes another resolution and another bar', () => {
-        const other = readFromSpencerBar(spencerBar(events), { rowsPerInch: 200, trackOf: position => track(position) })
+    it('names the Licensee as the system the copy was cut for', () => {
+        expect(copy.production?.system).toEqual({
+            id: 'https://w3id.org/reo/type/system/welte-licensee',
+            name: welteLicensee.name,
+            sameAs: []
+        })
+    })
+
+    it('takes another resolution and another system', () => {
+        const other = readFromSpencerBar(spencerBar(events), { rowsPerInch: 200, system: welteT100 })
         expect(other.features[0].horizontal.from).toBeCloseTo(copy.features[0].horizontal.from * 2, 9)
         expect(other.features.map(feature => feature.vertical.from)).toContain(9)
         expect(other.features.map(feature => feature.vertical.from)).not.toContain(11)
+        expect(other.production?.system?.id).toEqual('https://w3id.org/reo/type/system/welte-t100')
+    })
+
+    it('leaves out a hole the edition’s bar does not read', () => {
+        const ontoLicensee = readFromSpencerBar(
+            spencerBar([[10, 9], [5, 9], [5, 45], [5, 45]]),
+            { system: welteT100, bar: welteLicensee }
+        )
+        expect(ontoLicensee.features.map(feature => feature.vertical.from)).toEqual([43])
     })
 
     it('reads distances of more than one byte', () => {

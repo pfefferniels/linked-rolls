@@ -3,7 +3,7 @@ import { AtonParser } from "./AtonParser";
 import { Hole } from "../Feature";
 import { RollCopy } from "../RollCopy";
 import { TrackCalibration } from "../TrackCalibration";
-import { TrackerBar } from "../TrackerBar";
+import { systemOf, TrackerBar, translationBetween } from "../TrackerBar";
 import { welteT100 } from "../systems/welteT100/bar";
 import { inMillimeters, mean, Millimeters, mm, Pixels, px, subtract, Track, track } from "../Quantity";
 
@@ -104,7 +104,16 @@ export interface StanfordAtonOptions {
      */
     trackShift?: Track
 
+    /** The edition's bar, onto which the holes are put. */
     bar?: TrackerBar
+
+    /**
+     * The bar the scanned roll was cut for, where it is not the
+     * edition's. The scan is calibrated on it, and the holes are then
+     * put onto the edition's bar; one on a position that bar does not
+     * read is left out.
+     */
+    system?: TrackerBar
 
     /**
      * Where the scan the analysis was made from can be seen. Stanford's
@@ -141,7 +150,7 @@ const measuredByOf = (rollinfo: Record<string, string>) => {
 
 export function readFromStanfordAton(
     atonString: string,
-    { trackShift, bar = welteT100, scan }: StanfordAtonOptions = {}
+    { trackShift, bar = welteT100, system = bar, scan }: StanfordAtonOptions = {}
 ): RollCopy {
     const parser = new AtonParser()
     const json = parser.parse(atonString)
@@ -155,7 +164,7 @@ export function readFromStanfordAton(
 
     const rewindTrack = rewindTrackIn(holes)
     const shift = trackShift
-        ?? (rewindTrack === undefined ? track(0) : track(bar.rewindTrack - rewindTrack))
+        ?? (rewindTrack === undefined ? track(0) : track(system.rewindTrack - rewindTrack))
 
     const calibration: TrackCalibration = {
         unit: 'px',
@@ -167,20 +176,24 @@ export function readFromStanfordAton(
     const punchDiameter = punchDiameterOf(holes, dpi)
 
     const chains = chainsAmong([...holes, ...chainedBadHoles(listOf(json.ROLLINFO.BADHOLES?.HOLE), calibration)])
+    const onBar = translationBetween(system, bar)
 
     const features = chains
-        .map(({ hole, attack, release }): Hole => {
+        .flatMap(({ hole, attack, release }): Hole[] => {
+            const position = onBar(track(+hole.TRACKER_HOLE + shift))
+            if (position === undefined) return []
+
             const column = readPx(hole.ORIGIN_COL)
             const columnWidth = readPx(hole.WIDTH_COL)
 
-            return {
+            return [{
                 type: 'Hole',
                 id: v4(),
                 ...(stanford && {
                     depiction: stanford.depictionOf(column, attack, columnWidth, subtract(release, attack))
                 }),
                 vertical: {
-                    from: track(+hole.TRACKER_HOLE + shift),
+                    from: position,
                     unit: 'track'
                 },
                 horizontal: {
@@ -188,7 +201,7 @@ export function readFromStanfordAton(
                     from: inMillimeters(attack, dpi),
                     to: inMillimeters(release, dpi)
                 }
-            }
+            }]
         })
 
     return {
@@ -197,6 +210,7 @@ export function readFromStanfordAton(
         ops: [],
         conditions: [],
         keeper: { name: '', sameAs: [] },
+        production: { system: systemOf(system) },
         modifications: [],
         ...((scan ?? stanford) && { scan: scan ?? stanford?.scan }),
         measurements: {

@@ -145,3 +145,28 @@ export const describeTrackerBar = (spec: TrackerBarSpec): TrackerBar => {
         roleOf
     }
 }
+
+const keyOf = (meaning: TrackMeaning): string =>
+    meaning.type === 'note' ? `note ${meaning.pitch}` : `${meaning.scope} ${meaning.expressionType}`
+
+const positionsOf = (bar: TrackerBar): Track[] =>
+    Array.from({ length: bar.trackCount }, (_, i) => track(i + 1))
+
+/**
+ * Puts a position of one bar onto the position of another that reads
+ * the same thing, or nowhere when the other bar does not read it. This
+ * is how a copy cut for one system takes its place in an edition of
+ * another, as a Licensee re-cut does in an edition of a T-100 roll.
+ */
+export const translationBetween = (from: TrackerBar, to: TrackerBar): (position: Track) => Track | undefined => {
+    const positions = new Map<string, Track>()
+    positionsOf(to).forEach(position => {
+        const meaning = to.meaningOf(position)
+        if (meaning) positions.set(keyOf(meaning), position)
+    })
+
+    return position => {
+        const meaning = from.meaningOf(position)
+        return meaning ? positions.get(keyOf(meaning)) : undefined
+    }
+}

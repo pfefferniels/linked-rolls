@@ -4,6 +4,7 @@ import * as path from 'path'
 import { asSymbols, calibrationOf, unreadTracks } from '../src/RollCopy'
 import { readFromStanfordAton } from '../src/readers/stanfordAton'
 import { welteT100 } from '../src/systems/welteT100/bar'
+import { welteLicensee } from '../src/systems/welteLicensee/bar'
 import { columnOf } from '../src/TrackCalibration'
 import { Expression } from '../src/Symbol'
 import { track } from '../src/Quantity'
@@ -26,6 +27,11 @@ const countByExpression = (copy: ReturnType<typeof readFromStanfordAton>) =>
             const key = `${symbol.scope} ${symbol.expressionType}`
             return counts.set(key, (counts.get(key) || 0) + 1)
         }, new Map<string, number>())
+
+const pitchesOf = (copy: ReturnType<typeof readFromStanfordAton>) =>
+    asSymbols(copy.features)
+        .filter(symbol => symbol.type === 'note')
+        .map(symbol => symbol.pitch)
 
 describe('reading a Stanford analysis file', () => {
     const copy = readFromStanfordAton(aton)
@@ -79,12 +85,36 @@ describe('reading a Stanford analysis file', () => {
     })
 
     it('reads the notes within the T100 compass', () => {
-        const pitches = asSymbols(copy.features)
-            .filter(symbol => symbol.type === 'note')
-            .map(symbol => symbol.pitch)
+        const pitches = pitchesOf(copy)
 
         expect(Math.min(...pitches)).toBeGreaterThanOrEqual(24)
         expect(Math.max(...pitches)).toBeLessThanOrEqual(103)
+    })
+
+    it('names the system the roll was cut for', () => {
+        expect(copy.production?.system?.id).toEqual('https://w3id.org/reo/type/system/welte-t100')
+    })
+
+    /**
+     * A roll cut for another bar is calibrated on that bar and then
+     * put onto the edition's. Read as a Licensee roll, this T-100 scan
+     * has its rewind chain taken for the Licensee's, two positions
+     * nearer the notes, so the notes and the treble valves still land
+     * where they belong while the bass valves slip by two tracks. That
+     * slip is how a wrongly declared system shows itself.
+     */
+    it('reads a roll on the bar it was cut for and puts it onto the edition’s', () => {
+        const asLicensee = readFromStanfordAton(aton, { system: welteLicensee })
+        expect(asLicensee.production?.system?.id).toEqual('https://w3id.org/reo/type/system/welte-licensee')
+        expect(asLicensee.measurements.trackCalibration?.shift).toEqual(-5)
+        expect([...unreadTracks(asLicensee.features).keys()]).toEqual([])
+
+        expect(pitchesOf(asLicensee)).toEqual(pitchesOf(copy))
+
+        const counts = countByExpression(asLicensee)
+        expect(counts.get('treble SustainPedalOn')).toEqual(52)
+        expect(counts.get('bass SlowCrescendoOn')).toEqual(countByExpression(copy).get('bass ForzandoOn'))
+        expect(counts.get('bass MotorOn')).toBeUndefined()
     })
 
     it('measures a plausible punch diameter', () => {

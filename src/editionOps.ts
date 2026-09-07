@@ -6,9 +6,9 @@ import { AnyPerforation, AnySymbol, Expression, PlacementRelation, isPerforation
 import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance } from "./Collation"
 import { Edit, EditType } from "./Edit"
 import { insertedBy, Version } from "./Version"
-import { asSymbols, PaperStretch, RollCopy, Shift } from "./RollCopy"
-import { applyShift, applyStretch, revertShift, revertStretch } from "./alignment"
-import { AnyArgumentation, Assumption, Belief, Certainty, ObjectAssumption, assignReference, idOf } from "./Assumption"
+import { asSymbols, RollConditionAssignment, RollCopy, ScaleReading, Shift } from "./RollCopy"
+import { applyShift, applyScale, revertShift, revertScale } from "./alignment"
+import { AnyArgumentation, Assumption, Belief, Certainty, assignReference, idOf } from "./Assumption"
 import { HorizontalSpan } from "./Feature"
 import { distance, Millimeters, mm, subtract } from "./Quantity"
 
@@ -94,18 +94,41 @@ export const createVersion = (siglum: string, copy: RollCopy): EditionOp =>
         })
     }
 
-/** Shifts and then stretches the copy's features into line with another copy's. */
-export const alignCopy = (copyId: string, shift: Shift, stretch: ObjectAssumption<PaperStretch>): EditionOp =>
+const isPaperStretch = (condition: RollConditionAssignment): boolean =>
+    condition.conditionType === 'paper-stretch'
+
+/** States what the scale is put down to, in place of an earlier reading. */
+const readScale = (copy: Draft<RollCopy>, reading: ScaleReading) => {
+    if (reading.cause === 'paper') {
+        copy.conditions = [...copy.conditions.filter(condition => !isPaperStretch(condition)), reading.condition]
+        return
+    }
+    if (!copy.production) copy.production = {}
+    copy.production.speed = reading.speed
+}
+
+/**
+ * Shifts and then scales the copy's features into line with another
+ * copy's, and puts the scale down to what the reading says: the paper,
+ * or the speed the copy was cut for.
+ */
+export const alignCopy = (copyId: string, shift: Shift, scale: number, reading?: ScaleReading): EditionOp =>
     onCopy(copyId, copy => {
         applyShift(shift, copy)
-        applyStretch(stretch, copy)
+        applyScale(scale, copy)
+        if (reading) readScale(copy, reading)
     })
 
-/** Puts the copy's features back where they were measured. */
+/**
+ * Puts the copy's features back where they were measured. A paper
+ * stretch read off the alignment goes with it; a speed stated stays,
+ * being a fact about the copy.
+ */
 export const unalignCopy = (copyId: string): EditionOp =>
     onCopy(copyId, copy => {
-        revertStretch(copy)
+        revertScale(copy)
         revertShift(copy)
+        copy.conditions = without(copy.conditions, isPaperStretch)
     })
 
 const featureIdsOf = (copy: RollCopy): Ids => new Set(copy.features.map(feature => feature.id))

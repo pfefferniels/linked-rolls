@@ -1239,6 +1239,83 @@
       ],
       "type": "object"
     },
+    "ObjectAssumption<PaperSpeed>": {
+      "anyOf": [
+        {
+          "properties": {
+            "@annotation": {
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+              "properties": {
+                "belief": {
+                  "$ref": "#/definitions/Belief",
+                  "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
+                },
+                "@id": {
+                  "description": "A unique identifier for this object.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "belief",
+                "@id"
+              ],
+              "type": "object"
+            },
+            "unit": {
+              "const": "ft/min",
+              "description": "The unit of measurement. [ontology: crm:P91 has unit]",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/Quantity%3C%22ft%2Fmin%22%3E",
+              "description": "The measured value. [ontology: crm:P90 has value]"
+            }
+          },
+          "required": [
+            "unit",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "@annotation": {
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+              "properties": {
+                "belief": {
+                  "$ref": "#/definitions/Belief",
+                  "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
+                },
+                "@id": {
+                  "description": "A unique identifier for this object.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "belief",
+                "@id"
+              ],
+              "type": "object"
+            },
+            "unit": {
+              "const": "m/min",
+              "description": "The unit of measurement. [ontology: crm:P91 has unit]",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/Quantity%3C%22m%2Fmin%22%3E",
+              "description": "The measured value. [ontology: crm:P90 has value]"
+            }
+          },
+          "required": [
+            "unit",
+            "value"
+          ],
+          "type": "object"
+        }
+      ],
+      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain."
+    },
     "ObjectAssumption<Person>": {
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
@@ -1462,7 +1539,7 @@
       "type": "object"
     },
     "ProductionEvent": {
-      "description": "Describes the production of a roll copy: the manufacturer, the paper used, and the date. [ontology: lrmoo:F32 Item Production Event]",
+      "description": "Describes the production of a roll copy: the manufacturer, the paper used, the date, and the system and paper speed the copy was cut for. [ontology: lrmoo:F32 Item Production Event]",
       "properties": {
         "company": {
           "$ref": "#/definitions/Agent",
@@ -1475,6 +1552,14 @@
         "paper": {
           "$ref": "#/definitions/Concept",
           "description": "The paper the roll copy was cut on. [ontology: crm:P126 employed]"
+        },
+        "speed": {
+          "$ref": "#/definitions/ObjectAssumption%3CPaperSpeed%3E",
+          "description": "The paper speed the copy was cut for. A copy cut from the same master for another speed comes out longer or shorter than the roll it is aligned with by the ratio of the speeds, which is what the alignment then measures. [ontology: reo:paperSpeed]"
+        },
+        "system": {
+          "$ref": "#/definitions/Concept",
+          "description": "The reproducing system the copy was cut for. Left out, it is the roll's own; a Licensee re-cut of a T-100 roll names the Licensee here. A system the type vocabulary knows carries the IRI of its concept as `id`. [ontology: crm:P32 used general technique]"
         }
       },
       "type": "object"
@@ -1693,6 +1778,10 @@
             "punchDiameter": {
               "$ref": "#/definitions/Measure%3C%22mm%22%3E",
               "description": "The average diameter of punched holes. [ontology: reo:punchDiameter]"
+            },
+            "scale": {
+              "description": "The factor this copy's features were scaled by to align them with the others. What it is put down to is stated apart: a paper-stretch condition, or the speed the copy was cut for. Not exported to RDF.",
+              "type": "number"
             },
             "shift": {
               "$ref": "#/definitions/Shift",
