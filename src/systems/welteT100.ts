@@ -5,7 +5,6 @@ import {
     Grid,
     levelChanges,
     mezzoforteTravel,
-    noteDensity,
     paperSeconds,
     pedalDefaults,
     playbackParameters,
@@ -207,26 +206,11 @@ const nuanceCurves = (
     grid: Grid,
     ports: Ports,
     samples: Samples,
-    events: readonly NegotiatedEvent[],
     options: WelteT100Options
 ): Record<Half, DynamicsCurve> => {
-    const onsetRows = (half: Half) =>
-        events
-            .filter(isNote)
-            .filter(note => halfOf(note, options.division) === half)
-            .map(note => rowOf(note.horizontal.from))
-    const density = {
-        bass: noteDensity(grid, onsetRows('bass')),
-        treble: noteDensity(grid, onsetRows('treble')),
-    }
-    const totalNoteDensity = Float64Array.from(density.bass, (value, index) => value + density.treble[index])
-
     const curveOf = (half: Half): DynamicsCurve => {
         const params = options.nuance[half]
-        const output = pneumaticModel.run(
-            { grid, half, ports, noteDensity: density[half], totalNoteDensity },
-            params
-        )
+        const output = pneumaticModel.run({ grid, half, ports }, params)
         const travel = travelBetweenRails(output, params)
         const hook = clamp(mezzoforteTravel(params), 0.01, 0.99)
         return {
@@ -321,7 +305,7 @@ const perform = (
         seconds: grid.seconds
     }
 
-    const nuance = nuanceCurves(grid, ports, samples, events, options)
+    const nuance = nuanceCurves(grid, ports, samples, options)
     const pedals = pedalCurves(grid, ports, samples, options)
     const readingsOf = (control: Control) => readings.filter(reading => reading.punch.control === control)
 
