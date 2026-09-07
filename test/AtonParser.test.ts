@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { AtonParser } from './AtonParser'
+import { AtonParser } from '../src/readers/AtonParser'
 
 test('it import ATON files correctly', () => {
     const parser = new AtonParser()

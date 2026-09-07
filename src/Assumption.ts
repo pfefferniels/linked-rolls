@@ -1,4 +1,5 @@
-import { WithActor, WithNote, WithId } from "./utils"
+import { WithNote, WithId } from "./utils"
+import { Person, WithActor } from "./Agent"
 
 export const certainties = [
     'true',
@@ -138,6 +139,25 @@ export type ReferenceAssumption = Assumption & WithId
  * may be uncertain.
  */
 export type ObjectAssumption<O extends object> =  Assumption & O
+
+/**
+ * An actor assignment associates a person with an action.
+ * It is an object assumption so that the attribution can be
+ * annotated with a belief about its certainty.
+ */
+export type ActorAssignment = ObjectAssumption<Person>
+
+/**
+ * A date value wrapped as an assumption, so that the date
+ * can be annotated with a belief about its certainty and source.
+ */
+export type DateAssignment = ValueAssumption<Date> & {
+    /**
+     * The datatype of the value. Written on export so that
+     * RDF reads the value as a date rather than a string.
+     */
+    '@type'?: 'xsd:date'
+}
 
 export function valueOf<ValueT>(
     assumption: ValueAssumption<ValueT>

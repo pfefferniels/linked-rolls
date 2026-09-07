@@ -1,5 +1,5 @@
 import { NegotiatedEvent, ReproducingSystem } from '../src/ReproducingSystem'
-import { welteT100 } from '../src/TrackerBar'
+import { welteT100 } from '../src/systems/welteT100/bar'
 import { Note } from '../src/Symbol'
 
 /**

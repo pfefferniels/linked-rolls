@@ -16,8 +16,8 @@
       "default": "./lib/index.js"
     },
     "./welte-t100": {
-      "types": "./lib/systems/welteT100.d.ts",
-      "default": "./lib/systems/welteT100.js"
+      "types": "./lib/systems/welteT100/system.d.ts",
+      "default": "./lib/systems/welteT100/system.js"
     },
     "./lib/*": "./lib/*",
     "./package.json": "./package.json"

@@ -1,5 +1,4 @@
-import { Assumption, ObjectAssumption } from "./Assumption";
-import { Person } from "./Edition";
+import { Assumption } from "./Assumption";
 import { AnySymbol } from "./Symbol";
 import { WithId } from "./utils";
 
@@ -26,13 +25,6 @@ export const editTypes = [
  * adds an accent, shifts a note, or shortens/prolongs a perforation.
  */
 export type EditType = typeof editTypes[number];
-
-/**
- * An actor assignment associates a person with an action.
- * It is an object assumption so that the attribution can be
- * annotated with a belief about its certainty.
- */
-export type ActorAssignment = ObjectAssumption<Person>
 
 /**
  * A set of edits transforms a version of a roll into another version.

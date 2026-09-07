@@ -7,8 +7,8 @@ import { importJsonLd } from '../src/importJsonLd'
 import { EditionView } from '../src/EditionView'
 import { Emulation } from '../src/Emulation'
 import { DynamicsCurve, PedalCurve, PerformedPedalEvent } from '../src/ReproducingSystem'
-import { secondsAt, welteT100System } from '../src/systems/welteT100'
-import { atConstantSpeed, SPENCER_FEET_PER_MINUTE } from '../src/RollCopy'
+import { secondsAt, welteT100System } from '../src/systems/welteT100/system'
+import { atConstantSpeed, SPENCER_FEET_PER_MINUTE } from '../src/readers/spencerMidi'
 
 const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')
 const edition = importJsonLd(JSON.parse(file))

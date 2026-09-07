@@ -6,7 +6,7 @@ import { EditionView } from '../src/EditionView'
 import { Emulation } from '../src/Emulation'
 import { assignReference } from '../src/Assumption'
 import { Expression, Note } from '../src/Symbol'
-import { constraintProblems } from '../src/validate'
+import { constraintProblems } from '../src/constraints'
 import { flat } from './flat'
 
 const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')

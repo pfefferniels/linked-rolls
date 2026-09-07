@@ -4,6 +4,6 @@ import { defineConfig } from 'vitest/config'
 // out into the workspace, and its node:test files are not for vitest.
 export default defineConfig({
     test: {
-        include: ['test/**/*.test.ts', 'src/**/*.test.ts']
+        include: ['test/**/*.test.ts']
     }
 })

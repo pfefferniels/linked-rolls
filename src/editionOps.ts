@@ -3,10 +3,11 @@ import { v4 } from "uuid"
 import { EditionView, getAt, Path } from "./EditionView"
 import { Edition } from "./Edition"
 import { AnyPerforation, AnySymbol, Expression, PlacementRelation, isPerforation, placementRelations } from "./Symbol"
-import { CollationTolerance } from "./Collation"
+import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance } from "./Collation"
 import { Edit, EditType } from "./Edit"
 import { Version } from "./Version"
-import { applyShift, applyStretch, asSymbols, PaperStretch, revertShift, revertStretch, RollCopy, Shift } from "./RollCopy"
+import { asSymbols, PaperStretch, RollCopy, Shift } from "./RollCopy"
+import { applyShift, applyStretch, revertShift, revertStretch } from "./alignment"
 import { AnyArgumentation, Assumption, Belief, Certainty, ObjectAssumption, assignReference, idOf } from "./Assumption"
 
 /**
@@ -36,8 +37,6 @@ const without = <T,>(items: T[], matches: (item: T) => boolean): T[] =>
     items.some(matches) ? items.filter(item => !matches(item)) : items
 
 type Ids = ReadonlySet<string>
-
-const defaultTolerance: CollationTolerance = { toleranceStart: 5, toleranceEnd: 5 }
 
 const insertion = (symbol: AnySymbol): Edit => ({ type: 'edit', id: v4(), insert: [symbol] })
 
@@ -162,20 +161,6 @@ export const removeCopy = (copyId: string): EditionOp =>
         draft.copies = draft.copies.filter(c => c.id !== copyId)
     })
 
-type Collation = { symbol: Readonly<AnySymbol>, counterpart: Readonly<AnySymbol> }
-
-/** Each of the version's own symbols with every inherited symbol it collates with. */
-const collationsOf = (
-    view: EditionView,
-    own: readonly Readonly<AnySymbol>[],
-    inherited: readonly Readonly<AnySymbol>[],
-    tolerance: CollationTolerance
-): Collation[] =>
-    own.flatMap(symbol =>
-        inherited
-            .filter(candidate => view.isCollatable(symbol, candidate, tolerance))
-            .map(counterpart => ({ symbol, counterpart })))
-
 /** The carriers of each collated symbol pass to its counterpart. */
 const handOverCarriers = (view: EditionView, draft: Draft<Edition>, collations: readonly Collation[]) =>
     collations.forEach(({ symbol, counterpart }) => {
@@ -194,11 +179,11 @@ export const connectVersions = (
     view: EditionView,
     childId: string,
     parentId: string,
-    tolerance: CollationTolerance = defaultTolerance
+    tolerance: CollationTolerance = defaultCollationTolerance
 ): EditionOp => {
     const inherited = view.snapshot(parentId)
     const own = view.snapshot(childId)
-    const collations = collationsOf(view, own, inherited, tolerance)
+    const collations = collationsOf(own, inherited, symbol => view.dimensionOf(symbol), tolerance)
     const collated = new Set(collations.map(({ symbol }) => symbol.id))
     const matched = new Set(collations.map(({ counterpart }) => counterpart.id))
 
@@ -222,14 +207,14 @@ export const collateSymbols = (
     view: EditionView,
     versionId: string,
     symbolIds: readonly string[],
-    tolerance: CollationTolerance = defaultTolerance
+    tolerance: CollationTolerance = defaultCollationTolerance
 ): EditionOp => {
     const version = view.get<Version>(versionId)
     if (!version?.basedOn) return noChange
 
     const chosen = new Set(symbolIds)
     const own = insertedIn([version]).filter(symbol => chosen.has(symbol.id))
-    const collations = collationsOf(view, own, view.snapshot(idOf(version.basedOn)), tolerance)
+    const collations = collationsOf(own, view.snapshot(idOf(version.basedOn)), symbol => view.dimensionOf(symbol), tolerance)
     const collated = new Set(collations.map(({ symbol }) => symbol.id))
 
     return onVersion(versionId, (version, draft) => {

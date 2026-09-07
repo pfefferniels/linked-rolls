@@ -1,4 +1,3 @@
-import { CollationTolerance } from "./Collation";
 import { Edition } from "./Edition";
 import { HorizontalSpan, VerticalSpan, AnyFeature } from "./Feature";
 import { AnySymbol, Expression, Note } from "./Symbol";
@@ -41,30 +40,10 @@ export class EditionView {
      */
     private readonly links: Map<string, Set<Path>> = new Map()
 
-    /**
-     * Dimensions cache: one frequent operation is to find the average
-     * dimensions of a symbol based on its carriers. This cache stores
-     * the computed dimensions for reuse.
-     */
-    //private readonly dimensionsCache: Map<string, { horizontal: HorizontalSpan, vertical: VerticalSpan }> = new Map()
-
-
     constructor(edition: Edition) {
         this.edition = edition;
         this.indexObjects();
-        //this.buildDimensionsCache()
     }
-
-    // private buildDimensionsCache() {
-    //     for (const version of this.edition.versions) {
-    //         for (const symbol of version.edits.flatMap(edit => edit.insert || [])) {
-    //             const dim = this.dimensionOf(symbol)
-    //             if (dim) {
-    //                 this.dimensionsCache.set(symbol.id, dim)
-    //             }
-    //         }
-    //     }
-    // }
 
     atPath<T>(path: Path): T | null {
         const node = getAt<T>(path, this.edition);
@@ -171,10 +150,6 @@ export class EditionView {
     }
 
     dimensionOf(symbol: AnySymbol): Readonly<{ horizontal: HorizontalSpan, vertical: VerticalSpan }> | undefined {
-        // if (this.dimensionsCache.has(symbol.id)) {
-        //     return this.dimensionsCache.get(symbol.id);
-        // }
-
         const carriers = this.getAll<AnyFeature>(idsOf(symbol.carriers))
         if (carriers.length === 0) {
             return
@@ -227,43 +202,6 @@ export class EditionView {
             const bDimension = this.dimensionOf(b)
             return (aDimension?.horizontal.from || 0) - (bDimension?.horizontal.from || 0);
         })
-    }
-
-    isCollatable(
-        symbolA: AnySymbol,
-        symbolB: AnySymbol,
-        tolerance: CollationTolerance = {
-            toleranceEnd: 5,
-            toleranceStart: 5
-        },
-    ): boolean {
-        // two symbols are collatible if they share the same 
-        // symbol characteristics (pitch, expression type etc.)
-        // and occur in the same horizontal position.
-        if (symbolA.type === 'note' && symbolB.type === 'note') {
-            if (symbolA.pitch !== symbolB.pitch) return false;
-        }
-        else if (symbolA.type === 'expression' && symbolB.type === 'expression') {
-            if (symbolA.expressionType !== symbolB.expressionType) return false;
-            if (symbolA.scope !== symbolB.scope) return false;
-        }
-
-        const dimensionA = this.dimensionOf(symbolA);
-        const dimensionB = this.dimensionOf(symbolB);
-
-        if (!dimensionA || !dimensionB) return false
-
-        const distanceStart = Math.abs(dimensionA.horizontal.from - dimensionB.horizontal.from);
-        const distanceEnd = Math.abs(dimensionA.horizontal.to - dimensionB.horizontal.to);
-
-        if (distanceStart > tolerance.toleranceStart
-            || distanceEnd > tolerance.toleranceEnd
-        ) {
-            // the symbols are too far apart to be collated
-            return false;
-        }
-
-        return true
     }
 
     /**

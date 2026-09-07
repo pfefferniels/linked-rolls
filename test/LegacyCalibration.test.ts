@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { calibrationOf, RollCopy } from '../src/RollCopy'
 import { columnsOf } from '../src/TrackCalibration'
-import { welteT100 } from '../src/TrackerBar'
+import { welteT100 } from '../src/systems/welteT100/bar'
 
 /**
  * Copies imported before the calibration was recorded have to keep

@@ -22,9 +22,9 @@ import {
     Punch,
     Spool,
 } from "welte-t100-emulator";
-import { Expression, ExpressionScope, Note } from "../Symbol";
-import { welteT100, WelteT100ExpressionType } from "../TrackerBar";
-import { Hole } from "../Feature";
+import { Expression, ExpressionScope, Note } from "../../Symbol";
+import { welteT100, WelteT100ExpressionType } from "./bar";
+import { Hole } from "../../Feature";
 import {
     DynamicsCurve,
     NegotiatedEvent,
@@ -35,7 +35,7 @@ import {
     PerformedPedalEvent,
     ReproducingSystem,
     RollProperties
-} from "../ReproducingSystem";
+} from "../../ReproducingSystem";
 
 /**
  * MIDI velocity at the open rail of the Nuancierbalg, at the Mezzoforte pin,

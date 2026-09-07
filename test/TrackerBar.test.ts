@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { welteT100 } from '../src/TrackerBar'
+import { welteT100 } from '../src/systems/welteT100/bar'
 import { columnOf, columnsOf, trackAt, TrackCalibration } from '../src/TrackCalibration'
 
 describe('WelteT100 tracker bar', () => {

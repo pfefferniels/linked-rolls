@@ -5,7 +5,7 @@ import { EditionView, Path } from '../src/EditionView'
 import { Edit } from '../src/Edit'
 import { AnySymbol, Expression, Note, placementsOf } from '../src/Symbol'
 import { PaperStretch } from '../src/RollCopy'
-import { constraintProblems } from '../src/validate'
+import { constraintProblems } from '../src/constraints'
 import { Assumption, assignObject, idOf, idsOf } from '../src/Assumption'
 import {
     addReason, alignCopy, clearBelief, collateSymbols, connectVersions, createBelief, createVersion, deriveVersion,

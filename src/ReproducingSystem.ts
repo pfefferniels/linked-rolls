@@ -1,7 +1,30 @@
-import { RollTempo } from "./Edition";
 import { Hole } from "./Feature";
 import { Expression, Note } from "./Symbol";
 import { TrackerBar } from "./TrackerBar";
+
+/**
+ * The playback tempo of the roll, specified as a starting
+ * and ending speed. The tempo may change over the course
+ * of the roll due to acceleration effects.
+ * @see crm:E54 Dimension
+ */
+export interface RollTempo {
+    /**
+     * The tempo at the beginning of the roll.
+     * @see reo:from
+     */
+    startsWith: number;
+    /**
+     * The tempo at the end of the roll.
+     * @see reo:to
+     */
+    endsWith: number;
+    /**
+     * The unit of the tempo measurement (e.g. 'ft/min', 'm/min').
+     * @see crm:P91 has unit
+     */
+    unit: string;
+}
 
 /**
  * A note or expression of a version with the dimensions of its carriers

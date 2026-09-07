@@ -1,6 +1,7 @@
 import { conditions } from "./Feature";
 import { rollConditions } from "./RollCopy";
-import { systemOf, welteT100 } from "./TrackerBar";
+import { systemOf } from "./TrackerBar";
+import { welteT100 } from "./systems/welteT100/bar";
 import { versionTypes } from "./Version";
 
 /**

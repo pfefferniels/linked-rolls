@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'fs'
 import * as path from 'path'
-import { asSymbols, calibrationOf, readFromStanfordAton, unreadTracks } from '../src/RollCopy'
-import { welteT100 } from '../src/TrackerBar'
+import { asSymbols, calibrationOf, unreadTracks } from '../src/RollCopy'
+import { readFromStanfordAton } from '../src/readers/stanfordAton'
+import { welteT100 } from '../src/systems/welteT100/bar'
 import { columnOf } from '../src/TrackCalibration'
 import { Expression } from '../src/Symbol'
 
