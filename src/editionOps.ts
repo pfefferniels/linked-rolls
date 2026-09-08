@@ -9,8 +9,8 @@ import { insertedBy, Version } from "./Version"
 import { asSymbols, RollConditionAssignment, RollCopy, ScaleReading, Shift } from "./RollCopy"
 import { FeatureSource } from "./FeatureSource"
 import { applyShift, applyScale, revertShift, revertScale } from "./alignment"
-import { AnyArgumentation, Assumption, Belief, Certainty, assignReference, idOf } from "./Assumption"
-import { HorizontalSpan } from "./Feature"
+import { AnyArgumentation, Assumption, Belief, Certainty, ReferenceAssumption, assignReference, idOf } from "./Assumption"
+import { AnyFeature, HorizontalSpan } from "./Feature"
 import { distance, Millimeters, mm, subtract } from "./Quantity"
 
 /**
@@ -223,6 +223,139 @@ export const removeCopy = (copyId: string): EditionOp =>
     onCopy(copyId, (copy, draft) => {
         forgetFeatures(draft, featureIdsOf(copy))
         draft.copies = draft.copies.filter(c => c.id !== copyId)
+    })
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null
+
+/**
+ * Whether two records of the edition state the same, the identity of a
+ * statement left out: two transcriptions reading the same word say the
+ * same, whichever ids they were given.
+ */
+const sayTheSame = (a: unknown, b: unknown): boolean => {
+    if (a === b) return true
+    if (!isRecord(a) || !isRecord(b) || Array.isArray(a) !== Array.isArray(b)) return false
+
+    const keys = new Set([...Object.keys(a), ...Object.keys(b)])
+    keys.delete('id')
+    return [...keys].every(key => sayTheSame(a[key], b[key]))
+}
+
+/** What a feature states beyond its identity, its place along the roll, its depiction and its condition. */
+const nature = (feature: AnyFeature): object => {
+    const { id, horizontal, depiction, condition, ...rest } = feature
+    return rest
+}
+
+const conditionsOf = (features: readonly AnyFeature[]) =>
+    features.flatMap(feature => feature.condition ? [feature.condition] : [])
+
+/** Why several features cannot be replaced by one. */
+export type MergeObstacle =
+    | 'fewer-than-two'
+    | 'different-types'
+    | 'different-tracks'
+    | 'differing-conditions'
+    | 'unlike-features'
+
+/**
+ * What stands in the way of reading the features as one, or nothing
+ * where they may be merged. Features may be merged where they differ
+ * in nothing but their place along the roll, their depiction and the
+ * condition at most one of them states. How far apart they lie is not
+ * asked: whether a gap is a bridge of the perforator, a tear or two
+ * perforations of their own is the editor's reading.
+ */
+export const mergeObstacle = (features: readonly AnyFeature[]): MergeObstacle | undefined => {
+    if (features.length < 2) return 'fewer-than-two'
+
+    const [first, ...rest] = features
+    if (rest.some(feature => feature.type !== first.type)) return 'different-types'
+    if (rest.some(feature => !sayTheSame(feature.vertical, first.vertical))) return 'different-tracks'
+    if (rest.some(feature => !sayTheSame(nature(feature), nature(first)))) return 'unlike-features'
+
+    const conditions = conditionsOf(features)
+    if (conditions.some(condition => !sayTheSame(condition, conditions[0]))) return 'differing-conditions'
+
+    return undefined
+}
+
+/** The items with the replacement in the place of the first it stands for, the others dropped. */
+const standingFor = <T,>(items: T[], stands: (item: T) => boolean, replacement: T): T[] => {
+    const first = items.findIndex(stands)
+    if (first < 0) return items
+
+    return items.flatMap((item, i) => i === first ? [replacement] : stands(item) ? [] : [item])
+}
+
+const spanning = (features: readonly AnyFeature[]): HorizontalSpan => ({
+    unit: 'mm',
+    from: mm(Math.min(...features.map(feature => feature.horizontal.from))),
+    to: mm(Math.max(...features.map(feature => feature.horizontal.to)))
+})
+
+/**
+ * The feature the merged ones give way to. It spans them all and is in
+ * every other respect the one of them that states a condition, the
+ * others being alike in all but their place. The depiction goes: a
+ * region of the scan showing one part depicts no more than that part.
+ */
+const mergedFrom = (features: readonly AnyFeature[]): AnyFeature => {
+    const stating = features.find(feature => feature.condition) ?? features[0]
+    const merged: AnyFeature = { ...stating, id: v4(), horizontal: spanning(features) }
+    delete merged.depiction
+    return merged
+}
+
+/** The symbol carried by the merged feature where it named one of those it replaces, and naming it once. */
+const carriedByMerged = (replaced: Ids, mergedId: string) => (symbol: AnySymbol): AnySymbol => {
+    const names = (carrier: ReferenceAssumption) => replaced.has(idOf(carrier))
+    const first = symbol.carriers.find(names)
+    if (!first) return symbol
+
+    return { ...symbol, carriers: standingFor(symbol.carriers, names, { ...first, id: mergedId }) }
+}
+
+/** Points the versions at the merged feature wherever they name one it replaces. */
+const carryOver = (draft: Draft<Edition>, replaced: Ids, mergedId: string) => {
+    const recarry = carriedByMerged(replaced, mergedId)
+    const recarrying = (edit: Edit): Edit => {
+        const insert = edit.insert && mapped(edit.insert, recarry)
+        return insert === edit.insert ? edit : { ...edit, insert }
+    }
+
+    const versions = stateOf<Version[]>(draft.versions)
+    draft.versions.forEach((version, i) => {
+        version.edits = mapped(versions[i].edits, recarrying)
+    })
+}
+
+/**
+ * Replaces the features of the copy with a single one covering them
+ * all, where a scan has split what the editor reads as one feature.
+ * The merged feature takes the place of the first it replaces and
+ * spans from the first to the last, any gap between them included.
+ * What the replaced features carried is carried by the merged one.
+ *
+ * Throws where the features cannot stand for one; `mergeObstacle`
+ * says beforehand whether they can.
+ */
+export const mergeFeatures = (copyId: string, featureIds: readonly string[]): EditionOp =>
+    onCopy(copyId, (copy, draft) => {
+        const replaced = new Set(featureIds)
+        const isReplaced = (feature: AnyFeature) => replaced.has(feature.id)
+        const features = stateOf<AnyFeature[]>(copy.features)
+        const toMerge = features.filter(isReplaced)
+
+        const obstacle = mergeObstacle(toMerge)
+        if (obstacle) {
+            throw new Error(`The features of copy ${copyId} cannot be merged: ${obstacle}`)
+        }
+
+        const merged = mergedFrom(toMerge)
+        copy.features = standingFor(features, isReplaced, merged)
+        carryOver(draft, replaced, merged.id)
     })
 
 /** The carriers of each collated symbol pass to its counterpart. */
