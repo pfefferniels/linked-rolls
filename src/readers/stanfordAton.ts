@@ -69,6 +69,34 @@ const rewindTrackIn = (holes: AtonHole[]) => {
 }
 
 /**
+ * The columns themselves, for a roll that punches its outermost
+ * positions. A hole can only sit on a position the bar reads, so
+ * columns spanning exactly as many positions as the bar has must run
+ * from its first to its last, and the lowest column is position one.
+ * Fewer columns leave the phase open and more mean something outside
+ * the bar was measured, and neither settles anything.
+ */
+const spannedShiftIn = (holes: AtonHole[], bar: TrackerBar): Track | undefined => {
+    const columns = holes.map(hole => +hole.TRACKER_HOLE).filter(Number.isFinite)
+    if (columns.length === 0) return undefined
+
+    const lowest = Math.min(...columns)
+    return Math.max(...columns) - lowest + 1 === bar.trackCount ? track(1 - lowest) : undefined
+}
+
+/**
+ * How far the scanner's own hole numbering has to move to reach the
+ * bar. The rewind perforation is the usual landmark; where the roll
+ * carries punches past it, as Dyer's T-98 scans do, the span of the
+ * columns settles it instead.
+ */
+const calibrationShiftIn = (holes: AtonHole[], bar: TrackerBar): Track => {
+    const rewind = rewindTrackIn(holes)
+    if (rewind !== undefined) return track(bar.rewindTrack - rewind)
+    return spannedShiftIn(holes, bar) ?? track(0)
+}
+
+/**
  * The phase of the tracker grid within the image. The analysis file
  * usually states it; where it does not, the holes themselves give it away,
  * since each sits close to the centre of its column.
@@ -162,9 +190,7 @@ export function readFromStanfordAton(
     const dpi = parseFloat(json.ROLLINFO.LENGTH_DPI)
     const measuredBy = measuredByOf(json.ROLLINFO)
 
-    const rewindTrack = rewindTrackIn(holes)
-    const shift = trackShift
-        ?? (rewindTrack === undefined ? track(0) : track(system.rewindTrack - rewindTrack))
+    const shift = trackShift ?? calibrationShiftIn(holes, system)
 
     const calibration: TrackCalibration = {
         unit: 'px',

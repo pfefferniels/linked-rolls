@@ -5,6 +5,7 @@ import { asSymbols, calibrationOf, unreadTracks } from '../src/RollCopy'
 import { readFromStanfordAton } from '../src/readers/stanfordAton'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
+import { welteT98 } from '../src/systems/welteT98/bar'
 import { columnOf } from '../src/TrackCalibration'
 import { Expression } from '../src/Symbol'
 import { inPixels, track } from '../src/Quantity'
@@ -28,8 +29,8 @@ const countByExpression = (copy: ReturnType<typeof readFromStanfordAton>) =>
             return counts.set(key, (counts.get(key) || 0) + 1)
         }, new Map<string, number>())
 
-const pitchesOf = (copy: ReturnType<typeof readFromStanfordAton>) =>
-    asSymbols(copy.features)
+const pitchesOf = (copy: ReturnType<typeof readFromStanfordAton>, bar = welteT100) =>
+    asSymbols(copy.features, bar)
         .filter(symbol => symbol.type === 'note')
         .map(symbol => symbol.pitch)
 
@@ -213,5 +214,74 @@ describe('reading a Stanford analysis file', () => {
         })
         expect(elsewhere.scan).toEqual('/facsimiles/WR0225_02')
         expect(elsewhere.features.every(feature => feature.depiction === undefined)).toBe(true)
+    })
+})
+
+/**
+ * A T-98 scan the way Dyer's is: the rewind is not the last thing on
+ * the roll, since a pattern of test punches follows it, so nothing
+ * trails the final attack and the rewind chain cannot be picked out.
+ */
+const t98Analysis = (columns: readonly number[]): string => {
+    const hole = (column: number, row: number) => [
+        '@@BEGIN: HOLE',
+        `@ORIGIN_ROW:\t${row}px`,
+        `@ORIGIN_COL:\t${column * 33.2957}px`,
+        '@WIDTH_ROW:\t110px',
+        '@WIDTH_COL:\t19px',
+        `@CENTROID_COL:\t${column * 33.2957 + 1.51476}px`,
+        '@PERIMETER:\t190.091px',
+        '@CIRCULARITY:\t0.46',
+        `@NOTE_ATTACK:\t${row}px`,
+        `@OFF_TIME:\t${row + 110}px`,
+        `@TRACKER_HOLE:\t${column}`,
+        '@@END: HOLE'
+    ].join('\n')
+
+    return [
+        '@@BEGIN: ROLLINFO',
+        '@DRUID:',
+        '@ROLL_TYPE:\twelte-green',
+        '@LENGTH_DPI:\t300.25ppi',
+        '@IMAGE_LENGTH:\t96038px',
+        '@ROLL_WIDTH:\t3372.67px',
+        '@HARD_MARGIN_BASS:\t358px',
+        '@HARD_MARGIN_TREBLE:\t358px',
+        '@HOLE_SEPARATION:\t33.2957px',
+        '@HOLE_OFFSET:\t1.51476px',
+        '@@BEGIN: HOLES',
+        ...columns.map((column, i) => hole(column, 1000 + i * 200)),
+        '@@END: HOLES',
+        '@@END: ROLLINFO'
+    ].join('\n\n')
+}
+
+const spanning = (from: number, to: number) =>
+    Array.from({ length: to - from + 1 }, (_, i) => from + i)
+
+describe('calibrating a scan whose rewind cannot be found', () => {
+    it('reads the phase off columns that span the whole bar', () => {
+        const copy = readFromStanfordAton(t98Analysis(spanning(13, 110)), {
+            system: welteT98, bar: welteT98
+        })
+
+        expect(copy.measurements.trackCalibration?.shift).toEqual(-12)
+        expect([...unreadTracks(copy.features, welteT98).keys()]).toEqual([])
+
+        const pitches = pitchesOf(copy, welteT98)
+        expect(Math.min(...pitches)).toEqual(21)
+        expect(Math.max(...pitches)).toEqual(108)
+    })
+
+    it('leaves the phase open where the columns fall short of the bar', () => {
+        const copy = readFromStanfordAton(t98Analysis(spanning(20, 100)), {
+            system: welteT98, bar: welteT98
+        })
+
+        expect(copy.measurements.trackCalibration?.shift).toEqual(0)
+    })
+
+    it('still prefers the rewind chain where the roll has one', () => {
+        expect(readFromStanfordAton(aton).measurements.trackCalibration?.shift).toEqual(-3)
     })
 })
