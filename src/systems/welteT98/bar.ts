@@ -1,5 +1,5 @@
 import { describeTrackerBar, TrackerBar } from "../../TrackerBar"
-import { mm } from "../../Quantity"
+import { metersPerMinute, mm } from "../../Quantity"
 
 /**
  * The commands of the Welte-Mignon T-98, as its tracker bar reads them.
@@ -36,8 +36,21 @@ export type WelteT98ExpressionType = typeof welteT98ExpressionTypes[number]
  *
  * Measured against Julian Dyer's scan of the T-98 copy of roll 225
  * (Grünfeld, Träumerei): 98 columns 2.818 mm apart on paper 285.6 mm
- * wide, notes on the middle 80 columns, the sustain valve punched 53
- * times where the T-100 copy latches its sustain on 53 times.
+ * wide, notes on the middle 80 columns, the sustain valve punched 52
+ * times in the music where the T-100 copy latches its sustain on 52
+ * times. A 53rd perforation on that track belongs to the test pattern
+ * after the rewind.
+ *
+ * The paper speed is the Deutsches Museum's figure for its Welte grün /
+ * T 98 rolls, 220 cm/min. Phillips gives 7 ft/min = 2.134 m/min (p. 121);
+ * midi2exp's and PlaySK's green defaults of 72.2 and 72.27, read as the
+ * Stanford convention of feet per minute times ten, are 2.201 m/min, which
+ * is the museum's figure; and the two copies of roll 225 last the same
+ * time if the green starts at about 7.30 ft/min. Welte's own booklets give
+ * no speed, only that the roll must run from the first "A" of the chromatic
+ * scale to the cross-line bearing the dial number in half a minute
+ * (Skala-Rolle 98 §1b). This is documentation; what sets the emulator's
+ * time axis is the spool.
  */
 export const welteT98: TrackerBar = describeTrackerBar({
     id: 'welte-green',
@@ -45,6 +58,7 @@ export const welteT98: TrackerBar = describeTrackerBar({
     width: mm(286),
     trackCount: 98,
     notes: { from: 6, to: 93, lowestPitch: 21 },
+    paperSpeed: { value: metersPerMinute(2.2), unit: 'm/min' },
     rewindTrack: 1,
     expressions: new Map<number, WelteT98ExpressionType>([
         [1, 'SforzandoPiano'],
