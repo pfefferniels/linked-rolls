@@ -175,6 +175,15 @@ describe('the dynamics of a green roll', () => {
         expect(instrumentNameOf({ ...nuance, bass: { ...nuance.bass, alpha: 0 } })).toBeUndefined()
     })
 
+    it('attributes every performed event to the symbol it performs', () => {
+        // `Emulation.findEventsPerforming` looks events up by the id of their
+        // symbol, so an event that performs nothing is invisible to the desk.
+        const ids = new Set(GREEN.map(event => event.id))
+        expect(green.events.length).toBeGreaterThan(100)
+        green.events.forEach(event => expect(ids.has(event.performs.id)).toBe(true))
+        expect(new Set(green.events.map(event => event.performs.id)).size).toBeGreaterThan(50)
+    })
+
     it('gives every note a velocity within the map', () => {
         const noteOns = green.events.filter(event => event.type === 'noteOn')
         expect(noteOns.length).toBeGreaterThan(20)
