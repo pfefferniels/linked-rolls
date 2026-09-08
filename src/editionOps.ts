@@ -6,12 +6,15 @@ import { AnyPerforation, AnySymbol, Expression, PlacementRelation, isPerforation
 import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance } from "./Collation"
 import { Edit, EditType } from "./Edit"
 import { collationToleranceOf, insertedBy, Version } from "./Version"
-import { asSymbols, RollConditionAssignment, RollCopy, ScaleReading, Shift } from "./RollCopy"
+import { asSymbols, Modification, RollConditionAssignment, RollCopy, ScaleReading, Shift } from "./RollCopy"
 import { FeatureSource } from "./FeatureSource"
 import { applyShift, applyScale, revertShift, revertScale } from "./alignment"
-import { AnyArgumentation, Assumption, Belief, Certainty, ReferenceAssumption, assignReference, idOf } from "./Assumption"
+import {
+    AnyArgumentation, Assumption, Belief, Certainty, MeaningComprehension, ReferenceAssumption, assignReference, idOf
+} from "./Assumption"
 import { AnyFeature, HorizontalSpan } from "./Feature"
 import { distance, Millimeters, mm, subtract } from "./Quantity"
+import { WithId } from "./utils"
 
 /**
  * A change to an edition, written onto an immer draft of it. One
@@ -51,6 +54,22 @@ const mapped = <T,>(items: T[], change: (item: T) => T): T[] => {
     return changed.every((item, i) => item === items[i]) ? items : changed
 }
 
+/** The items each changed, less those the change emptied; the very same array where it changed none. */
+const pruned = <T,>(items: T[], change: (item: T) => T, emptied: (item: T) => boolean): T[] => {
+    const changed = mapped(items, change)
+    return changed === items ? items : changed.filter((item, i) => item === items[i] || !emptied(item))
+}
+
+/** The record with the field replaced, or the very same record where that is what stood there. */
+const replacing = <T extends object, K extends keyof T>(record: T, key: K, value: T[K]): T =>
+    record[key] === value ? record : { ...record, [key]: value }
+
+/** The ids of the items the rewriting left out. */
+const droppedIds = (before: readonly WithId[], after: readonly WithId[]): string[] => {
+    const kept = new Set(after.map(item => item.id))
+    return before.flatMap(item => kept.has(item.id) ? [] : [item.id])
+}
+
 type Ids = ReadonlySet<string>
 
 const insertion = (symbol: AnySymbol): Edit => ({ type: 'edit', id: v4(), insert: [symbol] })
@@ -62,10 +81,7 @@ const isEmpty = (edit: Edit): boolean => !edit.insert?.length && !edit.delete?.l
 const insertedIn = (versions: readonly Version[]): AnySymbol[] => versions.flatMap(insertedBy)
 
 /** The edits with the change applied, less those it emptied; the very same array where it changed none. */
-const edited = (edits: Edit[], change: (edit: Edit) => Edit): Edit[] => {
-    const changed = mapped(edits, change)
-    return changed === edits ? edits : changed.filter((edit, i) => edit === edits[i] || !isEmpty(edit))
-}
+const edited = (edits: Edit[], change: (edit: Edit) => Edit): Edit[] => pruned(edits, change, isEmpty)
 
 /** The edit without the symbols among its insertions, or the very same edit where it inserts none of them. */
 const droppingInsertions = (symbolIds: Ids) => (edit: Edit): Edit => {
@@ -193,17 +209,125 @@ const forgettingFeatures = (features: Ids, dropped: Ids) => {
     }
 }
 
+/** A record of the edition, as the walk over it sees one. */
+type Node = Record<string, unknown>
+
+const isRecord = (value: unknown): value is Node =>
+    typeof value === 'object' && value !== null
+
+/** The record's values each changed, or the very same record where the change left every one as it was. */
+const withValues = (record: Node, change: (value: unknown) => unknown): Node => {
+    const entries = Object.entries(record)
+    const changed = entries.map(([key, value]): [string, unknown] => [key, change(value)])
+    return changed.every(([, value], i) => value === entries[i][1]) ? record : Object.fromEntries(changed)
+}
+
+/** The value with the change applied to every record within it and then to itself, innermost first. */
+const deeply = (change: (record: object) => object) => {
+    const changed = (value: unknown): unknown =>
+        Array.isArray(value) ? mapped(value as unknown[], changed)
+            : isRecord(value) ? change(withValues(value, changed))
+                : value
+    return changed
+}
+
+/** Whether the two stand alike, so that what differs within them can be written where it lies. */
+const alike = (before: unknown, after: unknown): boolean => {
+    if (!isRecord(before) || !isRecord(after)) return false
+    if (Array.isArray(before)) return Array.isArray(after) && before.length === after.length
+    return !Array.isArray(after)
+}
+
+/** Writes onto the draft what the rewriting changed, as deep as the change reaches. */
+const writeInto = (draft: Node, before: Node, after: Node) =>
+    Object.entries(after).forEach(([key, value]) => {
+        if (value === before[key]) return
+        if (alike(before[key], value)) writeInto(draft[key] as Node, before[key] as Node, value as Node)
+        else draft[key] = value
+    })
+
+/** The ids a statement names, as the rewriting leaves them. */
+type Rename = (ids: string[]) => string[]
+
+const isCopy = (record: object): record is RollCopy =>
+    'type' in record && record.type === 'RollCopy'
+
+const isBelief = (record: object): record is Belief =>
+    'type' in record && record.type === 'belief'
+
+const isComprehension = (reason: AnyArgumentation): reason is MeaningComprehension =>
+    reason.type === 'meaningComprehension'
+
+/** What the modification names, be it as added or as removed. */
+const membersOf = (modification: Modification): string[] =>
+    modification.type === 'Addition' ? modification.added : modification.removed
+
+const namesNothing = (modification: Modification): boolean => membersOf(modification).length === 0
+
+const comprehendsNothing = (reason: AnyArgumentation): boolean =>
+    isComprehension(reason) && reason.comprehends.length === 0
+
+/** The modification with what it names rewritten, or the very same one where that leaves it as it was. */
+const renamingMembers = (rename: Rename) => (modification: Modification): Modification =>
+    modification.type === 'Addition'
+        ? replacing(modification, 'added', rename(modification.added))
+        : replacing(modification, 'removed', rename(modification.removed))
+
+/** The reason with what a comprehension comprehends rewritten; any other reason names nothing of the kind. */
+const renamingComprehended = (rename: Rename) => (reason: AnyArgumentation): AnyArgumentation =>
+    isComprehension(reason) ? replacing(reason, 'comprehends', rename(reason.comprehends)) : reason
+
 /**
- * Strikes the features from the versions: their carriers go, a symbol
- * that had no other carrier goes with them, and so does every
- * reference the versions made to such a symbol.
+ * The record with the ids it names rewritten: what a copy's
+ * modifications added or removed, and what the comprehensions among a
+ * belief's reasons comprehend. A modification or a comprehension the
+ * rewriting emptied goes with what it named; one that named nothing
+ * before stays, as an edit that was empty before it does.
+ */
+const renaming = (rename: Rename) => (record: object): object => {
+    if (isCopy(record)) {
+        return replacing(record, 'modifications',
+            pruned(record.modifications, renamingMembers(rename), namesNothing))
+    }
+    if (isBelief(record)) {
+        return replacing(record, 'reasons',
+            pruned(record.reasons, renamingComprehended(rename), comprehendsNothing))
+    }
+    return record
+}
+
+/**
+ * Rewrites the ids by which the edition names features and symbols
+ * outside the versions. A belief is annotatable anywhere, so the whole
+ * edition is read; what the rewriting leaves alone is left the very
+ * object it was.
+ */
+const renameReferences = (draft: Draft<Edition>, rename: Rename) => {
+    const before = stateOf<Edition>(draft) as unknown as Node
+    const after = deeply(renaming(rename))(before) as Node
+    if (after !== before) writeInto(draft as unknown as Node, before, after)
+}
+
+/**
+ * Strikes the features from the edition: their carriers go, a symbol
+ * that had no other carrier goes with them, an edit left exchanging
+ * nothing goes as well, and so does every reference the versions, the
+ * modifications of the copies and the comprehensions made to what went.
  */
 const forgetFeatures = (draft: Draft<Edition>, features: Ids) => {
     const versions = stateOf<Version[]>(draft.versions)
     const dropped = new Set(insertedIn(versions).filter(carriedOnlyOn(features)).map(symbol => symbol.id))
     const forget = forgettingFeatures(features, dropped)
+    const edits = versions.map(version => edited(version.edits, forget))
+    const gone = new Set([
+        ...features,
+        ...dropped,
+        ...versions.flatMap((version, i) => droppedIds(version.edits, edits[i]))
+    ])
+
+    renameReferences(draft, ids => without(ids, id => gone.has(id)))
     draft.versions.forEach((version, i) => {
-        version.edits = edited(versions[i].edits, forget)
+        version.edits = edits[i]
     })
 }
 
@@ -217,16 +341,14 @@ export const removeFeatures = (copyId: string, featureIds: readonly string[]): E
 
 /**
  * Takes the copy out of the edition together with the symbols only it
- * carries, and with every reference the versions made to those symbols.
+ * carries, and with every reference the versions and the argumentations
+ * made to those symbols.
  */
 export const removeCopy = (copyId: string): EditionOp =>
     onCopy(copyId, (copy, draft) => {
         forgetFeatures(draft, featureIdsOf(copy))
         draft.copies = draft.copies.filter(c => c.id !== copyId)
     })
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-    typeof value === 'object' && value !== null
 
 /**
  * Whether two records of the edition state the same, the identity of a
@@ -336,7 +458,9 @@ const carryOver = (draft: Draft<Edition>, replaced: Ids, mergedId: string) => {
  * all, where a scan has split what the editor reads as one feature.
  * The merged feature takes the place of the first it replaces and
  * spans from the first to the last, any gap between them included.
- * What the replaced features carried is carried by the merged one.
+ * What the replaced features carried is carried by the merged one, and
+ * whatever else named them, a modification or a comprehension, names
+ * the merged one in their stead.
  *
  * Throws where the features cannot stand for one; `mergeObstacle`
  * says beforehand whether they can.
@@ -356,6 +480,7 @@ export const mergeFeatures = (copyId: string, featureIds: readonly string[]): Ed
         const merged = mergedFrom(toMerge)
         copy.features = standingFor(features, isReplaced, merged)
         carryOver(draft, replaced, merged.id)
+        renameReferences(draft, ids => standingFor(ids, id => replaced.has(id), merged.id))
     })
 
 /** The carriers of each collated symbol pass to its counterpart. */
