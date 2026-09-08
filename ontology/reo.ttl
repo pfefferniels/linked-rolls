@@ -291,3 +291,11 @@ reo:holeSeparation
     rdfs:label "hole separation"@en ;
     rdfs:comment """This property associates the measurement of a copy with the distance between adjacent tracks as found on it, stated with P90 has value and P91 has unit."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:scanResolution
+    a owl:ObjectProperty ;
+    rdfs:domain crm:E16_Measurement ;
+    rdfs:range crm:E54_Dimension ;
+    rdfs:label "scan resolution"@en ;
+    rdfs:comment """This property associates the measurement of a copy with the resolution along the roll at which the scan it was taken from was read, stated with P90 has value and P91 has unit. It is what the measurements given in pixels are to be read against. The resolution is a property of the scan and not a dimension observed on the roll, which is why it is no subproperty of P40 observed dimension. A scanner may read across the roll at another resolution."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .

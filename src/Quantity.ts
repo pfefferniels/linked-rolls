@@ -8,7 +8,7 @@
  */
 declare const unit: unique symbol
 
-export type Unit = 'mm' | 'cm' | 'px' | 'track' | 's' | 'ms' | 'ft/min' | 'm/min'
+export type Unit = 'mm' | 'cm' | 'px' | 'track' | 's' | 'ms' | 'ft/min' | 'm/min' | 'px/in'
 
 export type Quantity<U extends Unit> = number & { readonly [unit]: U }
 
@@ -23,6 +23,8 @@ export type Seconds = Quantity<'s'>
 export type Milliseconds = Quantity<'ms'>
 export type FeetPerMinute = Quantity<'ft/min'>
 export type MetersPerMinute = Quantity<'m/min'>
+/** How finely a scan was read: pixels of the image per inch of paper. */
+export type Resolution = Quantity<'px/in'>
 
 const quantity = <U extends Unit>(value: number): Quantity<U> => value as Quantity<U>
 
@@ -34,6 +36,7 @@ export const seconds = quantity<'s'>
 export const milliseconds = quantity<'ms'>
 export const feetPerMinute = quantity<'ft/min'>
 export const metersPerMinute = quantity<'m/min'>
+export const pixelsPerInch = quantity<'px/in'>
 
 /**
  * A value together with the unit it was measured in, as a record
@@ -77,6 +80,9 @@ const MM_PER_INCH = 25.4
 
 /** A place in a scan taken at `dpi` dots per inch, on the paper. */
 export const inMillimeters = (place: Pixels, dpi: number): Millimeters => mm(place / dpi * MM_PER_INCH)
+
+/** A place on the paper, in a scan taken at `dpi` dots per inch. */
+export const inPixels = (place: Millimeters, dpi: number): Pixels => px(place / MM_PER_INCH * dpi)
 
 export const inCentimeters = (length: Millimeters): Centimeters => cm(length / 10)
 

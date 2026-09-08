@@ -135,6 +135,7 @@
         "height": "reo:height",
         "punchDiameter": "reo:punchDiameter",
         "holeSeparation": "reo:holeSeparation",
+        "scanResolution": "reo:scanResolution",
         "value": "crm:P90_has_value",
         "measuredBy": "crmdig:L23_used_software_or_firmware",
         "software": "rdfs:label",

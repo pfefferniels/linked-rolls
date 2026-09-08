@@ -7,7 +7,7 @@ import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
 import { columnOf } from '../src/TrackCalibration'
 import { Expression } from '../src/Symbol'
-import { track } from '../src/Quantity'
+import { inPixels, track } from '../src/Quantity'
 
 /**
  * mf320jq4997, a red Welte roll scanned at Stanford, reduced to its
@@ -115,6 +115,26 @@ describe('reading a Stanford analysis file', () => {
         expect(counts.get('treble SustainPedalOn')).toEqual(52)
         expect(counts.get('bass SlowCrescendoOn')).toEqual(countByExpression(copy).get('bass ForzandoOn'))
         expect(counts.get('bass MotorOn')).toBeUndefined()
+    })
+
+    /**
+     * The file states the resolution along the roll, and the copy keeps
+     * it. Taking the first hole back into the scan at the resolution the
+     * copy carries lands on the row the analysis measured it at, which
+     * is what shows the number to be this scan's own rather than one
+     * assumed for every scan.
+     */
+    it('keeps the resolution the scan was read at', () => {
+        expect(copy.measurements.scanResolution).toEqual({ value: 300.25, unit: 'px/in' })
+
+        // the first chain of the file attacks at row 8083
+        const resolution = copy.measurements.scanResolution!.value
+        expect(inPixels(copy.features[0].horizontal.from, resolution)).toBeCloseTo(8083, 6)
+    })
+
+    it('states no resolution where the file gives none', () => {
+        const silent = readFromStanfordAton(aton.replace(/^@LENGTH_DPI:.*$/m, '@LENGTH_DPI:'))
+        expect(silent.measurements.scanResolution).toBeUndefined()
     })
 
     it('measures a plausible punch diameter', () => {

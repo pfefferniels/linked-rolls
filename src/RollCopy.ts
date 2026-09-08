@@ -258,6 +258,17 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
         scale: number
 
         /**
+         * The resolution this copy's scan was read at, along the roll.
+         * It is what the measurements given in pixels are to be read
+         * against, and what every conversion between a place in the
+         * scan and one on the paper goes through. A scanner may read
+         * across the roll at another resolution, which the analysis
+         * files do not state.
+         * @see reo:scanResolution
+         */
+        scanResolution: Measure<'px/in'>
+
+        /**
          * Relates this copy's scan to the tracker bar: how the scanning
          * software's hole numbering was shifted onto the bar, and where
          * the track grid sits in the image. Not exported to RDF.

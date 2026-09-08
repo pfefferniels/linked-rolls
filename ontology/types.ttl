@@ -153,6 +153,9 @@ reot:track a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3i
 reot:px a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "pixel"@en ;
     rdfs:comment "A pixel of the scan the measurement was taken from."@en .
+<https://w3id.org/reo/type/px/in> a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "pixels per inch"@en ;
+    rdfs:comment "The resolution a scan was read at, in pixels of the image to an inch of paper."@en .
 <https://w3id.org/reo/type/ft/min> a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "feet per minute"@en ;
     rdfs:comment "A paper speed, as roll tempos are stated: tempo 80 is eight feet per minute."@en .

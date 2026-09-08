@@ -5,7 +5,7 @@ import { RollCopy } from "../RollCopy";
 import { TrackCalibration } from "../TrackCalibration";
 import { systemOf, TrackerBar, translationBetween } from "../TrackerBar";
 import { welteT100 } from "../systems/welteT100/bar";
-import { inMillimeters, mean, Millimeters, mm, Pixels, px, subtract, Track, track } from "../Quantity";
+import { inMillimeters, mean, Millimeters, mm, Pixels, pixelsPerInch, px, subtract, Track, track } from "../Quantity";
 
 /** A hole record as the Stanford analysis files spell it. */
 interface AtonHole {
@@ -231,6 +231,9 @@ export function readFromStanfordAton(
                 bass: readPx(json.ROLLINFO.HARD_MARGIN_BASS),
                 unit: 'px'
             },
+            ...(Number.isFinite(dpi) && {
+                scanResolution: { value: pixelsPerInch(dpi), unit: 'px/in' }
+            }),
             trackCalibration: calibration,
             ...(measuredBy && { measuredBy })
         },

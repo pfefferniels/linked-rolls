@@ -917,6 +917,25 @@
       ],
       "type": "object"
     },
+    "Measure<\"px/in\">": {
+      "description": "A value together with the unit it was measured in, as a record states it. [ontology: crm:E54 Dimension]",
+      "properties": {
+        "unit": {
+          "const": "px/in",
+          "description": "The unit of measurement. [ontology: crm:P91 has unit]",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/definitions/Quantity%3C%22px%2Fin%22%3E",
+          "description": "The measured value. [ontology: crm:P90 has value]"
+        }
+      },
+      "required": [
+        "value",
+        "unit"
+      ],
+      "type": "object"
+    },
     "Millimeters": {
       "$ref": "#/definitions/Quantity%3C%22mm%22%3E",
       "description": "A place along the roll, or any length on the paper."
@@ -1645,6 +1664,9 @@
     "Quantity<\"px\">": {
       "type": "number"
     },
+    "Quantity<\"px/in\">": {
+      "type": "number"
+    },
     "Quantity<\"track\">": {
       "type": "number"
     },
@@ -1851,6 +1873,10 @@
             "scale": {
               "description": "The factor this copy's features were scaled by to align them with the others. What it is put down to is stated apart: a paper-stretch condition, or the speed the copy was cut for. Not exported to RDF.",
               "type": "number"
+            },
+            "scanResolution": {
+              "$ref": "#/definitions/Measure%3C%22px%2Fin%22%3E",
+              "description": "The resolution this copy's scan was read at, along the roll. It is what the measurements given in pixels are to be read against, and what every conversion between a place in the scan and one on the paper goes through. A scanner may read across the roll at another resolution, which the analysis files do not state. [ontology: reo:scanResolution]"
             },
             "shift": {
               "$ref": "#/definitions/Shift",
