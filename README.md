@@ -79,7 +79,7 @@ tracker bar and a `perform` function; the core does not depend on any one
 instrument's model.
 
 The first system is the red Welte, `linked-rolls/welte-t100`, built on
-[welte-t100-emulator](https://github.com/pfefferniels/welte-t100): the
+[welte-mignon-emulator](https://github.com/pfefferniels/welte-t100): the
 take-up spool sets the time axis, the Nuancierbälge fill through their
 conduits and are arrested by the Mezzoforte pin, and the two pedals travel
 rather than switch. The nuancing constants come as `instruments`: the
@@ -103,11 +103,36 @@ emulation.emulateVersion(version, view)
 const midi = emulation.asMIDI()
 ```
 
-The emulator is an optional peer dependency: an application that uses the
-T-100 system installs `welte-t100-emulator` itself, and one that only
-reads editions does not need it. For development on both at once, `npm
-link` a checkout of [welte-t100](https://github.com/pfefferniels/welte-t100)
-into this repository.
+The second is the green Welte, `linked-rolls/welte-t98`. Everything
+downstream of the relay is the same mechanism — Hagmann has the nuancing
+unit built the same for both tracker scales (p. 96) — and what differs is
+in front of it: each function lasts exactly as long as its own perforation
+runs over the glide block rather than latching until a cancel line is read,
+four conduits stand on one bellows and their drives add as flows, the
+crescendo's ceiling is the balance of its throttle against a permanently
+open bleed rather than a cap, the two pedals sit on the opposite edges of
+the paper, and a long perforation on the bass sforzando-piano line sends
+the roll back. Its constants are **not fitted**: `instruments.genuine` and
+`instruments.derived` are empty until their fits are run, and until then a
+playback runs on unfitted starting values, which every curve says in its
+own `instrument` field.
+
+Both systems share one velocity map, and `DynamicsCurve.travel` means the
+same thing on both: the position on the printed ordinate of Welte's own
+ruled band, 0 at that half's P.P. gridline and 1 at the shared F.F. line.
+That is what lets a red issue and a green issue of one recording be
+compared at all, since the band is ruled the same way on both.
+
+```ts
+import { welteT98System } from 'linked-rolls/welte-t98'
+```
+
+The emulator is an optional peer dependency: an application that uses one
+of the Welte systems installs `welte-mignon-emulator` itself, and one that
+only reads editions does not need it. For development on both at once,
+`npm link` a checkout of
+[welte-t100](https://github.com/pfefferniels/welte-t100) into this
+repository.
 
 ### Alignment, order and pairing
 

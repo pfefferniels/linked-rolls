@@ -20,6 +20,10 @@
       "types": "./lib/systems/welteT100/system.d.ts",
       "default": "./lib/systems/welteT100/system.js"
     },
+    "./welte-t98": {
+      "types": "./lib/systems/welteT98/system.d.ts",
+      "default": "./lib/systems/welteT98/system.js"
+    },
     "./lib/*": "./lib/*",
     "./package.json": "./package.json"
   },
