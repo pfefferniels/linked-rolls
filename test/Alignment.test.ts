@@ -3,6 +3,7 @@ import { alignFeatures } from '../src/alignment'
 import { AnyFeature, Hole } from '../src/Feature'
 import { mm, track } from '../src/Quantity'
 import { welteT100 } from '../src/systems/welteT100/bar'
+import { welteT98 } from '../src/systems/welteT98/bar'
 
 interface Note {
     pitch: number
@@ -27,6 +28,9 @@ const hole = (tracked: number, from: number, to: number): Hole => ({
 })
 
 const noteHole = ({ pitch, from, to }: Note): Hole => hole(pitch - LOWEST_PITCH + LOWEST_NOTE_TRACK, from, to)
+
+/** The same note where the T-98 cuts it, two positions below the T-100's. */
+const t98Hole = ({ pitch, from, to }: Note): Hole => hole(pitch - 21 + 6, from, to)
 
 /**
  * A piece of `count` notes: an opening that is played twice, so that
@@ -62,7 +66,7 @@ const asCopy = (notes: readonly Note[]): Note[] =>
 const reference = piece(1)
 const copy = asCopy(reference)
 
-const roll = (notes: readonly Note[]): AnyFeature[] => notes.map(noteHole)
+const roll = (notes: readonly Note[], cut: (note: Note) => Hole = noteHole): AnyFeature[] => notes.map(cut)
 
 describe('aligning two copies of a roll', () => {
     it('recovers the shift and scale of an exact copy', () => {
@@ -124,6 +128,17 @@ describe('aligning two copies of a roll', () => {
         const result = alignFeatures(roll(copy).concat(valves), roll(reference))!
         expect(result.scale).toBeCloseTo(SCALE, 9)
         expect(result.matched).toBe(reference.length)
+    })
+
+    it('aligns a copy cut for the T-98 against one cut for the T-100', () => {
+        const result = alignFeatures(roll(copy, t98Hole), roll(reference), welteT98, welteT100)!
+        expect(result.scale).toBeCloseTo(SCALE, 9)
+        expect(result.shift).toBeCloseTo(SHIFT, 6)
+        expect(result.matched).toBe(reference.length)
+    })
+
+    it('finds nothing between the systems when one bar is made to read both', () => {
+        expect(alignFeatures(roll(copy, t98Hole), roll(reference), welteT100)).toBeUndefined()
     })
 
     it('reads the notes through the bar it is given', () => {

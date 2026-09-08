@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
+import { welteT98 } from '../src/systems/welteT98/bar'
 import { translationBetween } from '../src/TrackerBar'
 import { columnOf, columnsOf, trackAt, TrackCalibration } from '../src/TrackCalibration'
 import { px, track } from '../src/Quantity'
@@ -78,6 +79,42 @@ describe('Welte Licensee tracker bar', () => {
     })
 })
 
+describe('Welte T-98 tracker bar', () => {
+    it('reads 98 positions, five valves on each side and 88 notes between them', () => {
+        expect(welteT98.trackCount).toBe(98)
+        expect(welteT98.areas.map(a => a.to - a.from + 1)).toEqual([5, 88, 5])
+
+        const tracks = Array.from({ length: 98 }, (_, i) => track(i + 1))
+        expect(tracks.filter(t => !welteT98.meaningOf(t))).toEqual([])
+        expect(welteT98.meaningOf(track(99))).toBeUndefined()
+    })
+
+    it('spans A0 to c⁵, the T-100 compass sitting in the middle of it', () => {
+        expect(welteT98.meaningOf(track(6))).toEqual({ type: 'note', pitch: 21 })
+        expect(welteT98.meaningOf(track(93))).toEqual({ type: 'note', pitch: 108 })
+        expect(welteT98.meaningOf(track(9))).toEqual(welteT100.meaningOf(track(11)))
+        expect(welteT98.meaningOf(track(88))).toEqual(welteT100.meaningOf(track(90)))
+    })
+
+    it('names no valve On or Off, the T-98 holding a function instead of latching it', () => {
+        expect(welteT98.expressionTypes.filter(type => /On$|Off$/.test(type))).toEqual([])
+        expect(welteT98.meaningOf(track(3))).toEqual({
+            type: 'expression', expressionType: 'SustainPedal', scope: 'bass'
+        })
+        expect(welteT98.meaningOf(track(96))).toEqual({
+            type: 'expression', expressionType: 'SoftPedal', scope: 'treble'
+        })
+    })
+
+    it('runs the rewind on the bass sforzando-piano valve rather than one of its own', () => {
+        expect(welteT98.rewindTrack).toEqual(1)
+        expect(welteT98.expressionTypes).not.toContain('Rewind')
+        expect(welteT98.meaningOf(track(1))).toEqual({
+            type: 'expression', expressionType: 'SforzandoPiano', scope: 'bass'
+        })
+    })
+})
+
 describe('translating positions between bars', () => {
     const onT100 = translationBetween(welteLicensee, welteT100)
 
@@ -96,6 +133,16 @@ describe('translating positions between bars', () => {
         expect(onLicensee(track(11))).toBe(9)
         expect(onT100(track(0))).toBeUndefined()
         expect(onT100(track(99))).toBeUndefined()
+    })
+
+    it('carries the notes of a T-98 across but none of its valves', () => {
+        const onT100 = translationBetween(welteT98, welteT100)
+        expect(onT100(track(9))).toBe(11)
+        expect(onT100(track(88))).toBe(90)
+        expect(onT100(track(6))).toBeUndefined()
+        expect(onT100(track(93))).toBeUndefined()
+        expect(onT100(track(3))).toBeUndefined()
+        expect(onT100(track(96))).toBeUndefined()
     })
 
     it('is the identity on a bar itself', () => {

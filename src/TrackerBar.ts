@@ -99,6 +99,13 @@ export interface TrackerBarSpec {
     notes: { from: number, to: number, lowestPitch: number }
     /** Every position outside the note block, keyed by track. */
     expressions: ReadonlyMap<number, string>
+    /**
+     * The position the rewind runs on, where the system gives it no
+     * valve of its own to be named after. The T-98 drives its rewind
+     * with a long perforation on the bass sforzando-piano position.
+     * Left out, it is the position typed `Rewind`.
+     */
+    rewindTrack?: number
     /** The speed the system runs its rolls at, where the literature states one. */
     paperSpeed?: SpeedMeasure
 }
@@ -135,8 +142,8 @@ export const describeTrackerBar = (spec: TrackerBarSpec): TrackerBar => {
         return { type: 'expression', expressionType, scope: scopeOf(role) }
     }
 
-    const rewind = [...spec.expressions]
-        .find(([, type]) => type === 'Rewind')?.[0]
+    const rewind = spec.rewindTrack
+        ?? [...spec.expressions].find(([, type]) => type === 'Rewind')?.[0]
 
     if (rewind === undefined) {
         throw new Error(`${spec.name} declares no rewind track`)

@@ -1,0 +1,61 @@
+import { describeTrackerBar, TrackerBar } from "../../TrackerBar"
+import { mm } from "../../Quantity"
+
+/**
+ * The commands of the Welte-Mignon T-98, as its tracker bar reads them.
+ *
+ * They are not the T-100's. Where the T-100 latches a function on with
+ * one perforation and cancels it with a second, the T-98 holds it for
+ * as long as one continuous perforation lasts (Hagmann, pp. 89 f. and
+ * 100–103; Phillips, p. 121), so none of these is an On or an Off. The
+ * two sforzando valves name the end of the range they pull towards.
+ */
+export const welteT98ExpressionTypes = [
+    'SforzandoPiano',
+    'SforzandoForte',
+    'Mezzoforte',
+    'Crescendo',
+    'SustainPedal',
+    'SoftPedal'
+] as const
+
+export type WelteT98ExpressionType = typeof welteT98ExpressionTypes[number]
+
+/**
+ * Welte-Mignon T-98 ("green Welte"), cf. Hagmann, Anhang 11 (p. 179)
+ * and Phillips, p. 121.
+ *
+ * 98 positions at nine to the inch on paper 286 mm wide, five expression
+ * valves on each side and 88 note positions between them, A0 to c⁵ (MIDI
+ * 21 to 108). A roll re-cut from a Mignon master uses only the middle 80
+ * of those, C1 to g⁴, which is the T-100's compass.
+ *
+ * The rewind is not a valve of its own: a long perforation on the bass
+ * sforzando-piano position drives it, which is why that position is
+ * named for the valve and the rewind stated separately.
+ *
+ * Measured against Julian Dyer's scan of the T-98 copy of roll 225
+ * (Grünfeld, Träumerei): 98 columns 2.818 mm apart on paper 285.6 mm
+ * wide, notes on the middle 80 columns, the sustain valve punched 53
+ * times where the T-100 copy latches its sustain on 53 times.
+ */
+export const welteT98: TrackerBar = describeTrackerBar({
+    id: 'welte-green',
+    name: 'Welte-Mignon T98',
+    width: mm(286),
+    trackCount: 98,
+    notes: { from: 6, to: 93, lowestPitch: 21 },
+    rewindTrack: 1,
+    expressions: new Map<number, WelteT98ExpressionType>([
+        [1, 'SforzandoPiano'],
+        [2, 'Mezzoforte'],
+        [3, 'SustainPedal'],
+        [4, 'Crescendo'],
+        [5, 'SforzandoForte'],
+        [94, 'SforzandoForte'],
+        [95, 'Crescendo'],
+        [96, 'SoftPedal'],
+        [97, 'Mezzoforte'],
+        [98, 'SforzandoPiano']
+    ])
+})

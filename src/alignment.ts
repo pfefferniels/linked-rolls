@@ -229,21 +229,28 @@ const resultOf = ({ line, matches }: Fit): AlignmentResult | undefined => {
 
 /**
  * Finds the shift and scale that carry the places of `rollA` onto those
- * of `rollB`, reading both through the bar. Runs of pitches that occur
- * once on each roll anchor a first line; then every note is paired with
- * its nearest counterpart of the same pitch and the line refitted, the
- * window closing each time. A copy cut for another paper speed, a scan
- * with a calibration pattern, and holes the other copy lacks are all
- * within reach of that. Nothing is found where the rolls share no run of
- * pitches, as between two different pieces.
+ * of `rollB`, reading each through its own bar. Runs of pitches that
+ * occur once on each roll anchor a first line; then every note is paired
+ * with its nearest counterpart of the same pitch and the line refitted,
+ * the window closing each time. A copy cut for another paper speed, a
+ * scan with a calibration pattern, and holes the other copy lacks are
+ * all within reach of that. Nothing is found where the rolls share no
+ * run of pitches, as between two different pieces.
+ *
+ * Two bars are what lets a copy cut for one system be aligned against a
+ * copy cut for another, a T-98 against a T-100: the bars put the note
+ * positions on different tracks, but they agree on the pitch each track
+ * sounds, and it is the pitches that are matched. Where a copy's holes
+ * have already been put onto the edition's bar, that bar reads it.
  */
 export function alignFeatures(
     rollA: readonly AnyFeature[],
     rollB: readonly AnyFeature[],
-    bar: TrackerBar = welteT100
+    barA: TrackerBar = welteT100,
+    barB: TrackerBar = barA
 ): AlignmentResult | undefined {
-    const a = noteOnsets(rollA, bar)
-    const b = noteOnsets(rollB, bar)
+    const a = noteOnsets(rollA, barA)
+    const b = noteOnsets(rollB, barB)
     const coarse = robustLine(anchors(a, b))
     if (!coarse) return undefined
     return resultOf(WINDOWS.reduce(settled(a, b), { line: coarse, matches: [] }))
