@@ -6,13 +6,14 @@ import { AnyPerforation, AnySymbol, Expression, PlacementRelation, isPerforation
 import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance } from "./Collation"
 import { Edit, EditType } from "./Edit"
 import { collationToleranceOf, insertedBy, Version } from "./Version"
-import { asSymbols, Modification, RollConditionAssignment, RollCopy, ScaleReading, Shift } from "./RollCopy"
+import { asSymbols, GeneralRollCondition, Modification, RollConditionAssignment, RollCopy, ScaleReading, Shift } from "./RollCopy"
 import { FeatureSource } from "./FeatureSource"
 import { applyShift, applyScale, revertShift, revertScale } from "./alignment"
 import {
-    AnyArgumentation, Assumption, Belief, Certainty, MeaningComprehension, ReferenceAssumption, assignReference, idOf
+    AnyArgumentation, Assumption, Belief, Certainty, MeaningComprehension, ObjectAssumption, ReferenceAssumption,
+    assignReference, idOf
 } from "./Assumption"
-import { AnyFeature, HorizontalSpan } from "./Feature"
+import { AnyFeature, FeatureConditionAssignment, FeatureConditionType, HorizontalSpan, conditions as conditionsAllowed } from "./Feature"
 import { distance, Millimeters, mm, subtract } from "./Quantity"
 import { WithId } from "./utils"
 
@@ -37,6 +38,12 @@ const onVersion = (versionId: string, op: (version: Draft<Version>, draft: Draft
         const version = draft.versions.find(v => v.id === versionId)
         if (version) op(version, draft)
     }
+
+const onFeature = (copyId: string, featureId: string, op: (feature: Draft<AnyFeature>) => void): EditionOp =>
+    onCopy(copyId, copy => {
+        const feature = copy.features.find(f => f.id === featureId)
+        if (feature) op(feature)
+    })
 
 /**
  * The state a draft stands at, as plain data. Reading a draft proxies
@@ -158,6 +165,44 @@ export const stateSource = (copyId: string, source: FeatureSource): EditionOp =>
 export const clearSource = (copyId: string): EditionOp =>
     onCopy(copyId, copy => {
         copy.readFrom = undefined
+    })
+
+/**
+ * Adds a general condition to the copy, beside whatever is stated of it
+ * already. The other condition a copy may be in, a paper stretch, is
+ * read off an alignment and stated by `alignCopy`.
+ */
+export const addGeneralCondition = (copyId: string, condition: ObjectAssumption<GeneralRollCondition>): EditionOp =>
+    onCopy(copyId, copy => {
+        copy.conditions.push(condition)
+    })
+
+/**
+ * Whether the feature's own kind allows a condition of this kind. The
+ * type narrowed to is the weaker statement, holding of a condition any
+ * kind of feature may be in.
+ */
+const allows = (feature: AnyFeature, condition: FeatureConditionAssignment):
+    condition is NonNullable<AnyFeature['condition']> => {
+    const allowed: readonly FeatureConditionType[] = conditionsAllowed[feature.type]
+    return allowed.includes(condition.conditionType)
+}
+
+/**
+ * States the condition of the feature, in place of any earlier
+ * statement. Throws where the kind of feature is in no such condition;
+ * `conditions` says which conditions each kind of feature may be in.
+ */
+export const stateFeatureCondition = (
+    copyId: string,
+    featureId: string,
+    condition: FeatureConditionAssignment
+): EditionOp =>
+    onFeature(copyId, featureId, feature => {
+        if (!allows(feature, condition)) {
+            throw new Error(`A ${feature.type} is in no '${condition.conditionType}' condition`)
+        }
+        feature.condition = condition
     })
 
 const featureIdsOf = (copy: RollCopy): Ids => new Set(copy.features.map(feature => feature.id))

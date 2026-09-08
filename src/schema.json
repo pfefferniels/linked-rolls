@@ -1281,6 +1281,49 @@
       ],
       "type": "object"
     },
+    "ObjectAssumption<ConditionState<(\"illegible\")>>": {
+      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
+      "properties": {
+        "@annotation": {
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "conditionType": {
+          "const": "illegible",
+          "description": "The kind of condition, from the list the roll or the kind of feature allows. [ontology: crm:P2 has type]",
+          "type": "string"
+        },
+        "description": {
+          "description": "A free-text description of the condition, providing details beyond the type classification. [ontology: crm:P3 has note]",
+          "type": "string"
+        },
+        "@type": {
+          "const": "ConditionState",
+          "description": "The type discriminator for this object. [ontology: rdf:type]",
+          "type": "string",
+          "ontology": "rdf:type"
+        }
+      },
+      "required": [
+        "conditionType",
+        "@type"
+      ],
+      "type": "object"
+    },
     "ObjectAssumption<ConditionState<(\"partially-torn\"|\"missing-perforation\")>>": {
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
@@ -2120,7 +2163,7 @@
       "description": "A piece of writing found on the roll, such as a label, catalogue number, or annotation. Writings have a method of production and a transcription of their content. [ontology: crm:E25 Human-Made Feature]",
       "properties": {
         "condition": {
-          "$ref": "#/definitions/ObjectAssumption%3CConditionState%3C(%22faded%22)%3E%3E",
+          "$ref": "#/definitions/ObjectAssumption%3CConditionState%3C(%22illegible%22)%3E%3E",
           "description": "This can be used e.g. to indicate a perforation which is torn out or in any other way damaged. [ontology: crm:P44 has condition]"
         },
         "depiction": {

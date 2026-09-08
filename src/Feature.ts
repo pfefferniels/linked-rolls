@@ -99,6 +99,16 @@ export const conditions = {
     GluedOn: ['detaching', 'ripped']
 } as const satisfies Record<FeatureType, readonly string[]>;
 
+/** The kinds of condition a feature may be in, whichever kind of feature it is. */
+export type FeatureConditionType = typeof conditions[FeatureType][number];
+
+/**
+ * A condition assigned to a feature, annotatable with a belief about
+ * its certainty. Which of the kinds a feature may be in depends on its
+ * own kind, which `conditions` states.
+ */
+export type FeatureConditionAssignment = ObjectAssumption<ConditionState<FeatureConditionType>>;
+
 /**
  * A hole (perforation) in the roll paper. Holes are the primary
  * carriers of musical information on piano rolls, as they trigger
@@ -120,7 +130,7 @@ export interface Hole extends RollFeature<'Hole', typeof conditions.Hole[number]
  * A trace is a visible mark or writing on the roll surface.
  * Traces may fade over time.
  */
-export interface Trace<T extends FeatureType> extends RollFeature<T, typeof conditions.Mark[number]> { }
+export interface Trace<T extends FeatureType> extends RollFeature<T, typeof conditions[T][number]> { }
 
 export const writingMethods = ['Print', 'Handwriting', 'Stamp'] as const;
 
