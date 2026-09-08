@@ -543,6 +543,40 @@
       ],
       "type": "string"
     },
+    "FeatureSource": {
+      "description": "The capture by which a copy's features became data: what they were read from, who read them, on what device and when. It states where the numbers of the edition come from and says nothing about the state of the paper, which is a condition.\n\nWhat is not known is left out. A reader is told about the gap by `reservationsAbout`, which works out what a copy cannot vouch for from what it states here. [ontology: crm:E7 Activity]",
+      "properties": {
+        "actor": {
+          "$ref": "#/definitions/ActorAssignment",
+          "description": "Who carried out the capture. [ontology: crm:P14 carried out by]"
+        },
+        "date": {
+          "$ref": "#/definitions/DateAssignment",
+          "description": "When the capture took place. [ontology: dcterms:date]",
+          "format": "date"
+        },
+        "device": {
+          "$ref": "#/definitions/Concept",
+          "description": "The make and model of the scanner, camera or player the capture ran on. [ontology: crmdig:L12 happened on device]"
+        },
+        "kind": {
+          "$ref": "#/definitions/SourceKind",
+          "description": "What the features were read from. [ontology: crm:P2 has type]"
+        },
+        "note": {
+          "description": "A free-text note providing additional context. [ontology: crm:P3 has note]",
+          "type": "string"
+        },
+        "output": {
+          "description": "The file the capture produced, where it has an address. [ontology: crmdig:L11 had output]",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "type": "object"
+    },
     "GluedOn": {
       "description": "A piece of material (paper or tape) glued onto the roll surface. Glued-on features are typically used to cover perforations (for corrections) or to reinforce damaged areas. They may themselves carry other features such as writings or additional holes. [ontology: crm:E22 Human-Made Object]",
       "properties": {
@@ -1816,6 +1850,10 @@
           "$ref": "#/definitions/ProductionEvent",
           "description": "The production event that created this roll copy. [ontology: lrmoo:R28i was produced by]"
         },
+        "readFrom": {
+          "$ref": "#/definitions/FeatureSource",
+          "description": "What this copy's features were read from. A copy that states no source is one whose features reached the edition by a way that was not written down. [ontology: reo:capture]"
+        },
         "scan": {
           "description": "The scan URL or IIIF URL of the roll. [ontology: crm:P138i has representation]",
           "type": "string"
@@ -1860,6 +1898,16 @@
         "vertical"
       ],
       "type": "object"
+    },
+    "SourceKind": {
+      "enum": [
+        "roll",
+        "scan",
+        "analysis",
+        "emulation",
+        "recording"
+      ],
+      "type": "string"
     },
     "Text": {
       "description": "A textual symbol, e.g. a label or annotation found on the roll. [ontology: crm:E33 Linguistic Object]",

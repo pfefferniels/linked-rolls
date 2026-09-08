@@ -157,6 +157,20 @@ reo:removed
 
 
 #################################################################
+# Properties of copies
+#################################################################
+
+reo:capture
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf crm:P16i_was_used_for ;
+    rdfs:domain lrmoo:F5_Item ;
+    rdfs:range crm:E7_Activity ;
+    rdfs:label "capture"@en ;
+    rdfs:comment """This property associates a copy of a roll with the activity by which its features became the data of an edition. What the features were read from is given by P2 has type with one of the types roll, scan, analysis, emulation and recording at https://w3id.org/reo/type/, the file the activity produced by L11 had output, the machine it ran on by L12 happened on device. Where the activity is a digitisation it is also an instance of D2 Digitization Process, and where it derives one file from another, of D3 Formal Derivation; neither covers all five kinds, so the range is left at E7 Activity and the kind is stated as a type. This property concerns the provenance of the data and not the state of the paper, which is a condition of the copy (P44 has condition). What is not known about the capture is left unstated."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+
+#################################################################
 # Shortcuts
 #
 # Each of these stands for a path through CRM and LRMoo that the

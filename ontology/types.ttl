@@ -77,6 +77,25 @@ reot:detaching a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/re
 reot:ripped a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "ripped"@en .
 
 
+# What a copy's features were read from (P2 has type on a reo:capture)
+
+reot:roll a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "roll"@en ;
+    rdfs:comment "The features were measured on the paper itself."@en .
+reot:scan a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "scan"@en ;
+    rdfs:comment "The features were measured on an image of the roll."@en .
+reot:analysis a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "analysis"@en ;
+    rdfs:comment "The features were taken from a list of holes that somebody else had measured on a scan, such as a SUPRA analysis file."@en .
+reot:emulation a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "emulation"@en ;
+    rdfs:comment "The features were reconstructed from a MIDI file that an emulator had produced from the roll, in which the expression commands have already been read and interpreted."@en .
+reot:recording a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "recording"@en ;
+    rdfs:comment "The features were reconstructed from a MIDI file captured while the copy was played on a reproducing piano, so they carry the rendering of that instrument."@en .
+
+
 # Role of an agent in the edition (P2 has type on an E39 Actor)
 
 reot:pianist a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "pianist"@en .

@@ -33,6 +33,41 @@ the keeper and the production metadata are nodes with a name and
 authority links, and the roll names its reproducing system. Exports
 are always in the current format.
 
+## Where a copy's features come from
+
+`readFrom` states what a copy's features were read from: the roll
+itself, a `scan` of it, an `analysis` somebody else measured on a
+scan, an `emulation` in which the roll has already been read into
+notes and commands, or a `recording` captured while the copy was
+played. Beside the kind it holds who carried the capture out, on what
+device, when, and a note. What is not known is left out.
+
+This says where the numbers of the edition come from and nothing
+about the state of the paper, which is a condition of the copy. In
+RDF it is `reo:capture`, an activity typed by what it read from; the
+file it produced is `crmdig:L11 had output`, the machine it ran on
+`crmdig:L12 happened on device`.
+
+Nothing records that a copy is doubtful. `reservationsAbout` works
+out from what a copy states what the edition cannot vouch for in it:
+that it names no source, that the making of its source is
+undocumented, that its features are somebody else's reading, that its
+source bears no physical evidence, that no measuring software is
+recorded, that it is not calibrated. A reservation goes away when the
+gap it names is filled.
+
+```ts
+import { reservationsAbout, stateSource } from 'linked-rolls'
+
+const next = produce(edition, stateSource(copyId, {
+    kind: 'emulation',
+    output: 'https://example.org/wm225.mid',
+    note: 'MIDI from a third party; the emulator is not named.'
+}))
+
+reservationsAbout(next.copies[0]).map(reservation => reservation.note)
+```
+
 ## Emulation
 
 `Emulation` turns a version of the edition into MIDI. The core of the
