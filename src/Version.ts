@@ -1,5 +1,6 @@
 import { Edit } from "./Edit";
 import { ReferenceAssumption } from "./Assumption";
+import { CollationTolerance, defaultCollationTolerance } from "./Collation";
 import { AnySymbol } from "./Symbol";
 import { WithId, WithNote, WithType } from "./utils";
 
@@ -31,6 +32,26 @@ export type VersionType = typeof versionTypes[number];
 export type Motivation = WithType<'motivation'> & WithId & WithNote
 
 /**
+ * A derivation names the version another one was derived from, together
+ * with the tolerance the two were collated at. How precisely the copies
+ * put a symbol depends on what they are and on how their features were
+ * obtained, so the tolerance can differ from derivation to derivation.
+ * @see lrmoo:R76 is derivative of
+ */
+export type Derivation = ReferenceAssumption & {
+    /**
+     * The tolerance at which the derived version was collated against
+     * the one it is based on. A derivation written before the tolerance
+     * was held here states none. Not exported to RDF.
+     */
+    collationTolerance?: CollationTolerance
+}
+
+/** The tolerance the derivation was collated at, or the default where it states none. */
+export const collationToleranceOf = (derivation: Readonly<Derivation>): CollationTolerance =>
+    derivation.collationTolerance ?? defaultCollationTolerance
+
+/**
  * A version is defined by the sum of edits applied
  * to the version it is based on. For simple identification,
  * a siglum is given to each version.
@@ -54,7 +75,7 @@ export interface Version extends WithId, WithType<'Version'> {
      * If no derivation is defined, it is assumed that this version represents the mother roll.
      * @see lrmoo:R76 is derivative of
      */
-    basedOn?: ReferenceAssumption;
+    basedOn?: Derivation;
 
     /**
      * The list of edits that, applied to the base version, produce this version.

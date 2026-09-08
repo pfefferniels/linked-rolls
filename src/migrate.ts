@@ -138,4 +138,29 @@ const withEditors = (edition: Json): Json =>
         ? edition
         : { ...edition, creation: { ...edition.creation, editors: [] } }
 
-export const migrate = (edition: Json): Json => walk(withRollSystem(withEditors(edition)))
+const statesNoTolerance = (version: Json): boolean =>
+    version.basedOn && !version.basedOn.collationTolerance
+
+/**
+ * The collation tolerance was the edition's before it was stated on
+ * each derivation. An edition written then collated every version at
+ * that one value, so it is written onto every derivation that gives
+ * none of its own.
+ */
+const withDerivationTolerance = (edition: Json): Json => {
+    const collationTolerance = edition.creation?.collationTolerance
+    const versions: Json[] = Array.isArray(edition.versions) ? edition.versions : []
+    if (!collationTolerance || !versions.some(statesNoTolerance)) return edition
+
+    return {
+        ...edition,
+        versions: versions.map(version => statesNoTolerance(version)
+            ? { ...version, basedOn: { ...version.basedOn, collationTolerance } }
+            : version)
+    }
+}
+
+const editionSteps = [withRollSystem, withEditors, withDerivationTolerance]
+
+export const migrate = (edition: Json): Json =>
+    walk(editionSteps.reduce((result, step) => step(result), edition))

@@ -277,6 +277,41 @@
       ],
       "type": "object"
     },
+    "Derivation": {
+      "description": "A derivation names the version another one was derived from, together with the tolerance the two were collated at. How precisely the copies put a symbol depends on what they are and on how their features were obtained, so the tolerance can differ from derivation to derivation. [ontology: lrmoo:R76 is derivative of]",
+      "properties": {
+        "@annotation": {
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement. [ontology: crminf:J4i is subject of]"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "collationTolerance": {
+          "$ref": "#/definitions/CollationTolerance",
+          "description": "The tolerance at which the derived version was collated against the one it is based on. A derivation written before the tolerance was held here states none. Not exported to RDF."
+        },
+        "@id": {
+          "description": "A unique identifier for this object.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "@id"
+      ],
+      "type": "object"
+    },
     "Edit": {
       "description": "A set of edits transforms a version of a roll into another version. Edits insert or delete symbols, or both (= replace). Edits may be motivated by a given set of reasons, e.g. to add an additional accent or to correct an error. If an edit is the interpretation of a metamark, such as a pencil mark, this should be made explicit using a meaning comprehension on the `@annotation` field. [ontology: reo:Edit]",
       "properties": {
@@ -1978,7 +2013,7 @@
       "description": "A version is defined by the sum of edits applied to the version it is based on. For simple identification, a siglum is given to each version. [ontology: lrmoo:F2 Expression]",
       "properties": {
         "basedOn": {
-          "$ref": "#/definitions/ReferenceAssumption",
+          "$ref": "#/definitions/Derivation",
           "description": "If no derivation is defined, it is assumed that this version represents the mother roll. [ontology: lrmoo:R76 is derivative of]"
         },
         "edits": {

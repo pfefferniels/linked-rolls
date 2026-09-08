@@ -5,7 +5,7 @@ import { Edition } from "./Edition"
 import { AnyPerforation, AnySymbol, Expression, PlacementRelation, isPerforation, placementRelations } from "./Symbol"
 import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance } from "./Collation"
 import { Edit, EditType } from "./Edit"
-import { insertedBy, Version } from "./Version"
+import { collationToleranceOf, insertedBy, Version } from "./Version"
 import { asSymbols, RollConditionAssignment, RollCopy, ScaleReading, Shift } from "./RollCopy"
 import { FeatureSource } from "./FeatureSource"
 import { applyShift, applyScale, revertShift, revertScale } from "./alignment"
@@ -370,7 +370,8 @@ const handOverCarriers = (view: EditionView, draft: Draft<Edition>, collations: 
  * Bases the child on the parent. A symbol of the child that collates
  * with one the parent hands down adds its carriers to that symbol; the
  * rest become the child's insertions, and what the parent hands down
- * and the child lacks becomes its deletions.
+ * and the child lacks becomes its deletions. The derivation states the
+ * tolerance it was collated at.
  */
 export const connectVersions = (
     view: EditionView,
@@ -392,26 +393,31 @@ export const connectVersions = (
     return onVersion(childId, (child, draft) => {
         handOverCarriers(view, draft, collations)
         child.edits = edits
-        child.basedOn = assignReference(parentId)
+        child.basedOn = { ...assignReference(parentId), collationTolerance: tolerance }
     })
 }
 
 /**
  * Folds the version's own symbols into those it inherits and collates
- * with: the carriers pass over, and the insertions go.
+ * with: the carriers pass over, and the insertions go. Collates at the
+ * tolerance of the derivation, where the caller names none.
  */
 export const collateSymbols = (
     view: EditionView,
     versionId: string,
     symbolIds: readonly string[],
-    tolerance: CollationTolerance = defaultCollationTolerance
+    tolerance?: CollationTolerance
 ): EditionOp => {
     const version = view.get<Version>(versionId)
     if (!version?.basedOn) return noChange
 
     const chosen = new Set(symbolIds)
     const own = insertedIn([version]).filter(symbol => chosen.has(symbol.id))
-    const collations = collationsOf(own, view.snapshot(idOf(version.basedOn)), symbol => view.dimensionOf(symbol), tolerance)
+    const collations = collationsOf(
+        own,
+        view.snapshot(idOf(version.basedOn)),
+        symbol => view.dimensionOf(symbol),
+        tolerance ?? collationToleranceOf(version.basedOn))
     const collated = new Set(collations.map(({ symbol }) => symbol.id))
 
     return onVersion(versionId, (version, draft) => {

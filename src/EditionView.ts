@@ -22,9 +22,12 @@ const referenceKeys = ['delete', 'comprehends', 'motivation'] as const;
 
 const isObject = (v: unknown): v is object => v !== null && typeof v === "object";
 
-/** An object that names another by its id and says nothing else, save perhaps a belief about the reference. */
+/** What a reference may state besides the id: a belief about it, and the tolerance a derivation was collated at. */
+const referenceOwnKeys = new Set(['id', '@annotation', 'collationTolerance']);
+
+/** An object that names another by its id and says nothing of its own beyond that. */
 const isReferenceOnly = (keys: readonly string[]): boolean =>
-    keys.every(key => key === 'id' || key === '@annotation');
+    keys.every(key => referenceOwnKeys.has(key));
 
 /**
  * A path as the walk over the edition grows it, one link per step and

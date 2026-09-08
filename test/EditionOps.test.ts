@@ -7,6 +7,7 @@ import { AnySymbol, Expression, Note, placementsOf } from '../src/Symbol'
 import { PaperSpeed, PaperStretch } from '../src/RollCopy'
 import { constraintProblems } from '../src/constraints'
 import { Assumption, assignObject, idOf, idsOf } from '../src/Assumption'
+import { CollationTolerance, defaultCollationTolerance } from '../src/Collation'
 import {
     addReason, alignCopy, clearBelief, collateSymbols, connectVersions, createBelief, createVersion, deriveVersion,
     detachVersion, mergeEdits, pairPerforations, placePerforation, removeFeatures, removeReason, removeSymbols,
@@ -66,6 +67,13 @@ const derived = () => editionOf(twoCopies(), [
         { type: 'edit', id: 'edit-b2', insert: [note('extra', 64, 'hole-extra')] }
     ], 'A')
 ])
+
+/** The same, its derivation stating the tolerance the two versions were collated at. */
+const derivedWithin = (tolerance: CollationTolerance): Edition => {
+    const edition = derived()
+    edition.versions[1].basedOn!.collationTolerance = tolerance
+    return edition
+}
 
 describe('creating a version from a copy', () => {
     it('adds the copy and a version inserting what the tracker bar reads on it', () => {
@@ -160,6 +168,17 @@ describe('connecting a version to another', () => {
         expect(viewOf(next).snapshot('B').map(symbol => symbol.id)).toEqual(['note', 'extra'])
     })
 
+    it('states the tolerance it collated at on the derivation', () => {
+        const before = twoRoots()
+        const connected = produce(before, connectVersions(viewOf(before), 'B', 'A'))
+        expect(connected.versions[1].basedOn!.collationTolerance).toEqual(defaultCollationTolerance)
+
+        const tolerance = { toleranceStart: mm(1), toleranceEnd: mm(1) }
+        const tight = produce(before, connectVersions(viewOf(before), 'B', 'A', tolerance))
+        expect(tight.versions[1].basedOn!.collationTolerance).toEqual(tolerance)
+        expect(idsOf(noteIn(tight).carriers)).toEqual(['hole-note'])
+    })
+
     it('leaves the edition as it is for a version it does not have', () => {
         const before = twoRoots()
         expect(produce(before, connectVersions(viewOf(before), 'nothing', 'A'))).toBe(before)
@@ -174,6 +193,21 @@ describe('collating the symbols of a version into what it inherits', () => {
         expect(idsOf(noteIn(next).carriers)).toEqual(['hole-note', 'hole-note-second'])
         expect(editsOf(next, 'B').map(edit => edit.id)).toEqual(['edit-b2'])
         expect(viewOf(next).snapshot('B').map(symbol => symbol.id)).toEqual(['forzando-on', 'note', 'other-note', 'extra'])
+    })
+
+    it('collates at the tolerance of the derivation, where the caller names none', () => {
+        const tight = derivedWithin({ toleranceStart: mm(1), toleranceEnd: mm(1) })
+        expect(produce(tight, collateSymbols(viewOf(tight), 'B', ['note-b']))).toBe(tight)
+
+        const wide = derivedWithin({ toleranceStart: mm(5), toleranceEnd: mm(5) })
+        const next = produce(wide, collateSymbols(viewOf(wide), 'B', ['note-b']))
+        expect(idsOf(noteIn(next).carriers)).toEqual(['hole-note', 'hole-note-second'])
+    })
+
+    it('collates at the tolerance the caller names, in place of the one the derivation states', () => {
+        const tight = derivedWithin({ toleranceStart: mm(1), toleranceEnd: mm(1) })
+        const next = produce(tight, collateSymbols(viewOf(tight), 'B', ['note-b'], defaultCollationTolerance))
+        expect(idsOf(noteIn(next).carriers)).toEqual(['hole-note', 'hole-note-second'])
     })
 
     it('leaves the edition as it is where nothing collates, or for a version standing on its own', () => {

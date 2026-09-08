@@ -1,11 +1,42 @@
 import { describe, expect, it } from 'vitest'
+import { produce } from 'immer'
 import { readFileSync } from 'fs'
 import * as path from 'path'
 import { migrate } from '../src/migrate'
 import { importJsonLd } from '../src/importJsonLd'
+import { asJsonLd } from '../src/asJsonLd'
+import { CollationTolerance } from '../src/Collation'
+import { Edition } from '../src/Edition'
+import { EditionView } from '../src/EditionView'
+import { collateSymbols } from '../src/editionOps'
+import { idsOf } from '../src/Assumption'
+import { Note } from '../src/Symbol'
+import { mm } from '../src/Quantity'
+import { copy, editionOf, hole, note, version } from './editionFixture'
 
 const edition01 = () =>
     JSON.parse(readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8'))
+
+/** Two copies putting one note 2 mm apart, in a version and one based on it. */
+const twoCopiesApart = (): Edition => editionOf(
+    [
+        copy('first', [hole('hole-note', 1000, 1010, 47)]),
+        copy('second', [hole('hole-note-second', 1002, 1011, 47)])
+    ],
+    [
+        version('A', [{ type: 'edit', id: 'edit-a', insert: [note('note', 60, 'hole-note')] }]),
+        version('B', [{ type: 'edit', id: 'edit-b', insert: [note('note-b', 60, 'hole-note-second')] }], 'A')
+    ]
+)
+
+/** That edition as a release before the move wrote it: the tolerance stated once, on the edition. */
+const writtenBefore = (tolerance: CollationTolerance) => {
+    const edition = twoCopiesApart()
+    edition.creation.collationTolerance = tolerance
+    return JSON.parse(JSON.stringify(asJsonLd(edition)))
+}
+
+const carriersOfNote = (edition: Edition) => idsOf(new EditionView(edition).get<Note>('note')!.carriers)
 
 describe('migrating a 0.1 edition', () => {
     it('gives versions and conditions their typology keys', () => {
@@ -96,5 +127,36 @@ describe('migrating a 0.1 edition', () => {
         expect(imported.versions[0]).toMatchObject({ type: 'Version', versionType: 'edition' })
         expect(imported.roll.system.id).toEqual('https://w3id.org/reo/type/system/welte-t100')
         expect(imported.copies[0].keeper).toEqual({ name: 'Stanford', sameAs: [] })
+    })
+})
+
+describe('migrating an edition whose collation tolerance was the edition\'s', () => {
+    it('states it on every derivation that gives none of its own', () => {
+        const migrated = migrate({
+            creation: { collationTolerance: { toleranceStart: 2, toleranceEnd: 2 } },
+            versions: [
+                { '@id': 'A' },
+                { '@id': 'B', basedOn: { '@id': 'A' } },
+                { '@id': 'C', basedOn: { '@id': 'A', collationTolerance: { toleranceStart: 7, toleranceEnd: 7 } } }
+            ]
+        })
+        expect(migrated.versions[0]).not.toHaveProperty('basedOn')
+        expect(migrated.versions[1].basedOn).toEqual({ '@id': 'A', collationTolerance: { toleranceStart: 2, toleranceEnd: 2 } })
+        expect(migrated.versions[2].basedOn.collationTolerance).toEqual({ toleranceStart: 7, toleranceEnd: 7 })
+    })
+
+    it('leaves the derivations of an edition that stated no tolerance as they are', () => {
+        const migrated = migrate({ creation: {}, versions: [{ '@id': 'B', basedOn: { '@id': 'A' } }] })
+        expect(migrated.versions[0].basedOn).toEqual({ '@id': 'A' })
+    })
+
+    it('keeps a version collating at the tolerance the edition stated', () => {
+        const tight = importJsonLd(writtenBefore({ toleranceStart: mm(1), toleranceEnd: mm(1) }))
+        expect(tight.versions[1].basedOn!.collationTolerance).toEqual({ toleranceStart: 1, toleranceEnd: 1 })
+        expect(produce(tight, collateSymbols(new EditionView(tight), 'B', ['note-b']))).toBe(tight)
+
+        const wide = importJsonLd(writtenBefore({ toleranceStart: mm(5), toleranceEnd: mm(5) }))
+        const collated = produce(wide, collateSymbols(new EditionView(wide), 'B', ['note-b']))
+        expect(carriersOfNote(collated)).toEqual(['hole-note', 'hole-note-second'])
     })
 })
