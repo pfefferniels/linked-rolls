@@ -1,6 +1,6 @@
 {
   "name": "linked-rolls",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "Digital editions of piano rolls: import, collation, editorial assumptions, JSON-LD export, and emulation through a reproducing system",
   "license": "MIT",
   "repository": {
