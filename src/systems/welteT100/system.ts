@@ -1,31 +1,33 @@
 import {
-    aperturePorts,
-    CONSENSUS,
     DEFAULT_PUNCH_MM,
     geometryInMm,
     Grid,
     levelChanges,
-    mezzoforteTravel,
     paperSeconds,
     pedalBrushing,
     pedalDefaults,
-    pneumaticModel,
-    PRESETS,
     ROWS_PER_MM,
-    runPedals,
     TRACKER_BORE_MM,
-    travelBetweenRails,
     WELTE_SPOOL,
-    Action,
-    Control,
     Half,
-    Instrument,
     Parameters,
     PedalMode,
+    Spool,
+} from "welte-mignon-emulator";
+import {
+    aperturePorts,
+    CONSENSUS,
+    mezzoforteTravel,
+    pneumaticModel,
+    PRESETS,
+    runPedals,
+    travelBetweenRails,
+    Action,
+    Control,
+    Instrument,
     Punch,
     RollNumber,
-    Spool,
-} from "welte-t100-emulator";
+} from "welte-mignon-emulator/t100";
 import { Expression, ExpressionScope, Note } from "../../Symbol";
 import { welteT100, WelteT100ExpressionType } from "./bar";
 import { Hole } from "../../Feature";
@@ -42,21 +44,11 @@ import {
 } from "../../ReproducingSystem";
 import { add, inCentimeters, Millimeters, mm, Seconds, seconds, Track, track } from "../../Quantity";
 import { partitionPoint } from "../../sorted";
+import { defaultVelocityMap, velocityOf, type VelocityMap } from "../velocity";
 
-/**
- * MIDI velocity at the open rail of the Nuancierbalg, at the Mezzoforte pin,
- * and at the closed rail, joined linearly in between. Nothing in the
- * mechanism determines how bellows travel maps onto hammer velocity, so
- * these are anchors rather than measurements; the three values are the
- * ones midi2exp publishes.
- */
-export type VelocityMap = {
-    piano: number
-    mezzoforte: number
-    forte: number
-}
+export type { VelocityMap } from "../velocity";
 
-export type { Instrument } from "welte-t100-emulator";
+export type { Instrument } from "welte-mignon-emulator/t100";
 
 export type InstrumentName = 'consensus' | RollNumber
 
@@ -144,7 +136,7 @@ export const defaultWelteT100Options: WelteT100Options = {
     spool: WELTE_SPOOL,
     nuance: nuanceOf(instruments.consensus),
     pedals: pedalPresets.damping,
-    velocity: { piano: 35, mezzoforte: 60, forte: 90 },
+    velocity: defaultVelocityMap,
     pedalMode: 'continuous',
     trackerBore: mm(TRACKER_BORE_MM),
     punchDiameter: mm(DEFAULT_PUNCH_MM),
@@ -229,18 +221,6 @@ const readingOf = (event: NegotiatedEvent & Expression): Reading | undefined => 
 const clamp = (value: number, low: number, high: number) => Math.min(Math.max(value, low), high)
 
 /**
- * The velocity map joined linearly through its three anchors, with the
- * middle one at the Mezzoforte pin of the half in question.
- */
-const velocityOf = (travel: number, hook: number, map: VelocityMap): number => {
-    const position = clamp(travel, 0, 1)
-    if (position <= hook) {
-        return map.piano + (position / hook) * (map.mezzoforte - map.piano)
-    }
-    return map.mezzoforte + ((position - hook) / (1 - hook)) * (map.forte - map.mezzoforte)
-}
-
-/**
  * One sample per row of the scan the constants were fitted on, from the
  * beginning of the roll to a little past the last hole. The rows are
  * equally spaced on the paper and not in time, which is what the
@@ -262,6 +242,7 @@ const nuanceCurves = (
     samples: Samples,
     options: WelteT100Options
 ): Record<Half, DynamicsCurve> => {
+    const instrument = instrumentNameOf(options.nuance) ?? 'custom'
     const curveOf = (half: Half): DynamicsCurve => {
         const params = options.nuance[half]
         const output = pneumaticModel.run({ grid, half, ports }, params)
@@ -271,6 +252,7 @@ const nuanceCurves = (
             ...samples,
             name: half,
             kind: 'dynamics',
+            instrument: `Welte-Mignon T-100, ${instrument}`,
             travel,
             velocity: travel.map(value => velocityOf(value, hook, options.velocity))
         }
@@ -374,7 +356,7 @@ const perform = (
 }
 
 /**
- * The red Welte, as welte-t100-emulator models it: the take-up spool sets
+ * The red Welte, as welte-mignon-emulator models it: the take-up spool sets
  * the time axis, the Nuancierbälge fill through their conduits and are
  * arrested by the Mezzoforte pin, and the two pedals travel rather than
  * switch. The constants are the consensus fitted across the hand-drawn

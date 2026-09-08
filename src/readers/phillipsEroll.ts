@@ -62,7 +62,7 @@ export interface PhillipsErollOptions {
     /**
      * Where on the paper the roll had run after so many seconds. The
      * default is the constant speed the system states, which ignores
-     * the take-up spool; pass `paperAt` of welte-t100-emulator to
+     * the take-up spool; pass `paperAt` of welte-mignon-emulator to
      * account for it.
      */
     placeAt?: (elapsed: Seconds) => Millimeters

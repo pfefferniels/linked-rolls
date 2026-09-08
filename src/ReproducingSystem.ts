@@ -79,8 +79,18 @@ interface CurveSamples {
     readonly seconds: Float64Array
 
     /**
-     * Position between the two ends of a travel: 0 with a bellows open and
-     * 1 with it closed, 0 with a pedal up and 1 with it down.
+     * Position on the printed ordinate of the roll's own ruled band: 0 at that
+     * half's P.P. gridline, 1 at the shared F.F. line, with M.F. at 0.5. For a
+     * pedal, 0 with it up and 1 with it down.
+     *
+     * Both Welte scales rule that band the same way — five rails, "P.P. M.F.
+     * F.F. M.F. P.P.", three named levels a side with the centre F.F. shared,
+     * measuring 20.0 mm between rails on red 3309 and on green Welte 184 alike —
+     * so a curve from one system and a curve from the other are in one unit, on
+     * Welte's authority rather than on ours. That is what lets a red issue and a
+     * green issue of one recording be compared at all. It is a unit of *drawn
+     * deflection*: whether the deflection is linear in the bellows' own travel is
+     * open, and is what the emulator's `scaleWarp` exists to answer.
      */
     readonly travel: Float64Array
 }
@@ -89,6 +99,15 @@ interface CurveSamples {
 export type DynamicsCurve = CurveSamples & {
     readonly kind: 'dynamics'
     readonly velocity: Float64Array
+
+    /**
+     * The instrument whose constants produced it, by name. A comparison plot
+     * must not be able to put two curves side by side without saying which
+     * instrument each came from: a T-98 fitted to a green roll's drawn line and
+     * a T-98 fitted to a red copy's curve answer different questions, and their
+     * difference is the point of the comparison.
+     */
+    readonly instrument: string
 }
 
 export type PedalCurve = CurveSamples & {

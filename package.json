@@ -40,13 +40,13 @@
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0",
-    "welte-t100-emulator": "^0.4.0"
+    "welte-mignon-emulator": "file:../welte-t100"
   },
   "peerDependencies": {
-    "welte-t100-emulator": "^0.4.0"
+    "welte-mignon-emulator": "^1.0.0"
   },
   "peerDependenciesMeta": {
-    "welte-t100-emulator": {
+    "welte-mignon-emulator": {
       "optional": true
     }
   },
