@@ -626,7 +626,7 @@
         "features": {
           "description": "A glued-on feature itself may carry other features. Nested features do not need to be positioned explicitly. [ontology: crm:P56 bears feature]",
           "items": {
-            "$ref": "#/definitions/PartialBy%3CAnyFeature%2C(%22horizontal%22%7C%22vertical%22)%3E"
+            "$ref": "#/definitions/NestedFeature"
           },
           "type": "array"
         },
@@ -1048,6 +1048,10 @@
         "@type"
       ],
       "type": "object"
+    },
+    "NestedFeature": {
+      "$ref": "#/definitions/PartialBy%3CAnyFeature%2C(%22horizontal%22%7C%22vertical%22)%3E",
+      "description": "A feature borne by another feature. It states no place of its own, the feature bearing it standing in one."
     },
     "Note": {
       "description": "A note symbol, representing a single pitched musical event on the roll. The pitch is encoded via the tracker bar position (track number). [ontology: reo:Note]",

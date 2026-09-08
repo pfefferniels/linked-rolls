@@ -1,5 +1,5 @@
 import { Edition } from '../src/Edition'
-import { Hole } from '../src/Feature'
+import { AnyFeature, Hole } from '../src/Feature'
 import { RollCopy } from '../src/RollCopy'
 import { Expression, Note, Text } from '../src/Symbol'
 import { Version } from '../src/Version'
@@ -13,7 +13,7 @@ export const hole = (id: string, from: number, to: number, position: number): Ho
     vertical: { unit: 'track', from: track(position) }
 })
 
-export const copy = (id: string, features: Hole[]): RollCopy => ({
+export const copy = (id: string, features: AnyFeature[]): RollCopy => ({
     type: 'RollCopy',
     id,
     ops: [],

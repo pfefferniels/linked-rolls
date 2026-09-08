@@ -192,7 +192,7 @@ export interface GluedOn extends RollFeature<'GluedOn', typeof conditions.GluedO
      * Nested features do not need to be positioned explicitly.
      * @see crm:P56 bears feature
      */
-    features?: PartialBy<AnyFeature, 'horizontal' | 'vertical'>[];
+    features?: NestedFeature[];
 }
 
 /**
@@ -202,6 +202,23 @@ export interface GluedOn extends RollFeature<'GluedOn', typeof conditions.GluedO
  */
 export type AnyFeature = Hole | Writing | Mark | GluedOn;
 
+/**
+ * A feature borne by another feature. It states no place of its own,
+ * the feature bearing it standing in one.
+ */
+export type NestedFeature = PartialBy<AnyFeature, 'horizontal' | 'vertical'>;
+
 export const isRollFeature = (obj: object): obj is AnyFeature => {
     return 'type' in obj && featureTypes.includes(obj.type as FeatureType);
 }
+
+export const isGluedOn = <T extends NestedFeature>(feature: T): feature is T & GluedOn =>
+    feature.type === 'GluedOn';
+
+/** The features a feature bears: a patch those stated as parts of it, any other feature none. */
+export const featuresBorneBy = (feature: NestedFeature): NestedFeature[] =>
+    isGluedOn(feature) ? feature.features ?? [] : [];
+
+/** The feature together with everything it bears, as deep as a patch on a patch goes. */
+export const withBorneFeatures = (feature: NestedFeature): NestedFeature[] =>
+    [feature, ...featuresBorneBy(feature).flatMap(withBorneFeatures)];

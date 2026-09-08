@@ -13,7 +13,10 @@ import {
     AnyArgumentation, Assumption, Belief, Certainty, MeaningComprehension, ObjectAssumption, ReferenceAssumption,
     assignReference, idOf
 } from "./Assumption"
-import { AnyFeature, FeatureConditionAssignment, FeatureConditionType, HorizontalSpan, conditions as conditionsAllowed } from "./Feature"
+import {
+    AnyFeature, FeatureConditionAssignment, FeatureConditionType, HorizontalSpan, NestedFeature,
+    conditions as conditionsAllowed, featuresBorneBy, isGluedOn, withBorneFeatures
+} from "./Feature"
 import { distance, Millimeters, mm, subtract } from "./Quantity"
 import { WithId } from "./utils"
 
@@ -205,7 +208,9 @@ export const stateFeatureCondition = (
         feature.condition = condition
     })
 
-const featureIdsOf = (copy: RollCopy): Ids => new Set(copy.features.map(feature => feature.id))
+/** The ids of every feature the copy bears, those a patch bears among them. */
+const featureIdsOf = (copy: RollCopy): Ids =>
+    new Set(copy.features.flatMap(withBorneFeatures).map(feature => feature.id))
 
 /**
  * A symbol every carrier of which lies among the features loses its
@@ -376,12 +381,39 @@ const forgetFeatures = (draft: Draft<Edition>, features: Ids) => {
     })
 }
 
-/** Takes the features off the copy, and out of the versions with what only they carried. */
+/**
+ * The ids of the features named and of everything they bear: a feature
+ * of a patch stands nowhere once the patch is gone.
+ */
+const goneWith = (features: readonly NestedFeature[], named: Ids): string[] =>
+    features.flatMap(feature => named.has(feature.id)
+        ? withBorneFeatures(feature).map(borne => borne.id)
+        : goneWith(featuresBorneBy(feature), named))
+
+/** The feature with the named ones gone from what it bears, or the very same one where it bears none of them. */
+const withoutBorne = <T extends NestedFeature>(feature: T, named: Ids): T => {
+    if (!isGluedOn(feature) || !feature.features) return feature
+
+    const borne = withoutFeatures(feature.features, named)
+    return borne === feature.features ? feature : { ...feature, features: borne }
+}
+
+/** The features without those named, wherever they lie, and without whatever those bore. */
+const withoutFeatures = <T extends NestedFeature>(features: T[], named: Ids): T[] =>
+    mapped(without(features, feature => named.has(feature.id)), feature => withoutBorne(feature, named))
+
+/**
+ * Takes the features off the copy, and out of the versions with what
+ * only they carried. A feature may be named wherever the copy bears it:
+ * a patch goes with everything glued onto it, and a feature of a patch
+ * may be taken back on its own, the patch staying where it is.
+ */
 export const removeFeatures = (copyId: string, featureIds: readonly string[]): EditionOp =>
     onCopy(copyId, (copy, draft) => {
-        const features = new Set(featureIds)
-        copy.features = without(copy.features, feature => features.has(feature.id))
-        forgetFeatures(draft, features)
+        const named = new Set(featureIds)
+        const features = stateOf<AnyFeature[]>(copy.features)
+        copy.features = withoutFeatures(features, named)
+        forgetFeatures(draft, new Set(goneWith(features, named)))
     })
 
 /**
@@ -409,10 +441,17 @@ const sayTheSame = (a: unknown, b: unknown): boolean => {
     return [...keys].every(key => sayTheSame(a[key], b[key]))
 }
 
-/** What a feature states beyond its identity, its place along the roll, its depiction and its condition. */
+/**
+ * What a feature states beyond its identity, its place along the roll,
+ * its depiction and its condition. What a patch bears counts by
+ * identity: two patches bear the same only where they bear the very
+ * same features, so that no merge takes a feature of a patch away.
+ */
 const nature = (feature: AnyFeature): object => {
     const { id, horizontal, depiction, condition, ...rest } = feature
-    return rest
+    return isGluedOn(feature) && feature.features
+        ? { ...rest, features: feature.features.map(borne => borne.id) }
+        : rest
 }
 
 const conditionsOf = (features: readonly AnyFeature[]) =>
@@ -507,23 +546,28 @@ const carryOver = (draft: Draft<Edition>, replaced: Ids, mergedId: string) => {
  * whatever else named them, a modification or a comprehension, names
  * the merged one in their stead.
  *
+ * Only the features the copy bears itself are merged. A feature of a
+ * patch states no place along the roll of its own, so there is nothing
+ * for a merge to span, and an id naming one is passed over as an id the
+ * copy does not bear is.
+ *
  * Throws where the features cannot stand for one; `mergeObstacle`
  * says beforehand whether they can.
  */
 export const mergeFeatures = (copyId: string, featureIds: readonly string[]): EditionOp =>
     onCopy(copyId, (copy, draft) => {
-        const replaced = new Set(featureIds)
-        const isReplaced = (feature: AnyFeature) => replaced.has(feature.id)
+        const named = new Set(featureIds)
         const features = stateOf<AnyFeature[]>(copy.features)
-        const toMerge = features.filter(isReplaced)
+        const toMerge = features.filter(feature => named.has(feature.id))
 
         const obstacle = mergeObstacle(toMerge)
         if (obstacle) {
             throw new Error(`The features of copy ${copyId} cannot be merged: ${obstacle}`)
         }
 
+        const replaced = new Set(toMerge.map(feature => feature.id))
         const merged = mergedFrom(toMerge)
-        copy.features = standingFor(features, isReplaced, merged)
+        copy.features = standingFor(features, feature => replaced.has(feature.id), merged)
         carryOver(draft, replaced, merged.id)
         renameReferences(draft, ids => standingFor(ids, id => replaced.has(id), merged.id))
     })
