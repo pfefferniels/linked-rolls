@@ -8,6 +8,7 @@ import { AnyFeature } from "./Feature";
 import { ActorAssignment, assignReference, DateAssignment, ObjectAssumption } from "./Assumption";
 import { WithId, WithType } from "./utils";
 import { Agent, Concept } from "./Agent";
+import { FeatureSource } from "./FeatureSource";
 import { Measure, Millimeters, Quantity, px, Track, track } from "./Quantity";
 
 /**
@@ -324,6 +325,14 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
      * @see crm:P138i has representation
      */
     scan?: string
+
+    /**
+     * What this copy's features were read from. A copy that states no
+     * source is one whose features reached the edition by a way that
+     * was not written down.
+     * @see reo:capture
+     */
+    readFrom?: FeatureSource
 }
 
 /**

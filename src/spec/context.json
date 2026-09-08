@@ -169,6 +169,22 @@
       "@id": "crm:P138i_has_representation",
       "@type": "@id"
     },
+    "readFrom": {
+      "@id": "reo:capture",
+      "@context": {
+        "kind": {
+          "@id": "crm:P2_has_type",
+          "@type": "@vocab",
+          "@context": { "@vocab": "https://w3id.org/reo/type/" }
+        },
+        "output": {
+          "@id": "crmdig:L11_had_output",
+          "@type": "@id"
+        },
+        "device": "crmdig:L12_happened_on_device",
+        "note": "crm:P3_has_note"
+      }
+    },
 
     "depiction": {
       "@id": "crm:P138i_has_representation",

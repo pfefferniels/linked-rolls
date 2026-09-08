@@ -7,6 +7,7 @@ import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance 
 import { Edit, EditType } from "./Edit"
 import { insertedBy, Version } from "./Version"
 import { asSymbols, RollConditionAssignment, RollCopy, ScaleReading, Shift } from "./RollCopy"
+import { FeatureSource } from "./FeatureSource"
 import { applyShift, applyScale, revertShift, revertScale } from "./alignment"
 import { AnyArgumentation, Assumption, Belief, Certainty, assignReference, idOf } from "./Assumption"
 import { HorizontalSpan } from "./Feature"
@@ -129,6 +130,18 @@ export const unalignCopy = (copyId: string): EditionOp =>
         revertScale(copy)
         revertShift(copy)
         copy.conditions = without(copy.conditions, isPaperStretch)
+    })
+
+/** States what the copy's features were read from, in place of any earlier statement. */
+export const stateSource = (copyId: string, source: FeatureSource): EditionOp =>
+    onCopy(copyId, copy => {
+        copy.readFrom = source
+    })
+
+/** Takes back the statement, leaving the copy silent about its source again. */
+export const clearSource = (copyId: string): EditionOp =>
+    onCopy(copyId, copy => {
+        copy.readFrom = undefined
     })
 
 const featureIdsOf = (copy: RollCopy): Ids => new Set(copy.features.map(feature => feature.id))
