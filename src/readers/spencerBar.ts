@@ -1,8 +1,10 @@
 import { v4 } from "uuid";
 import { Hole } from "../Feature";
-import { RollCopy } from "../RollCopy";
+import { PaperSpeed, RollCopy } from "../RollCopy";
+import { systemOf, TrackerBar, translationBetween } from "../TrackerBar";
 import { welteT100 } from "../systems/welteT100/bar";
-import { inMillimeters, px, Track, track } from "../Quantity";
+import { welteLicensee } from "../systems/welteLicensee/bar";
+import { feetPerMinute, inMillimeters, px, track } from "../Quantity";
 
 /**
  * Spencer Chase's e-roll file (`.bar`, "eRoll Tracker Bar Image") holds
@@ -28,25 +30,18 @@ const END_OF_EVENTS = 0xFF
  */
 export const SPENCER_ROWS_PER_INCH = 400
 
-/**
- * The file numbers positions as the 98-hole Welte Licensee bar does.
- * Its bass controls are the T-100's tracks 1 to 8, it has no motor
- * tracks, and its note block follows the controls at once, so from
- * there on every position lies two tracks lower than on the T-100 bar.
- * Checked valve by valve on roll 225 against the Stanford copies.
- */
-const LICENSEE_NOTES_FROM = 9
-const T100_NOTES_FROM = welteT100.areas.find(area => area.role === 'note')!.from
-
-export const licenseeOnT100 = (position: number): Track =>
-    track(position < LICENSEE_NOTES_FROM ? position : position + T100_NOTES_FROM - LICENSEE_NOTES_FROM)
-
 export interface SpencerBarOptions {
     /** Rows of the image on an inch of paper. */
     rowsPerInch?: number
 
-    /** Puts a position the file names onto the edition's bar. */
-    trackOf?: (position: number) => Track
+    /**
+     * The bar the file numbers its positions by, which is the bar of
+     * the roll it was scanned from. His Welte files are Licensee rolls.
+     */
+    system?: TrackerBar
+
+    /** The edition's bar, onto which the positions are put. */
+    bar?: TrackerBar
 }
 
 interface BarEvent {
@@ -114,9 +109,13 @@ const holesOf = (events: Iterable<BarEvent>): BarHole[] => {
     return holes.sort((a, b) => a.from - b.from)
 }
 
+/**
+ * Reads the copy onto the edition's bar. A hole on a position the
+ * edition's bar does not read is left out, as the bar would leave it.
+ */
 export function readFromSpencerBar(
     buffer: ArrayBuffer,
-    { rowsPerInch = SPENCER_ROWS_PER_INCH, trackOf = licenseeOnT100 }: SpencerBarOptions = {}
+    { rowsPerInch = SPENCER_ROWS_PER_INCH, system = welteLicensee, bar = welteT100 }: SpencerBarOptions = {}
 ): RollCopy {
     const bytes = new Uint8Array(buffer)
     if (byteAt(bytes, TEXT_AT) !== TEXT_TAG) {
@@ -124,21 +123,27 @@ export function readFromSpencerBar(
     }
 
     const placeOf = (row: number) => inMillimeters(px(row), rowsPerInch)
+    const onBar = translationBetween(system, bar)
 
     const features = holesOf(eventsIn(bytes, endOfText(bytes, TEXT_AT + 1)))
-        .map((hole): Hole => ({
-            type: 'Hole',
-            id: v4(),
-            vertical: {
-                from: trackOf(hole.position),
-                unit: 'track'
-            },
-            horizontal: {
-                unit: 'mm',
-                from: placeOf(hole.from),
-                to: placeOf(hole.to)
-            }
-        }))
+        .flatMap((hole): Hole[] => {
+            const position = onBar(track(hole.position))
+            if (position === undefined) return []
+
+            return [{
+                type: 'Hole',
+                id: v4(),
+                vertical: {
+                    from: position,
+                    unit: 'track'
+                },
+                horizontal: {
+                    unit: 'mm',
+                    from: placeOf(hole.from),
+                    to: placeOf(hole.to)
+                }
+            }]
+        })
 
     return {
         type: 'RollCopy',
@@ -147,7 +152,31 @@ export function readFromSpencerBar(
         conditions: [],
         keeper: { name: '', sameAs: [] },
         measurements: {},
+        production: { system: systemOf(system) },
         modifications: [],
         features
     }
+}
+
+/**
+ * The `.ann` file beside a `.bar` holds the player's settings for the
+ * roll as lines of "/key:   value": title, composer, pianist, roll
+ * number and class, and the tempo the roll is played at.
+ */
+export const readSpencerAnn = (text: string): ReadonlyMap<string, string> =>
+    new Map(
+        text.split(/\r?\n/)
+            .map(line => line.match(/^\/(\w+):\s*(.*?)\s*$/))
+            .filter((match): match is RegExpMatchArray => match !== null)
+            .map(([, key, value]): [string, string] => [key, value])
+    )
+
+/** A roll tempo counts tenths of a foot per minute: tempo 83 runs the roll at 8.3 feet a minute. */
+const TEMPO_PER_FOOT_PER_MINUTE = 10
+
+/** The paper speed a `.ann` states through its roll tempo, where it states one. */
+export const paperSpeedOfSpencerAnn = (ann: ReadonlyMap<string, string>): PaperSpeed | undefined => {
+    const tempo = parseFloat(ann.get('roll_tempo') ?? '')
+    if (isNaN(tempo) || tempo <= 0) return undefined
+    return { value: feetPerMinute(tempo / TEMPO_PER_FOOT_PER_MINUTE), unit: 'ft/min' }
 }

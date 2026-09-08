@@ -1,6 +1,5 @@
-import { ObjectAssumption } from "./Assumption";
 import { AnyFeature } from "./Feature";
-import { PaperStretch, RollConditionAssignment, RollCopy, Shift } from "./RollCopy";
+import { RollCopy, Shift } from "./RollCopy";
 import { TrackerBar } from "./TrackerBar";
 import { welteT100 } from "./systems/welteT100/bar";
 import { add, Millimeters, mm, Quantity, scale, Unit } from "./Quantity";
@@ -33,15 +32,13 @@ export const applyShift = (shift: Shift, copy: RollCopy) => {
     copy.measurements.shift = shift
 }
 
-export const applyStretch = (
-    paperStretch: ObjectAssumption<PaperStretch>,
-    copy: RollCopy
-) => {
+/** Scales the copy's features away from the beginning of the roll, and records the factor. */
+export const applyScale = (factor: number, copy: RollCopy) => {
     if (copy.ops.includes('stretched')) return
 
-    copy.features.forEach(feature => stretch(feature.horizontal, paperStretch.factor))
+    copy.features.forEach(feature => stretch(feature.horizontal, factor))
     copy.ops = [...copy.ops, 'stretched']
-    copy.conditions.push(paperStretch)
+    copy.measurements.scale = factor
 }
 
 /** Takes the shift off the copy's features again, as far as one was applied. */
@@ -58,23 +55,20 @@ export const revertShift = (copy: RollCopy) => {
     delete copy.measurements.shift
 }
 
-const isPaperStretch = (condition: RollConditionAssignment): condition is ObjectAssumption<PaperStretch> =>
-    condition.conditionType === 'paper-stretch'
+/** Takes the scale off the copy's features again, as far as one was applied. */
+export const revertScale = (copy: RollCopy) => {
+    const factor = copy.measurements.scale
+    if (!copy.ops.includes('stretched') || factor === undefined) return
 
-/** Takes the stretch off the copy's features again, as far as one was applied. */
-export const revertStretch = (copy: RollCopy) => {
-    const applied = copy.conditions.find(isPaperStretch)
-    if (!copy.ops.includes('stretched') || !applied) return
-
-    copy.features.forEach(feature => stretch(feature.horizontal, 1 / applied.factor))
+    copy.features.forEach(feature => stretch(feature.horizontal, 1 / factor))
     copy.ops = copy.ops.filter(op => op !== 'stretched')
-    copy.conditions = copy.conditions.filter(condition => !isPaperStretch(condition))
+    delete copy.measurements.scale
 }
 
 type AlignmentResult = {
-    /** Applied before the stretch. */
+    /** Applied before the scale. */
     shift: Millimeters;
-    stretch: number;
+    scale: number;
 };
 
 const isNoteOn = (bar: TrackerBar) => (feature: AnyFeature): boolean => {
@@ -111,7 +105,7 @@ function selectEnds<T>(arr: T[], count: number): T[] {
 
 /**
  * Align two rolls by computing independent linear fits of each roll's note-onset positions
- * using only the first and last segments, then deriving a transform x2 = (x1 + shift) * stretch.
+ * using only the first and last segments, then deriving a transform x2 = (x1 + shift) * scale.
  */
 export function alignFeatures(
     rollA: AnyFeature[],
@@ -136,9 +130,9 @@ export function alignFeatures(
     const { alpha: alphaA, beta: betaA } = fitIndexToPosition(idxA, XA);
     const { alpha: alphaB, beta: betaB } = fitIndexToPosition(idxB, XB);
 
-    // 5. Derive stretch and shift such that x2 = (x1 + shift) * stretch
-    const stretch = alphaB / alphaA;
-    const shift = mm(betaB / stretch - betaA);
+    // 5. Derive scale and shift such that x2 = (x1 + shift) * scale
+    const scale = alphaB / alphaA;
+    const shift = mm(betaB / scale - betaA);
 
-    return { stretch, shift };
+    return { scale, shift };
 }

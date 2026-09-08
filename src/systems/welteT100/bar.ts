@@ -1,5 +1,5 @@
 import { describeTrackerBar, TrackerBar } from "../../TrackerBar"
-import { mm } from "../../Quantity"
+import { metersPerMinute, mm } from "../../Quantity"
 
 /**
  * The commands of the Welte-Mignon T-100, as its tracker bar reads them.
@@ -28,7 +28,8 @@ export type WelteT100ExpressionType = typeof welteT100ExpressionTypes[number]
  *
  * The note block spans 80 positions from C1 to g⁴, i.e. MIDI 24 to 103.
  * The expression valves are duplicated, bass below the note block and
- * treble above it, in mirrored order.
+ * treble above it, in mirrored order. The rolls run at three metres a
+ * minute (Phillips 2016, p. 113; Bärtsch 2020 gives 3 or 2.9).
  */
 export const welteT100: TrackerBar = describeTrackerBar({
     id: 'welte-t100',
@@ -36,6 +37,7 @@ export const welteT100: TrackerBar = describeTrackerBar({
     width: mm(328),
     trackCount: 100,
     notes: { from: 11, to: 90, lowestPitch: 24 },
+    paperSpeed: { value: metersPerMinute(3), unit: 'm/min' },
     expressions: new Map<number, WelteT100ExpressionType>([
         [1, 'MezzoforteOff'],
         [2, 'MezzoforteOn'],

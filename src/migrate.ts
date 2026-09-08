@@ -72,12 +72,30 @@ const withProductionNodes = (node: Json): Json => {
             ...rest,
             ...(typeof company === 'string' ? (company && { company: named(company) }) : { company }),
             ...(typeof paper === 'string' ? (paper && { paper: named(paper) }) : { paper }),
+            // a 0.1 file named the roll's system here as text; a copy's own system is a node
+            ...(system && typeof system === 'object' && { system })
         }
     }
 }
 
+const isPaperStretch = (condition: Json): boolean =>
+    condition?.conditionType === 'paper-stretch' || condition?.['@type'] === 'paper-stretch'
+
+/**
+ * The scale of an aligned copy used to be recorded only as the factor
+ * of its paper-stretch condition. It is the alignment's own number
+ * now, and the condition stays as the reading of it. The conditions
+ * are still in their old shape here, since a node is migrated before
+ * its children are.
+ */
+const withScale = (node: Json): Json => {
+    if (!Array.isArray(node.ops) || !node.ops.includes('stretched') || node.measurements?.scale !== undefined) return node
+    const factor = (node.conditions ?? []).find(isPaperStretch)?.factor
+    return factor === undefined ? node : { ...node, measurements: { ...node.measurements, scale: factor } }
+}
+
 const migrateNode = (node: Json): Json =>
-    [withRenamedKeys, withTypology, withReferences, withKeeper, withProductionNodes]
+    [withRenamedKeys, withTypology, withReferences, withKeeper, withProductionNodes, withScale]
         .reduce((result, step) => step(result), node)
 
 /** The items each walked, or the very same list where the walk changed none. */

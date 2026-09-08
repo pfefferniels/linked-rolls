@@ -127,6 +127,7 @@
       "@id": "crm:P39i_was_measured_by",
       "@context": {
         "shift": null,
+        "scale": null,
         "trackCalibration": null,
         "margins": null,
         "dimensions": "reo:dimensions",
@@ -140,7 +141,16 @@
         "version": "owl:versionInfo"
       }
     },
-    "production": "lrmoo:R28i_was_produced_by",
+    "production": {
+      "@id": "lrmoo:R28i_was_produced_by",
+      "@context": {
+        "system": "crm:P32_used_general_technique",
+        "speed": {
+          "@id": "reo:paperSpeed",
+          "@context": { "value": "crm:P90_has_value" }
+        }
+      }
+    },
     "company": "crm:P14_carried_out_by",
     "paper": "crm:P126_employed",
     "conditions": "crm:P44_has_condition",

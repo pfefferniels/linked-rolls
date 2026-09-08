@@ -1,6 +1,6 @@
 import type { Concept } from "./Agent"
 import { Expression, ExpressionScope, Note } from "./Symbol"
-import { Millimeters, Track, track } from "./Quantity"
+import { Millimeters, SpeedMeasure, Track, track } from "./Quantity"
 
 /**
  * What a tracker bar position does: sound a note, or operate one of
@@ -61,6 +61,13 @@ export interface TrackerBar {
      */
     readonly rewindTrack: Track
 
+    /**
+     * The paper speed the system runs its rolls at, where the
+     * literature states one. A system whose rolls each carry a tempo
+     * of their own, as the Licensee's do, states none.
+     */
+    readonly paperSpeed?: SpeedMeasure
+
     /** `undefined` for a position the bar does not read. */
     meaningOf(position: Track): TrackMeaning | undefined
 
@@ -92,6 +99,8 @@ export interface TrackerBarSpec {
     notes: { from: number, to: number, lowestPitch: number }
     /** Every position outside the note block, keyed by track. */
     expressions: ReadonlyMap<number, string>
+    /** The speed the system runs its rolls at, where the literature states one. */
+    paperSpeed?: SpeedMeasure
 }
 
 const areasOf = ({ notes, trackCount }: TrackerBarSpec): TrackArea[] => [
@@ -141,7 +150,33 @@ export const describeTrackerBar = (spec: TrackerBarSpec): TrackerBar => {
         areas,
         expressionTypes: [...new Set(spec.expressions.values())],
         rewindTrack: track(rewind),
+        ...(spec.paperSpeed && { paperSpeed: spec.paperSpeed }),
         meaningOf,
         roleOf
+    }
+}
+
+const keyOf = (meaning: TrackMeaning): string =>
+    meaning.type === 'note' ? `note ${meaning.pitch}` : `${meaning.scope} ${meaning.expressionType}`
+
+const positionsOf = (bar: TrackerBar): Track[] =>
+    Array.from({ length: bar.trackCount }, (_, i) => track(i + 1))
+
+/**
+ * Puts a position of one bar onto the position of another that reads
+ * the same thing, or nowhere when the other bar does not read it. This
+ * is how a copy cut for one system takes its place in an edition of
+ * another, as a Licensee re-cut does in an edition of a T-100 roll.
+ */
+export const translationBetween = (from: TrackerBar, to: TrackerBar): (position: Track) => Track | undefined => {
+    const positions = new Map<string, Track>()
+    positionsOf(to).forEach(position => {
+        const meaning = to.meaningOf(position)
+        if (meaning) positions.set(keyOf(meaning), position)
+    })
+
+    return position => {
+        const meaning = from.meaningOf(position)
+        return meaning ? positions.get(keyOf(meaning)) : undefined
     }
 }

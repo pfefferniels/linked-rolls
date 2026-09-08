@@ -64,8 +64,25 @@ export interface Margins<U extends 'px' | 'mm'> {
 }
 
 /**
+ * A paper speed, as a roll's label, its catalogue or its format
+ * states it.
+ * @see crm:E54 Dimension
+ */
+export type PaperSpeed = Measure<'ft/min'> | Measure<'m/min'>
+
+/**
+ * What the scale an alignment found is put down to: the paper of the
+ * copy having stretched or shrunk, or the copy having been cut for
+ * another paper speed than the roll it is aligned with.
+ */
+export type ScaleReading =
+    | { cause: 'paper', condition: ObjectAssumption<PaperStretch> }
+    | { cause: 'speed', speed: ObjectAssumption<PaperSpeed> }
+
+/**
  * Describes the production of a roll copy: the manufacturer,
- * the paper used, and the date.
+ * the paper used, the date, and the system and paper speed the
+ * copy was cut for.
  * @see lrmoo:F32 Item Production Event
  */
 export interface ProductionEvent {
@@ -87,6 +104,24 @@ export interface ProductionEvent {
      * @see dcterms:date
      */
     date?: DateAssignment
+
+    /**
+     * The reproducing system the copy was cut for. Left out, it is
+     * the roll's own; a Licensee re-cut of a T-100 roll names the
+     * Licensee here. A system the type vocabulary knows carries the
+     * IRI of its concept as `id`.
+     * @see crm:P32 used general technique
+     */
+    system?: Concept
+
+    /**
+     * The paper speed the copy was cut for. A copy cut from the same
+     * master for another speed comes out longer or shorter than the
+     * roll it is aligned with by the ratio of the speeds, which is
+     * what the alignment then measures.
+     * @see reo:paperSpeed
+     */
+    speed?: ObjectAssumption<PaperSpeed>
 }
 
 /**
@@ -212,6 +247,14 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
          * Not exported to RDF.
          */
         shift: Shift
+
+        /**
+         * The factor this copy's features were scaled by to align them
+         * with the others. What it is put down to is stated apart: a
+         * paper-stretch condition, or the speed the copy was cut for.
+         * Not exported to RDF.
+         */
+        scale: number
 
         /**
          * Relates this copy's scan to the tracker bar: how the scanning

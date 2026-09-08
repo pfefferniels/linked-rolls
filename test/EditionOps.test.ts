@@ -4,7 +4,7 @@ import { Edition } from '../src/Edition'
 import { EditionView, Path } from '../src/EditionView'
 import { Edit } from '../src/Edit'
 import { AnySymbol, Expression, Note, placementsOf } from '../src/Symbol'
-import { PaperStretch } from '../src/RollCopy'
+import { PaperSpeed, PaperStretch } from '../src/RollCopy'
 import { constraintProblems } from '../src/constraints'
 import { Assumption, assignObject, idOf, idsOf } from '../src/Assumption'
 import {
@@ -13,7 +13,7 @@ import {
     removeVersion, setCertainty, splitEdit, unalignCopy, unpairPerforation, unplacePerforation
 } from '../src/editionOps'
 import { copy, edition, editionOf, expression, hole, note, version } from './editionFixture'
-import { mm, track } from '../src/Quantity'
+import { feetPerMinute, mm, track } from '../src/Quantity'
 
 const viewOf = (edition: Edition) => new EditionView(edition)
 const noteIn = (edition: Edition) => viewOf(edition).get<Note>('note')!
@@ -91,19 +91,34 @@ describe('aligning a copy', () => {
     const shift = { horizontal: mm(2), vertical: track(1) }
     const holeOf = (edition: Edition) => edition.copies[1].features[0]
 
-    it('shifts and then stretches its features, recording both', () => {
-        const next = produce(edition(), alignCopy('second', shift, stretch))
+    const speed = assignObject<PaperSpeed>({ value: feetPerMinute(8), unit: 'ft/min' })
+
+    it('shifts and then scales its features, recording both', () => {
+        const next = produce(edition(), alignCopy('second', shift, 1.5))
         const aligned = next.copies[1]
 
         expect(holeOf(next).horizontal).toEqual({ unit: 'mm', from: 1504.5, to: 1519.5 })
         expect(holeOf(next).vertical.from).toBe(48)
         expect(aligned.ops).toEqual(['shifted', 'stretched'])
         expect(aligned.measurements.shift).toEqual(shift)
-        expect(aligned.conditions).toEqual([stretch])
+        expect(aligned.measurements.scale).toBe(1.5)
+        expect(aligned.conditions).toEqual([])
     })
 
-    it('is undone completely by unaligning', () => {
-        const aligned = produce(edition(), alignCopy('second', shift, stretch))
+    it('puts the scale down to the paper where the reading says so', () => {
+        const next = produce(edition(), alignCopy('second', shift, 1.5, { cause: 'paper', condition: stretch }))
+        expect(next.copies[1].conditions).toEqual([stretch])
+        expect(next.copies[1].production?.speed).toBeUndefined()
+    })
+
+    it('puts the scale down to the speed the copy was cut for where the reading says so', () => {
+        const next = produce(edition(), alignCopy('second', shift, 1.5, { cause: 'speed', speed }))
+        expect(next.copies[1].production?.speed).toEqual(speed)
+        expect(next.copies[1].conditions).toEqual([])
+    })
+
+    it('is undone completely by unaligning, the paper stretch going with it', () => {
+        const aligned = produce(edition(), alignCopy('second', shift, 1.5, { cause: 'paper', condition: stretch }))
         const next = produce(aligned, unalignCopy('second'))
 
         expect(holeOf(next).horizontal.from).toBeCloseTo(1001)
@@ -111,7 +126,16 @@ describe('aligning a copy', () => {
         expect(holeOf(next).vertical.from).toBe(47)
         expect(next.copies[1].ops).toEqual([])
         expect(next.copies[1].measurements.shift).toBeUndefined()
+        expect(next.copies[1].measurements.scale).toBeUndefined()
         expect(next.copies[1].conditions).toEqual([])
+    })
+
+    it('keeps a speed stated when unaligning, being a fact about the copy', () => {
+        const aligned = produce(edition(), alignCopy('second', shift, 1.5, { cause: 'speed', speed }))
+        const next = produce(aligned, unalignCopy('second'))
+
+        expect(next.copies[1].production?.speed).toEqual(speed)
+        expect(next.copies[1].ops).toEqual([])
     })
 
     it('leaves a copy that was never aligned as it is', () => {
