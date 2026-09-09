@@ -127,12 +127,19 @@ const twoIssues = () => {
 }
 
 describe('the paper a version ran on', () => {
+    /**
+     * The factor is arithmetic on the alignment's scale, not a second
+     * measurement of the two papers: `alignFeatures` fits the scale over
+     * the matched note onsets of the same two scans a length ratio would
+     * be taken from. That it comes out near the ratio measured on 225 is
+     * consistency, and says nothing more until someone establishes that
+     * the two rest on different evidence.
+     */
     it('takes a green version back off the shared axis onto its own paper', () => {
         const view = new EditionView(twoIssues())
         const green = view.get<Version>('B')!
 
         expect(view.toOwnPaperOf(green)).toBeCloseTo(1 / 1.29072, 9)
-        expect(view.toOwnPaperOf(green)! * 1000).toBeCloseTo(774.76, 2)
     })
 
     it('says nothing for a version whose copies were never scaled', () => {
