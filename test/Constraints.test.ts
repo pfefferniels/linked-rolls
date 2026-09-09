@@ -20,12 +20,12 @@ const setUp = () => {
     const edition = importJsonLd(JSON.parse(file))
     const view = new EditionView(edition)
     const version = edition.versions[0]
-    const placed = view.snapshot(version.id).filter(s => view.dimensionOf(s) !== undefined)
+    const placed = view.snapshot(version.id).filter(s => view.placeOf(s) !== undefined)
     const [first, second, third] = placed.filter((s): s is Expression => s.type === 'expression')
     const note = placed.find((s): s is Note => s.type === 'note')!
-    const onsetOf = (symbol: Note | Expression) => view.dimensionOf(symbol)!.horizontal.from
+    const onsetOf = (symbol: Note | Expression) => view.placeOf(symbol)!.from
     const lengthOf = (symbol: Note | Expression) => {
-        const { from, to } = view.dimensionOf(symbol)!.horizontal
+        const { from, to } = view.placeOf(symbol)!
         return to - from
     }
     const emulate = () => {

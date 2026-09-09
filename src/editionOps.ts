@@ -600,7 +600,7 @@ export const connectVersions = (
 ): EditionOp => {
     const inherited = view.snapshot(parentId)
     const own = view.snapshot(childId)
-    const collations = collationsOf(own, inherited, symbol => view.dimensionOf(symbol), tolerance)
+    const collations = collationsOf(own, inherited, symbol => view.placeOf(symbol), tolerance)
     const collated = new Set(collations.map(({ symbol }) => symbol.id))
     const matched = new Set(collations.map(({ counterpart }) => counterpart.id))
 
@@ -635,7 +635,7 @@ export const collateSymbols = (
     const collations = collationsOf(
         own,
         view.snapshot(idOf(version.basedOn)),
-        symbol => view.dimensionOf(symbol),
+        symbol => view.placeOf(symbol),
         tolerance ?? collationToleranceOf(version.basedOn))
     const collated = new Set(collations.map(({ symbol }) => symbol.id))
 
@@ -709,8 +709,8 @@ const REPLACEMENT_TOLERANCE = mm(5)
 
 /** Shorten or prolong, where the inserted symbol starts about where the deleted one did. */
 const replacementType = (view: EditionView, inserted: AnySymbol, deleted: AnySymbol): EditType | undefined => {
-    const after = view.dimensionOf(inserted)?.horizontal
-    const before = view.dimensionOf(deleted)?.horizontal
+    const after = view.placeOf(inserted)
+    const before = view.placeOf(deleted)
     if (!after || !before || distance(after.from, before.from) >= REPLACEMENT_TOLERANCE) return undefined
 
     return lengthOf(after) < lengthOf(before) ? 'shorten' : 'prolong'

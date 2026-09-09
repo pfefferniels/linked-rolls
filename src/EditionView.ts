@@ -1,8 +1,9 @@
 import { Edition } from "./Edition";
-import { HorizontalSpan, VerticalSpan, AnyFeature } from "./Feature";
+import { HorizontalSpan, AnyFeature } from "./Feature";
 import { AnySymbol, Expression, Note } from "./Symbol";
 import { deletedBy, insertedBy, Version } from "./Version";
 import { NegotiatedEvent } from "./ReproducingSystem";
+import { TrackerBar } from "./TrackerBar";
 import { idOf, idsOf } from "./Assumption";
 import { mean, Millimeters } from "./Quantity";
 
@@ -160,32 +161,33 @@ export class EditionView {
         return this.get<Version>(idOf(v.basedOn))
     }
 
-    dimensionOf(symbol: AnySymbol): Readonly<{ horizontal: HorizontalSpan, vertical: VerticalSpan }> | undefined {
+    /**
+     * Where along the roll the symbol lies, as its carriers put it, or
+     * nothing for a symbol no copy carries.
+     *
+     * Only the place is measured. Which track the symbol sits on is not
+     * a measurement but a question for a tracker bar, since a note of
+     * one pitch sits on exactly one position of a given bar: ask
+     * `bar.positionOf`. The carriers cannot answer it, because a copy
+     * cut for another system numbers its tracks differently, and one
+     * symbol may be carried by copies of both — averaging a red carrier
+     * on track 47 with a green one on 45 would give 46, a legal
+     * position a semitone away on either bar.
+     */
+    placeOf(symbol: AnySymbol): Readonly<HorizontalSpan> | undefined {
         const carriers = this.getAll<AnyFeature>(idsOf(symbol.carriers))
-        if (carriers.length === 0) {
-            return
-        }
-
-        const farEnds = carriers.flatMap(carrier => carrier.vertical.to === undefined ? [] : [carrier.vertical.to])
+        if (carriers.length === 0) return
 
         return {
-            horizontal: {
-                unit: 'mm',
-                from: mean(carriers.map(carrier => carrier.horizontal.from)),
-                to: mean(carriers.map(carrier => carrier.horizontal.to))
-            },
-            vertical: {
-                unit: 'track',
-                from: mean(carriers.map(carrier => carrier.vertical.from)),
-                ...(farEnds.length > 0 && { to: mean(farEnds) })
-            }
-        };
+            unit: 'mm',
+            from: mean(carriers.map(carrier => carrier.horizontal.from)),
+            to: mean(carriers.map(carrier => carrier.horizontal.to))
+        }
     }
 
     /** Where the symbol begins, as the mean onset of its carriers, or nothing for a symbol without a place. */
     onsetOf(symbol: AnySymbol): Millimeters | undefined {
-        const carriers = this.carriersOf(symbol)
-        return carriers.length > 0 ? mean(carriers.map(carrier => carrier.horizontal.from)) : undefined
+        return this.placeOf(symbol)?.from
     }
 
     /** The symbols by onset, those without a place first; symbols at one place keep their order. */
@@ -258,13 +260,24 @@ export class EditionView {
         return withGen;
     }
 
-    simplifySymbol(symbol: Note | Expression): NegotiatedEvent | null {
-        const dim = this.dimensionOf(symbol)
-        if (!symbol.carriers.length || !dim) return null
+    /**
+     * The symbol as a performance needs it: where it lies, and the
+     * position the performing bar reads it on.
+     *
+     * Nothing where that bar reads nothing of it, which is the case a
+     * transfer between systems leaves behind: a red `ForzandoOn` a
+     * green version still inherits cannot be performed on a green
+     * machine, and an edit has yet to say what took its place.
+     */
+    simplifySymbol(symbol: Note | Expression, bar: TrackerBar): NegotiatedEvent | null {
+        const horizontal = this.placeOf(symbol)
+        const position = bar.positionOf(symbol)
+        if (!horizontal || position === undefined) return null
 
         return {
             ...symbol,
-            ...dim
+            horizontal,
+            vertical: { unit: 'track', from: position }
         }
     }
 }

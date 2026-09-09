@@ -179,7 +179,7 @@ export class Emulation<Options extends object> {
         this.negotiatedEvents =
             view.snapshot(version.id)
                 .filter(isPerforation)
-                .map(symbol => view.simplifySymbol(symbol))
+                .map(symbol => view.simplifySymbol(symbol, this.system.trackerBar))
                 .filter(event => event !== null)
                 .filter(inScope)
 

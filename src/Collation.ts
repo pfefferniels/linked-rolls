@@ -19,7 +19,7 @@ export interface CollationTolerance {
 export const defaultCollationTolerance: CollationTolerance = { toleranceStart: mm(5), toleranceEnd: mm(5) }
 
 /** Where a symbol lies along the roll, as its carriers put it, or nothing for a symbol without a place. */
-export type Locate = (symbol: AnySymbol) => Readonly<{ horizontal: HorizontalSpan }> | undefined
+export type Locate = (symbol: AnySymbol) => Readonly<HorizontalSpan> | undefined
 
 /**
  * What a symbol says, as a key: the pitch of a note, the type and scope
@@ -48,8 +48,8 @@ export const isCollatable = (
 ): boolean => {
     if (kindOf(a) !== kindOf(b)) return false
 
-    const here = locate(a)?.horizontal
-    const there = locate(b)?.horizontal
+    const here = locate(a)
+    const there = locate(b)
     return here !== undefined && there !== undefined && nearby(here, there, tolerance)
 }
 
@@ -60,7 +60,7 @@ type Placed = { symbol: Readonly<AnySymbol>, index: number, horizontal: Horizont
 
 const placed = (symbols: readonly Readonly<AnySymbol>[], locate: Locate): Placed[] =>
     symbols.flatMap((symbol, index) => {
-        const horizontal = locate(symbol)?.horizontal
+        const horizontal = locate(symbol)
         return horizontal ? [{ symbol, index, horizontal }] : []
     })
 
