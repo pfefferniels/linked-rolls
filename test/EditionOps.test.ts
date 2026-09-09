@@ -17,6 +17,7 @@ import { copy, edition, editionOf, expression, hole, note, version } from './edi
 import { feetPerMinute, mm, track } from '../src/Quantity'
 import { systemOf } from '../src/TrackerBar'
 import { welteT98 } from '../src/systems/welteT98/bar'
+import { welteT100 } from '../src/systems/welteT100/bar'
 
 const viewOf = (edition: Edition) => new EditionView(edition)
 const noteIn = (edition: Edition) => viewOf(edition).get<Note>('note')!
@@ -524,5 +525,87 @@ describe('believing an assumption', () => {
         const before = edition()
         expect(produce(before, setCertainty(carrier, 'false'))).toBe(before)
         expect(produce(before, createBelief(['versions', 9]))).toBe(before)
+    })
+})
+
+/**
+ * A red version and a green one of the same recording, their copies on
+ * one place axis. The green code stands on the red's places, which is
+ * what the collation of Welte 225 shows to within a millimetre or two.
+ */
+const twoIssues = () => editionOf(
+    [
+        copy('red', [
+            hole('hole-note', 1000, 1010, 47),
+            hole('hole-cresc-on', 900, 902, 4),
+            hole('hole-cresc-off', 1100, 1102, 3),
+            hole('hole-motor-on', 20, 22, 10)
+        ]),
+        {
+            ...copy('green', [
+                hole('hole-note-green', 1000, 1010, 45),
+                hole('hole-cresc', 900, 1100, 4)
+            ]),
+            production: { system: systemOf(welteT98) }
+        }
+    ],
+    [
+        version('A', [{
+            type: 'edit',
+            id: 'edit-a',
+            insert: [
+                note('note', 60, 'hole-note'),
+                expression('cresc-on', 'SlowCrescendoOn', 'hole-cresc-on'),
+                expression('cresc-off', 'SlowCrescendoOff', 'hole-cresc-off'),
+                expression('motor-on', 'MotorOn', 'hole-motor-on')
+            ]
+        }]),
+        {
+            ...version('B', [{
+                type: 'edit',
+                id: 'edit-b',
+                insert: [
+                    note('note-green', 60, 'hole-note-green'),
+                    expression('cresc-green', 'Crescendo', 'hole-cresc')
+                ]
+            }]),
+            system: systemOf(welteT98)
+        }
+    ]
+)
+
+describe('attaching a version coded for another system', () => {
+    const attached = () => {
+        const before = twoIssues()
+        return produce(before, connectVersions(viewOf(before), 'B', 'A'))
+    }
+
+    it('says in one edit that a held perforation stands for a latched pair', () => {
+        const replacement = editsOf(attached(), 'B')
+            .find(edit => (edit.insert ?? []).some(symbol => symbol.id === 'cresc-green'))!
+
+        expect(replacement.delete).toEqual(['cresc-on', 'cresc-off'])
+        expect(replacement.editType).toBe('replace-with-equivalent')
+    })
+
+    it('collates the notes away, the two scales agreeing on the pitch', () => {
+        const carried = viewOf(attached()).get<Note>('note')!
+        expect(idsOf(carried.carriers)).toEqual(['hole-note', 'hole-note-green'])
+        expect(editsOf(attached(), 'B').flatMap(edit => insertedIds(edit))).not.toContain('note-green')
+    })
+
+    it('leaves a command the green scale has no word for as a plain deletion', () => {
+        const orphaned = editsOf(attached(), 'B')
+            .find(edit => (edit.delete ?? []).includes('motor-on'))!
+
+        expect(orphaned.insert ?? []).toEqual([])
+    })
+
+    it('leaves the edits alone where the two versions share a system', () => {
+        const before = twoIssues()
+        before.versions[1].system = systemOf(welteT100)
+        const edits = editsOf(produce(before, connectVersions(viewOf(before), 'B', 'A')), 'B')
+
+        expect(edits.every(edit => !edit.insert?.length || !edit.delete?.length)).toBe(true)
     })
 })
