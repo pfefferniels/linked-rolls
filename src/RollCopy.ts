@@ -348,6 +348,14 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
 }
 
 /**
+ * Whether the condition is the stretch or shrinkage of the paper. A
+ * scale put down to this belongs to the one exemplar and says nothing
+ * about the speed its system's rolls were cut at.
+ */
+export const isPaperStretch = (condition: RollConditionAssignment): boolean =>
+    condition.conditionType === 'paper-stretch'
+
+/**
  * The bar a copy is read by, which is the one it was cut for. A copy
  * that names no system falls back to the T-100, as every copy was read
  * before the systems were told apart; `reservationsAbout` says so.

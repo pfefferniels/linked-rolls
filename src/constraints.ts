@@ -3,8 +3,8 @@ import { idOf } from "./Assumption"
 import { AnyPerforation, AnySymbol, Expression, PlacementRelation, isPerforation, pairsAmong, placementsOf } from "./Symbol"
 import { keyOf } from "./TrackerBar"
 import { trackerBarOf } from "./systems"
-import { barOf, RollCopy } from "./RollCopy"
-import { AnyFeature, withBorneFeatures } from "./Feature"
+import { barOf } from "./RollCopy"
+import { AnyFeature } from "./Feature"
 import { Version } from "./Version"
 
 export type ConstraintProblem = {
@@ -22,6 +22,7 @@ export type ConstraintProblem = {
         | 'pair-placed-on-both-sides'
         | 'type-not-on-the-bar'
         | 'carrier-on-another-track'
+        | 'copies-disagree-on-the-paper'
 }
 
 const missingReference: Record<PlacementRelation, ConstraintProblem['problem']> = {
@@ -97,13 +98,6 @@ const typesNotOnTheBar = (version: Version, snapshot: readonly AnySymbol[]): Con
         .map(symbol => ({ version: version.id, symbol: symbol.id, problem: 'type-not-on-the-bar' as const }))
 }
 
-/** The copy each feature sits on, a patch and what it bears included. */
-const copiesByFeature = (view: EditionView): Map<string, RollCopy> =>
-    new Map(view.edition.copies.flatMap(copy =>
-        copy.features
-            .flatMap(withBorneFeatures)
-            .map(feature => [feature.id, copy] as const)))
-
 /**
  * Carriers whose track does not say what the symbol they carry says.
  *
@@ -118,11 +112,10 @@ const copiesByFeature = (view: EditionView): Map<string, RollCopy> =>
 const carriersOffTheirMeaning = (
     view: EditionView,
     version: string,
-    perforations: readonly AnyPerforation[],
-    copyOf: ReadonlyMap<string, RollCopy>
+    perforations: readonly AnyPerforation[]
 ): ConstraintProblem[] => {
     const misread = (carrier: AnyFeature, symbol: AnyPerforation): boolean => {
-        const copy = copyOf.get(carrier.id)
+        const copy = view.copyOf(carrier.id)
         if (!copy) return false
 
         const meaning = barOf(copy).meaningOf(carrier.vertical.from)
@@ -135,6 +128,20 @@ const carriersOffTheirMeaning = (
 }
 
 /**
+ * Where the copies of the version's own system disagree about the scale
+ * that put them on the edition's shared axis.
+ *
+ * That scale is what takes a place back to the paper the version's roll
+ * ran on, so a performance needs one number. Copies disagreeing about it
+ * is evidence about the copies, and averaging it away would hide both
+ * the disagreement and the fact that the playback rests on a guess.
+ */
+const paperDisagreed = (view: EditionView, version: Version): ConstraintProblem[] =>
+    view.speedScalesIn(version).length > 1
+        ? [{ version: version.id, symbol: version.id, problem: 'copies-disagree-on-the-paper' as const }]
+        : []
+
+/**
  * Where the edition cannot hold as stated, version by version: a
  * placement or pairing reference absent from the version, a perforation
  * placed relative to itself or in several ways at once, one claimed by
@@ -143,17 +150,15 @@ const carriersOffTheirMeaning = (
  * expression the version's own bar cannot read, and a carrier sitting
  * on a track that does not say what its symbol says.
  */
-export const constraintProblems = (view: EditionView): ConstraintProblem[] => {
-    const copyOf = copiesByFeature(view)
-
-    return view.edition.versions.flatMap(version => {
+export const constraintProblems = (view: EditionView): ConstraintProblem[] =>
+    view.edition.versions.flatMap(version => {
         const snapshot = view.snapshot(version.id)
         const perforations = snapshot.filter(isPerforation)
 
         return [
             ...problemsIn(version.id, perforations),
             ...typesNotOnTheBar(version, snapshot),
-            ...carriersOffTheirMeaning(view, version.id, perforations, copyOf)
+            ...carriersOffTheirMeaning(view, version.id, perforations),
+            ...paperDisagreed(view, version)
         ]
     })
-}

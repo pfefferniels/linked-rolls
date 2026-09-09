@@ -5,6 +5,11 @@ import { mm } from '../src/Quantity'
 import { Expression, Note } from '../src/Symbol'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteT98 } from '../src/systems/welteT98/bar'
+import { systemOf } from '../src/TrackerBar'
+import { Version } from '../src/Version'
+import { constraintProblems } from '../src/constraints'
+import { assignObject } from '../src/Assumption'
+import { PaperStretch } from '../src/RollCopy'
 
 /** B, based on A and listed before it, its derivation stating the tolerance it was collated at. */
 const childFirst = () => {
@@ -84,5 +89,88 @@ describe('where a symbol lies and which track it sits on', () => {
 
         expect(seen.simplifySymbol(forzando, welteT100)?.vertical.from).toBe(95)
         expect(seen.simplifySymbol(forzando, welteT98)).toBeNull()
+    })
+})
+
+/**
+ * The red copy sets the edition's place axis; the green copy of the
+ * same recording was scaled onto it by 1.29072, the figure the
+ * alignment of Welte 225 measured, and its scale is put down to the
+ * speed rather than to the paper.
+ */
+const twoIssues = () => {
+    const edition = editionOf(
+        [
+            { ...copy('red', [hole('hole-red', 1000, 1010, 47)]) },
+            {
+                ...copy('green', [hole('hole-green', 1000, 1010, 45)]),
+                production: { system: systemOf(welteT98) },
+                ops: ['stretched'] as Array<'shifted' | 'stretched'>,
+                measurements: { scale: 1.29072 }
+            }
+        ],
+        [
+            version('A', [{
+                type: 'edit', id: 'edit-a',
+                insert: [note('note', 60, 'hole-red')]
+            }]),
+            {
+                ...version('B', [{
+                    type: 'edit', id: 'edit-b',
+                    insert: [note('note-green', 60, 'hole-green')]
+                }], 'A'),
+                system: systemOf(welteT98)
+            }
+        ]
+    )
+    return edition
+}
+
+describe('the paper a version ran on', () => {
+    it('takes a green version back off the shared axis onto its own paper', () => {
+        const view = new EditionView(twoIssues())
+        const green = view.get<Version>('B')!
+
+        expect(view.toOwnPaperOf(green)).toBeCloseTo(1 / 1.29072, 9)
+        expect(view.toOwnPaperOf(green)! * 1000).toBeCloseTo(774.76, 2)
+    })
+
+    it('says nothing for a version whose copies were never scaled', () => {
+        const view = new EditionView(twoIssues())
+        expect(view.toOwnPaperOf(view.get<Version>('A')!)).toBeUndefined()
+    })
+
+    /**
+     * A stretch belongs to the one exemplar and says nothing about the
+     * speed its system's rolls were cut at, so it must not be read as a
+     * paper factor.
+     */
+    it('leaves out a scale put down to the copy having stretched', () => {
+        const edition = twoIssues()
+        edition.copies[1].conditions = [assignObject<PaperStretch>({
+            type: 'ConditionState', conditionType: 'paper-stretch', factor: 1.29072
+        })]
+
+        const view = new EditionView(edition)
+        expect(view.toOwnPaperOf(view.get<Version>('B')!)).toBeUndefined()
+    })
+
+    it('reports copies of one system that disagree instead of averaging them', () => {
+        const edition = twoIssues()
+        edition.copies.push({
+            ...copy('green-other', [hole('hole-green-other', 1000, 1010, 45)]),
+            production: { system: systemOf(welteT98) },
+            ops: ['stretched'],
+            measurements: { scale: 1.35 }
+        })
+        edition.versions[1].edits.push({
+            type: 'edit', id: 'edit-b2',
+            insert: [note('note-green-other', 62, 'hole-green-other')]
+        })
+
+        const view = new EditionView(edition)
+        expect(view.toOwnPaperOf(view.get<Version>('B')!)).toBeUndefined()
+        expect(constraintProblems(view).map(problem => problem.problem))
+            .toContain('copies-disagree-on-the-paper')
     })
 })

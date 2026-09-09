@@ -1,9 +1,10 @@
 import { Edition } from "./Edition";
-import { HorizontalSpan, AnyFeature } from "./Feature";
+import { HorizontalSpan, AnyFeature, withBorneFeatures } from "./Feature";
 import { AnySymbol, Expression, Note } from "./Symbol";
 import { deletedBy, insertedBy, Version } from "./Version";
 import { NegotiatedEvent } from "./ReproducingSystem";
-import { TrackerBar } from "./TrackerBar";
+import { systemIdOf, TrackerBar } from "./TrackerBar";
+import { isPaperStretch, RollCopy } from "./RollCopy";
 import { idOf, idsOf } from "./Assumption";
 import { mean, Millimeters } from "./Quantity";
 
@@ -60,6 +61,9 @@ export class EditionView {
      * Map from id to paths where it is referenced
      */
     private readonly links: Map<string, Trail[]> = new Map()
+
+    /** Built when a copy is first asked for, the walk not recording it. */
+    private copiesByFeature?: Map<string, RollCopy>
 
     constructor(edition: Edition) {
         this.edition = edition;
@@ -153,6 +157,62 @@ export class EditionView {
 
     carriersOf(symbol: AnySymbol): Readonly<AnyFeature>[] {
         return this.getAll<AnyFeature>(idsOf(symbol.carriers));
+    }
+
+    /** The copy a feature sits on, a patch and everything it bears included. */
+    copyOf(featureId: string): Readonly<RollCopy> | undefined {
+        if (!this.copiesByFeature) {
+            this.copiesByFeature = new Map(this.edition.copies.flatMap(copy =>
+                copy.features
+                    .flatMap(withBorneFeatures)
+                    .map(feature => [feature.id, copy] as const)))
+        }
+        return this.copiesByFeature.get(featureId)
+    }
+
+    /**
+     * How a place on the edition's shared axis relates to the paper of
+     * this version: place × factor = millimetres of its own paper.
+     *
+     * Copies cut for different systems are scaled onto one axis so that
+     * they can be collated at all, which leaves a version of another
+     * system carrying places in the axis copy's millimetres. A
+     * performance needs the paper the roll actually ran on, and the
+     * factor is the inverse of the scale `alignCopy` recorded.
+     *
+     * It is read only from the copies of the version's own system, since
+     * under the shared axis a green version's notes are carried by red
+     * copies too and those say nothing about green paper. A copy whose
+     * scale is put down to its own paper having stretched is left out as
+     * well: that is a fact about the one exemplar, not about the speed
+     * the system's rolls were cut at. Where what remains disagrees,
+     * `constraintProblems` reports it rather than averaging it away.
+     */
+    toOwnPaperOf(version: Readonly<Version>): number | undefined {
+        const scales = this.speedScalesIn(version)
+        return scales.length === 1 ? 1 / scales[0] : undefined
+    }
+
+    /** The scales of the version's own copies that are not their own paper stretch. */
+    speedScalesIn(version: Readonly<Version>): number[] {
+        return [...new Set(this.copiesOwning(version)
+            .filter(copy => !copy.conditions.some(isPaperStretch))
+            .map(copy => copy.measurements.scale)
+            .filter((scale): scale is number => scale !== undefined && scale > 0))]
+    }
+
+    /** The copies of the version's own system that carry any of its symbols. */
+    copiesOwning(version: Readonly<Version>): Readonly<RollCopy>[] {
+        const system = systemIdOf(version.system)
+        const carrying = new Set(this.snapshot(version.id)
+            .flatMap(symbol => idsOf(symbol.carriers))
+            .flatMap(id => {
+                const copy = this.copyOf(id)
+                return copy ? [copy.id] : []
+            }))
+
+        return this.edition.copies.filter(copy =>
+            carrying.has(copy.id) && systemIdOf(copy.production?.system) === system)
     }
 
     predecessorOf(versionId: string): Readonly<Version> | undefined {

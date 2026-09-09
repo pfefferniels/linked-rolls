@@ -6,7 +6,7 @@ import { AnyPerforation, AnySymbol, Expression, PlacementRelation, isPerforation
 import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance } from "./Collation"
 import { Edit, EditType } from "./Edit"
 import { collationToleranceOf, insertedBy, Version } from "./Version"
-import { asSymbols, barOf, GeneralRollCondition, Modification, RollConditionAssignment, RollCopy, ScaleReading, Shift } from "./RollCopy"
+import { asSymbols, barOf, GeneralRollCondition, isPaperStretch, Modification, RollCopy, ScaleReading, Shift } from "./RollCopy"
 import { systemOf, TrackerBar } from "./TrackerBar"
 import { trackerBarOf } from "./systems"
 import { FeatureSource } from "./FeatureSource"
@@ -126,9 +126,6 @@ export const createVersion = (siglum: string, copy: RollCopy): EditionOp =>
             motivations: []
         })
     }
-
-const isPaperStretch = (condition: RollConditionAssignment): boolean =>
-    condition.conditionType === 'paper-stretch'
 
 /** States what the scale is put down to, in place of an earlier reading. */
 const readScale = (copy: Draft<RollCopy>, reading: ScaleReading) => {
