@@ -9,6 +9,10 @@ import { Expression, Note } from '../src/Symbol'
 import { constraintProblems } from '../src/constraints'
 import { flat } from './flat'
 import { mean, Millimeters, mm } from '../src/Quantity'
+import { copy, editionOf, expression, hole, note, version } from './editionFixture'
+import { Version } from '../src/Version'
+import { systemOf } from '../src/TrackerBar'
+import { welteT98 } from '../src/systems/welteT98/bar'
 
 const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')
 
@@ -181,9 +185,36 @@ describe('reporting constraints that cannot hold', () => {
             .filter(problem => problem.version === versionId && problem.symbol === symbolId)
             .map(problem => problem.problem)
 
-    it('finds nothing to report in the edition as it is', () => {
+    it('finds no placement or pairing to report in the edition as it is', () => {
         const { view } = setUp()
-        expect(constraintProblems(view)).toEqual([])
+        const stated = constraintProblems(view)
+            .filter(problem => problem.problem !== 'carrier-on-another-track')
+        expect(stated).toEqual([])
+    })
+
+    /**
+     * A real fault in the 0.1 fixture rather than a contrived one: four
+     * of its symbols name carriers that say something else, a treble
+     * SustainPedalOff on track 94 also claiming note holes on 59 and a
+     * crescendo hole on 4. Nothing checked the tracks of a carrier
+     * before, so it went unnoticed.
+     */
+    it('reports a carrier sitting on a track that does not say what its symbol says', () => {
+        const { view } = setUp()
+        const reported = constraintProblems(view)
+            .filter(problem => problem.problem === 'carrier-on-another-track')
+
+        expect(new Set(reported.map(problem => problem.symbol)).size).toBe(4)
+        reported.forEach(({ symbol }) => {
+            const carried = view.get<Note | Expression>(symbol)!
+            const tracks = view.carriersOf(carried).map(carrier => carrier.vertical.from)
+            expect(new Set(tracks).size).toBeGreaterThan(1)
+        })
+    })
+
+    it('says nothing of carriers that agree across two systems', () => {
+        const { view, note } = setUp()
+        expect(problemsWith(view, view.edition.versions[0].id, note.id)).toEqual([])
     })
 
     it('reports a missing reference and a missing partner', () => {
@@ -238,5 +269,72 @@ describe('reporting constraints that cannot hold', () => {
 
         expect(problemsWith(view, version.id, first.id)).toEqual(['pair-placed-on-both-sides'])
         expect(problemsWith(view, version.id, second.id)).toEqual(['pair-placed-on-both-sides'])
+    })
+})
+
+/**
+ * A green version derived from a red one, as the transfer between the
+ * two systems leaves it: the notes collate away and every red
+ * expression is inherited into a vocabulary that has no word for it.
+ */
+const afterTransfer = () => {
+    const red = version('A', [{
+        type: 'edit',
+        id: 'edit-a',
+        insert: [
+            note('note', 60, 'hole-note'),
+            expression('forzando-on', 'ForzandoOn', 'hole-on'),
+            expression('forzando-off', 'ForzandoOff', 'hole-off')
+        ]
+    }])
+
+    const green: Version = {
+        ...version('B', [], 'A'),
+        system: systemOf(welteT98)
+    }
+
+    return editionOf(
+        [copy('red', [
+            hole('hole-note', 1000, 1010, 47),
+            hole('hole-on', 990, 992, 95),
+            hole('hole-off', 1004, 1006, 96)
+        ])],
+        [red, green]
+    )
+}
+
+describe('reporting a transfer between systems that is unfinished', () => {
+    const typesNotRead = (edition: ReturnType<typeof afterTransfer>, versionId: string) =>
+        constraintProblems(new EditionView(edition))
+            .filter(problem => problem.problem === 'type-not-on-the-bar' && problem.version === versionId)
+            .map(problem => problem.symbol)
+
+    it('reports every inherited expression the green bar cannot read', () => {
+        const edition = afterTransfer()
+        expect(typesNotRead(edition, 'B')).toEqual(['forzando-on', 'forzando-off'])
+    })
+
+    it('says nothing of the same symbols in the red version they belong to', () => {
+        const edition = afterTransfer()
+        expect(typesNotRead(edition, 'A')).toEqual([])
+    })
+
+    it('empties as the edits delete what the green system has no word for', () => {
+        const edition = afterTransfer()
+        edition.versions[1].edits = [{
+            type: 'edit',
+            id: 'edit-b',
+            delete: ['forzando-on', 'forzando-off'],
+            insert: [expression('sforzando', 'SforzandoForte', 'hole-on')]
+        }]
+
+        expect(typesNotRead(edition, 'B')).toEqual([])
+    })
+
+    it('reports nothing where it has no bar for the version\'s system', () => {
+        const edition = afterTransfer()
+        edition.versions[1].system = { id: 'https://example.org/system/duo-art', name: 'Duo-Art', sameAs: [] }
+
+        expect(typesNotRead(edition, 'B')).toEqual([])
     })
 })
