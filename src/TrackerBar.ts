@@ -99,9 +99,13 @@ const SYSTEM_IRI = 'https://w3id.org/reo/type/system/'
 export const systemOf = (bar: TrackerBar): Concept =>
     ({ id: SYSTEM_IRI + bar.id, name: bar.name, sameAs: [] })
 
+/** The identifier of a system the type vocabulary knows, from the IRI naming it. */
+export const systemIdIn = (id: string | undefined): string | undefined =>
+    id?.startsWith(SYSTEM_IRI) ? id.slice(SYSTEM_IRI.length) : undefined
+
 /** The identifier of a system the type vocabulary knows, from its concept. */
 export const systemIdOf = (system: Concept | undefined): string | undefined =>
-    system?.id?.startsWith(SYSTEM_IRI) ? system.id.slice(SYSTEM_IRI.length) : undefined
+    systemIdIn(system?.id)
 
 /**
  * A tracker bar as written down, with its positions as plain numbers

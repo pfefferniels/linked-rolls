@@ -7,6 +7,7 @@ import { assignObject } from '../src/Assumption';
 import { PaperSpeed } from '../src/RollCopy';
 import { systemOf } from '../src/TrackerBar';
 import { welteLicensee } from '../src/systems/welteLicensee/bar';
+import { welteT98 } from '../src/systems/welteT98/bar';
 import { feetPerMinute } from '../src/Quantity';
 
 const edition = () =>
@@ -19,11 +20,38 @@ describe('Export', () => {
         expect(serialized.copies).toHaveLength(3)
     })
 
-    it('adds the context of the roll system', () => {
+    it('leaves the shared context at the top and no system there', () => {
         expect(asJsonLd(edition())['@context']).toEqual([
             'https://w3id.org/reo/context.jsonld',
-            'https://w3id.org/reo/welte-t100/context.jsonld',
             { '@base': edition().base }
+        ])
+    })
+
+    /**
+     * Each system's context defines `expressionType` with its own
+     * vocabulary, so two of them in one array would leave every
+     * expression type in the document reading as whichever came last.
+     */
+    it('gives each version the context of its own system', () => {
+        const exported = asJsonLd(edition())
+        exported.versions.forEach((version: any) =>
+            expect(version['@context']).toEqual('https://w3id.org/reo/welte-t100/context.jsonld'))
+    })
+
+    it('keeps a green version and a red one apart in one edition', () => {
+        const red = edition()
+        const green = {
+            ...red,
+            versions: [
+                red.versions[0],
+                { ...red.versions[1], system: systemOf(welteT98) }
+            ]
+        }
+
+        const contexts = asJsonLd(green).versions.map((version: any) => version['@context'])
+        expect(contexts).toEqual([
+            'https://w3id.org/reo/welte-t100/context.jsonld',
+            'https://w3id.org/reo/welte-green/context.jsonld'
         ])
     })
 

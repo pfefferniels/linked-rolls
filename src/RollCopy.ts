@@ -3,6 +3,7 @@ import { ConditionState } from "./ConditionState";
 import { AnySymbol } from "./Symbol";
 import { TrackerBar } from "./TrackerBar";
 import { welteT100 } from "./systems/welteT100/bar";
+import { trackerBarOf } from "./systems";
 import { TrackCalibration } from "./TrackCalibration";
 import { AnyFeature } from "./Feature";
 import { ActorAssignment, assignReference, DateAssignment, ObjectAssumption } from "./Assumption";
@@ -347,13 +348,24 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
 }
 
 /**
+ * The bar a copy is read by, which is the one it was cut for. A copy
+ * that names no system falls back to the T-100, as every copy was read
+ * before the systems were told apart; `reservationsAbout` says so.
+ */
+export const barOf = (copy: Pick<RollCopy, 'production'>): TrackerBar =>
+    trackerBarOf(copy.production?.system) ?? welteT100
+
+/**
  * Reads the features of a copy as the tracker bar would read them.
  * Holes on a position the bar does not read carry no symbol and are
  * dropped, which is what happens physically as well.
+ *
+ * The bar is named rather than defaulted: a copy is read by its own
+ * bar, and reading a green copy with the red one is a silent semitone.
  */
 export function asSymbols(
     features: AnyFeature[],
-    bar: TrackerBar = welteT100
+    bar: TrackerBar
 ): AnySymbol[] {
     return features
         .filter(feature => feature.type === 'Hole')
@@ -375,7 +387,7 @@ export function asSymbols(
  */
 export function unreadTracks(
     features: AnyFeature[],
-    bar: TrackerBar = welteT100
+    bar: TrackerBar
 ): Map<Track, number> {
     const counts = new Map<Track, number>()
     features

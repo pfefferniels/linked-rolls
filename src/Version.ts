@@ -1,4 +1,5 @@
 import { Edit } from "./Edit";
+import { Concept } from "./Agent";
 import { ReferenceAssumption } from "./Assumption";
 import { CollationTolerance, defaultCollationTolerance } from "./Collation";
 import { AnySymbol } from "./Symbol";
@@ -63,6 +64,17 @@ export interface Version extends WithId, WithType<'Version'> {
      * @see reo:siglum
      */
     siglum: string;
+
+    /**
+     * The reproducing system this version is coded for. One roll was
+     * often issued for several of them, and a version is a reading in
+     * one system's words: its expression types are that system's
+     * vocabulary and its notes sit on that bar's positions. A system
+     * the type vocabulary knows carries the IRI of its concept as
+     * `id`, from which the export takes the system's own context.
+     * @see crm:P2 has type
+     */
+    system: Concept
 
     /**
      * Whether the version served as a master for reproductions

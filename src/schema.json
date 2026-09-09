@@ -1802,15 +1802,10 @@
         "recordingEvent": {
           "$ref": "#/definitions/RecordingEvent",
           "description": "[ontology: lrmoo:R19i was realised through]"
-        },
-        "system": {
-          "$ref": "#/definitions/Concept",
-          "description": "The reproducing system the roll was cut for. A system the type vocabulary knows carries the IRI of its concept as `id`, from which the export takes the system's own context, so that the expression types are read as that system's. [ontology: crm:P2 has type]"
         }
       },
       "required": [
         "catalogueNumber",
-        "system",
         "recordingEvent"
       ],
       "type": "object"
@@ -2107,6 +2102,10 @@
           "description": "A short siglum to identify the version, e.g. \"A\", \"B1\", \"B2_rev\", etc. [ontology: reo:siglum]",
           "type": "string"
         },
+        "system": {
+          "$ref": "#/definitions/Concept",
+          "description": "The reproducing system this version is coded for. One roll was often issued for several of them, and a version is a reading in one system's words: its expression types are that system's vocabulary and its notes sit on that bar's positions. A system the type vocabulary knows carries the IRI of its concept as `id`, from which the export takes the system's own context. [ontology: crm:P2 has type]"
+        },
         "versionType": {
           "$ref": "#/definitions/VersionType",
           "description": "Whether the version served as a master for reproductions or exists on one copy only. [ontology: crm:P2 has type]"
@@ -2127,6 +2126,7 @@
         "@id",
         "motivations",
         "siglum",
+        "system",
         "@type",
         "versionType"
       ],

@@ -21,8 +21,8 @@ const aton = readFileSync(
     'utf8'
 )
 
-const countByExpression = (copy: ReturnType<typeof readFromStanfordAton>) =>
-    asSymbols(copy.features)
+const countByExpression = (copy: ReturnType<typeof readFromStanfordAton>, bar = welteT100) =>
+    asSymbols(copy.features, bar)
         .filter((symbol): symbol is Expression => symbol.type === 'expression')
         .reduce((counts, symbol) => {
             const key = `${symbol.scope} ${symbol.expressionType}`
@@ -44,7 +44,7 @@ describe('reading a Stanford analysis file', () => {
     })
 
     it('leaves no hole on a position the bar cannot read', () => {
-        expect([...unreadTracks(copy.features).keys()]).toEqual([])
+        expect([...unreadTracks(copy.features, welteT100).keys()]).toEqual([])
     })
 
     /**
@@ -97,22 +97,22 @@ describe('reading a Stanford analysis file', () => {
     })
 
     /**
-     * A roll cut for another bar is calibrated on that bar and then
-     * put onto the edition's. Read as a Licensee roll, this T-100 scan
-     * has its rewind chain taken for the Licensee's, two positions
-     * nearer the notes, so the notes and the treble valves still land
-     * where they belong while the bass valves slip by two tracks. That
-     * slip is how a wrongly declared system shows itself.
+     * A roll is calibrated on the bar it was cut for and keeps that
+     * bar's numbering. Read as a Licensee roll, this T-100 scan has its
+     * rewind chain taken for the Licensee's, two positions nearer the
+     * notes, so the notes and the treble valves still mean what they
+     * did while the bass valves slip by two tracks. That slip is how a
+     * wrongly declared system shows itself.
      */
-    it('reads a roll on the bar it was cut for and puts it onto the edition’s', () => {
+    it('reads a roll on the bar it was cut for and keeps its numbering', () => {
         const asLicensee = readFromStanfordAton(aton, { system: welteLicensee })
         expect(asLicensee.production?.system?.id).toEqual('https://w3id.org/reo/type/system/welte-licensee')
         expect(asLicensee.measurements.trackCalibration?.shift).toEqual(-5)
-        expect([...unreadTracks(asLicensee.features).keys()]).toEqual([])
+        expect([...unreadTracks(asLicensee.features, welteLicensee).keys()]).toEqual([])
 
-        expect(pitchesOf(asLicensee)).toEqual(pitchesOf(copy))
+        expect(pitchesOf(asLicensee, welteLicensee)).toEqual(pitchesOf(copy))
 
-        const counts = countByExpression(asLicensee)
+        const counts = countByExpression(asLicensee, welteLicensee)
         expect(counts.get('treble SustainPedalOn')).toEqual(52)
         expect(counts.get('bass SlowCrescendoOn')).toEqual(countByExpression(copy).get('bass ForzandoOn'))
         expect(counts.get('bass MotorOn')).toBeUndefined()

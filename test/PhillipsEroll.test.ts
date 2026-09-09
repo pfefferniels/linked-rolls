@@ -119,21 +119,20 @@ describe('reading one of Phillips’s e-roll files', () => {
     })
 })
 
-describe('reading a Licensee e-roll onto the edition’s bar', () => {
+describe('reading a Licensee e-roll on the Licensee bar', () => {
     /** Sustain on and off, and the lowest note, in Licensee positions. */
     const licensee: Perforation[] = [[91, 100, 130], [92, 300, 330], [9, 500, 600]]
     const copy = readFromPhillipsEroll(eroll(licensee, welteLicensee), {
         system: welteLicensee,
-        bar: welteT100,
         placeAt: elapsed => mm(elapsed * 50)
     })
 
-    it('carries a Licensee position to the T-100 position that means the same', () => {
-        const symbols = asSymbols(copy.features, welteT100)
+    it('keeps the Licensee positions and reads them as that bar does', () => {
+        const symbols = asSymbols(copy.features, welteLicensee)
         expect(symbols.filter(symbol => symbol.type === 'expression').map(s => (s as Expression).expressionType).sort())
             .toEqual(['SustainPedalOff', 'SustainPedalOn'])
         expect(copy.features.map(feature => feature.vertical.from).sort((a, b) => a - b))
-            .toEqual([11, 93, 94])
+            .toEqual([9, 91, 92])
     })
 
     it('needs a placeAt, the Licensee stating no speed of its own', () => {

@@ -2,7 +2,7 @@ import { RollCopy } from "./RollCopy";
 import { Version } from "./Version";
 import { CollationTolerance } from "./Collation";
 import { DateAssignment, ObjectAssumption } from "./Assumption";
-import { Concept, Editor, Person, Place } from "./Agent";
+import { Editor, Person, Place } from "./Agent";
 import { RollTempo } from "./ReproducingSystem";
 
 /**
@@ -101,15 +101,6 @@ export interface Roll {
      * @see dcterms:identifier
      */
     catalogueNumber: string
-
-    /**
-     * The reproducing system the roll was cut for. A system the
-     * type vocabulary knows carries the IRI of its concept as `id`,
-     * from which the export takes the system's own context, so that
-     * the expression types are read as that system's.
-     * @see crm:P2 has type
-     */
-    system: Concept
 
     /**
      * @see lrmoo:R19i was realised through

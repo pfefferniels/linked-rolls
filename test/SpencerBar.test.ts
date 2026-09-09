@@ -55,22 +55,24 @@ describe('reading a Spencer e-roll file', () => {
     })
 
     it('keeps a hole open across the events of other positions', () => {
-        const note = copy.features.find(feature => feature.vertical.from === 47)!
+        const note = copy.features.find(feature => feature.vertical.from === 45)!
         const forzando = copy.features.find(feature => feature.vertical.from === 5)!
         expect(note.horizontal.from).toBeLessThan(forzando.horizontal.from)
         expect(note.horizontal.to).toBeGreaterThan(forzando.horizontal.to)
     })
 
     it('leaves no hole on a position the bar cannot read', () => {
-        expect([...unreadTracks(copy.features).keys()]).toEqual([])
+        expect([...unreadTracks(copy.features, welteLicensee).keys()]).toEqual([])
     })
 
     /**
      * The Licensee bar has no motor tracks, so its note block begins
      * two tracks below the T-100's while the bass controls coincide.
+     * The copy keeps its own numbering and is read by its own bar, so
+     * the meanings come out the same as a T-100 copy's would.
      */
-    it('puts the Licensee positions onto the T-100 bar', () => {
-        const symbols = asSymbols(copy.features)
+    it('reads the Licensee positions on the Licensee bar', () => {
+        const symbols = asSymbols(copy.features, welteLicensee)
         const pitches = symbols.filter((symbol): symbol is Note => symbol.type === 'note').map(symbol => symbol.pitch)
         expect(pitches).toEqual([24, 103, 60])
 
@@ -96,12 +98,12 @@ describe('reading a Spencer e-roll file', () => {
         expect(other.production?.system?.id).toEqual('https://w3id.org/reo/type/system/welte-t100')
     })
 
-    it('leaves out a hole the edition’s bar does not read', () => {
-        const ontoLicensee = readFromSpencerBar(
-            spencerBar([[10, 9], [5, 9], [5, 45], [5, 45]]),
-            { system: welteT100, bar: welteLicensee }
+    it('leaves out a hole on a position its own bar does not read', () => {
+        const beyondTheBar = readFromSpencerBar(
+            spencerBar([[10, 99], [5, 99], [5, 45], [5, 45]]),
+            { system: welteLicensee }
         )
-        expect(ontoLicensee.features.map(feature => feature.vertical.from)).toEqual([43])
+        expect(beyondTheBar.features.map(feature => feature.vertical.from)).toEqual([45])
     })
 
     it('reads distances of more than one byte', () => {

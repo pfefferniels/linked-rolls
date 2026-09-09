@@ -1,8 +1,7 @@
 import { v4 } from "uuid";
 import { Hole } from "../Feature";
 import { PaperSpeed, RollCopy } from "../RollCopy";
-import { systemOf, TrackerBar, translationBetween } from "../TrackerBar";
-import { welteT100 } from "../systems/welteT100/bar";
+import { systemOf, TrackerBar } from "../TrackerBar";
 import { welteLicensee } from "../systems/welteLicensee/bar";
 import { feetPerMinute, inMillimeters, px, track } from "../Quantity";
 
@@ -39,9 +38,6 @@ export interface SpencerBarOptions {
      * the roll it was scanned from. His Welte files are Licensee rolls.
      */
     system?: TrackerBar
-
-    /** The edition's bar, onto which the positions are put. */
-    bar?: TrackerBar
 }
 
 interface BarEvent {
@@ -110,12 +106,13 @@ const holesOf = (events: Iterable<BarEvent>): BarHole[] => {
 }
 
 /**
- * Reads the copy onto the edition's bar. A hole on a position the
- * edition's bar does not read is left out, as the bar would leave it.
+ * Reads the copy on the bar it was cut for, whose numbering it keeps.
+ * A hole on a position that bar does not read is left out, as the bar
+ * would leave it.
  */
 export function readFromSpencerBar(
     buffer: ArrayBuffer,
-    { rowsPerInch = SPENCER_ROWS_PER_INCH, system = welteLicensee, bar = welteT100 }: SpencerBarOptions = {}
+    { rowsPerInch = SPENCER_ROWS_PER_INCH, system = welteLicensee }: SpencerBarOptions = {}
 ): RollCopy {
     const bytes = new Uint8Array(buffer)
     if (byteAt(bytes, TEXT_AT) !== TEXT_TAG) {
@@ -123,12 +120,12 @@ export function readFromSpencerBar(
     }
 
     const placeOf = (row: number) => inMillimeters(px(row), rowsPerInch)
-    const onBar = translationBetween(system, bar)
+
 
     const features = holesOf(eventsIn(bytes, endOfText(bytes, TEXT_AT + 1)))
         .flatMap((hole): Hole[] => {
-            const position = onBar(track(hole.position))
-            if (position === undefined) return []
+            const position = track(hole.position)
+            if (!system.meaningOf(position)) return []
 
             return [{
                 type: 'Hole',

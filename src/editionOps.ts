@@ -6,7 +6,8 @@ import { AnyPerforation, AnySymbol, Expression, PlacementRelation, isPerforation
 import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance } from "./Collation"
 import { Edit, EditType } from "./Edit"
 import { collationToleranceOf, insertedBy, Version } from "./Version"
-import { asSymbols, GeneralRollCondition, Modification, RollConditionAssignment, RollCopy, ScaleReading, Shift } from "./RollCopy"
+import { asSymbols, barOf, GeneralRollCondition, Modification, RollConditionAssignment, RollCopy, ScaleReading, Shift } from "./RollCopy"
+import { systemOf } from "./TrackerBar"
 import { FeatureSource } from "./FeatureSource"
 import { applyShift, applyScale, revertShift, revertScale } from "./alignment"
 import {
@@ -106,17 +107,21 @@ const dropInsertions = (version: Draft<Version>, symbolIds: Ids) => {
 
 /**
  * Puts the copy into the edition with a version of its own, which
- * inserts every symbol the tracker bar reads on the copy.
+ * inserts every symbol the copy's own tracker bar reads on it. The
+ * version is a reading in that system's words, so it is coded for the
+ * system the copy was cut for.
  */
 export const createVersion = (siglum: string, copy: RollCopy): EditionOp =>
     draft => {
+        const bar = barOf(copy)
         draft.copies.push(copy)
         draft.versions.push({
             type: 'Version',
             id: v4(),
             siglum,
+            system: systemOf(bar),
             versionType: 'edition',
-            edits: asSymbols(copy.features).map(insertion),
+            edits: asSymbols(copy.features, bar).map(insertion),
             motivations: []
         })
     }
@@ -681,6 +686,7 @@ export const deriveVersion = (versionId: string, editIds: readonly string[]): Ed
             type: 'Version',
             id: v4(),
             siglum: `${version.siglum}_derived`,
+            system: stateOf<Version>(version).system,
             versionType: 'unicum',
             basedOn: assignReference(versionId),
             edits: moved,

@@ -3,7 +3,7 @@ import { AtonParser } from "./AtonParser";
 import { Hole } from "../Feature";
 import { RollCopy } from "../RollCopy";
 import { TrackCalibration } from "../TrackCalibration";
-import { systemOf, TrackerBar, translationBetween } from "../TrackerBar";
+import { systemOf, TrackerBar } from "../TrackerBar";
 import { welteT100 } from "../systems/welteT100/bar";
 import { inMillimeters, mean, Millimeters, mm, Pixels, pixelsPerInch, px, subtract, Track, track } from "../Quantity";
 
@@ -132,14 +132,10 @@ export interface StanfordAtonOptions {
      */
     trackShift?: Track
 
-    /** The edition's bar, onto which the holes are put. */
-    bar?: TrackerBar
-
     /**
-     * The bar the scanned roll was cut for, where it is not the
-     * edition's. The scan is calibrated on it, and the holes are then
-     * put onto the edition's bar; one on a position that bar does not
-     * read is left out.
+     * The bar the scanned roll was cut for. The scan is calibrated on
+     * it and the holes keep its numbering, since a copy is read by the
+     * bar it was cut for and by no other.
      */
     system?: TrackerBar
 
@@ -178,7 +174,7 @@ const measuredByOf = (rollinfo: Record<string, string>) => {
 
 export function readFromStanfordAton(
     atonString: string,
-    { trackShift, bar = welteT100, system = bar, scan }: StanfordAtonOptions = {}
+    { trackShift, system = welteT100, scan }: StanfordAtonOptions = {}
 ): RollCopy {
     const parser = new AtonParser()
     const json = parser.parse(atonString)
@@ -202,12 +198,12 @@ export function readFromStanfordAton(
     const punchDiameter = punchDiameterOf(holes, dpi)
 
     const chains = chainsAmong([...holes, ...chainedBadHoles(listOf(json.ROLLINFO.BADHOLES?.HOLE), calibration)])
-    const onBar = translationBetween(system, bar)
+
 
     const features = chains
         .flatMap(({ hole, attack, release }): Hole[] => {
-            const position = onBar(track(+hole.TRACKER_HOLE + shift))
-            if (position === undefined) return []
+            const position = track(+hole.TRACKER_HOLE + shift)
+            if (!system.meaningOf(position)) return []
 
             const column = readPx(hole.ORIGIN_COL)
             const columnWidth = readPx(hole.WIDTH_COL)

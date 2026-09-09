@@ -9,6 +9,8 @@ import { importJsonLd } from '../src/importJsonLd'
 import { assignValue } from '../src/Assumption'
 import { mm, px, track } from '../src/Quantity'
 import { copy, editionOf } from './editionFixture'
+import { systemOf } from '../src/TrackerBar'
+import { welteT98 } from '../src/systems/welteT98/bar'
 
 const scanned = (source: FeatureSource): RollCopy => ({
     ...copy('scanned', []),
@@ -76,6 +78,25 @@ describe('reservations about a copy', () => {
             'measurement-undocumented',
             'not-calibrated'
         ])
+    })
+
+    it('reports a copy the edition cannot place in a system', () => {
+        const { production: _named, ...unplaced } = copy('unplaced', [])
+        expect(typesOf(unplaced)).toContain('system-unknown')
+
+        const foreign: RollCopy = {
+            ...copy('foreign', []),
+            production: { system: { id: 'https://example.org/system/duo-art', name: 'Duo-Art', sameAs: [] } }
+        }
+        expect(typesOf(foreign)).toContain('system-unknown')
+    })
+
+    it('says nothing about a copy that names a system it has a bar for', () => {
+        const green: RollCopy = {
+            ...copy('green', []),
+            production: { system: systemOf(welteT98) }
+        }
+        expect(typesOf(green)).not.toContain('system-unknown')
     })
 
     it('goes away once the gap is filled', () => {
