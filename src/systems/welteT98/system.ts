@@ -33,9 +33,8 @@ import {
     Punch,
     WelteT98InstrumentName,
 } from "welte-mignon-emulator/t98";
-import { Expression, ExpressionScope, Note } from "../../Symbol";
+import { Expression, Note } from "../../Symbol";
 import { welteT98, WelteT98ExpressionType } from "./bar";
-import { Hole } from "../../Feature";
 import {
     DynamicsCurve,
     NegotiatedEvent,
@@ -214,21 +213,6 @@ const codeOf = (expressionType: string) =>
 /** Paper the grid runs on past the last hole, so that a final pedal release completes. */
 const RUN_OUT = mm(100)
 
-/**
- * Which stack of valves an expression perforation belongs to. The symbol
- * usually says so, having been read off the tracker bar already; where it does
- * not, the bar is asked again, since sending a perforation to neither side
- * would quietly flatten the dynamics.
- */
-const scopeOf = (
-    event: { scope?: ExpressionScope } & Pick<Hole, 'vertical'>
-): ExpressionScope | undefined => {
-    if (event.scope) return event.scope
-
-    const meaning = welteT98.meaningOf(event.vertical.from)
-    return meaning?.type === 'expression' ? meaning.scope : undefined
-}
-
 const isNote = (event: NegotiatedEvent): event is NegotiatedEvent & Note => event.type === 'note'
 const isExpression = (event: NegotiatedEvent): event is NegotiatedEvent & Expression => event.type === 'expression'
 
@@ -251,9 +235,9 @@ type Reading = {
 
 const readingOf = (event: NegotiatedEvent & Expression): Reading | undefined => {
     const control = codeOf(event.expressionType)
-    const half = scopeOf(event)
-    if (!control || !half) return undefined
+    if (!control) return undefined
 
+    const half = event.scope
     return {
         event,
         punch: { half, control, rowOn: rowOf(event.horizontal.from), rowOff: rowOf(event.horizontal.to) }
