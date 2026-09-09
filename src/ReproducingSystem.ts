@@ -123,6 +123,25 @@ export type RollProperties = {
 
     /** The tempo the edition adjusts the roll to, where it states one. */
     tempo?: RollTempo
+
+    /**
+     * Place on the edition's shared axis × this = millimetres of the version's
+     * own paper. About 0.775 for a green issue of a red recording, 1 for a
+     * version on the axis it was measured on, which is the default.
+     *
+     * Versions of several systems share one place axis, so a green version's
+     * places are in red millimetres and would play about 29 % long if the
+     * spool read them as green paper. The factor is the inverse of the scale
+     * `alignCopy` recorded when it put the copy on the shared axis, taken from
+     * the copies of the version's own system: red copies carry a green
+     * version's notes too and say nothing about green paper.
+     *
+     * It scales **places only**. Punch diameter, the chain gap and the tracker
+     * bore are measured on the version's own paper already, and scaling them
+     * as well would put the aperture model out by the factor with nothing
+     * failing loudly.
+     */
+    toOwnPaper?: number
 }
 
 export type Performance = {

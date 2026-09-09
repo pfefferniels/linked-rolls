@@ -46,7 +46,7 @@ import {
     ReproducingSystem,
     RollProperties
 } from "../../ReproducingSystem";
-import { add, inCentimeters, Millimeters, mm, Seconds, seconds, Track, track } from "../../Quantity";
+import { inCentimeters, Millimeters, mm, Seconds, seconds, Track, track } from "../../Quantity";
 import { partitionPoint } from "../../sorted";
 import { defaultVelocityMap, velocityOf, type VelocityMap } from "../velocity";
 
@@ -216,9 +216,27 @@ const RUN_OUT = mm(100)
 const isNote = (event: NegotiatedEvent): event is NegotiatedEvent & Note => event.type === 'note'
 const isExpression = (event: NegotiatedEvent): event is NegotiatedEvent & Expression => event.type === 'expression'
 
-const rowOf = (place: Millimeters): number => place * ROWS_PER_MM
+/**
+ * Between the edition's shared place axis and this version's own paper. A
+ * green version's places are in the axis the red was measured on, so
+ * `toOwnPaper` is about 0.775 there and 1 on its own axis; see
+ * `RollProperties`.
+ *
+ * Rows are rows of the version's own paper, so the spool is asked in
+ * `paperOfRow` and never in `placeOfRow`: one is the paper that passes the
+ * tracker bar, the other is the coordinate the edition states.
+ */
+type Paper = {
+    readonly rowOf: (place: Millimeters) => number
+    readonly placeOfRow: (row: number) => Millimeters
+    readonly paperOfRow: (row: number) => Millimeters
+}
 
-const placeOfRow = (row: number): Millimeters => mm(row / ROWS_PER_MM)
+const paperOf = (toOwnPaper: number): Paper => ({
+    rowOf: place => place * toOwnPaper * ROWS_PER_MM,
+    placeOfRow: row => mm(row / (toOwnPaper * ROWS_PER_MM)),
+    paperOfRow: row => mm(row / ROWS_PER_MM)
+})
 
 /** When the spool brings a place on the roll to the tracker bar. */
 export const secondsAt = (spool: Spool, place: Millimeters): Seconds =>
@@ -233,14 +251,19 @@ type Reading = {
     readonly punch: Punch
 }
 
-const readingOf = (event: NegotiatedEvent & Expression): Reading | undefined => {
+const readingOf = (paper: Paper) => (event: NegotiatedEvent & Expression): Reading | undefined => {
     const control = codeOf(event.expressionType)
     if (!control) return undefined
 
     const half = event.scope
     return {
         event,
-        punch: { half, control, rowOn: rowOf(event.horizontal.from), rowOff: rowOf(event.horizontal.to) }
+        punch: {
+            half,
+            control,
+            rowOn: paper.rowOf(event.horizontal.from),
+            rowOff: paper.rowOf(event.horizontal.to)
+        }
     }
 }
 
@@ -250,10 +273,10 @@ const clamp = (value: number, low: number, high: number) => Math.min(Math.max(va
  * One sample per row of the scan the constants were fitted on, from the
  * beginning of the roll to a little past the last hole.
  */
-const gridOver = (events: readonly NegotiatedEvent[], spool: Spool): Grid => {
+const gridOver = (events: readonly NegotiatedEvent[], spool: Spool, paper: Paper): Grid => {
     const last = mm(events.reduce((furthest, event) => Math.max(furthest, event.horizontal.to), 0))
-    const length = Math.ceil(rowOf(add(last, RUN_OUT))) + 1
-    const times = new Float64Array(length).map((_, row) => secondsAt(spool, placeOfRow(row)))
+    const length = Math.ceil(paper.rowOf(last) + RUN_OUT * ROWS_PER_MM) + 1
+    const times = new Float64Array(length).map((_, row) => secondsAt(spool, paper.paperOfRow(row)))
     return new Grid(0, times)
 }
 
@@ -302,13 +325,14 @@ const performNotes = (
     events: readonly NegotiatedEvent[],
     grid: Grid,
     nuance: Record<Half, DynamicsCurve>,
-    options: WelteT98Options
+    options: WelteT98Options,
+    paper: Paper
 ): (PerformedNoteOnEvent | PerformedNoteOffEvent)[] =>
     events
         .filter(isNote)
         .flatMap((note): (PerformedNoteOnEvent | PerformedNoteOffEvent)[] => {
             const curve = nuance[halfOf(note, options.division)]
-            const velocity = curve.velocity[grid.indexOfRow(rowOf(note.horizontal.from))]
+            const velocity = curve.velocity[grid.indexOfRow(paper.rowOf(note.horizontal.from))]
             return [
                 { type: 'noteOn', performs: note, pitch: note.pitch, velocity, at: secondsAt(options.spool, note.horizontal.from) },
                 { type: 'noteOff', performs: note, pitch: note.pitch, velocity: 127, at: secondsAt(options.spool, note.horizontal.to) }
@@ -374,16 +398,17 @@ const perform = (
     options: WelteT98Options,
     roll: RollProperties
 ): Performance => {
+    const paper = paperOf(roll.toOwnPaper ?? 1)
     const readings = events
         .filter(isExpression)
-        .map(readingOf)
+        .map(readingOf(paper))
         .filter((reading): reading is Reading => reading !== undefined)
-    const grid = gridOver(events, options.spool)
+    const grid = gridOver(events, options.spool, paper)
     const geometry = geometryInMm(roll.punchDiameter ?? options.punchDiameter, options.trackerBore)
     const gap = options.chainGap * ROWS_PER_MM
     const ports = aperturePorts(grid, readings.map(reading => reading.punch), geometry, gap)
     const samples: Samples = {
-        place: grid.seconds.map((_, row) => placeOfRow(row)),
+        place: grid.seconds.map((_, row) => paper.placeOfRow(row)),
         seconds: grid.seconds
     }
 
@@ -397,7 +422,7 @@ const perform = (
 
     return {
         events: truncated([
-            ...performNotes(events, grid, nuance, options),
+            ...performNotes(events, grid, nuance, options, paper),
             ...performPedal('damper', pedals.damper, grid, readingsOf('sustainPedal'), options.pedalMode),
             ...performPedal('hammerRail', pedals.hammerRail, grid, readingsOf('hammerRail'), options.pedalMode)
         ], until),
