@@ -96,11 +96,13 @@ describe('the time axis', () => {
         expect(paperAt(WELTE_T98_SPOOL, secondsAt(WELTE_T98_SPOOL, mm(120)))).toBeCloseTo(12, 9)
     })
 
-    it('starts near the Deutsches Museum figure of 220 cm/min', () => {
-        // No source states a T-98 spool geometry; the revolution is set to make
-        // the initial paper speed this and it is better varied than trusted.
+    it('runs slower than the Deutsches Museum figure, as Welte\'s own scale roll has it', () => {
+        // The museum gives 220 cm/min. The six tempo cross-lines of the
+        // Monteurscala put it at 206, six per cent slower, and the constants are
+        // fitted to those (welte-mignon-emulator, core/spool.ts).
         const perSecond = 10 / secondsAt(WELTE_T98_SPOOL, mm(100))
-        expect(perSecond * 60).toBeCloseTo(220, 0)
+        expect(perSecond * 60).toBeCloseTo(206.5, 0)
+        expect(perSecond * 60).toBeLessThan(220)
     })
 })
 
