@@ -1,6 +1,6 @@
 import { Edit } from "./Edit";
 import { Concept } from "./Agent";
-import { ReferenceAssumption } from "./Assumption";
+import { ActorAssignment, DateAssignment, ReferenceAssumption } from "./Assumption";
 import { CollationTolerance, defaultCollationTolerance } from "./Collation";
 import { AnySymbol } from "./Symbol";
 import { WithId, WithNote, WithType } from "./utils";
@@ -53,6 +53,40 @@ export const collationToleranceOf = (derivation: Readonly<Derivation>): Collatio
     derivation.collationTolerance ?? defaultCollationTolerance
 
 /**
+ * How a version was made, where that is known and worth stating.
+ *
+ * A roll issued for another system was re-punched by an editor of the
+ * publisher's, and that was an editorial act rather than a conversion:
+ * Lawson names Kähle as the man who corrected second masters for the
+ * green system. The rule he worked by is the procedure named here, and
+ * the version's edits carry it out, so the mechanical part of a
+ * transfer is stated once instead of being spelled out per note.
+ * @see lrmoo:F28 Expression Creation
+ */
+export interface VersionCreation {
+    /**
+     * Who carried the act out. An `ObjectAssumption`, so an attribution
+     * can carry the belief it rests on and the reasons for it.
+     * @see crm:P14 carried out by
+     */
+    actor?: ActorAssignment
+
+    /**
+     * When it took place.
+     * @see dcterms:date
+     */
+    date?: DateAssignment
+
+    /**
+     * The rule followed, as a term of the vocabulary: the notes stand
+     * at their pitch, the expression is re-spelled in the other
+     * system's words.
+     * @see crm:P33 used specific technique
+     */
+    procedure?: Concept
+}
+
+/**
  * A version is defined by the sum of edits applied
  * to the version it is based on. For simple identification,
  * a siglum is given to each version.
@@ -88,6 +122,13 @@ export interface Version extends WithId, WithType<'Version'> {
      * @see lrmoo:R76 is derivative of
      */
     basedOn?: Derivation;
+
+    /**
+     * The act that made this version, where it is known: who carried it
+     * out, when, and by what rule.
+     * @see lrmoo:R17i was created by
+     */
+    creation?: VersionCreation;
 
     /**
      * The list of edits that, applied to the base version, produce this version.
