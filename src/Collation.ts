@@ -1,5 +1,6 @@
 import { HorizontalSpan } from "./Feature"
 import { AnySymbol } from "./Symbol"
+import { keyOf } from "./TrackerBar"
 import { distance, Millimeters, mm } from "./Quantity"
 import { partitionPoint } from "./sorted"
 
@@ -22,15 +23,13 @@ export type Locate = (symbol: AnySymbol) => Readonly<{ horizontal: HorizontalSpa
 
 /**
  * What a symbol says, as a key: the pitch of a note, the type and scope
- * of an expression. Symbols collate within one key only.
+ * of an expression. Symbols collate within one key only. This is the
+ * same key the tracker bars are indexed by, so two symbols collate
+ * exactly where two bars would read them as the same thing, which is
+ * what carries a note across a transfer between systems.
  */
-const kindOf = (symbol: AnySymbol): string => {
-    switch (symbol.type) {
-        case 'note': return `note ${symbol.pitch}`
-        case 'expression': return `expression ${symbol.scope} ${symbol.expressionType}`
-        case 'text': return 'text'
-    }
-}
+const kindOf = (symbol: AnySymbol): string =>
+    symbol.type === 'text' ? 'text' : keyOf(symbol)
 
 const nearby = (here: HorizontalSpan, there: HorizontalSpan, tolerance: CollationTolerance): boolean =>
     distance(here.from, there.from) <= tolerance.toleranceStart
