@@ -224,9 +224,9 @@ const nuanceCurves = (
     grid: Grid,
     ports: Ports,
     samples: Samples,
-    options: WelteT100Options
+    options: WelteT100Options,
+    instrument: string
 ): Record<Half, DynamicsCurve> => {
-    const instrument = instrumentNameOf(options.nuance) ?? 'custom'
     const curveOf = (half: Half): DynamicsCurve => {
         const params = options.nuance[half]
         const output = pneumaticModel.run({ grid, half, ports }, params)
@@ -236,7 +236,7 @@ const nuanceCurves = (
             ...samples,
             name: half,
             kind: 'dynamics',
-            instrument: `Welte-Mignon T-100, ${instrument}`,
+            instrument,
             travel,
             velocity: travel.map(value => velocityOf(value, hook, options.velocity))
         }
@@ -304,11 +304,17 @@ const performPedal = (
 }
 
 /**
+ * The mechanism, given a way of naming the instrument on the curves it
+ * produces. The Licensee reads the same commands and is played by the same
+ * valves, so it shares this; what it may not share is the name, since a
+ * Licensee playback runs on constants fitted to Freiburg instruments and the
+ * curve has to say so.
+ *
  * The edition's tempo adjustment is left aside: it is stated as a paper
  * speed, and what the spool holds constant is its rate of revolution, so
  * the two are not the same quantity. The spool in the options sets the speed.
  */
-const perform = (
+export const performAs = (instrumentOf: (nuance: Record<Half, Parameters>) => string) => (
     events: readonly NegotiatedEvent[],
     options: WelteT100Options,
     roll: RollProperties
@@ -325,7 +331,7 @@ const perform = (
         seconds: grid.seconds
     }
 
-    const nuance = nuanceCurves(grid, ports, samples, options)
+    const nuance = nuanceCurves(grid, ports, samples, options, instrumentOf(options.nuance))
     const pedals = pedalCurves(grid, ports, samples, options)
     const readingsOf = (control: Control) => readings.filter(reading => reading.punch.control === control)
 
@@ -351,5 +357,5 @@ export const welteT100System: ReproducingSystem<WelteT100Options> = {
     name: 'Welte-Mignon T100',
     trackerBar: welteT100,
     defaultOptions: defaultWelteT100Options,
-    perform
+    perform: performAs(nuance => `Welte-Mignon T-100, ${instrumentNameOf(nuance) ?? 'custom'}`)
 }
