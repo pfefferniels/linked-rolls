@@ -15,6 +15,8 @@ import {
 } from '../src/editionOps'
 import { copy, edition, editionOf, expression, hole, note, version } from './editionFixture'
 import { feetPerMinute, mm, track } from '../src/Quantity'
+import { systemOf } from '../src/TrackerBar'
+import { welteT98 } from '../src/systems/welteT98/bar'
 
 const viewOf = (edition: Edition) => new EditionView(edition)
 const noteIn = (edition: Edition) => viewOf(edition).get<Note>('note')!
@@ -369,6 +371,42 @@ describe('merging edits', () => {
     it('leaves the edition as it is with nothing to merge', () => {
         const before = withC([])
         expect(produce(before, mergeEdits(viewOf(before), 'C', []))).toBe(before)
+    })
+
+    /**
+     * The green version's edits carry the transfer out. A red pair
+     * giving way to one held green perforation says the same thing in
+     * the other system's words; calling it a corrected error, as the
+     * rules for one system do, would say the editor made a mistake.
+     */
+    it('calls an exchange across two systems a replacement with an equivalent', () => {
+        const green = expression('sforzando', 'SforzandoForte', 'hole-on-2')
+        const edits = [inserting('e1', green), deleting('e2', 'forzando-on', 'forzando-off')]
+
+        const before = withC(edits)
+        before.versions.find(version => version.id === 'C')!.system = systemOf(welteT98)
+        const merged = editsOf(produce(before, mergeEdits(viewOf(before), 'C', edits)), 'C').at(-1)!
+
+        expect(merged.editType).toBe('replace-with-equivalent')
+    })
+
+    it('keeps the rules of one system where the version does not change it', () => {
+        const green = expression('sforzando', 'SforzandoForte', 'hole-on-2')
+        const edits = [inserting('e1', green), deleting('e2', 'forzando-on', 'forzando-off')]
+
+        expect(mergedIn(edits).at(-1)!.editType).toBe('correct-error')
+    })
+
+    it('offers each bar only the accents it can spell', () => {
+        const held = expression('held', 'Crescendo', 'hole-on-2')
+        const edits = [inserting('e1', held)]
+
+        const before = withC(edits)
+        before.versions.find(version => version.id === 'C')!.system = systemOf(welteT98)
+        const onGreen = editsOf(produce(before, mergeEdits(viewOf(before), 'C', edits)), 'C').at(-1)!
+        expect(onGreen.editType).toBe('additional-accent')
+
+        expect(mergedIn(edits).at(-1)!.editType).toBe('correct-error')
     })
 })
 

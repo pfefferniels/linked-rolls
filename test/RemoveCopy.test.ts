@@ -24,7 +24,7 @@ describe('removing a copy', () => {
         expect(next.copies.map(copy => copy.id)).toEqual(['second'])
         expect(next.versions[0].edits[0].insert?.map(symbol => symbol.id)).toEqual(['note', 'label'])
         expect(idsOf(noteIn(next).carriers)).toEqual(['hole-note-second'])
-        expect(view.dimensionOf(noteIn(next))?.horizontal.from).toBe(1001)
+        expect(view.placeOf(noteIn(next))?.from).toBe(1001)
     })
 
     it('leaves no reference to a dropped symbol behind', () => {

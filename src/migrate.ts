@@ -1,7 +1,9 @@
 import { conditions } from "./Feature";
 import { rollConditions } from "./RollCopy";
-import { systemOf } from "./TrackerBar";
+import { systemIdIn, systemOf, TrackerBar, translationBetween } from "./TrackerBar";
+import { trackerBars } from "./systems";
 import { welteT100 } from "./systems/welteT100/bar";
+import { Track } from "./Quantity";
 import { versionTypes } from "./Version";
 
 /**
@@ -117,19 +119,107 @@ const walk = (value: Json): Json => {
     return value
 }
 
+/** The production of a copy, under whichever of its two names it carries. */
+const productionKeyOf = (copy: Json): 'production' | 'productionEvent' =>
+    copy?.productionEvent && !copy?.production ? 'productionEvent' : 'production'
+
+/** The list under the key, or nothing where the document holds something else there. */
+const listAt = (edition: Json, key: string): Json[] | undefined =>
+    Array.isArray(edition[key]) ? edition[key] : undefined
+
+/** A file written while the system belonged to the roll rather than to each version. */
+const namesSystemOnTheRoll = (edition: Json): boolean =>
+    edition.roll?.system !== undefined
+    || (listAt(edition, 'versions') ?? []).some((version: Json) => !version?.system)
+
+const barNamed = (system: Json): TrackerBar | undefined =>
+    trackerBars.find(bar => bar.id === systemIdIn(system?.['@id']))
+
+const withSystem = (node: Json, system: Json): Json =>
+    node.system && typeof node.system === 'object' ? node : { ...node, system }
+
+/** A span on the other bar, or nothing where that bar does not read one of its ends. */
+const spanOnBar = (span: Json, at: (position: Track) => Track | undefined): Json | undefined => {
+    const from = at(span.from)
+    if (from === undefined) return undefined
+    if (span.to === undefined) return { ...span, from }
+
+    const to = at(span.to)
+    return to === undefined ? undefined : { ...span, from, to }
+}
+
+/** The features on the copy's own bar, those it does not read left out, patches and all. */
+const featuresOnBar = (features: Json[], at: (position: Track) => Track | undefined): Json[] =>
+    features.flatMap((feature: Json) => {
+        const vertical = feature.vertical?.unit === 'track'
+            ? spanOnBar(feature.vertical, at)
+            : feature.vertical
+        if (!vertical) return []
+
+        return [{
+            ...feature,
+            vertical,
+            ...(Array.isArray(feature.features) && { features: featuresOnBar(feature.features, at) })
+        }]
+    })
+
 /**
- * Every 0.1 edition was read with the T-100 tracker bar, so a roll
- * without a system is a T-100 roll. The text a copy's production
- * gave for the system is kept as the name.
+ * A copy cut for another system had its holes put onto the roll's bar
+ * as it was read, so they are numbered in the roll's system and not in
+ * its own. They go back onto the bar the copy names, which is the only
+ * numbering that means anything once each copy is read by its own bar.
+ * Between two Welte scales the difference is two tracks, which is a
+ * legal position a whole tone away rather than a visible error.
  */
-const withRollSystem = (edition: Json): Json => {
-    if (!edition.roll || edition.roll.system) return edition
-    const stated = (edition.copies ?? [])
-        .map((copy: Json) => copy.production?.system ?? copy.productionEvent?.system)
+const onOwnBar = (copy: Json, rollSystem: Json): Json => {
+    if (!copy || typeof copy !== 'object') return copy
+    const key = productionKeyOf(copy)
+    const own = copy[key]?.system
+    const from = barNamed(rollSystem)
+    const to = own && typeof own === 'object' ? barNamed(own) : undefined
+    if (!from || !to || from.id === to.id || !Array.isArray(copy.features)) return copy
+
+    return { ...copy, features: featuresOnBar(copy.features, translationBetween(from, to)) }
+}
+
+/**
+ * Systems belonged to the roll before they belonged to the versions
+ * and the copies. Every 0.1 edition was read with the T-100 bar, so a
+ * roll that named no system was a T-100 roll, and the text a copy's
+ * production gave for it is kept as the system's name.
+ */
+const withSystems = (edition: Json): Json => {
+    if (!edition.roll || !namesSystemOnTheRoll(edition)) return edition
+
+    const versions = listAt(edition, 'versions')
+    const copies = listAt(edition, 'copies')
+
+    const stated = (copies ?? [])
+        .map((copy: Json) => copy?.[productionKeyOf(copy)]?.system)
         .find((system: unknown) => typeof system === 'string' && system !== '')
     const { id, ...concept } = systemOf(welteT100)
-    const system = { '@id': id, ...concept, ...(stated && { name: stated }) }
-    return { ...edition, roll: { ...edition.roll, system } }
+    const system = edition.roll.system ?? { '@id': id, ...concept, ...(stated && { name: stated }) }
+
+    const { system: _named, ...roll } = edition.roll
+    const created = roll.recordingEvent?.created
+
+    return {
+        ...edition,
+        roll: created
+            ? { ...roll, recordingEvent: { ...roll.recordingEvent, created: withSystem(created, system) } }
+            : roll,
+        ...(versions && {
+            versions: versions.map((version: Json) => withSystem(version, system))
+        }),
+        ...(copies && {
+            copies: copies.map((copy: Json) => {
+                if (!copy || typeof copy !== 'object') return copy
+                const key = productionKeyOf(copy)
+                const onOwn = onOwnBar(copy, system)
+                return { ...onOwn, [key]: withSystem(onOwn[key] ?? {}, system) }
+            })
+        })
+    }
 }
 
 /** An edition written before the editors were carried names none. */
@@ -160,7 +250,7 @@ const withDerivationTolerance = (edition: Json): Json => {
     }
 }
 
-const editionSteps = [withRollSystem, withEditors, withDerivationTolerance]
+const editionSteps = [withSystems, withEditors, withDerivationTolerance]
 
 export const migrate = (edition: Json): Json =>
     walk(editionSteps.reduce((result, step) => step(result), edition))

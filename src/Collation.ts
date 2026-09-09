@@ -1,5 +1,6 @@
 import { HorizontalSpan } from "./Feature"
 import { AnySymbol } from "./Symbol"
+import { keyOf } from "./TrackerBar"
 import { distance, Millimeters, mm } from "./Quantity"
 import { partitionPoint } from "./sorted"
 
@@ -18,19 +19,17 @@ export interface CollationTolerance {
 export const defaultCollationTolerance: CollationTolerance = { toleranceStart: mm(5), toleranceEnd: mm(5) }
 
 /** Where a symbol lies along the roll, as its carriers put it, or nothing for a symbol without a place. */
-export type Locate = (symbol: AnySymbol) => Readonly<{ horizontal: HorizontalSpan }> | undefined
+export type Locate = (symbol: AnySymbol) => Readonly<HorizontalSpan> | undefined
 
 /**
  * What a symbol says, as a key: the pitch of a note, the type and scope
- * of an expression. Symbols collate within one key only.
+ * of an expression. Symbols collate within one key only. This is the
+ * same key the tracker bars are indexed by, so two symbols collate
+ * exactly where two bars would read them as the same thing, which is
+ * what carries a note across a transfer between systems.
  */
-const kindOf = (symbol: AnySymbol): string => {
-    switch (symbol.type) {
-        case 'note': return `note ${symbol.pitch}`
-        case 'expression': return `expression ${symbol.scope} ${symbol.expressionType}`
-        case 'text': return 'text'
-    }
-}
+const kindOf = (symbol: AnySymbol): string =>
+    symbol.type === 'text' ? 'text' : keyOf(symbol)
 
 const nearby = (here: HorizontalSpan, there: HorizontalSpan, tolerance: CollationTolerance): boolean =>
     distance(here.from, there.from) <= tolerance.toleranceStart
@@ -49,8 +48,8 @@ export const isCollatable = (
 ): boolean => {
     if (kindOf(a) !== kindOf(b)) return false
 
-    const here = locate(a)?.horizontal
-    const there = locate(b)?.horizontal
+    const here = locate(a)
+    const there = locate(b)
     return here !== undefined && there !== undefined && nearby(here, there, tolerance)
 }
 
@@ -61,7 +60,7 @@ type Placed = { symbol: Readonly<AnySymbol>, index: number, horizontal: Horizont
 
 const placed = (symbols: readonly Readonly<AnySymbol>[], locate: Locate): Placed[] =>
     symbols.flatMap((symbol, index) => {
-        const horizontal = locate(symbol)?.horizontal
+        const horizontal = locate(symbol)
         return horizontal ? [{ symbol, index, horizontal }] : []
     })
 

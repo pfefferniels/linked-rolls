@@ -5,6 +5,8 @@ import { Expression, Note, Text } from '../src/Symbol'
 import { Version } from '../src/Version'
 import { assignReference, assignValue } from '../src/Assumption'
 import { mm, track } from '../src/Quantity'
+import { systemOf } from '../src/TrackerBar'
+import { welteT100 } from '../src/systems/welteT100/bar'
 
 export const hole = (id: string, from: number, to: number, position: number): Hole => ({
     type: 'Hole',
@@ -21,6 +23,7 @@ export const copy = (id: string, features: AnyFeature[]): RollCopy => ({
     conditions: [],
     modifications: [],
     keeper: { name: id, sameAs: [] },
+    production: { system: systemOf(welteT100) },
     features
 })
 
@@ -45,6 +48,7 @@ export const version = (id: string, edits: Version['edits'], basedOn?: string): 
     type: 'Version',
     id,
     siglum: id,
+    system: systemOf(welteT100),
     versionType: 'edition',
     edits,
     motivations: [],
@@ -60,7 +64,6 @@ export const editionOf = (copies: RollCopy[], versions: Version[]): Edition => (
     creation: { publisher: nobody, publicationDate: new Date() },
     roll: {
         catalogueNumber: '',
-        system: nobody,
         recordingEvent: { recorded: { pianist: nobody, playing: '' }, place: nobody, date: assignValue(new Date()) }
     },
     copies,

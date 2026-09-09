@@ -6,7 +6,9 @@ import { AnyPerforation, AnySymbol, Expression, PlacementRelation, isPerforation
 import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance } from "./Collation"
 import { Edit, EditType } from "./Edit"
 import { collationToleranceOf, insertedBy, Version } from "./Version"
-import { asSymbols, GeneralRollCondition, Modification, RollConditionAssignment, RollCopy, ScaleReading, Shift } from "./RollCopy"
+import { asSymbols, barOf, GeneralRollCondition, isPaperStretch, Modification, RollCopy, ScaleReading, Shift } from "./RollCopy"
+import { systemOf, TrackerBar } from "./TrackerBar"
+import { trackerBarOf } from "./systems"
 import { FeatureSource } from "./FeatureSource"
 import { applyShift, applyScale, revertShift, revertScale } from "./alignment"
 import {
@@ -106,23 +108,24 @@ const dropInsertions = (version: Draft<Version>, symbolIds: Ids) => {
 
 /**
  * Puts the copy into the edition with a version of its own, which
- * inserts every symbol the tracker bar reads on the copy.
+ * inserts every symbol the copy's own tracker bar reads on it. The
+ * version is a reading in that system's words, so it is coded for the
+ * system the copy was cut for.
  */
 export const createVersion = (siglum: string, copy: RollCopy): EditionOp =>
     draft => {
+        const bar = barOf(copy)
         draft.copies.push(copy)
         draft.versions.push({
             type: 'Version',
             id: v4(),
             siglum,
+            system: systemOf(bar),
             versionType: 'edition',
-            edits: asSymbols(copy.features).map(insertion),
+            edits: asSymbols(copy.features, bar).map(insertion),
             motivations: []
         })
     }
-
-const isPaperStretch = (condition: RollConditionAssignment): boolean =>
-    condition.conditionType === 'paper-stretch'
 
 /** States what the scale is put down to, in place of an earlier reading. */
 const readScale = (copy: Draft<RollCopy>, reading: ScaleReading) => {
@@ -595,7 +598,7 @@ export const connectVersions = (
 ): EditionOp => {
     const inherited = view.snapshot(parentId)
     const own = view.snapshot(childId)
-    const collations = collationsOf(own, inherited, symbol => view.dimensionOf(symbol), tolerance)
+    const collations = collationsOf(own, inherited, symbol => view.placeOf(symbol), tolerance)
     const collated = new Set(collations.map(({ symbol }) => symbol.id))
     const matched = new Set(collations.map(({ counterpart }) => counterpart.id))
 
@@ -630,7 +633,7 @@ export const collateSymbols = (
     const collations = collationsOf(
         own,
         view.snapshot(idOf(version.basedOn)),
-        symbol => view.dimensionOf(symbol),
+        symbol => view.placeOf(symbol),
         tolerance ?? collationToleranceOf(version.basedOn))
     const collated = new Set(collations.map(({ symbol }) => symbol.id))
 
@@ -681,6 +684,7 @@ export const deriveVersion = (versionId: string, editIds: readonly string[]): Ed
             type: 'Version',
             id: v4(),
             siglum: `${version.siglum}_derived`,
+            system: stateOf<Version>(version).system,
             versionType: 'unicum',
             basedOn: assignReference(versionId),
             edits: moved,
@@ -694,7 +698,21 @@ const sameSequence = (a: readonly string[], b: readonly string[]) =>
 const expressionTypesOf = (symbols: readonly AnySymbol[]) =>
     symbols.filter((symbol): symbol is Expression => symbol.type === 'expression').map(symbol => symbol.expressionType)
 
-const accents = [['SlowCrescendoOn', 'SlowCrescendoOff'], ['ForzandoOn', 'ForzandoOff']]
+/**
+ * How a single added accent is spelled. The red Welte latches a valve
+ * on and off again, the green holds one perforation for as long as the
+ * accent lasts, so the spelling is the system's and not the music's.
+ * Which of them a bar can spell decides which ones it is offered.
+ */
+const ACCENTS = [
+    ['SlowCrescendoOn', 'SlowCrescendoOff'],
+    ['ForzandoOn', 'ForzandoOff'],
+    ['Crescendo'],
+    ['SforzandoForte']
+]
+
+const accentsOn = (bar: TrackerBar | undefined): string[][] =>
+    bar ? ACCENTS.filter(accent => accent.every(type => bar.expressionTypes.includes(type))) : []
 
 const lengthOf = (span: HorizontalSpan): Millimeters => subtract(span.to, span.from)
 
@@ -703,21 +721,39 @@ const REPLACEMENT_TOLERANCE = mm(5)
 
 /** Shorten or prolong, where the inserted symbol starts about where the deleted one did. */
 const replacementType = (view: EditionView, inserted: AnySymbol, deleted: AnySymbol): EditType | undefined => {
-    const after = view.dimensionOf(inserted)?.horizontal
-    const before = view.dimensionOf(deleted)?.horizontal
+    const after = view.placeOf(inserted)
+    const before = view.placeOf(deleted)
     if (!after || !before || distance(after.from, before.from) >= REPLACEMENT_TOLERANCE) return undefined
 
     return lengthOf(after) < lengthOf(before) ? 'shorten' : 'prolong'
 }
 
-/** A guess at what an edit does, from the symbols it exchanges. */
-const guessEditType = (view: EditionView, edit: Edit): EditType => {
+/**
+ * A guess at what an edit does, from the symbols it exchanges and from
+ * the systems the version and the one it is based on are coded for.
+ */
+const guessEditType = (view: EditionView, versionId: string, edit: Edit): EditType => {
     const inserts = edit.insert ?? []
     const deletes = view.getAll<AnySymbol>(edit.delete ?? [])
     const inserted = expressionTypesOf(inserts)
     const deleted = expressionTypesOf(deletes)
 
-    if (deleted.length === 0 && accents.some(accent => sameSequence(inserted, accent))) return 'additional-accent'
+    const bar = trackerBarOf(view.get<Version>(versionId)?.system)
+    const parentBar = trackerBarOf(view.predecessorOf(versionId)?.system)
+
+    /**
+     * Where the version is coded for another system than its parent, an
+     * exchange of expression matter is the transfer being carried out:
+     * a red ForzandoOn and ForzandoOff pair giving way to one held green
+     * SforzandoForte says the same thing in the other system's words,
+     * which is what 'replace-with-equivalent' is for. Calling it a
+     * corrected error would say the editor made a mistake.
+     */
+    if (bar && parentBar && bar.id !== parentBar.id && inserted.length > 0 && deleted.length > 0) {
+        return 'replace-with-equivalent'
+    }
+
+    if (deleted.length === 0 && accentsOn(bar).some(accent => sameSequence(inserted, accent))) return 'additional-accent'
     if (inserted.length > 1 && sameSequence(inserted, deleted)) return 'shift'
     if (inserted.length === 0 && deleted.length === 1) return 'remove-redundancy'
     if (inserts.length === 1 && deletes.length === 1) return replacementType(view, inserts[0], deletes[0]) ?? 'correct-error'
@@ -738,7 +774,7 @@ export const mergeEdits = (view: EditionView, versionId: string, toMerge: readon
         insert: toMerge.flatMap(edit => edit.insert ?? []),
         delete: toMerge.flatMap(edit => edit.delete ?? [])
     }
-    merged.editType = guessEditType(view, merged)
+    merged.editType = guessEditType(view, versionId, merged)
     const mergedIds = new Set(toMerge.map(edit => edit.id))
 
     return onVersion(versionId, version => {

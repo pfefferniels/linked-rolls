@@ -1802,15 +1802,10 @@
         "recordingEvent": {
           "$ref": "#/definitions/RecordingEvent",
           "description": "[ontology: lrmoo:R19i was realised through]"
-        },
-        "system": {
-          "$ref": "#/definitions/Concept",
-          "description": "The reproducing system the roll was cut for. A system the type vocabulary knows carries the IRI of its concept as `id`, from which the export takes the system's own context, so that the expression types are read as that system's. [ontology: crm:P2 has type]"
         }
       },
       "required": [
         "catalogueNumber",
-        "system",
         "recordingEvent"
       ],
       "type": "object"
@@ -2089,6 +2084,10 @@
           "$ref": "#/definitions/Derivation",
           "description": "If no derivation is defined, it is assumed that this version represents the mother roll. [ontology: lrmoo:R76 is derivative of]"
         },
+        "creation": {
+          "$ref": "#/definitions/VersionCreation",
+          "description": "The act that made this version, where it is known: who carried it out, when, and by what rule. [ontology: lrmoo:R17i was created by]"
+        },
         "edits": {
           "description": "The list of edits that, applied to the base version, produce this version. [ontology: reo:involvedEdit]",
           "items": {
@@ -2106,6 +2105,10 @@
         "siglum": {
           "description": "A short siglum to identify the version, e.g. \"A\", \"B1\", \"B2_rev\", etc. [ontology: reo:siglum]",
           "type": "string"
+        },
+        "system": {
+          "$ref": "#/definitions/Concept",
+          "description": "The reproducing system this version is coded for. One roll was often issued for several of them, and a version is a reading in one system's words: its expression types are that system's vocabulary and its notes sit on that bar's positions. A system the type vocabulary knows carries the IRI of its concept as `id`, from which the export takes the system's own context. [ontology: crm:P2 has type]"
         },
         "versionType": {
           "$ref": "#/definitions/VersionType",
@@ -2127,9 +2130,28 @@
         "@id",
         "motivations",
         "siglum",
+        "system",
         "@type",
         "versionType"
       ],
+      "type": "object"
+    },
+    "VersionCreation": {
+      "description": "How a version was made, where that is known and worth stating.\n\nA roll issued for another system was re-punched by an editor of the publisher's, and that was an editorial act rather than a conversion: Lawson names Kähle as the man who corrected second masters for the green system. The rule he worked by is the procedure named here, and the version's edits carry it out, so the mechanical part of a transfer is stated once instead of being spelled out per note. [ontology: lrmoo:F28 Expression Creation]",
+      "properties": {
+        "actor": {
+          "$ref": "#/definitions/ActorAssignment",
+          "description": "Who carried the act out. An `ObjectAssumption`, so an attribution can carry the belief it rests on and the reasons for it. [ontology: crm:P14 carried out by]"
+        },
+        "date": {
+          "$ref": "#/definitions/DateAssignment",
+          "description": "When it took place. [ontology: dcterms:date]"
+        },
+        "procedure": {
+          "$ref": "#/definitions/Concept",
+          "description": "The rule followed, as a term of the vocabulary: the notes stand at their pitch, the expression is re-spelled in the other system's words. [ontology: crm:P33 used specific technique]"
+        }
+      },
       "type": "object"
     },
     "VersionType": {

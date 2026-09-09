@@ -60,7 +60,9 @@ describe('migrating a 0.1 edition', () => {
         migrated.copies.forEach((copy: any) => {
             expect(copy).not.toHaveProperty('location')
             expect(copy.keeper).toEqual({ name: expect.any(String), sameAs: [] })
-            expect(copy.production).not.toHaveProperty('system')
+            expect(copy.production.system).toMatchObject({
+                '@id': 'https://w3id.org/reo/type/system/welte-t100'
+            })
         })
         const [stated, ...unstated] = migrated.copies.map((copy: any) => copy.production)
         expect(stated.company).toEqual({ name: 'M. Welte & Söhne', sameAs: [] })
@@ -71,11 +73,51 @@ describe('migrating a 0.1 edition', () => {
         })
     })
 
-    it('names the T-100 as the system of the roll', () => {
-        expect(migrate(edition01()).roll.system).toMatchObject({
-            '@id': 'https://w3id.org/reo/type/system/welte-t100',
-            sameAs: []
+    it('moves the system off the roll and onto every version and copy', () => {
+        const migrated = migrate(edition01())
+        expect(migrated.roll).not.toHaveProperty('system')
+
+        const t100 = { '@id': 'https://w3id.org/reo/type/system/welte-t100', sameAs: [] }
+        migrated.versions.forEach((version: any) => expect(version.system).toMatchObject(t100))
+        migrated.copies.forEach((copy: any) => expect(copy.production.system).toMatchObject(t100))
+    })
+
+    /**
+     * A copy cut for another system had its holes put onto the roll's
+     * bar as it was read, so they go back onto its own. Between the
+     * Licensee and the T-100 that is two tracks in the note block.
+     */
+    it('puts a copy cut for another system back onto its own bar', () => {
+        const migrated = migrate({
+            roll: {
+                system: { '@id': 'https://w3id.org/reo/type/system/welte-t100', name: '', sameAs: [] }
+            },
+            versions: [],
+            copies: [{
+                production: {
+                    system: { '@id': 'https://w3id.org/reo/type/system/welte-licensee', name: '', sameAs: [] }
+                },
+                features: [
+                    { '@type': 'Hole', vertical: { unit: 'track', from: 47 } },
+                    { '@type': 'Hole', vertical: { unit: 'track', from: 93 } },
+                    { '@type': 'Hole', vertical: { unit: 'track', from: 9 } }
+                ]
+            }]
         })
+
+        expect(migrated.copies[0].features.map((feature: any) => feature.vertical.from))
+            .toEqual([45, 91])
+    })
+
+    it("leaves the features of a copy of the roll's own system alone", () => {
+        const features = [{ '@type': 'Hole', vertical: { unit: 'track', from: 47 } }]
+        const migrated = migrate({
+            roll: { system: { '@id': 'https://w3id.org/reo/type/system/welte-t100', name: '', sameAs: [] } },
+            versions: [],
+            copies: [{ features }]
+        })
+
+        expect(migrated.copies[0].features.map((feature: any) => feature.vertical.from)).toEqual([47])
     })
 
     it('rewrites references written as values and keys renamed since', () => {
@@ -125,7 +167,7 @@ describe('migrating a 0.1 edition', () => {
     it('imports a 0.1 edition as the current model', () => {
         const imported = importJsonLd(edition01())
         expect(imported.versions[0]).toMatchObject({ type: 'Version', versionType: 'edition' })
-        expect(imported.roll.system.id).toEqual('https://w3id.org/reo/type/system/welte-t100')
+        expect(imported.versions[0].system.id).toEqual('https://w3id.org/reo/type/system/welte-t100')
         expect(imported.copies[0].keeper).toEqual({ name: 'Stanford', sameAs: [] })
     })
 })
@@ -158,5 +200,29 @@ describe('migrating an edition whose collation tolerance was the edition\'s', ()
         const wide = importJsonLd(writtenBefore({ toleranceStart: mm(5), toleranceEnd: mm(5) }))
         const collated = produce(wide, collateSymbols(new EditionView(wide), 'B', ['note-b']))
         expect(carriersOfNote(collated)).toEqual(['hole-note', 'hole-note-second'])
+    })
+})
+
+describe('migrating a document that is not an edition', () => {
+    /**
+     * A document is migrated before it is validated, so a malformed one
+     * reaches these steps and must come out of them rather than throw:
+     * the schema is what turns it down, and it needs the document back
+     * to say why.
+     */
+    it('passes a document whose versions and copies are not lists through', () => {
+        const odd = { roll: { catalogueNumber: 'WM 225' }, versions: 'many', copies: 7 }
+        expect(() => migrate(odd)).not.toThrow()
+        expect(migrate(odd)).toMatchObject({ versions: 'many', copies: 7 })
+    })
+
+    it('leaves a copy that is not an object alone', () => {
+        const odd = {
+            roll: { system: { '@id': 'https://w3id.org/reo/type/system/welte-t100', name: '', sameAs: [] } },
+            versions: [],
+            copies: [null, 'a copy']
+        }
+        expect(() => migrate(odd)).not.toThrow()
+        expect(migrate(odd).copies).toEqual([null, 'a copy'])
     })
 })

@@ -1,5 +1,5 @@
 import { Edition } from "./Edition";
-import { systemIdOf } from "./TrackerBar";
+import { systemIdIn } from "./TrackerBar";
 
 export const exportDate = (date: Date) => {
     const year = date.getFullYear();
@@ -48,22 +48,40 @@ const asJsonLdEntity = (obj: object) => {
 }
 
 /**
- * The context of the roll's reproducing system, which reads the
- * expression types as that system's terms.
+ * Gives every version the context of its own reproducing system, which
+ * reads its expression types as that system's terms.
+ *
+ * It sits on the version rather than on the edition because one edition
+ * may hold versions of several systems, and each system's context
+ * defines `expressionType` with its own `@vocab`. Two of them in one
+ * context array would leave every expression type in the document
+ * reading as whichever came last. An embedded context merges with the
+ * active one, so the shared prefixes survive.
  */
-const systemContextOf = (edition: Edition): string[] => {
-    const system = systemIdOf(edition.roll?.system)
-    return system ? [`https://w3id.org/reo/${system}/context.jsonld`] : []
+const withSystemContexts = (node: any): any => {
+    if (Array.isArray(node)) return node.map(withSystemContexts)
+    if (node === null || typeof node !== 'object') return node
+
+    const walked = Object.fromEntries(
+        Object.entries(node).map(([key, value]) => [key, withSystemContexts(value)])
+    )
+
+    const system = node['@type'] === 'Version'
+        ? systemIdIn(node.system?.['@id'])
+        : undefined
+
+    return system
+        ? { '@context': `https://w3id.org/reo/${system}/context.jsonld`, ...walked }
+        : walked
 }
 
 export const asJsonLd = (edition: Edition) => {
     // The context is the export's own; one carried in from an import must not override it.
-    const { base, copies, '@context': carried, ...rest } = asJsonLdEntity(edition)
+    const { base, copies, '@context': carried, ...rest } = withSystemContexts(asJsonLdEntity(edition))
 
     return {
         '@context': [
             'https://w3id.org/reo/context.jsonld',
-            ...systemContextOf(edition),
             {
                 '@base': edition.base
             }

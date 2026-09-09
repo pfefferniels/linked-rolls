@@ -27,10 +27,12 @@ const fromJsonLdValue = (value: Json): Json => {
 /**
  * An entity with its keywords read as plain keys. The input is left as
  * it is. The `@type` of a value object names the datatype of the value,
- * not a class, and is dropped.
+ * not a class, and is dropped. So is a context: a version carries one
+ * naming its system's vocabulary, and it belongs to the serialisation
+ * rather than to the edition, which states the system as data.
  */
 const fromJsonLdEntity = (json: Record<string, Json>): Record<string, Json> => {
-    const { '@type': type, '@id': id, ...rest } = json
+    const { '@type': type, '@id': id, '@context': context, ...rest } = json
     const entity = Object.fromEntries(Object.entries(rest).map(([key, value]) => [key, fromJsonLdValue(value)]))
     if (type !== undefined && !('@value' in json)) entity.type = type
     if (id !== undefined) entity.id = id

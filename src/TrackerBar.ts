@@ -71,9 +71,27 @@ export interface TrackerBar {
     /** `undefined` for a position the bar does not read. */
     meaningOf(position: Track): TrackMeaning | undefined
 
+    /**
+     * `meaningOf` inverted: the position this bar reads the meaning on,
+     * or `undefined` where it does not read it at all. A symbol's track
+     * is this rather than anything measured, since a note of one pitch
+     * sits on exactly one position of a given bar.
+     */
+    positionOf(meaning: TrackMeaning): Track | undefined
+
     /** `undefined` for a position the bar does not read. */
     roleOf(position: Track): TrackRole | undefined
 }
+
+/**
+ * What a position says, as a key. Two bars read the same thing exactly
+ * where their keys agree, which is what lets a symbol cross from one
+ * system to another and what decides whether two symbols collate.
+ */
+export const keyOf = (meaning: TrackMeaning): string =>
+    meaning.type === 'note'
+        ? `note ${meaning.pitch}`
+        : `expression ${meaning.scope} ${meaning.expressionType}`
 
 const SYSTEM_IRI = 'https://w3id.org/reo/type/system/'
 
@@ -81,9 +99,13 @@ const SYSTEM_IRI = 'https://w3id.org/reo/type/system/'
 export const systemOf = (bar: TrackerBar): Concept =>
     ({ id: SYSTEM_IRI + bar.id, name: bar.name, sameAs: [] })
 
+/** The identifier of a system the type vocabulary knows, from the IRI naming it. */
+export const systemIdIn = (id: string | undefined): string | undefined =>
+    id?.startsWith(SYSTEM_IRI) ? id.slice(SYSTEM_IRI.length) : undefined
+
 /** The identifier of a system the type vocabulary knows, from its concept. */
 export const systemIdOf = (system: Concept | undefined): string | undefined =>
-    system?.id?.startsWith(SYSTEM_IRI) ? system.id.slice(SYSTEM_IRI.length) : undefined
+    systemIdIn(system?.id)
 
 /**
  * A tracker bar as written down, with its positions as plain numbers
@@ -142,6 +164,14 @@ export const describeTrackerBar = (spec: TrackerBarSpec): TrackerBar => {
         return { type: 'expression', expressionType, scope: scopeOf(role) }
     }
 
+    const positions = new Map(
+        Array.from({ length: spec.trackCount }, (_, i) => track(i + 1))
+            .flatMap(position => {
+                const meaning = meaningOf(position)
+                return meaning ? [[keyOf(meaning), position] as const] : []
+            })
+    )
+
     const rewind = spec.rewindTrack
         ?? [...spec.expressions].find(([, type]) => type === 'Rewind')?.[0]
 
@@ -159,31 +189,19 @@ export const describeTrackerBar = (spec: TrackerBarSpec): TrackerBar => {
         rewindTrack: track(rewind),
         ...(spec.paperSpeed && { paperSpeed: spec.paperSpeed }),
         meaningOf,
+        positionOf: meaning => positions.get(keyOf(meaning)),
         roleOf
     }
 }
 
-const keyOf = (meaning: TrackMeaning): string =>
-    meaning.type === 'note' ? `note ${meaning.pitch}` : `${meaning.scope} ${meaning.expressionType}`
-
-const positionsOf = (bar: TrackerBar): Track[] =>
-    Array.from({ length: bar.trackCount }, (_, i) => track(i + 1))
-
 /**
  * Puts a position of one bar onto the position of another that reads
  * the same thing, or nowhere when the other bar does not read it. This
- * is how a copy cut for one system takes its place in an edition of
- * another, as a Licensee re-cut does in an edition of a T-100 roll.
+ * is how a copy read in one system's numbering is put into another's,
+ * as the migration does for a Licensee copy stored on T-100 tracks.
  */
-export const translationBetween = (from: TrackerBar, to: TrackerBar): (position: Track) => Track | undefined => {
-    const positions = new Map<string, Track>()
-    positionsOf(to).forEach(position => {
-        const meaning = to.meaningOf(position)
-        if (meaning) positions.set(keyOf(meaning), position)
-    })
-
-    return position => {
+export const translationBetween = (from: TrackerBar, to: TrackerBar) =>
+    (position: Track): Track | undefined => {
         const meaning = from.meaningOf(position)
-        return meaning ? positions.get(keyOf(meaning)) : undefined
+        return meaning && to.positionOf(meaning)
     }
-}

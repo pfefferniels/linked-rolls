@@ -3,7 +3,7 @@ import { v4 } from "uuid";
 import { assignObject } from "../Assumption";
 import { Hole } from "../Feature";
 import { RollCopy } from "../RollCopy";
-import { systemOf, TrackerBar, translationBetween } from "../TrackerBar";
+import { systemOf, TrackerBar } from "../TrackerBar";
 import { welteT100 } from "../systems/welteT100/bar";
 import { welteLicensee } from "../systems/welteLicensee/bar";
 import { inMetersPerMinute, Millimeters, mm, Seconds, seconds, Track, track } from "../Quantity";
@@ -49,9 +49,6 @@ export interface PhillipsErollOptions {
      * the roll he read.
      */
     system?: TrackerBar
-
-    /** The edition's bar, onto which the positions are put. */
-    bar?: TrackerBar
 
     /**
      * How far above its position an expression number sits. Defaults to
@@ -179,14 +176,13 @@ const positionsByPitch = (bar: TrackerBar): Map<number, Track> =>
 
 /**
  * Reads one of his e-roll files as a copy of the roll, in millimetres
- * of paper. A position the edition's bar does not read is left out, as
- * the bar would leave it.
+ * of paper, on the bar it was cut for and in that bar's numbering. A
+ * position the bar does not read is left out, as the bar would leave it.
  */
 export function readFromPhillipsEroll(
     buffer: ArrayBuffer,
     {
         system = welteT100,
-        bar = welteT100,
         controlOffset,
         placeAt
     }: PhillipsErollOptions = {}
@@ -197,14 +193,13 @@ export function readFromPhillipsEroll(
     const place = placeAt ?? atStatedSpeed(system)
     const offset = controlOffsetOf(system, controlOffset)
     const notePositions = positionsByPitch(system)
-    const onBar = translationBetween(system, bar)
 
     const positionOf = (number: number): Track =>
         notePositions.get(number) ?? track(number - offset)
 
     const features = notesIn(timed).flatMap((note): Hole[] => {
-        const position = onBar(positionOf(note.pitch))
-        if (position === undefined) return []
+        const position = positionOf(note.pitch)
+        if (!system.meaningOf(position)) return []
 
         return [{
             type: 'Hole',

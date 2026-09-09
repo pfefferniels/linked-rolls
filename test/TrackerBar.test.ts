@@ -115,6 +115,48 @@ describe('Welte T-98 tracker bar', () => {
     })
 })
 
+describe('reading a position back from what it means', () => {
+    const bars = [welteT100, welteLicensee, welteT98]
+
+    it('inverts meaningOf on every position of every bar', () => {
+        bars.forEach(bar =>
+            Array.from({ length: bar.trackCount }, (_, i) => track(i + 1))
+                .forEach(position => {
+                    const meaning = bar.meaningOf(position)
+                    if (meaning) expect(bar.positionOf(meaning)).toBe(position)
+                }))
+    })
+
+    it('puts a pitch two tracks lower on the green bar than on the red', () => {
+        const middleC = { type: 'note', pitch: 60 } as const
+        expect(welteT100.positionOf(middleC)).toBe(47)
+        expect(welteT98.positionOf(middleC)).toBe(45)
+    })
+
+    it('reads nothing of a meaning the bar has no word for', () => {
+        expect(welteT98.positionOf({
+            type: 'expression', expressionType: 'ForzandoOn', scope: 'treble'
+        })).toBeUndefined()
+        expect(welteT100.positionOf({
+            type: 'expression', expressionType: 'SforzandoForte', scope: 'treble'
+        })).toBeUndefined()
+    })
+
+    it('reads nothing of a pitch outside its compass', () => {
+        expect(welteT100.positionOf({ type: 'note', pitch: 21 })).toBeUndefined()
+        expect(welteT98.positionOf({ type: 'note', pitch: 21 })).toBe(6)
+    })
+
+    it('tells the two sides apart, the same type on each edge', () => {
+        expect(welteT98.positionOf({
+            type: 'expression', expressionType: 'SforzandoPiano', scope: 'bass'
+        })).toBe(1)
+        expect(welteT98.positionOf({
+            type: 'expression', expressionType: 'SforzandoPiano', scope: 'treble'
+        })).toBe(98)
+    })
+})
+
 describe('translating positions between bars', () => {
     const onT100 = translationBetween(welteLicensee, welteT100)
 

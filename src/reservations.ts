@@ -1,5 +1,6 @@
 import { bearsPhysicalEvidence, isMeasured, sourceLabels } from "./FeatureSource";
 import { calibrationOf, RollCopy } from "./RollCopy";
+import { trackerBarOf } from "./systems";
 
 export const reservationTypes = [
     'source-not-stated',
@@ -7,7 +8,8 @@ export const reservationTypes = [
     'features-interpreted',
     'no-physical-evidence',
     'measurement-undocumented',
-    'not-calibrated'
+    'not-calibrated',
+    'system-unknown'
 ] as const
 
 export type ReservationType = typeof reservationTypes[number]
@@ -69,13 +71,34 @@ const calibrated: Check = copy =>
         note: 'The copy is not calibrated against the tracker bar, so its track positions rest on the numbering its source used.'
     }
 
+/**
+ * The bar decides what every track on the copy means, so a copy the
+ * edition cannot place in a system is read by the T-100 for want of
+ * anything better. Between two Welte scales that is a semitone rather
+ * than a visible error, which is why it is said out loud.
+ */
+const systemKnown: Check = copy => {
+    const system = copy.production?.system
+    if (system === undefined) {
+        return {
+            type: 'system-unknown',
+            note: 'The copy names no reproducing system, so it is read by the T-100 tracker bar.'
+        }
+    }
+    return trackerBarOf(system) ? undefined : {
+        type: 'system-unknown',
+        note: `The copy names ${system.name || 'a reproducing system'}, which the edition has no tracker bar for, so it is read by the T-100's.`
+    }
+}
+
 const checks: readonly Check[] = [
     sourceStated,
     sourceDocumented,
     featuresMeasured,
     physicalEvidence,
     measurementDocumented,
-    calibrated
+    calibrated,
+    systemKnown
 ]
 
 /**

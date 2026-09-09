@@ -29,9 +29,10 @@ const punchDiameterOf = (view: EditionView): Millimeters | undefined => {
     return measured.length > 0 ? mean(measured) : undefined
 }
 
-const propertiesOf = (view: EditionView): RollProperties => ({
+const propertiesOf = (view: EditionView, version: Readonly<Version>): RollProperties => ({
     punchDiameter: punchDiameterOf(view),
-    tempo: view.edition.tempoAdjustment
+    tempo: view.edition.tempoAdjustment,
+    toOwnPaper: view.toOwnPaperOf(version)
 })
 
 /** The onset a symbol has on each copy carrying it, by the copy's index, as the mean of its holes there. */
@@ -179,7 +180,7 @@ export class Emulation<Options extends object> {
         this.negotiatedEvents =
             view.snapshot(version.id)
                 .filter(isPerforation)
-                .map(symbol => view.simplifySymbol(symbol))
+                .map(symbol => view.simplifySymbol(symbol, this.system.trackerBar))
                 .filter(event => event !== null)
                 .filter(inScope)
 
@@ -191,7 +192,7 @@ export class Emulation<Options extends object> {
 
         this.applyConstraints(view);
 
-        const performance = this.system.perform(this.negotiatedEvents, this.options, propertiesOf(view))
+        const performance = this.system.perform(this.negotiatedEvents, this.options, propertiesOf(view, version))
         this.curves = performance.curves
 
         const onsets = performance.events.filter(event => event.type === 'noteOn').map(event => event.at)
