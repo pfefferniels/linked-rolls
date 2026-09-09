@@ -202,3 +202,27 @@ describe('migrating an edition whose collation tolerance was the edition\'s', ()
         expect(carriersOfNote(collated)).toEqual(['hole-note', 'hole-note-second'])
     })
 })
+
+describe('migrating a document that is not an edition', () => {
+    /**
+     * A document is migrated before it is validated, so a malformed one
+     * reaches these steps and must come out of them rather than throw:
+     * the schema is what turns it down, and it needs the document back
+     * to say why.
+     */
+    it('passes a document whose versions and copies are not lists through', () => {
+        const odd = { roll: { catalogueNumber: 'WM 225' }, versions: 'many', copies: 7 }
+        expect(() => migrate(odd)).not.toThrow()
+        expect(migrate(odd)).toMatchObject({ versions: 'many', copies: 7 })
+    })
+
+    it('leaves a copy that is not an object alone', () => {
+        const odd = {
+            roll: { system: { '@id': 'https://w3id.org/reo/type/system/welte-t100', name: '', sameAs: [] } },
+            versions: [],
+            copies: [null, 'a copy']
+        }
+        expect(() => migrate(odd)).not.toThrow()
+        expect(migrate(odd).copies).toEqual([null, 'a copy'])
+    })
+})

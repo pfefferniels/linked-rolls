@@ -121,12 +121,16 @@ const walk = (value: Json): Json => {
 
 /** The production of a copy, under whichever of its two names it carries. */
 const productionKeyOf = (copy: Json): 'production' | 'productionEvent' =>
-    copy.productionEvent && !copy.production ? 'productionEvent' : 'production'
+    copy?.productionEvent && !copy?.production ? 'productionEvent' : 'production'
+
+/** The list under the key, or nothing where the document holds something else there. */
+const listAt = (edition: Json, key: string): Json[] | undefined =>
+    Array.isArray(edition[key]) ? edition[key] : undefined
 
 /** A file written while the system belonged to the roll rather than to each version. */
 const namesSystemOnTheRoll = (edition: Json): boolean =>
     edition.roll?.system !== undefined
-    || (edition.versions ?? []).some((version: Json) => !version.system)
+    || (listAt(edition, 'versions') ?? []).some((version: Json) => !version?.system)
 
 const barNamed = (system: Json): TrackerBar | undefined =>
     trackerBars.find(bar => bar.id === systemIdIn(system?.['@id']))
@@ -168,6 +172,7 @@ const featuresOnBar = (features: Json[], at: (position: Track) => Track | undefi
  * legal position a whole tone away rather than a visible error.
  */
 const onOwnBar = (copy: Json, rollSystem: Json): Json => {
+    if (!copy || typeof copy !== 'object') return copy
     const key = productionKeyOf(copy)
     const own = copy[key]?.system
     const from = barNamed(rollSystem)
@@ -186,8 +191,11 @@ const onOwnBar = (copy: Json, rollSystem: Json): Json => {
 const withSystems = (edition: Json): Json => {
     if (!edition.roll || !namesSystemOnTheRoll(edition)) return edition
 
-    const stated = (edition.copies ?? [])
-        .map((copy: Json) => copy[productionKeyOf(copy)]?.system)
+    const versions = listAt(edition, 'versions')
+    const copies = listAt(edition, 'copies')
+
+    const stated = (copies ?? [])
+        .map((copy: Json) => copy?.[productionKeyOf(copy)]?.system)
         .find((system: unknown) => typeof system === 'string' && system !== '')
     const { id, ...concept } = systemOf(welteT100)
     const system = edition.roll.system ?? { '@id': id, ...concept, ...(stated && { name: stated }) }
@@ -200,11 +208,12 @@ const withSystems = (edition: Json): Json => {
         roll: created
             ? { ...roll, recordingEvent: { ...roll.recordingEvent, created: withSystem(created, system) } }
             : roll,
-        ...(edition.versions && {
-            versions: edition.versions.map((version: Json) => withSystem(version, system))
+        ...(versions && {
+            versions: versions.map((version: Json) => withSystem(version, system))
         }),
-        ...(edition.copies && {
-            copies: edition.copies.map((copy: Json) => {
+        ...(copies && {
+            copies: copies.map((copy: Json) => {
+                if (!copy || typeof copy !== 'object') return copy
                 const key = productionKeyOf(copy)
                 const onOwn = onOwnBar(copy, system)
                 return { ...onOwn, [key]: withSystem(onOwn[key] ?? {}, system) }
