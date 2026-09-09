@@ -44,7 +44,7 @@ describe('substituting a held perforation for a latched pair', () => {
 
         const [substitution, ...rest] = substitutionsBetween([held], [on, off], locate)
         expect(rest).toEqual([])
-        expect(substitution.by.id).toBe('held')
+        expect(substitution.by.map(symbol => symbol.id)).toEqual(['held'])
         expect(substitution.replaced.map(symbol => symbol.id)).toEqual(['on', 'off'])
     })
 
@@ -84,13 +84,36 @@ describe('substituting a held perforation for a latched pair', () => {
         expect(substitutionsBetween([elsewhere], [on, off], locate)).toEqual([])
     })
 
-    it('reports neither where two held perforations answer one pair', () => {
+    /**
+     * A hold is punched as a chain of round holes with paper bridges
+     * rather than as a slot, so a scan whose analysis reports the punches
+     * singly shows a run where the paper shows one command. The whole
+     * chain is what stands for the latched pair.
+     */
+    it('reads a chain of punches as the one command the paper shows', () => {
         const on = command('on', 'SlowCrescendoOn', 'bass', 1000, 1002)
-        const off = command('off', 'SlowCrescendoOff', 'bass', 1200, 1202)
-        const one = command('one', 'Crescendo', 'bass', 1000, 1200)
-        const other = command('other', 'Crescendo', 'bass', 1001, 1201)
+        const off = command('off', 'SlowCrescendoOff', 'bass', 1100, 1102)
+        const punches = [0, 1, 2, 3].map(step =>
+            command(`punch-${step}`, 'Crescendo', 'bass', 1000 + step * 25, 1024 + step * 25))
+        const last = command('punch-last', 'Crescendo', 'bass', 1098, 1100)
 
-        expect(substitutionsBetween([one, other], [on, off], locate)).toEqual([])
+        const [substitution, ...rest] = substitutionsBetween([...punches, last], [on, off], locate)
+
+        expect(rest).toEqual([])
+        expect(substitution.by).toHaveLength(5)
+        expect(substitution.replaced.map(symbol => symbol.id)).toEqual(['on', 'off'])
+    })
+
+    it('keeps two commands apart where the paper leaves a gap between them', () => {
+        const on = command('on', 'MezzoforteOn', 'bass', 100, 102)
+        const off = command('off', 'MezzoforteOff', 'bass', 200, 202)
+        const held = command('held', 'Mezzoforte', 'bass', 100, 200)
+        const elsewhere = command('elsewhere', 'Mezzoforte', 'bass', 400, 500)
+
+        const [substitution, ...rest] = substitutionsBetween([held, elsewhere], [on, off], locate)
+
+        expect(rest).toEqual([])
+        expect(substitution.by.map(symbol => symbol.id)).toEqual(['held'])
     })
 
     /**
@@ -122,7 +145,7 @@ describe('substituting a held perforation for a latched pair', () => {
         const piano = command('piano', 'SforzandoPiano', 'treble', 800, 900)
 
         const [substitution] = substitutionsBetween([piano], [on, off], locate)
-        expect(substitution.by.expressionType).toBe('SforzandoPiano')
+        expect(substitution.by.map(symbol => symbol.expressionType)).toEqual(['SforzandoPiano'])
     })
 
     it('says nothing of a latched pair the newer version keeps latched', () => {

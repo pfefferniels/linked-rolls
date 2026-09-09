@@ -1,6 +1,7 @@
 import { CollationTolerance, defaultCollationTolerance, Locate } from "./Collation"
 import { AnySymbol, Expression } from "./Symbol"
-import { distance, Millimeters } from "./Quantity"
+import { distance, Millimeters, mm, Track, track } from "./Quantity"
+import { TrackerBar } from "./TrackerBar"
 
 /**
  * How a scale spells a command: as a perforation that turns a function
@@ -78,17 +79,58 @@ export interface Substitution {
     /** The perforation that turned the function on, and the one that cancelled it. */
     replaced: readonly [Expression, Expression]
 
-    /** The perforation that says the same thing in the other scale's words. */
-    by: Expression
+    /**
+     * The perforations that say the same thing in the other scale's
+     * words. Usually one, but a held command is punched as a chain of
+     * round holes with paper bridges rather than as a slot, and a scan
+     * whose analysis reports those singly gives one symbol per punch.
+     */
+    by: readonly Expression[]
 }
+
+/**
+ * How wide a paper bridge may be for two held perforations to be one
+ * command. The T-98 punches a hold as a chain of round holes on a
+ * 2.66 mm grid with bridges of about a millimetre, so a scan read hole
+ * by hole shows a run where the paper shows one command.
+ */
+export const defaultChainGap = mm(3)
 
 const isExpression = (symbol: AnySymbol): symbol is Expression => symbol.type === 'expression'
 
 /** The key a command is matched on: the function, and the side where the side counts. */
-const functionKey = (symbol: Expression, command: Command): string =>
+const functionKey = (symbol: Pick<Expression, 'scope'>, command: Command): string =>
     command.sided ? `${command.operates} ${symbol.scope}` : command.operates
 
-type Latched = { on: Expression, off: Expression, from: Millimeters, to: Millimeters }
+/**
+ * The position a bar reads its own command for the same function on,
+ * where it has no word for this one.
+ *
+ * A version keeps the perforations it does away with in its deletions,
+ * and those may be a scale the version is not coded for: a green
+ * version deletes the red `SlowCrescendoOn` it inherits. That has no
+ * position on the green bar, so drawing it as a perforation is out of
+ * the question, but an edit still has to be shown somewhere, and the
+ * lane the green scale gives the same function is where it belongs.
+ */
+export const positionOfSameFunction = (bar: TrackerBar, symbol: Expression): Track | undefined => {
+    const wanted = commandOf(symbol.expressionType)
+    if (!wanted) return undefined
+
+    const positions = Array.from({ length: bar.trackCount }, (_, index) => track(index + 1))
+
+    return positions.find(position => {
+        const meaning = bar.meaningOf(position)
+        if (meaning?.type !== 'expression') return false
+
+        const command = commandOf(meaning.expressionType)
+        return command !== undefined
+            && command.operates === wanted.operates
+            && functionKey(meaning, command) === functionKey(symbol, wanted)
+    })
+}
+
+type Latched = { on: Expression, off: Expression, from: Millimeters, to: Millimeters, key: string }
 
 /**
  * The intervals the older version latches: each perforation that turns
@@ -128,7 +170,8 @@ const latchedIn = (symbols: readonly AnySymbol[], locate: Locate): Latched[] => 
                             on: state.open.on,
                             off: entry.symbol,
                             from: state.open.from,
-                            to: entry.at
+                            to: entry.at,
+                            key: functionKey(state.open.on, commandOf(state.open.on.expressionType)!)
                         }]
                     }
                     : state
@@ -136,6 +179,41 @@ const latchedIn = (symbols: readonly AnySymbol[], locate: Locate): Latched[] => 
             { closed: [] }
         ).closed
     })
+}
+
+/** A command of the newer version: one held perforation, or the chain of punches that is one. */
+type Run = { of: Expression[], from: Millimeters, to: Millimeters, key: string }
+
+/**
+ * The commands the newer version holds, a chain of punches counting as
+ * the one command the paper shows rather than as a run of them.
+ */
+const heldRunsIn = (symbols: readonly AnySymbol[], locate: Locate, chainGap: Millimeters): Run[] => {
+    const byFunction = new Map<string, { symbol: Expression, from: Millimeters, to: Millimeters }[]>()
+
+    symbols.filter(isExpression).forEach(symbol => {
+        const command = commandOf(symbol.expressionType)
+        const place = locate(symbol)
+        if (!command || command.spelling !== 'held' || !place) return
+
+        const key = functionKey(symbol, command)
+        const group = byFunction.get(key) ?? []
+        group.push({ symbol, from: place.from, to: place.to })
+        byFunction.set(key, group)
+    })
+
+    return [...byFunction.entries()].flatMap(([key, group]) =>
+        [...group]
+            .sort((a, b) => a.from - b.from)
+            .reduce<Run[]>((runs, punch) => {
+                const open = runs[runs.length - 1]
+                if (open && punch.from - open.to <= chainGap) {
+                    open.of.push(punch.symbol)
+                    open.to = punch.to > open.to ? punch.to : open.to
+                    return runs
+                }
+                return [...runs, { of: [punch.symbol], from: punch.from, to: punch.to, key }]
+            }, []))
 }
 
 /** The only item of the list, or nothing where there is none or a rival. */
@@ -157,36 +235,30 @@ export const substitutionsBetween = (
     own: readonly AnySymbol[],
     inherited: readonly AnySymbol[],
     locate: Locate,
-    tolerance: CollationTolerance = defaultCollationTolerance
+    tolerance: CollationTolerance = defaultCollationTolerance,
+    chainGap: Millimeters = defaultChainGap
 ): Substitution[] => {
     const latched = latchedIn(inherited, locate)
 
-    const spans = (held: Expression, interval: Latched): boolean => {
-        const place = locate(held)
-        return place !== undefined
-            && distance(place.from, interval.from) <= tolerance.toleranceStart
-            && distance(place.to, interval.to) <= tolerance.toleranceEnd
-    }
+    const spans = (run: Run, interval: Latched): boolean =>
+        distance(run.from, interval.from) <= tolerance.toleranceStart
+        && distance(run.to, interval.to) <= tolerance.toleranceEnd
 
-    const candidates = own.filter(isExpression).flatMap(held => {
-        const command = commandOf(held.expressionType)
-        if (!command || command.spelling !== 'held') return []
-
+    const candidates = heldRunsIn(own, locate, chainGap).flatMap(run => {
         const answered = latched.filter(interval =>
-            functionKey(interval.on, commandOf(interval.on.expressionType)!) === functionKey(held, command)
-            && spans(held, interval))
+            interval.key === run.key && spans(run, interval))
 
         const only = theOnly(answered)
-        return only ? [{ held, interval: only }] : []
+        return only ? [{ run, interval: only }] : []
     })
 
-    // A latched interval two held perforations both answer is ambiguous
-    // from its side as well, so neither of them is reported.
+    // A latched interval two runs both answer is ambiguous from its side
+    // as well, so neither of them is reported.
     const claims = candidates.reduce(
         (counts, { interval }) => counts.set(interval.on.id, (counts.get(interval.on.id) ?? 0) + 1),
         new Map<string, number>())
 
     return candidates
         .filter(({ interval }) => claims.get(interval.on.id) === 1)
-        .map(({ held, interval }) => ({ replaced: [interval.on, interval.off] as const, by: held }))
+        .map(({ run, interval }) => ({ replaced: [interval.on, interval.off] as const, by: run.of }))
 }

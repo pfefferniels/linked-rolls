@@ -626,14 +626,15 @@ export const connectVersions = (
             tolerance)
         : []
 
-    const paired = new Set(substituted.flatMap(({ replaced, by }) => [by.id, ...replaced.map(s => s.id)]))
+    const paired = new Set(substituted.flatMap(({ replaced, by }) =>
+        [...by, ...replaced].map(symbol => symbol.id)))
 
     const edits = [
         ...substituted.map(({ replaced, by }): Edit => ({
             type: 'edit',
             id: v4(),
             editType: 'replace-with-equivalent',
-            insert: [by],
+            insert: [...by],
             delete: replaced.map(symbol => symbol.id)
         })),
         ...own.filter(symbol => !collated.has(symbol.id) && !paired.has(symbol.id)).map(insertion),
