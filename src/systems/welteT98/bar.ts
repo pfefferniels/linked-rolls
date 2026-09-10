@@ -68,8 +68,11 @@ export const welteT98: TrackerBar = describeTrackerBar({
      * the rewind is a single continuous 103.8 mm perforation (Kontrolle 10, 40
      * punches with gaps of 0.51–0.93 mm), where a commanded sforzando-piano
      * runs a couple of millimetres — a median of 0.06 s against the rewind's
-     * 10.2 s on WM 184. 40 mm sits between the two with a wide margin either
-     * side, so the threshold is not a fitted number and does not need to be.
+     * 10.2 s on WM 184. Dyer's scan of the green 225 says the same a third time:
+     * of the 30 perforations its track 1 carries, exactly one reaches 40 mm and
+     * it is 386 mm long. So the threshold is not a fitted number and does not
+     * need to be — every measurement of it so far leaves an order of magnitude
+     * either side.
      */
     rewindHold: mm(40),
     expressions: new Map<number, WelteT98ExpressionType>([
