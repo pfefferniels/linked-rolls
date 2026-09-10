@@ -8,6 +8,7 @@ import { Edit, EditType } from "./Edit"
 import { collationToleranceOf, insertedBy, Version } from "./Version"
 import { asSymbols, barOf, GeneralRollCondition, isPaperStretch, Modification, RollCopy, ScaleReading, Shift } from "./RollCopy"
 import { systemOf, TrackerBar } from "./TrackerBar"
+import { substitutionsBetween } from "./substitution"
 import { trackerBarOf } from "./systems"
 import { FeatureSource } from "./FeatureSource"
 import { applyShift, applyScale, revertShift, revertScale } from "./alignment"
@@ -583,6 +584,13 @@ const handOverCarriers = (view: EditionView, draft: Draft<Edition>, collations: 
         target?.carriers.push(...symbol.carriers)
     })
 
+/** Whether the two versions are coded for different reproducing systems. */
+const differ = (child: Version | undefined, parent: Version | undefined): boolean => {
+    const one = trackerBarOf(child?.system)
+    const other = trackerBarOf(parent?.system)
+    return one !== undefined && other !== undefined && one.id !== other.id
+}
+
 /**
  * Bases the child on the parent. A symbol of the child that collates
  * with one the parent hands down adds its carriers to that symbol; the
@@ -598,13 +606,41 @@ export const connectVersions = (
 ): EditionOp => {
     const inherited = view.snapshot(parentId)
     const own = view.snapshot(childId)
-    const collations = collationsOf(own, inherited, symbol => view.placeOf(symbol), tolerance)
+    const locate = (symbol: AnySymbol) => view.placeOf(symbol)
+    const collations = collationsOf(own, inherited, locate, tolerance)
     const collated = new Set(collations.map(({ symbol }) => symbol.id))
     const matched = new Set(collations.map(({ counterpart }) => counterpart.id))
 
+    /**
+     * Where the child is coded for another system, a held perforation of
+     * its own often stands for a latched pair of the parent's. Saying so
+     * as one edit is the transfer being carried out, and leaving the two
+     * apart would make the apparatus a list of unexplained losses beside
+     * a list of unexplained gains.
+     */
+    const substituted = differ(view.get<Version>(childId), view.get<Version>(parentId))
+        ? substitutionsBetween(
+            own.filter(symbol => !collated.has(symbol.id)),
+            inherited.filter(symbol => !matched.has(symbol.id)),
+            locate,
+            tolerance)
+        : []
+
+    const paired = new Set(substituted.flatMap(({ replaced, by }) =>
+        [...by, ...replaced].map(symbol => symbol.id)))
+
     const edits = [
-        ...own.filter(symbol => !collated.has(symbol.id)).map(insertion),
-        ...inherited.filter(symbol => !matched.has(symbol.id)).map(symbol => deletion(symbol.id))
+        ...substituted.map(({ replaced, by }): Edit => ({
+            type: 'edit',
+            id: v4(),
+            editType: 'replace-with-equivalent',
+            insert: [...by],
+            delete: replaced.map(symbol => symbol.id)
+        })),
+        ...own.filter(symbol => !collated.has(symbol.id) && !paired.has(symbol.id)).map(insertion),
+        ...inherited
+            .filter(symbol => !matched.has(symbol.id) && !paired.has(symbol.id))
+            .map(symbol => deletion(symbol.id))
     ]
 
     return onVersion(childId, (child, draft) => {
