@@ -1,6 +1,6 @@
 import type { Concept } from "./Agent"
 import { Expression, ExpressionScope, Note } from "./Symbol"
-import { Millimeters, SpeedMeasure, Track, track } from "./Quantity"
+import { Millimeters, mm, SpeedMeasure, Track, track } from "./Quantity"
 
 /**
  * What a tracker bar position does: sound a note, or operate one of
@@ -68,6 +68,18 @@ export interface TrackerBar {
      */
     readonly paperSpeed?: SpeedMeasure
 
+    /**
+     * Where the roll's own content ends, from its perforations alone, or
+     * `undefined` where nothing on the paper says. A copy that reads
+     * `undefined` runs to the end of whatever was scanned, which is a fact
+     * about the scan rather than about the roll and should be reported as one.
+     *
+     * Takes anything with a place and a position, so a reader can ask it of a
+     * copy's features before there are symbols, and a collation can ask it of
+     * the symbols afterwards.
+     */
+    endsAt(features: readonly PlacedOnBar[]): RollEnd | undefined
+
     /** `undefined` for a position the bar does not read. */
     meaningOf(position: Track): TrackMeaning | undefined
 
@@ -112,6 +124,25 @@ export const systemIdOf = (system: Concept | undefined): string | undefined =>
  * in the bar's own 1-based numbering; `describeTrackerBar` gives them
  * their type.
  */
+/**
+ * Where a roll's own content ends, as far as its perforations say.
+ *
+ * This is a question about the paper, not about the mechanism: it asks where
+ * the rewind is *punched*, not when the rewind pneumatic takes hold. The second
+ * is a matter of valve lift and belongs to whatever performs the roll. Keeping
+ * them apart is what lets collation and counting ask this without an emulator.
+ */
+export type RollEnd = {
+    readonly at: Millimeters
+    readonly because: 'rewind'
+}
+
+/** Anything carrying a place on the roll and a position on the bar. */
+export type PlacedOnBar = {
+    readonly horizontal: { readonly from: Millimeters, readonly to: Millimeters }
+    readonly vertical: { readonly from: Track }
+}
+
 export interface TrackerBarSpec {
     id: string
     name: string
@@ -130,6 +161,13 @@ export interface TrackerBarSpec {
     rewindTrack?: number
     /** The speed the system runs its rolls at, where the literature states one. */
     paperSpeed?: SpeedMeasure
+    /**
+     * How long a perforation on a *shared* rewind position has to be before it
+     * is the rewind rather than the command the position usually carries. Only
+     * meaningful with `rewindTrack`: a system that gives the rewind a line of
+     * its own needs no threshold, since anything there is the rewind.
+     */
+    rewindHold?: Millimeters
 }
 
 const areasOf = ({ notes, trackCount }: TrackerBarSpec): TrackArea[] => [
@@ -179,11 +217,24 @@ export const describeTrackerBar = (spec: TrackerBarSpec): TrackerBar => {
         throw new Error(`${spec.name} declares no rewind track`)
     }
 
+    // A rewind on a line of its own is unambiguous; one sharing a line is only
+    // the rewind when it is far longer than that line's usual command.
+    const shared = spec.rewindTrack !== undefined
+    const endsAt = (features: readonly PlacedOnBar[]): RollEnd | undefined => {
+        const hold = spec.rewindHold ?? mm(0)
+        const candidates = features
+            .filter(feature => feature.vertical.from === rewind)
+            .filter(feature => !shared || feature.horizontal.to - feature.horizontal.from >= hold)
+            .map(feature => feature.horizontal.from)
+        return candidates.length ? { at: mm(Math.min(...candidates)), because: 'rewind' } : undefined
+    }
+
     return {
         id: spec.id,
         name: spec.name,
         width: spec.width,
         trackCount: spec.trackCount,
+        endsAt,
         areas,
         expressionTypes: [...new Set(spec.expressions.values())],
         rewindTrack: track(rewind),

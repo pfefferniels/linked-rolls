@@ -60,6 +60,18 @@ export const welteT98: TrackerBar = describeTrackerBar({
     notes: { from: 6, to: 93, lowestPitch: 21 },
     paperSpeed: { value: metersPerMinute(2.2), unit: 'm/min' },
     rewindTrack: 1,
+
+    /**
+     * The T-98 gives the rewind no line of its own — Welte's Forzando P line
+     * doubles as it — so a perforation there is the rewind only when it is far
+     * longer than the command that line usually carries. On the Monteurscala
+     * the rewind is a single continuous 103.8 mm perforation (Kontrolle 10, 40
+     * punches with gaps of 0.51–0.93 mm), where a commanded sforzando-piano
+     * runs a couple of millimetres — a median of 0.06 s against the rewind's
+     * 10.2 s on WM 184. 40 mm sits between the two with a wide margin either
+     * side, so the threshold is not a fitted number and does not need to be.
+     */
+    rewindHold: mm(40),
     expressions: new Map<number, WelteT98ExpressionType>([
         [1, 'SforzandoPiano'],
         [2, 'Mezzoforte'],
