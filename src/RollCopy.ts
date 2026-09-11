@@ -370,13 +370,24 @@ export const barOf = (copy: Pick<RollCopy, 'production'>): TrackerBar =>
  *
  * The bar is named rather than defaulted: a copy is read by its own
  * bar, and reading a green copy with the red one is a silent semitone.
+ *
+ * Reading stops where the bar says the roll's content ends. What a
+ * scanner punched past the rewind is not the roll speaking: Julian
+ * Dyer's scan of the green 225 carries a staircase of test punches
+ * across nearly every track after its rewind, which read on as symbols
+ * would be 318 notes nobody played. The features stay on the copy,
+ * since they are really on the paper and are his calibration of his own
+ * scan; it is the reading that stops.
  */
 export function asSymbols(
     features: AnyFeature[],
     bar: TrackerBar
 ): AnySymbol[] {
-    return features
-        .filter(feature => feature.type === 'Hole')
+    const holes = features.filter(feature => feature.type === 'Hole')
+    const end = bar.endsAt(holes)
+
+    return holes
+        .filter(feature => end === undefined || feature.horizontal.from <= end.at)
         .flatMap((feature): AnySymbol[] => {
             const meaning = bar.meaningOf(feature.vertical.from)
             if (!meaning) return []

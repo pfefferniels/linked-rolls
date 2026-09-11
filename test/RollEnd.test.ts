@@ -3,6 +3,9 @@ import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteT98 } from '../src/systems/welteT98/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
 import { mm, track } from '../src/Quantity'
+import { asSymbols } from '../src/RollCopy'
+import { Hole } from '../src/Feature'
+import { idsOf } from '../src/Assumption'
 
 const at = (fromMm: number, toMm: number, trackNumber: number) => ({
     horizontal: { from: mm(fromMm), to: mm(toMm) },
@@ -56,5 +59,41 @@ describe('where a roll says it ends', () => {
             { horizontal: { from: mm(9700), to: mm(9804) }, vertical: { from: welteT98.rewindTrack } }
         ]
         expect(welteT98.endsAt(holes)?.at).toBe(mm(9700))
+    })
+})
+
+describe('reading a copy stops where its roll ends', () => {
+    const hole = (id: string, fromMm: number, toMm: number, trackNumber: number): Hole => ({
+        type: 'Hole', id,
+        horizontal: { unit: 'mm', from: mm(fromMm), to: mm(toMm) },
+        vertical: { unit: 'track', from: track(trackNumber) }
+    })
+
+    /**
+     * The shape of Julian Dyer's green scan of Welte 225: the music, the
+     * long rewind on the bass sforzando-piano line, and then a staircase
+     * of test punches across the tracks, which is his calibration of his
+     * own scanner rather than anything the roll plays.
+     */
+    const scanned = [
+        hole('note', 1000, 1010, welteT98.positionOf({ type: 'note', pitch: 60 })!),
+        hole('hold', 6976, 7362, welteT98.rewindTrack),
+        ...[10, 30, 50, 70, 90].map(position =>
+            hole(`staircase-${position}`, 7500 + position, 7504 + position, position))
+    ]
+
+    it('reads the music and leaves the staircase unread', () => {
+        const symbols = asSymbols(scanned, welteT98)
+        expect(symbols.map(symbol => idsOf(symbol.carriers)[0])).toEqual(['note', 'hold'])
+    })
+
+    it('keeps every feature on the copy, the staircase being really on the paper', () => {
+        expect(scanned).toHaveLength(7)
+    })
+
+    it('reads everything where the paper says nothing about an end', () => {
+        const withoutRewind = scanned.filter(feature => feature.id !== 'hold')
+        expect(welteT98.endsAt(withoutRewind)).toBeUndefined()
+        expect(asSymbols(withoutRewind, welteT98).length).toBeGreaterThan(1)
     })
 })
