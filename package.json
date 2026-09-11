@@ -1,6 +1,6 @@
 {
   "name": "linked-rolls",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "description": "Digital editions of piano rolls: import, collation, editorial assumptions, JSON-LD export, and emulation through a reproducing system",
   "license": "MIT",
   "repository": {
@@ -48,7 +48,7 @@
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0",
-    "welte-mignon-emulator": "file:../welte-t100"
+    "welte-mignon-emulator": "^1.0.0"
   },
   "peerDependencies": {
     "welte-mignon-emulator": "^1.0.0"
