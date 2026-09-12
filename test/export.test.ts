@@ -20,6 +20,24 @@ describe('Export', () => {
         expect(serialized.copies).toHaveLength(3)
     })
 
+    /**
+     * One rule for every entity of the edition: its IRI is its id under the
+     * base. Documents written before that was so named a copy `copy/<id>`,
+     * and are read as though they had not.
+     */
+    it('names a copy by its id alone, and reads one that was prefixed', () => {
+        const exported = asJsonLd(edition())
+        const ids = exported.copies.map((copy: any) => copy['@id'])
+        expect(ids.some((id: string) => id.startsWith('copy/'))).toBe(false)
+
+        const prefixed = {
+            ...exported,
+            copies: exported.copies.map((copy: any) => ({ ...copy, '@id': `copy/${copy['@id']}` }))
+        }
+        expect(importJsonLd(JSON.parse(JSON.stringify(prefixed))).copies.map(copy => copy.id))
+            .toEqual(ids)
+    })
+
     it('leaves the shared context at the top and no system there', () => {
         expect(asJsonLd(edition())['@context']).toEqual([
             'https://w3id.org/reo/context.jsonld',

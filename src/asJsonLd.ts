@@ -77,7 +77,7 @@ const withSystemContexts = (node: any): any => {
 
 export const asJsonLd = (edition: Edition) => {
     // The context is the export's own; one carried in from an import must not override it.
-    const { base, copies, '@context': carried, ...rest } = withSystemContexts(asJsonLdEntity(edition))
+    const { base, '@context': carried, ...rest } = withSystemContexts(asJsonLdEntity(edition))
 
     return {
         '@context': [
@@ -88,10 +88,6 @@ export const asJsonLd = (edition: Edition) => {
         ],
         '@type': "Edition",
         '@id': edition.base,
-        ...rest,
-        copies: (copies as any[])?.map(copy => ({
-            ...copy,
-            '@id': `copy/${copy['@id']}`
-        }))
+        ...rest
     }
 }

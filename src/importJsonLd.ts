@@ -39,7 +39,8 @@ const fromJsonLdEntity = (json: Record<string, Json>): Record<string, Json> => {
     return entity
 }
 
-// The export prefixes copy identifiers with `copy/`; this is its inverse.
+// Every entity is named by its id alone. Documents written before that was so
+// prefixed a copy's with `copy/`, and are read here as though they had not.
 const withPlainCopyIds = (json: Json) => ({
     ...json,
     copies: (json.copies ?? []).map((copy: Json) => ({
