@@ -142,7 +142,7 @@ describe('aligning two copies of a roll', () => {
     })
 
     it('reads the notes through the bar it is given', () => {
-        const otherBar = { ...welteT100, meaningOf: () => undefined }
+        const otherBar = { ...welteT100, meaningOf: () => undefined, meaningsOf: () => [] }
         expect(alignFeatures(roll(copy), roll(reference), otherBar)).toBeUndefined()
     })
 

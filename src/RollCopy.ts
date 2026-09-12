@@ -388,21 +388,21 @@ export function asSymbols(
 
     return holes
         .filter(feature => end === undefined || feature.horizontal.from <= end.at)
-        .flatMap((feature): AnySymbol[] => {
-            const meaning = bar.meaningOf(feature.vertical.from)
-            if (!meaning) return []
-
-            return [{
+        // An opening across two positions uncovers both bar holes and so
+        // reads as both commands; one on a single position gives the one.
+        .flatMap((feature): AnySymbol[] =>
+            bar.meaningsOf(feature.vertical).map(meaning => ({
                 id: `symbol_${v4()}`,
                 ...meaning,
                 carriers: [assignReference(feature.id)]
-            }]
-        })
+            })))
 }
 
 /**
  * The tracks a copy carries holes on that the tracker bar does not read.
- * A non-empty result usually means the scan is calibrated wrongly.
+ * A non-empty result usually means the scan is calibrated wrongly. A hole
+ * lying across several positions is counted against each one the bar
+ * cannot read, and not at all where it reads them all.
  */
 export function unreadTracks(
     features: AnyFeature[],
@@ -411,11 +411,9 @@ export function unreadTracks(
     const counts = new Map<Track, number>()
     features
         .filter(feature => feature.type === 'Hole')
-        .filter(feature => !bar.meaningOf(feature.vertical.from))
-        .forEach(feature => {
-            const position = feature.vertical.from
-            counts.set(position, (counts.get(position) || 0) + 1)
-        })
+        .flatMap(feature => bar.positionsIn(feature.vertical))
+        .filter(position => !bar.meaningOf(position))
+        .forEach(position => counts.set(position, (counts.get(position) || 0) + 1))
     return counts
 }
 

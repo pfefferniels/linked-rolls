@@ -118,8 +118,10 @@ const carriersOffTheirMeaning = (
         const copy = view.copyOf(carrier.id)
         if (!copy) return false
 
-        const meaning = barOf(copy).meaningOf(carrier.vertical.from)
-        return !meaning || keyOf(meaning) !== keyOf(symbol)
+        // A carrier lying across several positions reads as several commands,
+        // and carries the symbol as long as one of them is the symbol's.
+        return !barOf(copy).meaningsOf(carrier.vertical)
+            .some(meaning => keyOf(meaning) === keyOf(symbol))
     }
 
     return perforations

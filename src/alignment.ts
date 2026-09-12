@@ -104,8 +104,9 @@ const noteOnsets = (features: readonly AnyFeature[], bar: TrackerBar): Onset[] =
     features
         .flatMap((feature): Onset[] => {
             if (feature.type !== 'Hole') return []
-            const meaning = bar.meaningOf(feature.vertical.from)
-            return meaning?.type === 'note' ? [{ pitch: meaning.pitch, at: feature.horizontal.from }] : []
+            return bar.meaningsOf(feature.vertical)
+                .filter(meaning => meaning.type === 'note')
+                .map(meaning => ({ pitch: meaning.pitch, at: feature.horizontal.from }))
         })
         .sort(byPlace)
 

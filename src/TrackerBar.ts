@@ -80,8 +80,21 @@ export interface TrackerBar {
      */
     endsAt(features: readonly PlacedOnBar[]): RollEnd | undefined
 
-    /** `undefined` for a position the bar does not read. */
+    /**
+     * `undefined` for a position the bar does not read. A measured place
+     * is snapped to the nearest position: perforations sit on the grid and
+     * measurements of them scatter around it.
+     */
     meaningOf(position: Track): TrackMeaning | undefined
+
+    /**
+     * What the bar reads off a feature, which may lie across more than one
+     * position. A perforation lifts every valve whose bar hole it uncovers,
+     * so an opening across two positions reads as two commands; one on a
+     * single position reads as the one `meaningOf` gives, and one on
+     * positions the bar does not read as none at all.
+     */
+    meaningsOf(span: OnBar): readonly TrackMeaning[]
 
     /**
      * `meaningOf` inverted: the position this bar reads the meaning on,
@@ -91,8 +104,11 @@ export interface TrackerBar {
      */
     positionOf(meaning: TrackMeaning): Track | undefined
 
-    /** `undefined` for a position the bar does not read. */
+    /** `undefined` for a position the bar does not read; snapped as `meaningOf` is. */
     roleOf(position: Track): TrackRole | undefined
+
+    /** The positions a feature lies across, snapped to the grid. */
+    positionsIn(span: OnBar): readonly Track[]
 }
 
 /**
@@ -143,6 +159,16 @@ export type PlacedOnBar = {
     readonly vertical: { readonly from: Track }
 }
 
+/**
+ * Where a feature lies across the bar: one place, or a run of them where
+ * `to` is given. Structural, so a feature's `vertical` passes as it is and
+ * this module need know nothing about features.
+ */
+export type OnBar = {
+    readonly from: Track
+    readonly to?: Track
+}
+
 export interface TrackerBarSpec {
     id: string
     name: string
@@ -179,28 +205,51 @@ const areasOf = ({ notes, trackCount }: TrackerBarSpec): TrackArea[] => [
 const scopeOf = (role: TrackRole): ExpressionScope =>
     role === 'bass-expression' ? 'bass' : 'treble'
 
+/**
+ * The bar position a measured place falls on. Places are measured off a
+ * scan and scatter around the grid, while the bar has holes only at whole
+ * positions, so the nearest one is the one uncovered.
+ */
+const snap = (place: Track): Track => track(Math.round(place))
+
+/** The positions a span reaches, both ends snapped and the run between them. */
+const positionsBetween = (span: OnBar): Track[] => {
+    const ends = [snap(span.from), snap(span.to ?? span.from)]
+    const [first, last] = [Math.min(...ends), Math.max(...ends)]
+    return Array.from({ length: last - first + 1 }, (_, step) => track(first + step))
+}
+
 export const describeTrackerBar = (spec: TrackerBarSpec): TrackerBar => {
     const areas = areasOf(spec)
 
-    const roleOf = (position: Track) =>
+    const areaAt = (position: Track) =>
         areas.find(area => position >= area.from && position <= area.to)?.role
 
+    const roleOf = (position: Track) => areaAt(snap(position))
+
     const meaningOf = (position: Track): TrackMeaning | undefined => {
-        const role = roleOf(position)
+        const place = snap(position)
+        const role = areaAt(place)
         if (!role) return undefined
 
         if (role === 'note') {
             return {
                 type: 'note',
-                pitch: position - spec.notes.from + spec.notes.lowestPitch
+                pitch: place - spec.notes.from + spec.notes.lowestPitch
             }
         }
 
-        const expressionType = spec.expressions.get(position)
+        const expressionType = spec.expressions.get(place)
         if (!expressionType) return undefined
 
         return { type: 'expression', expressionType, scope: scopeOf(role) }
     }
+
+    const meaningsOf = (span: OnBar): TrackMeaning[] =>
+        positionsBetween(span).flatMap(position => {
+            const meaning = meaningOf(position)
+            return meaning ? [meaning] : []
+        })
 
     const positions = new Map(
         Array.from({ length: spec.trackCount }, (_, i) => track(i + 1))
@@ -223,7 +272,7 @@ export const describeTrackerBar = (spec: TrackerBarSpec): TrackerBar => {
     const endsAt = (features: readonly PlacedOnBar[]): RollEnd | undefined => {
         const hold = spec.rewindHold ?? mm(0)
         const candidates = features
-            .filter(feature => feature.vertical.from === rewind)
+            .filter(feature => snap(feature.vertical.from) === rewind)
             .filter(feature => !shared || feature.horizontal.to - feature.horizontal.from >= hold)
             .map(feature => feature.horizontal.from)
         return candidates.length ? { at: mm(Math.min(...candidates)), because: 'rewind' } : undefined
@@ -240,8 +289,10 @@ export const describeTrackerBar = (spec: TrackerBarSpec): TrackerBar => {
         rewindTrack: track(rewind),
         ...(spec.paperSpeed && { paperSpeed: spec.paperSpeed }),
         meaningOf,
+        meaningsOf,
         positionOf: meaning => positions.get(keyOf(meaning)),
-        roleOf
+        roleOf,
+        positionsIn: positionsBetween
     }
 }
 

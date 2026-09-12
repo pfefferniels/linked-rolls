@@ -231,3 +231,61 @@ describe('track calibration', () => {
         expect(columnsOf(track(13), track(11), calibration)).toEqual(columnsOf(track(11), track(13), calibration))
     })
 })
+
+describe('a place measured off a scan', () => {
+    it('snaps to the position it is nearest', () => {
+        // the one Mezzoforte-Off punch of the Licensee copy of WM 225 measures
+        // track 1.06, and the rewind perforation track 89.0 within a hundredth
+        expect(welteLicensee.meaningOf(track(1.06))).toEqual(welteLicensee.meaningOf(track(1)))
+        expect(welteLicensee.meaningOf(track(0.8))).toEqual(welteLicensee.meaningOf(track(1)))
+        expect(welteLicensee.roleOf(track(8.4))).toEqual('bass-expression')
+        expect(welteLicensee.meaningOf(track(9.4))).toEqual({ type: 'note', pitch: 24 })
+    })
+
+    it('gives a whole pitch, never a fraction of one', () => {
+        const meaning = welteLicensee.meaningOf(track(45.4))
+        expect(meaning).toEqual({ type: 'note', pitch: 60 })
+        expect(Number.isInteger(meaning!.type === 'note' ? meaning.pitch : 0)).toBe(true)
+    })
+
+    it('reads nothing off a place beyond the bar', () => {
+        expect(welteLicensee.meaningOf(track(0.4))).toBeUndefined()
+        expect(welteLicensee.meaningOf(track(98.6))).toBeUndefined()
+    })
+})
+
+describe('a feature lying across the bar', () => {
+    it('reads one command where it covers one position', () => {
+        expect(welteLicensee.meaningsOf({ from: track(4) }))
+            .toEqual([welteLicensee.meaningOf(track(4))])
+        expect(welteLicensee.meaningsOf({ from: track(4), to: track(4) }))
+            .toEqual([welteLicensee.meaningOf(track(4))])
+    })
+
+    /**
+     * The opening at the head of the Licensee copy of WM 225 spans tracks
+     * 0.80 to 2.46, so it uncovers the bar holes of Mezzoforte-Off and
+     * Mezzoforte-On together.
+     */
+    it('reads both commands where it covers two positions', () => {
+        expect(welteLicensee.meaningsOf({ from: track(0.8), to: track(2.46) })).toEqual([
+            { type: 'expression', expressionType: 'MezzoforteOff', scope: 'bass' },
+            { type: 'expression', expressionType: 'MezzoforteOn', scope: 'bass' }
+        ])
+        expect(welteLicensee.positionsIn({ from: track(0.8), to: track(2.46) })).toEqual([1, 2])
+    })
+
+    it('takes its ends either way round', () => {
+        expect(welteLicensee.meaningsOf({ from: track(2), to: track(1) }))
+            .toEqual(welteLicensee.meaningsOf({ from: track(1), to: track(2) }))
+    })
+
+    it('reads nothing off a run the bar does not reach', () => {
+        expect(welteLicensee.meaningsOf({ from: track(99), to: track(101) })).toEqual([])
+    })
+
+    it('leaves out the positions the bar does not read, and keeps the rest', () => {
+        const across = welteT98.meaningsOf({ from: track(97), to: track(100) })
+        expect(across).toEqual([welteT98.meaningOf(track(97)), welteT98.meaningOf(track(98))])
+    })
+})
