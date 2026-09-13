@@ -129,6 +129,16 @@ export const createVersion = (siglum: string, copy: RollCopy): EditionOp =>
         })
     }
 
+/**
+ * Puts the copy into the edition without a version of its own, as for a
+ * copy whose features are not read into symbols: one known only from a
+ * recording states instead which versions it carries.
+ */
+export const addCopy = (copy: RollCopy): EditionOp =>
+    draft => {
+        draft.copies.push(copy)
+    }
+
 /** States what the scale is put down to, in place of an earlier reading. */
 const readScale = (copy: Draft<RollCopy>, reading: ScaleReading) => {
     if (reading.cause === 'paper') {
@@ -174,6 +184,43 @@ export const clearSource = (copyId: string): EditionOp =>
     onCopy(copyId, copy => {
         copy.readFrom = undefined
     })
+
+/** A reference under the belief given, where one is given. */
+const referenceHeld = (id: string, belief?: Belief): ReferenceAssumption =>
+    ({ ...assignReference(id), ...(belief && { '@annotation': { id: v4(), belief } }) })
+
+/** The references less those that match, or nothing where none is left. */
+const withoutReferences = <R extends ReferenceAssumption>(references: readonly R[], matches: (reference: Readonly<R>) => boolean): R[] | undefined => {
+    const kept = references.filter(reference => !matches(reference))
+    return kept.length > 0 ? kept : undefined
+}
+
+/** Takes out the copy's statements that match, and the list itself where none is left. */
+const dropStatements = (copy: Draft<RollCopy>, matches: (statement: Readonly<ReferenceAssumption>) => boolean) => {
+    const statements = stateOf<RollCopy>(copy).carries
+    if (!statements?.some(matches)) return
+    const kept = withoutReferences(statements, matches)
+    if (kept) copy.carries = kept
+    else delete copy.carries
+}
+
+/**
+ * States that the copy carries the version, under the belief given. It
+ * is meant for a copy whose features are not read into symbols, such as
+ * one known only from a recording, and `carriageProblems` reports it
+ * where features carry symbols already. A second statement about one
+ * version is none.
+ */
+export const stateCarriage = (copyId: string, versionId: string, belief?: Belief): EditionOp =>
+    onCopy(copyId, copy => {
+        const statements = stateOf<RollCopy>(copy).carries ?? []
+        if (statements.some(statement => idOf(statement) === versionId)) return
+        copy.carries = [...statements, referenceHeld(versionId, belief)]
+    })
+
+/** Takes back the copy's statement that it carries the version. */
+export const clearCarriage = (copyId: string, versionId: string): EditionOp =>
+    onCopy(copyId, copy => dropStatements(copy, statement => idOf(statement) === versionId))
 
 /**
  * Adds a general condition to the copy, beside whatever is stated of it
@@ -610,8 +657,8 @@ const hypothesesBeside = (version: Readonly<Version>, parentId: string): Derivat
 const dropDerivations = (version: Draft<Version>, matches: (derivation: Readonly<Derivation>) => boolean) => {
     const derivations = stateOf<Version>(version).basedOn
     if (!derivations?.some(matches)) return
-    const kept = derivations.filter(derivation => !matches(derivation))
-    if (kept.length > 0) version.basedOn = kept
+    const kept = withoutReferences(derivations, matches)
+    if (kept) version.basedOn = kept
     else delete version.basedOn
 }
 
@@ -725,16 +772,19 @@ export const detachVersion = (view: EditionView, versionId: string): EditionOp =
 
 /**
  * Takes the version out. Whatever read its text against it comes to
- * stand on its own, and a hypothesis that something derives from it goes.
+ * stand on its own, a hypothesis that something derives from it goes,
+ * and so does a copy's statement that it carries the version.
  */
 export const removeVersion = (view: EditionView, versionId: string): EditionOp => {
     const detachments = view.edition.versions
         .filter(version => readsAgainst(version, versionId))
         .map(version => detachVersion(view, version.id))
+    const namesIt = (reference: Readonly<ReferenceAssumption>) => idOf(reference) === versionId
 
     return draft => {
         detachments.forEach(detach => detach(draft))
-        draft.versions.forEach(version => dropDerivations(version, derivation => idOf(derivation) === versionId))
+        draft.versions.forEach(version => dropDerivations(version, namesIt))
+        draft.copies.forEach(copy => dropStatements(copy, namesIt))
         draft.versions = without(draft.versions, version => version.id === versionId)
     }
 }
@@ -772,10 +822,7 @@ export const stateDerivation = (versionId: string, parentId: string, belief?: Be
     onVersion(versionId, version => {
         const derivations = stateOf<Version>(version).basedOn ?? []
         if (parentId === versionId || derivations.some(derivation => idOf(derivation) === parentId)) return
-        version.basedOn = [
-            ...derivations,
-            { ...assignReference(parentId), ...(belief && { '@annotation': { id: v4(), belief } }) }
-        ]
+        version.basedOn = [...derivations, referenceHeld(parentId, belief)]
     })
 
 /** Takes back the hypothesis that the version derives from the parent; the principal derivation goes with `detachVersion`. */

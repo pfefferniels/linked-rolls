@@ -147,7 +147,6 @@ export function readFromSpencerBar(
         id: v4(),
         ops: [],
         conditions: [],
-        keeper: { name: '', sameAs: [] },
         measurements: {},
         production: { system: systemOf(system) },
         modifications: [],

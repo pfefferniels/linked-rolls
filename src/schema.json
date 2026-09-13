@@ -628,7 +628,7 @@
       "ontology": "reo:scope"
     },
     "FeatureSource": {
-      "description": "The capture by which a copy's features became data: what they were read from, who read them, on what device and when. It states where the numbers of the edition come from and says nothing about the state of the paper, which is a condition.\n\nWhat is not known is left out. A reader is told about the gap by `reservationsAbout`, which works out what a copy cannot vouch for from what it states here.",
+      "description": "The capture by which a copy's features became data: what they were read from, who read them, on what device, with what software and when. It states where the numbers of the edition come from and says nothing about the state of the paper, which is a condition.\n\nWhat is not known is left out. A reader is told about the gap by `reservationsAbout`, which works out what a copy cannot vouch for from what it states here.",
       "properties": {
         "actor": {
           "$ref": "#/definitions/ActorAssignment",
@@ -646,6 +646,11 @@
           "description": "The make and model of the scanner, camera or player the capture ran on.",
           "ontology": "crmdig:L12 happened on device"
         },
+        "instrument": {
+          "$ref": "#/definitions/ObjectAssumption%3CInstrument%3E",
+          "description": "The instrument the copy was played on, where the capture is a recording of it.",
+          "ontology": "crm:P16 used specific object"
+        },
         "kind": {
           "$ref": "#/definitions/SourceKind",
           "description": "What the features were read from.",
@@ -660,6 +665,14 @@
           "description": "The file the capture produced, where it has an address.",
           "type": "string",
           "ontology": "crmdig:L11 had output"
+        },
+        "software": {
+          "description": "The software the capture ran, each with its version.",
+          "items": {
+            "$ref": "#/definitions/Software"
+          },
+          "type": "array",
+          "ontology": "crmdig:L23 used software or firmware"
         }
       },
       "required": [
@@ -823,12 +836,20 @@
           "ontology": "crm:P3 has note"
         },
         "premises": {
-          "description": "References (by `@id`) to the beliefs or facts from which the conclusion is drawn.",
+          "description": "References (by `@id`) to the beliefs from which the conclusion is drawn.",
           "items": {
             "type": "string"
           },
           "type": "array",
           "ontology": "crminf:J1 used as premise"
+        },
+        "used": {
+          "description": "References (by `@id`) to what the inference worked on besides beliefs, such as the versions it compared or the analysis output it cites.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "ontology": "crm:P16 used specific object"
         },
         "@type": {
           "const": "inference",
@@ -1312,6 +1333,52 @@
       ],
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain."
     },
+    "ObjectAssumption<ConditionState<\"general\">>": {
+      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
+      "properties": {
+        "@annotation": {
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement.",
+              "ontology": "crminf:J4i is subject of"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "conditionType": {
+          "const": "general",
+          "description": "The kind of condition, from the list the roll or the kind of feature allows.",
+          "type": "string",
+          "ontology": "crm:P2 has type"
+        },
+        "description": {
+          "description": "A free-text description of the condition, providing details beyond the type classification.",
+          "type": "string",
+          "ontology": "crm:P3 has note"
+        },
+        "@type": {
+          "const": "ConditionState",
+          "description": "The type discriminator for this object.",
+          "type": "string",
+          "ontology": "rdf:type"
+        }
+      },
+      "required": [
+        "conditionType",
+        "@type"
+      ],
+      "type": "object"
+    },
     "ObjectAssumption<ConditionState<(\"detaching\"|\"ripped\")>>": {
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
@@ -1499,6 +1566,55 @@
       "required": [
         "conditionType",
         "@type"
+      ],
+      "type": "object"
+    },
+    "ObjectAssumption<Instrument>": {
+      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
+      "properties": {
+        "@annotation": {
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement.",
+              "ontology": "crminf:J4i is subject of"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "condition": {
+          "$ref": "#/definitions/ObjectAssumption%3CConditionState%3C%22general%22%3E%3E",
+          "ontology": "crm:P44 has condition"
+        },
+        "name": {
+          "description": "The name, e.g. \"Grünfeld, Alfred\", \"Wien\", \"M. Welte & Söhne\".",
+          "type": "string",
+          "ontology": "rdfs:label"
+        },
+        "sameAs": {
+          "description": "Authority records for the same thing: GND, Wikidata, geonames or similar.",
+          "examples": [
+            "https://d-nb.info/gnd/116888652"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "ontology": "owl:sameAs"
+        }
+      },
+      "required": [
+        "name",
+        "sameAs"
       ],
       "type": "object"
     },
@@ -1984,6 +2100,14 @@
     "RollCopy": {
       "description": "A physical copy of a roll, held at a specific location. Each roll copy has its own set of features, measurements, conditions, and modifications. Multiple copies of the same roll may exist across different archives or collections.",
       "properties": {
+        "carries": {
+          "description": "The versions this copy is held to carry, where its features are not read into symbols, as for a copy known only from a recording. Each statement carries the belief it rests on.",
+          "items": {
+            "$ref": "#/definitions/ReferenceAssumption"
+          },
+          "type": "array",
+          "ontology": "crm:P128 carries"
+        },
         "conditions": {
           "description": "Condition assessments of this roll copy (e.g. paper stretch, general wear). Each condition is an assumption annotatable with a belief.",
           "items": {
@@ -2002,7 +2126,7 @@
         },
         "keeper": {
           "$ref": "#/definitions/Agent",
-          "description": "The institution or person holding this copy.",
+          "description": "The institution or person holding this copy. Left out where it is not known, as for a copy known only from a recording.",
           "ontology": "crm:P50 has current keeper"
         },
         "measurements": {
@@ -2161,7 +2285,6 @@
         "conditions",
         "features",
         "@id",
-        "keeper",
         "measurements",
         "modifications",
         "ops",
@@ -2188,11 +2311,31 @@
       ],
       "type": "object"
     },
+    "Software": {
+      "description": "Software a capture ran, such as the transcriber that read a recording into notes or the emulator that wrote a MIDI file.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "ontology": "rdfs:label"
+        },
+        "version": {
+          "description": "The release, or the model checkpoint of a transcriber.",
+          "type": "string",
+          "ontology": "owl:versionInfo"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "type": "object",
+      "ontology": "crmdig:D14 Software"
+    },
     "SourceKind": {
       "enum": [
         "roll",
         "scan",
         "analysis",
+        "reading",
         "emulation",
         "recording"
       ],

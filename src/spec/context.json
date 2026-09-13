@@ -61,7 +61,13 @@
     },
     "inference": {
       "@id": "crminf:I5_Inference_Making",
-      "@context": { "note": "crm:P3_has_note" }
+      "@context": {
+        "note": "crm:P3_has_note",
+        "used": {
+          "@id": "crm:P16_used_specific_object",
+          "@type": "@id"
+        }
+      }
     },
     "beliefAdoption": {
       "@id": "crminf:I7_Belief_Adoption",
@@ -172,6 +178,7 @@
     "factor": "rdf:value",
     "keeper": "crm:P50_has_current_keeper",
     "features": "crm:P56_bears_feature",
+    "carries": "crm:P128_carries",
     "modifications": "crm:P31i_was_modified_by",
     "scan": {
       "@id": "crm:P138i_has_representation",
@@ -194,6 +201,11 @@
           "@type": "@id"
         },
         "device": "crmdig:L12_happened_on_device",
+        "software": {
+          "@id": "crmdig:L23_used_software_or_firmware",
+          "@context": { "version": "owl:versionInfo" }
+        },
+        "instrument": "crm:P16_used_specific_object",
         "note": "crm:P3_has_note"
       }
     },

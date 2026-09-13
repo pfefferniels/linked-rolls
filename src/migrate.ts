@@ -103,8 +103,27 @@ const isSingleDerivation = (basedOn: Json): boolean =>
 const withDerivationList = (node: Json): Json =>
     isSingleDerivation(node.basedOn) ? { ...node, basedOn: [node.basedOn] } : node
 
+/**
+ * A copy read on a roll reader was stated as a recording before a sound
+ * recording could be one. A sound recording gives no holes, so a recording
+ * with holes is a reading.
+ */
+const withReadingKind = (node: Json): Json =>
+    node.readFrom?.kind === 'recording' && Array.isArray(node.features)
+        && node.features.some((feature: Json) => feature?.['@type'] === 'Hole')
+        ? { ...node, readFrom: { ...node.readFrom, kind: 'reading' } }
+        : node
+
+/** A keeper nobody could name was written as an empty one before a copy could leave it out. */
+const withoutEmptyKeeper = (node: Json): Json => {
+    if (node.keeper?.name !== '' || node.keeper.sameAs?.length) return node
+    const { keeper: _unnamed, ...rest } = node
+    return rest
+}
+
 const migrateNode = (node: Json): Json =>
-    [withRenamedKeys, withTypology, withReferences, withKeeper, withProductionNodes, withScale, withDerivationList]
+    [withRenamedKeys, withTypology, withReferences, withKeeper, withoutEmptyKeeper, withProductionNodes, withScale,
+        withDerivationList, withReadingKind]
         .reduce((result, step) => step(result), node)
 
 /** The items each walked, or the very same list where the walk changed none. */

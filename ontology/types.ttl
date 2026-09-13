@@ -88,12 +88,15 @@ reot:scan a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/typ
 reot:analysis a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "analysis"@en ;
     rdfs:comment "The features were taken from a list of holes that somebody else had measured on a scan, such as a SUPRA analysis file."@en .
+reot:reading a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "reading"@en ;
+    rdfs:comment "The features were taken from the times at which the switches of a roll reader opened and closed as the roll passed its tracker bar, put back onto the paper at the speed the roll ran. A hole runs as long as its switch stayed open, which is longer than the perforation."@en .
 reot:emulation a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "emulation"@en ;
     rdfs:comment "The features were reconstructed from a MIDI file that an emulator had produced from the roll, in which the expression commands have already been read and interpreted."@en .
 reot:recording a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "recording"@en ;
-    rdfs:comment "The features were reconstructed from a MIDI file captured while the copy was played on a reproducing piano, so they carry the rendering of that instrument."@en .
+    rdfs:comment "The copy is known from a sound recording of it played on an instrument. Features taken from it carry the rendering of that instrument, the recording chain and a transcriber, and the expression commands show only in how loudly the notes sound."@en .
 
 
 # Role of an agent in the edition (P2 has type on an E39 Actor)

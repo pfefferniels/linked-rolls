@@ -132,10 +132,11 @@ describe('a version that does not state its text', () => {
     }
 
     it('reads as the version it derives from, and says so', () => {
+        const view = new EditionView(editionWith(unstated()))
         expect(textOf(editionWith(unstated()), 'S')).toEqual(['note-c'])
-        expect(reservationsAboutVersion(unstated()).map(reservation => reservation.type))
+        expect(reservationsAboutVersion(view, unstated()).map(reservation => reservation.type))
             .toEqual(['text-not-stated', 'type-not-stated'])
-        expect(reservationsAboutVersion(version('S', [], 'C'))).toEqual([])
+        expect(reservationsAboutVersion(view, version('S', [], 'C'))).toEqual([])
     })
 
     it('stays unstated where an operation on its edits finds none', () => {

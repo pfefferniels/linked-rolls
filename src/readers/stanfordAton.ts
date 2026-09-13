@@ -231,7 +231,6 @@ export function readFromStanfordAton(
         id: v4(),
         ops: [],
         conditions: [],
-        keeper: { name: '', sameAs: [] },
         production: { system: systemOf(system) },
         modifications: [],
         ...((scan ?? stanford) && { scan: scan ?? stanford?.scan }),

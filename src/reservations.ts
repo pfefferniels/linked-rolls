@@ -2,15 +2,20 @@ import { bearsPhysicalEvidence, isMeasured, sourceLabels } from "./FeatureSource
 import { calibrationOf, RollCopy } from "./RollCopy";
 import { trackerBarOf } from "./systems";
 import { Version } from "./Version";
+import { EditionView } from "./EditionView";
+import { witnessesOf } from "./witnesses";
 
 export const reservationTypes = [
     'source-not-stated',
     'source-undocumented',
+    'software-not-named',
+    'instrument-not-named',
     'features-interpreted',
     'no-physical-evidence',
     'measurement-undocumented',
     'not-calibrated',
-    'system-unknown'
+    'system-unknown',
+    'keeper-unknown'
 ] as const
 
 export type ReservationType = typeof reservationTypes[number]
@@ -48,6 +53,22 @@ const sourceDocumented: Check = copy => {
         note: `The copy names ${sourceLabels[source.kind]} as its source, but records nobody who made it, no device and no date.`
     }
 }
+
+/** An emulation and a recording are turned into notes by software, which says how far to trust them. */
+const softwareNamed: Check = copy => {
+    const source = copy.readFrom
+    if (!source || isMeasured(source.kind) || source.software?.length) return undefined
+    return {
+        type: 'software-not-named',
+        note: `The copy names ${sourceLabels[source.kind]} as its source, but not the software that turned it into notes.`
+    }
+}
+
+const instrumentNamed: Check = copy =>
+    copy.readFrom?.kind === 'recording' && !copy.readFrom.instrument ? {
+        type: 'instrument-not-named',
+        note: 'The copy is known from a recording, but neither the instrument it was played on nor its regulation is named.'
+    } : undefined
 
 const featuresMeasured: Check = copy =>
     copy.readFrom && !isMeasured(copy.readFrom.kind) ? {
@@ -93,47 +114,69 @@ const systemKnown: Check = copy => {
     }
 }
 
+const keeperKnown: Check = copy =>
+    copy.keeper ? undefined : {
+        type: 'keeper-unknown',
+        note: 'Nobody is known to hold the copy, so its paper cannot be consulted.'
+    }
+
+/** A check on what a copy's features leave open, which has nothing to say of a copy without any. */
+const onFeatures = (check: Check): Check => copy =>
+    copy.features.length > 0 ? check(copy) : undefined
+
 const checks: readonly Check[] = [
     sourceStated,
     sourceDocumented,
-    featuresMeasured,
-    physicalEvidence,
-    measurementDocumented,
-    calibrated,
-    systemKnown
+    softwareNamed,
+    instrumentNamed,
+    onFeatures(featuresMeasured),
+    onFeatures(physicalEvidence),
+    onFeatures(measurementDocumented),
+    onFeatures(calibrated),
+    onFeatures(systemKnown),
+    keeperKnown
 ]
 
 /**
  * What the edition cannot vouch for in a copy, in the order the
  * checks are listed: where its features came from first, then what
- * the measurement leaves open.
+ * the measurement leaves open, then who holds it.
  */
 export const reservationsAbout = (copy: RollCopy): Reservation[] =>
     checks.flatMap(check => check(copy) ?? [])
 
 export const versionReservationTypes = [
     'text-not-stated',
-    'type-not-stated'
+    'type-not-stated',
+    'witnessed-by-statement-only'
 ] as const
 
 export type VersionReservationType = typeof versionReservationTypes[number]
 
-type VersionCheck = (version: Readonly<Version>) => Reservation<VersionReservationType> | undefined
+type VersionCheck = (view: EditionView, version: Readonly<Version>) => Reservation<VersionReservationType> | undefined
 
-const textStated: VersionCheck = version =>
+const textStated: VersionCheck = (_view, version) =>
     version.edits ? undefined : {
         type: 'text-not-stated',
         note: 'The version does not state its edits, so it reads as the version it derives from.'
     }
 
-const typeStated: VersionCheck = version =>
+const typeStated: VersionCheck = (_view, version) =>
     version.versionType ? undefined : {
         type: 'type-not-stated',
         note: 'The version does not say whether it served as a master for several copies or exists on one only.'
     }
 
-const versionChecks: readonly VersionCheck[] = [textStated, typeStated]
+const witnessedByFeatures: VersionCheck = (view, version) => {
+    const witnesses = witnessesOf(view, version.id)
+    return witnesses.length > 0 && witnesses.every(({ by }) => by === 'statement') ? {
+        type: 'witnessed-by-statement-only',
+        note: 'No copy\'s features carry what the version inserts; only copies that state they carry it bear witness to it.'
+    } : undefined
+}
+
+const versionChecks: readonly VersionCheck[] = [textStated, typeStated, witnessedByFeatures]
 
 /** What the edition cannot vouch for in a version, in the order the checks are listed. */
-export const reservationsAboutVersion = (version: Readonly<Version>): Reservation<VersionReservationType>[] =>
-    versionChecks.flatMap(check => check(version) ?? [])
+export const reservationsAboutVersion = (view: EditionView, version: Readonly<Version>): Reservation<VersionReservationType>[] =>
+    versionChecks.flatMap(check => check(view, version) ?? [])

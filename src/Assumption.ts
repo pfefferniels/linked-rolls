@@ -59,11 +59,19 @@ export interface MeaningComprehension extends Argumentation<'meaningComprehensio
  */
 export interface Inference extends Argumentation<'inference'> {
     /**
-     * References (by `@id`) to the beliefs or facts
+     * References (by `@id`) to the beliefs
      * from which the conclusion is drawn.
      * @see crminf:J1 used as premise
      */
     premises: string[]
+
+    /**
+     * References (by `@id`) to what the inference worked on besides
+     * beliefs, such as the versions it compared or the analysis output
+     * it cites.
+     * @see crm:P16 used specific object
+     */
+    used?: string[]
 }
 
 /**
