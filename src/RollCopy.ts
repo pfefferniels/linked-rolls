@@ -315,6 +315,13 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
     conditions: RollConditionAssignment[]
 
     /**
+     * A short siglum to identify the copy, e.g. "W1" or "S2". A copy
+     * without one is named by its keeper.
+     * @see reo:siglum
+     */
+    siglum?: string
+
+    /**
      * The institution or person holding this copy. Left out where it is
      * not known, as for a copy known only from a recording.
      * @see crm:P50 has current keeper

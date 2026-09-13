@@ -197,10 +197,10 @@ reo:witness
 
 reo:siglum
     a owl:DatatypeProperty ;
-    rdfs:domain lrmoo:F2_Expression ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( lrmoo:F2_Expression lrmoo:F5_Item ) ] ;
     rdfs:range xsd:string ;
     rdfs:label "siglum"@en ;
-    rdfs:comment """This property states the short label by which an edition refers to a version of the roll, such as A, B1 or B2. It is a shortcut of the path P1 is identified by, E42 Identifier typed 'siglum', P190 has symbolic content."""@en ;
+    rdfs:comment """This property states the short label by which an edition refers to a version of the roll, such as A, B1 or B2, or to a copy of it, such as W1. It is a shortcut of the path P1 is identified by, E42 Identifier typed 'siglum', P190 has symbolic content."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 

@@ -10,7 +10,7 @@ import { Assumption, assignObject, idOf, idsOf } from '../src/Assumption'
 import { CollationTolerance, defaultCollationTolerance } from '../src/Collation'
 import {
     addReason, alignCopy, clearBelief, collateSymbols, connectVersions, createBelief, createVersion, deriveVersion,
-    detachVersion, mergeEdits, pairPerforations, placePerforation, removeFeatures, removeReason, removeSymbols,
+    detachVersion, mergeEdits, nameCopy, pairPerforations, placePerforation, removeFeatures, removeReason, removeSymbols,
     removeVersion, setCertainty, splitEdit, unalignCopy, unpairPerforation, unplacePerforation
 } from '../src/editionOps'
 import { copy, edition, editionOf, expression, hole, note, version } from './editionFixture'
@@ -265,6 +265,16 @@ describe('removing symbols from a version', () => {
     it('leaves what the version inherits alone', () => {
         const before = edition()
         expect(produce(before, removeSymbols('B', ['note']))).toBe(before)
+    })
+})
+
+describe('naming a copy', () => {
+    it('gives the copy its siglum, trimmed, and takes a blank one away', () => {
+        const named = produce(twoRoots(), nameCopy('first', ' W1 '))
+
+        expect(named.copies[0].siglum).toBe('W1')
+        expect(named.copies[1]).not.toHaveProperty('siglum')
+        expect(produce(named, nameCopy('first', '  ')).copies[0]).not.toHaveProperty('siglum')
     })
 })
 

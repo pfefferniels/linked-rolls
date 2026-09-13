@@ -2270,6 +2270,11 @@
           "type": "string",
           "ontology": "crm:P138i has representation"
         },
+        "siglum": {
+          "description": "A short siglum to identify the copy, e.g. \"W1\" or \"S2\". A copy without one is named by its keeper.",
+          "type": "string",
+          "ontology": "reo:siglum"
+        },
         "@id": {
           "description": "A unique identifier for this object.",
           "type": "string"

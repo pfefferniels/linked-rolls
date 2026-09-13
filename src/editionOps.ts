@@ -185,6 +185,14 @@ export const clearSource = (copyId: string): EditionOp =>
         copy.readFrom = undefined
     })
 
+/** Gives the copy the siglum it is referred to by, or takes it away where the siglum given is blank. */
+export const nameCopy = (copyId: string, siglum: string): EditionOp =>
+    onCopy(copyId, copy => {
+        const trimmed = siglum.trim()
+        if (trimmed) copy.siglum = trimmed
+        else delete copy.siglum
+    })
+
 /** A reference under the belief given, where one is given. */
 const referenceHeld = (id: string, belief?: Belief): ReferenceAssumption =>
     ({ ...assignReference(id), ...(belief && { '@annotation': { id: v4(), belief } }) })

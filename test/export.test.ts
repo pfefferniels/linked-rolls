@@ -180,6 +180,17 @@ describe('Export', () => {
         expect(reimported.copies[0].production?.system?.id).toEqual('https://w3id.org/reo/type/system/welte-licensee')
         expect(reimported.copies[0].measurements.scale).toBe(1.3)
     })
+
+    it('carries the siglum of a copy there and back, and none where a copy has none', () => {
+        const named = edition()
+        named.copies[0].siglum = 'W1'
+
+        const exported = asJsonLd(named)
+        expect(exported.copies[0].siglum).toBe('W1')
+        expect(exported.copies[1]).not.toHaveProperty('siglum')
+        expect(importJsonLd(JSON.parse(JSON.stringify(exported))).copies.map(copy => copy.siglum))
+            .toEqual(['W1', undefined, undefined])
+    })
 })
 
 /**
