@@ -71,7 +71,7 @@ describe('the derivation a version is read against', () => {
         expect(view.withGenerations().find(candidate => candidate.id === 'S')?.generation).toBe(1)
         expect(derivationsOf(versionIn(edition, 'S'))).toEqual([
             { parent: 'C', certainty: 'true' },
-            { parent: 'B', certainty: 'possible' }
+            { parent: 'B', certainty: 'possible', belief: belief('possible') }
         ])
     })
 })
@@ -84,7 +84,7 @@ describe('stating and clearing a hypothesis of derivation', () => {
 
         expect(derivationsOf(versionIn(next, 'S'))).toEqual([
             { parent: 'C', certainty: 'true' },
-            { parent: 'B', certainty: 'possible' }
+            { parent: 'B', certainty: 'possible', belief: belief('possible') }
         ])
         expect(textOf(next, 'S')).toEqual(['note-c'])
     })
@@ -111,7 +111,7 @@ describe('connecting and removing where hypotheses are stated', () => {
 
         expect(derivationsOf(versionIn(next, 'S'))).toEqual([
             { parent: 'C', certainty: 'true' },
-            { parent: 'B', certainty: 'possible' }
+            { parent: 'B', certainty: 'possible', belief: belief('possible') }
         ])
         expect(versionIn(next, 'S').basedOn![0].collationTolerance).toBeDefined()
     })

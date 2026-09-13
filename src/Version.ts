@@ -1,6 +1,6 @@
 import { Edit } from "./Edit";
 import { Concept } from "./Agent";
-import { ActorAssignment, certainties, certaintyOf, Certainty, DateAssignment, idOf, ReferenceAssumption } from "./Assumption";
+import { ActorAssignment, Belief, certainties, certaintyOf, Certainty, DateAssignment, idOf, ReferenceAssumption } from "./Assumption";
 import { CollationTolerance, defaultCollationTolerance } from "./Collation";
 import { AnySymbol } from "./Symbol";
 import { WithId, WithNote, WithType } from "./utils";
@@ -160,9 +160,15 @@ export const insertedBy = (version: Readonly<Version>): AnySymbol[] =>
 export const deletedBy = (version: Readonly<Version>): string[] =>
     editsOf(version).flatMap(edit => edit.delete ?? [])
 
-/** The parents the version names, each with the certainty its derivation is held with. */
-export const derivationsOf = (version: Readonly<Version>): { parent: string, certainty: Certainty }[] =>
-    (version.basedOn ?? []).map(derivation => ({ parent: idOf(derivation), certainty: certaintyOf(derivation) }))
+/**
+ * The parents the version names, in the order of `basedOn`, each with the
+ * certainty its derivation is held with and the belief it rests on.
+ */
+export const derivationsOf = (version: Readonly<Version>): { parent: string, certainty: Certainty, belief?: Belief }[] =>
+    (version.basedOn ?? []).map(derivation => {
+        const belief = derivation['@annotation']?.belief
+        return { parent: idOf(derivation), certainty: certaintyOf(derivation), ...(belief && { belief }) }
+    })
 
 const rankOf = (derivation: Readonly<Derivation>): number => certainties.indexOf(certaintyOf(derivation))
 

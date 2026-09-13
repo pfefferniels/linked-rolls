@@ -1,4 +1,4 @@
-import { Certainty, certaintyOf, idOf, idsOf } from "./Assumption";
+import { Belief, Certainty, certaintyOf, idOf, idsOf } from "./Assumption";
 import { EditionView } from "./EditionView";
 import { AnySymbol } from "./Symbol";
 import { insertedBy, Version } from "./Version";
@@ -15,6 +15,9 @@ export interface Witness {
 
     /** How certainly a statement is held. Carriage through features is no statement and holds none. */
     certainty?: Certainty
+
+    /** The belief a statement rests on, where it states one. */
+    belief?: Belief
 }
 
 /** The copies whose features carry any of the symbols. */
@@ -47,10 +50,22 @@ export const witnessesOf = (view: EditionView, versionId: string): Witness[] => 
         .filter(copy => !carrying.has(copy.id))
         .flatMap(copy => (copy.carries ?? [])
             .filter(statement => idOf(statement) === versionId)
-            .map((statement): Witness => ({ copy: copy.id, by: 'statement', certainty: certaintyOf(statement) })))
+            .map((statement): Witness => {
+                const belief = statement['@annotation']?.belief
+                return { copy: copy.id, by: 'statement', certainty: certaintyOf(statement), ...(belief && { belief }) }
+            }))
 
     return [...byCarriers, ...byStatement]
 }
+
+/**
+ * The versions the copy bears witness to, each with how, in the order the
+ * edition lists its versions.
+ */
+export const versionsWitnessedBy = (view: EditionView, copyId: string): (Witness & { version: string })[] =>
+    view.edition.versions.flatMap(version => witnessesOf(view, version.id)
+        .filter(witness => witness.copy === copyId)
+        .map(witness => ({ ...witness, version: version.id })))
 
 export type CarriageProblem = {
     copy: string

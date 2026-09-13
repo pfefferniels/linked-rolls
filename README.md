@@ -88,9 +88,12 @@ no features to carry the symbols of a version. It states instead
 which versions it is held to carry, in `carries`, each under a belief
 that says how certainly and why. `witnessesOf` gathers the copies of a
 version, whether their features carry its symbols or they state that
-they carry it, and `carriageProblems` reports a statement made beside
-features that carry symbols already, or one naming a version the
-edition lacks.
+they carry it, a statement with the belief it rests on;
+`versionsWitnessedBy` gathers the same from the side of a copy.
+`carriageProblems` reports a statement made beside features that carry
+symbols already, or one naming a version the edition lacks. A copy may
+carry a `siglum`, as a version does; one without is named by its
+keeper.
 
 ```ts
 import { reservationsAbout, stateSource } from 'linked-rolls'

@@ -7,7 +7,7 @@ import { RollCopy } from '../src/RollCopy'
 import { Version } from '../src/Version'
 import { Edition } from '../src/Edition'
 import { addCopy, clearCarriage, EditionOp, removeVersion, stateCarriage } from '../src/editionOps'
-import { carriageProblems, witnessesOf } from '../src/witnesses'
+import { carriageProblems, versionsWitnessedBy, witnessesOf } from '../src/witnesses'
 import { reservationsAboutVersion } from '../src/reservations'
 import { asJsonLd } from '../src/asJsonLd'
 import { importJsonLd } from '../src/importJsonLd'
@@ -86,15 +86,24 @@ describe('a copy stating which versions it carries', () => {
 })
 
 describe('the witnesses of a version', () => {
-    it('counts a copy by what the version inserts, and a statement with its certainty', () => {
+    it('counts a copy by what the version inserts, and a statement with its certainty and belief', () => {
         const view = new EditionView(stating(['C', 'likely'], ['S', 'possible']))
 
         expect(witnessesOf(view, 'A')).toEqual([{ copy: 'paper', by: 'carriers' }])
         expect(witnessesOf(view, 'C')).toEqual([
             { copy: 'paper', by: 'carriers' },
-            { copy: 'recorded', by: 'statement', certainty: 'likely' }
+            { copy: 'recorded', by: 'statement', certainty: 'likely', belief: belief('likely') }
         ])
-        expect(witnessesOf(view, 'S')).toEqual([{ copy: 'recorded', by: 'statement', certainty: 'possible' }])
+        expect(witnessesOf(view, 'S')).toEqual([{ copy: 'recorded', by: 'statement', certainty: 'possible', belief: belief('possible') }])
+    })
+
+    it('gathers the versions a copy bears witness to, in the order of the edition', () => {
+        const view = new EditionView(stating(['S', 'possible'], ['C', 'likely']))
+
+        expect(versionsWitnessedBy(view, 'paper').map(({ version, by }) => [version, by]))
+            .toEqual([['A', 'carriers'], ['C', 'carriers']])
+        expect(versionsWitnessedBy(view, 'recorded').map(({ version, certainty }) => [version, certainty]))
+            .toEqual([['C', 'likely'], ['S', 'possible']])
     })
 
     it('reports a version to which only statements bear witness', () => {
