@@ -29,11 +29,19 @@ const twoCopiesApart = (): Edition => editionOf(
     ]
 )
 
-/** That edition as a release before the move wrote it: the tolerance stated once, on the edition. */
+/**
+ * That edition as a release before the move wrote it: the tolerance stated
+ * once, on the edition, and a version naming its one derivation on its own.
+ */
 const writtenBefore = (tolerance: CollationTolerance) => {
     const edition = twoCopiesApart()
     edition.creation.collationTolerance = tolerance
-    return JSON.parse(JSON.stringify(asJsonLd(edition)))
+    const written = JSON.parse(JSON.stringify(asJsonLd(edition)))
+    return {
+        ...written,
+        versions: written.versions.map(({ basedOn, ...version }: any) =>
+            basedOn ? { ...version, basedOn: basedOn[0] } : version)
+    }
 }
 
 const carriersOfNote = (edition: Edition) => idsOf(new EditionView(edition).get<Note>('note')!.carriers)
@@ -183,18 +191,18 @@ describe('migrating an edition whose collation tolerance was the edition\'s', ()
             ]
         })
         expect(migrated.versions[0]).not.toHaveProperty('basedOn')
-        expect(migrated.versions[1].basedOn).toEqual({ '@id': 'A', collationTolerance: { toleranceStart: 2, toleranceEnd: 2 } })
-        expect(migrated.versions[2].basedOn.collationTolerance).toEqual({ toleranceStart: 7, toleranceEnd: 7 })
+        expect(migrated.versions[1].basedOn).toEqual([{ '@id': 'A', collationTolerance: { toleranceStart: 2, toleranceEnd: 2 } }])
+        expect(migrated.versions[2].basedOn[0].collationTolerance).toEqual({ toleranceStart: 7, toleranceEnd: 7 })
     })
 
     it('leaves the derivations of an edition that stated no tolerance as they are', () => {
         const migrated = migrate({ creation: {}, versions: [{ '@id': 'B', basedOn: { '@id': 'A' } }] })
-        expect(migrated.versions[0].basedOn).toEqual({ '@id': 'A' })
+        expect(migrated.versions[0].basedOn).toEqual([{ '@id': 'A' }])
     })
 
     it('keeps a version collating at the tolerance the edition stated', () => {
         const tight = importJsonLd(writtenBefore({ toleranceStart: mm(1), toleranceEnd: mm(1) }))
-        expect(tight.versions[1].basedOn!.collationTolerance).toEqual({ toleranceStart: 1, toleranceEnd: 1 })
+        expect(tight.versions[1].basedOn![0].collationTolerance).toEqual({ toleranceStart: 1, toleranceEnd: 1 })
         expect(produce(tight, collateSymbols(new EditionView(tight), 'B', ['note-b']))).toBe(tight)
 
         const wide = importJsonLd(writtenBefore({ toleranceStart: mm(5), toleranceEnd: mm(5) }))

@@ -20,7 +20,7 @@ const childFirst = () => {
             version('A', [{ type: 'edit', id: 'edit-a', insert: [note('note', 60, 'hole-note')] }])
         ]
     )
-    edition.versions[0].basedOn!.collationTolerance = { toleranceStart: mm(1), toleranceEnd: mm(1) }
+    edition.versions[0].basedOn![0].collationTolerance = { toleranceStart: mm(1), toleranceEnd: mm(1) }
     return edition
 }
 

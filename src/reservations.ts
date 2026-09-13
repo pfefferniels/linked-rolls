@@ -1,6 +1,7 @@
 import { bearsPhysicalEvidence, isMeasured, sourceLabels } from "./FeatureSource";
 import { calibrationOf, RollCopy } from "./RollCopy";
 import { trackerBarOf } from "./systems";
+import { Version } from "./Version";
 
 export const reservationTypes = [
     'source-not-stated',
@@ -15,16 +16,17 @@ export const reservationTypes = [
 export type ReservationType = typeof reservationTypes[number]
 
 /**
- * Something an edition cannot vouch for in one of its copies.
+ * Something an edition cannot vouch for in one of its copies or
+ * versions.
  *
- * A reservation is worked out from what the copy states about itself
- * and is never written into the edition: it says that knowledge of
- * the copy is incomplete, so filling in what is missing makes it go
- * away. Nothing here describes the state of the paper, which is a
+ * A reservation is worked out from what the copy or version states
+ * about itself and is never written into the edition: it says that
+ * knowledge of it is incomplete, so filling in what is missing makes it
+ * go away. Nothing here describes the state of the paper, which is a
  * condition of the copy.
  */
-export interface Reservation {
-    type: ReservationType
+export interface Reservation<T extends string = ReservationType> {
+    type: T
 
     /** What the reservation means for a reader, in one sentence. */
     note: string
@@ -108,3 +110,30 @@ const checks: readonly Check[] = [
  */
 export const reservationsAbout = (copy: RollCopy): Reservation[] =>
     checks.flatMap(check => check(copy) ?? [])
+
+export const versionReservationTypes = [
+    'text-not-stated',
+    'type-not-stated'
+] as const
+
+export type VersionReservationType = typeof versionReservationTypes[number]
+
+type VersionCheck = (version: Readonly<Version>) => Reservation<VersionReservationType> | undefined
+
+const textStated: VersionCheck = version =>
+    version.edits ? undefined : {
+        type: 'text-not-stated',
+        note: 'The version does not state its edits, so it reads as the version it derives from.'
+    }
+
+const typeStated: VersionCheck = version =>
+    version.versionType ? undefined : {
+        type: 'type-not-stated',
+        note: 'The version does not say whether it served as a master for several copies or exists on one only.'
+    }
+
+const versionChecks: readonly VersionCheck[] = [textStated, typeStated]
+
+/** What the edition cannot vouch for in a version, in the order the checks are listed. */
+export const reservationsAboutVersion = (version: Readonly<Version>): Reservation<VersionReservationType>[] =>
+    versionChecks.flatMap(check => check(version) ?? [])

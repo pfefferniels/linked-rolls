@@ -5,7 +5,7 @@ import { Edition } from "./Edition"
 import { AnyPerforation, AnySymbol, Expression, PlacementRelation, isPerforation, placementRelations } from "./Symbol"
 import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance } from "./Collation"
 import { Edit, EditType } from "./Edit"
-import { collationToleranceOf, insertedBy, Version } from "./Version"
+import { collationToleranceOf, Derivation, editsOf, insertedBy, principalDerivationOf, Version } from "./Version"
 import { asSymbols, barOf, GeneralRollCondition, isPaperStretch, Modification, RollCopy, ScaleReading, Shift } from "./RollCopy"
 import { systemOf, TrackerBar } from "./TrackerBar"
 import { substitutionsBetween } from "./substitution"
@@ -104,7 +104,8 @@ const droppingInsertions = (symbolIds: Ids) => (edit: Edit): Edit => {
 
 /** Takes the symbols out of the version's own insertions, and the edits that had nothing else. */
 const dropInsertions = (version: Draft<Version>, symbolIds: Ids) => {
-    version.edits = edited(stateOf<Version>(version).edits, droppingInsertions(symbolIds))
+    const edits = stateOf<Version>(version).edits
+    if (edits) version.edits = edited(edits, droppingInsertions(symbolIds))
 }
 
 /**
@@ -372,16 +373,17 @@ const forgetFeatures = (draft: Draft<Edition>, features: Ids) => {
     const versions = stateOf<Version[]>(draft.versions)
     const dropped = new Set(insertedIn(versions).filter(carriedOnlyOn(features)).map(symbol => symbol.id))
     const forget = forgettingFeatures(features, dropped)
-    const edits = versions.map(version => edited(version.edits, forget))
+    const edits = versions.map(version => version.edits && edited(version.edits, forget))
     const gone = new Set([
         ...features,
         ...dropped,
-        ...versions.flatMap((version, i) => droppedIds(version.edits, edits[i]))
+        ...versions.flatMap((version, i) => droppedIds(editsOf(version), edits[i] ?? []))
     ])
 
     renameReferences(draft, ids => without(ids, id => gone.has(id)))
     draft.versions.forEach((version, i) => {
-        version.edits = edits[i]
+        const stated = edits[i]
+        if (stated) version.edits = stated
     })
 }
 
@@ -537,7 +539,8 @@ const carryOver = (draft: Draft<Edition>, replaced: Ids, mergedId: string) => {
 
     const versions = stateOf<Version[]>(draft.versions)
     draft.versions.forEach((version, i) => {
-        version.edits = mapped(versions[i].edits, recarrying)
+        const edits = versions[i].edits
+        if (edits) version.edits = mapped(edits, recarrying)
     })
 }
 
@@ -591,12 +594,34 @@ const differ = (child: Version | undefined, parent: Version | undefined): boolea
     return one !== undefined && other !== undefined && one.id !== other.id
 }
 
+/** Whether the version's text is read against the parent, its principal derivation naming it. */
+const readsAgainst = (version: Readonly<Version>, parentId: string): boolean => {
+    const principal = principalDerivationOf(version)
+    return principal !== undefined && idOf(principal) === parentId
+}
+
+/** The derivations the version states beside its principal one, less any naming the parent. */
+const hypothesesBeside = (version: Readonly<Version>, parentId: string): Derivation[] => {
+    const principal = principalDerivationOf(version)
+    return (version.basedOn ?? []).filter(derivation => derivation !== principal && idOf(derivation) !== parentId)
+}
+
+/** Takes out the derivations that match, and the list itself where none is left. */
+const dropDerivations = (version: Draft<Version>, matches: (derivation: Readonly<Derivation>) => boolean) => {
+    const derivations = stateOf<Version>(version).basedOn
+    if (!derivations?.some(matches)) return
+    const kept = derivations.filter(derivation => !matches(derivation))
+    if (kept.length > 0) version.basedOn = kept
+    else delete version.basedOn
+}
+
 /**
  * Bases the child on the parent. A symbol of the child that collates
  * with one the parent hands down adds its carriers to that symbol; the
  * rest become the child's insertions, and what the parent hands down
  * and the child lacks becomes its deletions. The derivation states the
- * tolerance it was collated at.
+ * tolerance it was collated at and becomes the principal one; the
+ * hypotheses the child stated beside its former one stay.
  */
 export const connectVersions = (
     view: EditionView,
@@ -646,7 +671,10 @@ export const connectVersions = (
     return onVersion(childId, (child, draft) => {
         handOverCarriers(view, draft, collations)
         child.edits = edits
-        child.basedOn = { ...assignReference(parentId), collationTolerance: tolerance }
+        child.basedOn = [
+            { ...assignReference(parentId), collationTolerance: tolerance },
+            ...hypothesesBeside(stateOf<Version>(child), parentId)
+        ]
     })
 }
 
@@ -662,15 +690,16 @@ export const collateSymbols = (
     tolerance?: CollationTolerance
 ): EditionOp => {
     const version = view.get<Version>(versionId)
-    if (!version?.basedOn) return noChange
+    const principal = version && principalDerivationOf(version)
+    if (!version || !principal) return noChange
 
     const chosen = new Set(symbolIds)
     const own = insertedIn([version]).filter(symbol => chosen.has(symbol.id))
     const collations = collationsOf(
         own,
-        view.snapshot(idOf(version.basedOn)),
+        view.snapshot(idOf(principal)),
         symbol => view.placeOf(symbol),
-        tolerance ?? collationToleranceOf(version.basedOn))
+        tolerance ?? collationToleranceOf(principal))
     const collated = new Set(collations.map(({ symbol }) => symbol.id))
 
     return onVersion(versionId, (version, draft) => {
@@ -681,8 +710,8 @@ export const collateSymbols = (
 
 /**
  * Makes the version stand on its own: what it inherited becomes its
- * own insertions, and the link to the version it was based on goes,
- * with the motivations that belonged to that derivation.
+ * own insertions, and its derivations go, the hypotheses among them,
+ * with the motivations that belonged to them.
  */
 export const detachVersion = (view: EditionView, versionId: string): EditionOp => {
     const edits = view.snapshot(versionId).map(insertion)
@@ -694,14 +723,18 @@ export const detachVersion = (view: EditionView, versionId: string): EditionOp =
     })
 }
 
-/** Takes the version out; whatever was based on it comes to stand on its own. */
+/**
+ * Takes the version out. Whatever read its text against it comes to
+ * stand on its own, and a hypothesis that something derives from it goes.
+ */
 export const removeVersion = (view: EditionView, versionId: string): EditionOp => {
     const detachments = view.edition.versions
-        .filter(version => version.basedOn && idOf(version.basedOn) === versionId)
+        .filter(version => readsAgainst(version, versionId))
         .map(version => detachVersion(view, version.id))
 
     return draft => {
         detachments.forEach(detach => detach(draft))
+        draft.versions.forEach(version => dropDerivations(version, derivation => idOf(derivation) === versionId))
         draft.versions = without(draft.versions, version => version.id === versionId)
     }
 }
@@ -714,18 +747,42 @@ export const removeSymbols = (versionId: string, symbolIds: readonly string[]): 
 export const deriveVersion = (versionId: string, editIds: readonly string[]): EditionOp =>
     onVersion(versionId, (version, draft) => {
         const chosen = new Set(editIds)
-        const moved = version.edits.filter(edit => chosen.has(edit.id))
-        version.edits = without(version.edits, edit => chosen.has(edit.id))
+        const moved = editsOf(version).filter(edit => chosen.has(edit.id))
+        if (version.edits) version.edits = without(version.edits, edit => chosen.has(edit.id))
         draft.versions.push({
             type: 'Version',
             id: v4(),
             siglum: `${version.siglum}_derived`,
             system: stateOf<Version>(version).system,
             versionType: 'unicum',
-            basedOn: assignReference(versionId),
+            basedOn: [assignReference(versionId)],
             edits: moved,
             motivations: []
         })
+    })
+
+/**
+ * States that the version may also derive from the parent, beside what
+ * it derives from already: a hypothesis, such as a contamination, under
+ * the belief given. The text stays read against the principal derivation
+ * unless the belief holds this one more certain. A version derives from
+ * itself, or twice from one parent, in no statement.
+ */
+export const stateDerivation = (versionId: string, parentId: string, belief?: Belief): EditionOp =>
+    onVersion(versionId, version => {
+        const derivations = stateOf<Version>(version).basedOn ?? []
+        if (parentId === versionId || derivations.some(derivation => idOf(derivation) === parentId)) return
+        version.basedOn = [
+            ...derivations,
+            { ...assignReference(parentId), ...(belief && { '@annotation': { id: v4(), belief } }) }
+        ]
+    })
+
+/** Takes back the hypothesis that the version derives from the parent; the principal derivation goes with `detachVersion`. */
+export const clearDerivation = (versionId: string, parentId: string): EditionOp =>
+    onVersion(versionId, version => {
+        if (readsAgainst(stateOf<Version>(version), parentId)) return
+        dropDerivations(version, derivation => idOf(derivation) === parentId)
     })
 
 const sameSequence = (a: readonly string[], b: readonly string[]) =>
@@ -814,7 +871,7 @@ export const mergeEdits = (view: EditionView, versionId: string, toMerge: readon
     const mergedIds = new Set(toMerge.map(edit => edit.id))
 
     return onVersion(versionId, version => {
-        version.edits = [...version.edits.filter(edit => !mergedIds.has(edit.id)), merged]
+        version.edits = [...editsOf(version).filter(edit => !mergedIds.has(edit.id)), merged]
     })
 }
 
@@ -826,7 +883,7 @@ export const splitEdit = (versionId: string, toSplit: Edit): EditionOp => {
     ]
 
     return onVersion(versionId, version => {
-        version.edits = [...version.edits.filter(edit => edit.id !== toSplit.id), ...parts]
+        version.edits = [...editsOf(version).filter(edit => edit.id !== toSplit.id), ...parts]
     })
 }
 

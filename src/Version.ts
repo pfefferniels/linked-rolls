@@ -1,6 +1,6 @@
 import { Edit } from "./Edit";
 import { Concept } from "./Agent";
-import { ActorAssignment, DateAssignment, ReferenceAssumption } from "./Assumption";
+import { ActorAssignment, certainties, certaintyOf, Certainty, DateAssignment, idOf, ReferenceAssumption } from "./Assumption";
 import { CollationTolerance, defaultCollationTolerance } from "./Collation";
 import { AnySymbol } from "./Symbol";
 import { WithId, WithNote, WithType } from "./utils";
@@ -112,16 +112,21 @@ export interface Version extends WithId, WithType<'Version'> {
 
     /**
      * Whether the version served as a master for reproductions
-     * or exists on one copy only.
+     * or exists on one copy only. Left out where that is not known,
+     * as for a version only a secondary witness hints at.
      * @see crm:P2 has type
      */
-    versionType: VersionType
+    versionType?: VersionType
 
     /**
-     * If no derivation is defined, it is assumed that this version represents the mother roll.
+     * The versions this one is held to derive from, each under the
+     * belief it rests on. The text is read against the principal one
+     * (`principalDerivationOf`); the others stand as hypotheses, such as
+     * a contamination. A version that names none represents the mother
+     * roll.
      * @see lrmoo:R76 is derivative of
      */
-    basedOn?: Derivation;
+    basedOn?: Derivation[];
 
     /**
      * The act that made this version, where it is known: who carried it
@@ -131,10 +136,12 @@ export interface Version extends WithId, WithType<'Version'> {
     creation?: VersionCreation;
 
     /**
-     * The list of edits that, applied to the base version, produce this version.
+     * The list of edits that, applied to the base version, produce this
+     * version. A hypothetical version whose changes nobody can state
+     * leaves it out; it then reads as the version it derives from.
      * @see reo:involvedEdit
      */
-    edits: Edit[];
+    edits?: Edit[];
 
     /**
      * A collection of motivations used in this version's edits.
@@ -142,10 +149,33 @@ export interface Version extends WithId, WithType<'Version'> {
     motivations: Motivation[]
 }
 
+/** The edits the version states, none where it leaves its text unstated. */
+export const editsOf = (version: Readonly<Version>): Edit[] => version.edits ?? []
+
 /** The symbols the version's edits insert. */
 export const insertedBy = (version: Readonly<Version>): AnySymbol[] =>
-    version.edits.flatMap(edit => edit.insert ?? [])
+    editsOf(version).flatMap(edit => edit.insert ?? [])
 
 /** The ids of the symbols the version's edits delete. */
 export const deletedBy = (version: Readonly<Version>): string[] =>
-    version.edits.flatMap(edit => edit.delete ?? [])
+    editsOf(version).flatMap(edit => edit.delete ?? [])
+
+/** The parents the version names, each with the certainty its derivation is held with. */
+export const derivationsOf = (version: Readonly<Version>): { parent: string, certainty: Certainty }[] =>
+    (version.basedOn ?? []).map(derivation => ({ parent: idOf(derivation), certainty: certaintyOf(derivation) }))
+
+const rankOf = (derivation: Readonly<Derivation>): number => certainties.indexOf(certaintyOf(derivation))
+
+/**
+ * The derivation the version's text is read against: the first of those
+ * held most certain. One held unlikely or false is a rejected hypothesis
+ * and gives no text. Lowering the certainty of the principal derivation
+ * below another's reads the version's edits against another parent.
+ */
+export const principalDerivationOf = (version: Readonly<Version>): Readonly<Derivation> | undefined =>
+    (version.basedOn ?? [])
+        .filter(derivation => rankOf(derivation) <= certainties.indexOf('possible'))
+        .reduce<Readonly<Derivation> | undefined>(
+            (principal, derivation) =>
+                principal === undefined || rankOf(derivation) < rankOf(principal) ? derivation : principal,
+            undefined)

@@ -1,6 +1,6 @@
 import { Edition } from "./Edition";
 import { systemIdIn } from "./TrackerBar";
-import { isAsserted } from "./Assumption";
+import { certaintyOf, isAsserted } from "./Assumption";
 import context from "./spec/context.json";
 
 export const exportDate = (date: Date) => {
@@ -96,7 +96,7 @@ const isDoubtedReference = (value: unknown): value is Record<string, Json> =>
     isRecord(value)
     && typeof value['@id'] === 'string'
     && isRecord(value['@annotation'])
-    && !isAsserted(value['@annotation'].belief?.certainty ?? 'true')
+    && !isAsserted(certaintyOf(value))
     && Object.keys(value).every(key => key === '@id' || key === '@annotation' || silentTerms.has(key))
 
 /**

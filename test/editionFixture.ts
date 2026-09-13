@@ -52,7 +52,7 @@ export const version = (id: string, edits: Version['edits'], basedOn?: string): 
     versionType: 'edition',
     edits,
     motivations: [],
-    ...(basedOn ? { basedOn: assignReference(basedOn) } : {})
+    ...(basedOn ? { basedOn: [assignReference(basedOn)] } : {})
 })
 
 const nobody = { name: '', sameAs: [] }

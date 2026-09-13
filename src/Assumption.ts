@@ -24,6 +24,10 @@ export type Certainty = typeof certainties[number];
 export const isAsserted = (certainty: Certainty): boolean =>
     certainty === 'true' || certainty === 'likely'
 
+/** The certainty a statement is held with. One that carries no belief is stated plainly, and so held true. */
+export const certaintyOf = (assumption: Readonly<Assumption>): Certainty =>
+    assumption['@annotation']?.belief.certainty ?? 'true'
+
 /**
  * An argumentation provides reasons for a belief and
  * may be associated with a person carrying out that argumentation.

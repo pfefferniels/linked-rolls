@@ -96,8 +96,15 @@ const withScale = (node: Json): Json => {
     return factor === undefined ? node : { ...node, measurements: { ...node.measurements, scale: factor } }
 }
 
+/** A derivation written as a single one, before a version could name several. */
+const isSingleDerivation = (basedOn: Json): boolean =>
+    basedOn !== null && typeof basedOn === 'object' && !Array.isArray(basedOn)
+
+const withDerivationList = (node: Json): Json =>
+    isSingleDerivation(node.basedOn) ? { ...node, basedOn: [node.basedOn] } : node
+
 const migrateNode = (node: Json): Json =>
-    [withRenamedKeys, withTypology, withReferences, withKeeper, withProductionNodes, withScale]
+    [withRenamedKeys, withTypology, withReferences, withKeeper, withProductionNodes, withScale, withDerivationList]
         .reduce((result, step) => step(result), node)
 
 /** The items each walked, or the very same list where the walk changed none. */
@@ -229,7 +236,7 @@ const withEditors = (edition: Json): Json =>
         : { ...edition, creation: { ...edition.creation, editors: [] } }
 
 const statesNoTolerance = (version: Json): boolean =>
-    version.basedOn && !version.basedOn.collationTolerance
+    isSingleDerivation(version.basedOn) && !version.basedOn.collationTolerance
 
 /**
  * The collation tolerance was the edition's before it was stated on
