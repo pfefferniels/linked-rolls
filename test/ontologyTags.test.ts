@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import schema from '../src/schema.json'
 import context from '../src/spec/context.json'
+import { resolve } from './schema'
 
 /**
  * The `@see` tags in the TSDoc name the ontology term each key and
@@ -10,14 +11,6 @@ import context from '../src/spec/context.json'
 
 type Json = any
 const ctx: Json = context['@context']
-
-const resolve = (node: Json): Json => {
-    if (!node?.$ref) return node
-    const name = decodeURIComponent(node.$ref.replace('#/definitions/', ''))
-    const definition = (schema as Json).definitions[name]
-    if (!definition) throw new Error(`unresolved $ref ${node.$ref}`)
-    return definition
-}
 
 /** "crm:P14 carried out by" and "crm:P14_carried_out_by" both reduce to "crm:P14". */
 const codeOf = (term: string): string => {

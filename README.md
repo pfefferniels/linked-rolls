@@ -24,6 +24,16 @@ https://pfefferniels.github.io/linked-rolls/reo/; the w3id.org
 identifiers are not registered yet. `ontology/README.md` records the
 naming decisions.
 
+Beliefs travel as JSON-LD-star annotations (`@annotation`), which state
+the triple they annotate. A reference the edition holds possible,
+unlikely or false is therefore written as an embedded node beside the
+document: RDF names the statement without stating it, and
+`importJsonLd` puts it back where it stood. A doubted value, such as a
+date or an attribution, stays annotated in place for now. Reading the
+beliefs needs a processor that implements JSON-LD-star, such as the
+Ruby `json-ld` gem; jsonld.js ignores `@annotation`, and every belief
+with it.
+
 ## Format revisions
 
 Files written by linked-rolls 0.1 load unchanged: `importJsonLd`
