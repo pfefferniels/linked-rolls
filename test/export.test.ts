@@ -3,7 +3,8 @@ import { importJsonLd } from '../src/importJsonLd';
 import * as path from 'path'
 import { readFileSync } from 'fs';
 import { asJsonLd } from '../src/asJsonLd';
-import { assignObject, assignValue, valueOf } from '../src/Assumption';
+import { assignObject, assignValue, Certainty, valueOf } from '../src/Assumption';
+import { edition as smallEdition } from './editionFixture';
 import { PaperSpeed } from '../src/RollCopy';
 import { systemOf } from '../src/TrackerBar';
 import { welteLicensee } from '../src/systems/welteLicensee/bar';
@@ -76,6 +77,69 @@ describe('Export', () => {
     it('reads its own export back unchanged', () => {
         const exported = asJsonLd(edition())
         expect(asJsonLd(importJsonLd(JSON.parse(JSON.stringify(exported))))).toEqual(exported)
+    })
+
+    describe('beliefs about references', () => {
+        const annotation = (certainty: Certainty) => ({
+            id: `annotation-${certainty}`,
+            belief: { type: 'belief' as const, id: `belief-${certainty}`, certainty, reasons: [] }
+        })
+
+        const exportedAnnotation = (certainty: Certainty) => ({
+            '@id': `annotation-${certainty}`,
+            belief: { '@type': 'belief', '@id': `belief-${certainty}`, certainty, reasons: [] }
+        })
+
+        /** Version B held unlikely to derive from A, and one carrier of the note held possible. */
+        const doubted = () => {
+            const doubting = smallEdition()
+            const [a, b] = doubting.versions
+            b.basedOn = { ...b.basedOn!, '@annotation': annotation('unlikely') }
+            const note = a.edits[0].insert![0]
+            note.carriers[1] = { ...note.carriers[1], '@annotation': annotation('possible') }
+            return doubting
+        }
+
+        it('quotes a reference held below likely instead of stating it', () => {
+            const exported = asJsonLd(doubted())
+            const { '@id': _annotation, ...possible } = exportedAnnotation('possible')
+            const { '@id': _other, ...unlikely } = exportedAnnotation('unlikely')
+
+            expect(exported.versions[1]).not.toHaveProperty('basedOn')
+            expect(exported.versions[0].edits[0].insert[0].carriers).toEqual([{ '@id': 'hole-note' }])
+            expect(exported['@included']).toHaveLength(2)
+            expect(exported['@included']).toContainEqual({
+                '@id': { '@id': 'note', carriers: [{ '@id': 'hole-note-second' }] },
+                annotation: 'annotation-possible',
+                ...possible
+            })
+            expect(exported['@included']).toContainEqual({
+                '@id': { '@id': 'B', basedOn: { '@id': 'A' } },
+                annotation: 'annotation-unlikely',
+                ...unlikely
+            })
+        })
+
+        it('states a reference held likely, with its belief on it', () => {
+            const held = smallEdition()
+            held.versions[1].basedOn = { ...held.versions[1].basedOn!, '@annotation': annotation('likely') }
+
+            const exported = asJsonLd(held)
+            expect(exported.versions[1].basedOn).toEqual({ '@id': 'A', '@annotation': exportedAnnotation('likely') })
+            expect(exported).not.toHaveProperty('@included')
+        })
+
+        it('reads the quoted references back where they were stated', () => {
+            const doubting = doubted()
+            const back = importJsonLd(JSON.parse(JSON.stringify(asJsonLd(doubting))))
+            expect(back.versions).toEqual(doubting.versions)
+        })
+
+        it('leaves a doubted value annotated where it stands', () => {
+            const dated = smallEdition()
+            dated.roll.recordingEvent.date = { ...dated.roll.recordingEvent.date, '@annotation': annotation('possible') }
+            expect(asJsonLd(dated).roll.recordingEvent.date['@annotation']).toEqual(exportedAnnotation('possible'))
+        })
     })
 
     it('types annotated dates as xsd:date and reads them back', () => {

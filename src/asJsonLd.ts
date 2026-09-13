@@ -1,5 +1,7 @@
 import { Edition } from "./Edition";
 import { systemIdIn } from "./TrackerBar";
+import { isAsserted } from "./Assumption";
+import context from "./spec/context.json";
 
 export const exportDate = (date: Date) => {
     const year = date.getFullYear();
@@ -75,9 +77,90 @@ const withSystemContexts = (node: any): any => {
         : walked
 }
 
+type Json = any
+
+const isRecord = (value: unknown): value is Record<string, Json> =>
+    value !== null && typeof value === 'object' && !Array.isArray(value)
+
+/** Terms the context sets to null, which say nothing when the edition is read as RDF. */
+const silentTerms = new Set(
+    Object.entries(context['@context'])
+        .filter(([, definition]) => definition === null)
+        .map(([term]) => term))
+
+/**
+ * A reference its belief does not hold to be so: it names a node, states
+ * nothing RDF would read besides, and its belief is below likely.
+ */
+const isDoubtedReference = (value: unknown): value is Record<string, Json> =>
+    isRecord(value)
+    && typeof value['@id'] === 'string'
+    && isRecord(value['@annotation'])
+    && !isAsserted(value['@annotation'].belief?.certainty ?? 'true')
+    && Object.keys(value).every(key => key === '@id' || key === '@annotation' || silentTerms.has(key))
+
+/**
+ * The statement a doubted reference makes, as a JSON-LD-star embedded
+ * node: the triple is named without being stated, and the belief is
+ * about it. The annotation's own id goes along under a key RDF does not
+ * read, so that an import can put it back.
+ */
+const quote = (subject: string, key: string, reference: Record<string, Json>, listed: boolean): Json => {
+    const { '@annotation': { '@id': annotation, ...about }, ...object } = reference
+    return { '@id': { '@id': subject, [key]: listed ? [object] : object }, annotation, ...about }
+}
+
+type Quoting = { readonly node: Json, readonly quoted: readonly Json[] }
+
+/** The value a node states under a key, less the doubted references, and those references quoted. */
+const quotingValue = (subject: string, key: string, value: Json): Quoting => {
+    if (Array.isArray(value)) {
+        return {
+            node: value.filter(item => !isDoubtedReference(item)),
+            quoted: value.filter(isDoubtedReference).map(item => quote(subject, key, item, true))
+        }
+    }
+    return isDoubtedReference(value)
+        ? { node: undefined, quoted: [quote(subject, key, value, false)] }
+        : { node: value, quoted: [] }
+}
+
+/**
+ * The document with every doubted reference taken off the node that
+ * states it, and quoted instead.
+ *
+ * An `@annotation` in JSON-LD-star states the triple it annotates and
+ * then says something about it, so a statement the edition holds
+ * possible, unlikely or false would reach RDF as a fact. Only references
+ * between nodes are quoted, since only they can be put back where they
+ * stood; a doubted date or attribution stays annotated in place.
+ */
+const withDoubtedReferencesQuoted = (value: Json): Quoting => {
+    if (Array.isArray(value)) {
+        const quotings = value.map(withDoubtedReferencesQuoted)
+        return { node: quotings.map(({ node }) => node), quoted: quotings.flatMap(({ quoted }) => quoted) }
+    }
+    if (!isRecord(value)) return { node: value, quoted: [] }
+
+    const subject = value['@id']
+    const entries = Object.entries(value).map(([key, child]) => {
+        const own: Quoting = typeof subject === 'string' && !key.startsWith('@')
+            ? quotingValue(subject, key, child)
+            : { node: child, quoted: [] }
+        const below = withDoubtedReferencesQuoted(own.node)
+        return { key, node: below.node, quoted: [...own.quoted, ...below.quoted] }
+    })
+
+    return {
+        node: Object.fromEntries(entries.filter(({ node }) => node !== undefined).map(({ key, node }) => [key, node])),
+        quoted: entries.flatMap(({ quoted }) => quoted)
+    }
+}
+
 export const asJsonLd = (edition: Edition) => {
+    const { node, quoted } = withDoubtedReferencesQuoted(withSystemContexts(asJsonLdEntity(edition)))
     // The context is the export's own; one carried in from an import must not override it.
-    const { base, '@context': carried, ...rest } = withSystemContexts(asJsonLdEntity(edition))
+    const { base, '@context': carried, ...rest } = node
 
     return {
         '@context': [
@@ -88,6 +171,7 @@ export const asJsonLd = (edition: Edition) => {
         ],
         '@type': "Edition",
         '@id': edition.base,
-        ...rest
+        ...rest,
+        ...(quoted.length > 0 && { '@included': quoted })
     }
 }

@@ -16,6 +16,15 @@ export const certainties = [
 export type Certainty = typeof certainties[number];
 
 /**
+ * Whether a statement held with this certainty is stated as a fact when
+ * the edition is read as RDF. One held possible, unlikely or false is
+ * only quoted, so that a reader who leaves the beliefs aside does not
+ * take a doubted statement for the edition's own.
+ */
+export const isAsserted = (certainty: Certainty): boolean =>
+    certainty === 'true' || certainty === 'likely'
+
+/**
  * An argumentation provides reasons for a belief and
  * may be associated with a person carrying out that argumentation.
  * @see crminf:I1 Argumentation

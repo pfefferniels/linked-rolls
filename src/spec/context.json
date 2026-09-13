@@ -86,6 +86,7 @@
       "@type": "xsd:date"
     },
     "collationTolerance": null,
+    "annotation": null,
     "roll": "lrmoo:R3i_realises",
     "catalogueNumber": "dcterms:identifier",
     "system": "crm:P2_has_type",
