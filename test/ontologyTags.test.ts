@@ -25,10 +25,8 @@ const codeOf = (term: string): string => {
     return `${prefix}:${local.split(/[_ ]/)[0]}`
 }
 
-const cited = (description?: string): string[] => {
-    const marker = description?.match(/\[ontology:\s*([^\]]+)\]/)
-    return marker ? marker[1].split(',').map(t => codeOf(t.trim())).sort() : []
-}
+const cited = (ontology?: string): string[] =>
+    ontology ? ontology.split(',').map(t => codeOf(t.trim())).sort() : []
 
 const iriOf = (definition: Json): string | null | undefined =>
     definition === null ? null : typeof definition === 'string' ? definition : definition?.['@id']
@@ -59,7 +57,7 @@ const compare = (): Mismatch[] => {
     const seen = new Set<Json>()
 
     const checkClass = (node: Json, scopes: Json[], path: string) => {
-        const expected = cited(node.description)
+        const expected = cited(node.ontology)
         if (!expected.length) return
         const types = [node, ...(node.anyOf ?? []).map(resolve)].flatMap(typeValues)
         if (!types.length) return
@@ -67,13 +65,13 @@ const compare = (): Mismatch[] => {
         if (JSON.stringify(mapped) !== JSON.stringify(expected)) mismatches.push({ at: path, cited: expected, mapped })
     }
 
-    // A key without any description lost it in the schema generator's
-    // handling of Omit and Partial; only a described key is expected
+    // A key without any annotation lost it in the schema generator's
+    // handling of Omit and Partial; only an annotated key is expected
     // to carry a tag.
     const checkProperty = (key: string, raw: Json, definition: Json, path: string, silenced: boolean) => {
         const iri = iriOf(definition)
-        if (iri?.startsWith('@') || raw.description === undefined) return
-        const expected = cited(raw.description)
+        if (iri?.startsWith('@') || (raw.description === undefined && raw.ontology === undefined)) return
+        const expected = cited(raw.ontology)
         const mapped = silenced || !iri ? [] : [codeOf(iri)]
         if (JSON.stringify(mapped) !== JSON.stringify(expected)) mismatches.push({ at: `${path}.${key}`, cited: expected, mapped })
     }
