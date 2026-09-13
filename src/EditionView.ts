@@ -20,7 +20,7 @@ export const getAt = <T,>(path: Path, obj: unknown): T | undefined => {
 }
 
 /** Keys under which an object names others by id, singly or in a list. */
-const referenceKeys = ['delete', 'comprehends', 'motivation'] as const;
+const referenceKeys = ['delete', 'comprehends', 'motivation', 'premises', 'used'] as const;
 
 const isObject = (v: unknown): v is object => v !== null && typeof v === "object";
 

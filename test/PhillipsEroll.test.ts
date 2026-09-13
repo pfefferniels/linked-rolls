@@ -110,7 +110,7 @@ describe('reading one of Phillips’s e-roll files', () => {
     })
 
     it('states that the features were read on a roll reader', () => {
-        expect(copy.readFrom?.kind).toBe('recording')
+        expect(copy.readFrom?.kind).toBe('reading')
         expect(copy.readFrom?.actor?.name).toBe('Phillips, Peter')
     })
 

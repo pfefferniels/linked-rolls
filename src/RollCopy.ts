@@ -6,7 +6,7 @@ import { welteT100 } from "./systems/welteT100/bar";
 import { trackerBarOf } from "./systems";
 import { TrackCalibration } from "./TrackCalibration";
 import { AnyFeature } from "./Feature";
-import { ActorAssignment, assignReference, DateAssignment, ObjectAssumption } from "./Assumption";
+import { ActorAssignment, assignReference, DateAssignment, ObjectAssumption, ReferenceAssumption } from "./Assumption";
 import { WithId, WithType } from "./utils";
 import { Agent, Concept } from "./Agent";
 import { FeatureSource } from "./FeatureSource";
@@ -315,10 +315,11 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
     conditions: RollConditionAssignment[]
 
     /**
-     * The institution or person holding this copy.
+     * The institution or person holding this copy. Left out where it is
+     * not known, as for a copy known only from a recording.
      * @see crm:P50 has current keeper
      */
-    keeper: Agent
+    keeper?: Agent
 
     /**
      * The physical features found on this copy, with shift
@@ -345,6 +346,14 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
      * @see reo:capture
      */
     readFrom?: FeatureSource
+
+    /**
+     * The versions this copy is held to carry, where its features are not
+     * read into symbols, as for a copy known only from a recording. Each
+     * statement carries the belief it rests on.
+     * @see crm:P128 carries
+     */
+    carries?: ReferenceAssumption[]
 }
 
 /**

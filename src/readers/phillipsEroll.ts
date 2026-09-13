@@ -218,13 +218,12 @@ export function readFromPhillipsEroll(
         id: v4(),
         ops: [],
         conditions: [],
-        keeper: { name: '', sameAs: [] },
         measurements: {},
         production: { system: systemOf(system) },
         modifications: [],
         features,
         readFrom: {
-            kind: 'recording',
+            kind: 'reading',
             actor: assignObject({ name: 'Phillips, Peter', sameAs: [] }),
             note: 'Read on Phillips’s pneumatic roll reader. The places are elapsed time put back onto the paper, and a hole runs as long as its switch stayed open, which is longer than the perforation.'
         }

@@ -8,12 +8,15 @@ import { asJsonLd } from '../src/asJsonLd'
 import { importJsonLd } from '../src/importJsonLd'
 import { assignValue } from '../src/Assumption'
 import { mm, px, track } from '../src/Quantity'
-import { copy, editionOf } from './editionFixture'
+import { copy, editionOf, hole } from './editionFixture'
 import { systemOf } from '../src/TrackerBar'
 import { welteT98 } from '../src/systems/welteT98/bar'
 
+/** A copy with a feature to read, which the checks on measurement and system are about. */
+const holed = (id: string): RollCopy => copy(id, [hole(`${id}-hole`, 1000, 1010, 47)])
+
 const scanned = (source: FeatureSource): RollCopy => ({
-    ...copy('scanned', []),
+    ...holed('scanned'),
     readFrom: source,
     measurements: {
         holeSeparation: { unit: 'px', value: px(37.7) },
@@ -51,20 +54,22 @@ describe('reservations about a copy', () => {
             date: assignValue(new Date('2015-01-01'))
         })
 
-        expect(typesOf(emulated)).toEqual(['features-interpreted', 'no-physical-evidence'])
+        expect(typesOf(emulated)).toEqual(['software-not-named', 'features-interpreted', 'no-physical-evidence'])
+        expect(typesOf({ ...emulated, readFrom: { ...emulated.readFrom!, software: [{ name: 'midi2exp' }] } }))
+            .toEqual(['features-interpreted', 'no-physical-evidence'])
     })
 
-    it('keeps the physical evidence of an analysis while denying it to a recording', () => {
+    it('keeps the physical evidence of an analysis while denying it to a roll reader, whose switches it measures', () => {
         const analysed = scanned({ kind: 'analysis', date: assignValue(new Date()) })
-        const recorded = scanned({ kind: 'recording', date: assignValue(new Date()) })
+        const read = scanned({ kind: 'reading', date: assignValue(new Date()) })
 
         expect(typesOf(analysed)).toEqual(['no-physical-evidence'])
-        expect(typesOf(recorded)).toEqual(['features-interpreted', 'no-physical-evidence'])
+        expect(typesOf(read)).toEqual(['no-physical-evidence'])
     })
 
     it('expects no measuring software where the roll itself was measured', () => {
         const byHand: RollCopy = {
-            ...copy('by-hand', []),
+            ...holed('by-hand'),
             readFrom: { kind: 'roll', date: assignValue(new Date('2021-01-01')) },
             measurements: { trackCalibration: { unit: 'mm', offset: mm(1), separation: 3, shift: track(0) } }
         }
@@ -73,7 +78,7 @@ describe('reservations about a copy', () => {
     })
 
     it('reports a copy with neither software nor calibration', () => {
-        expect(typesOf(copy('bare', []))).toEqual([
+        expect(typesOf(holed('bare'))).toEqual([
             'source-not-stated',
             'measurement-undocumented',
             'not-calibrated'
@@ -81,11 +86,11 @@ describe('reservations about a copy', () => {
     })
 
     it('reports a copy the edition cannot place in a system', () => {
-        const { production: _named, ...unplaced } = copy('unplaced', [])
+        const { production: _named, ...unplaced } = holed('unplaced')
         expect(typesOf(unplaced)).toContain('system-unknown')
 
         const foreign: RollCopy = {
-            ...copy('foreign', []),
+            ...holed('foreign'),
             production: { system: { id: 'https://example.org/system/duo-art', name: 'Duo-Art', sameAs: [] } }
         }
         expect(typesOf(foreign)).toContain('system-unknown')
@@ -93,7 +98,7 @@ describe('reservations about a copy', () => {
 
     it('says nothing about a copy that names a system it has a bar for', () => {
         const green: RollCopy = {
-            ...copy('green', []),
+            ...holed('green'),
             production: { system: systemOf(welteT98) }
         }
         expect(typesOf(green)).not.toContain('system-unknown')
@@ -107,6 +112,30 @@ describe('reservations about a copy', () => {
         }
 
         expect(typesOf(filled)).toEqual([])
+    })
+})
+
+describe('reservations about a copy known only from a recording', () => {
+    const recorded = (source: Omit<FeatureSource, 'kind'>): RollCopy => ({
+        ...copy('recorded', []),
+        readFrom: { kind: 'recording', date: assignValue(new Date(2016, 0, 1)), ...source }
+    })
+
+    it('asks for the software and the instrument, and nothing its missing features would have to say', () => {
+        expect(typesOf(recorded({}))).toEqual(['software-not-named', 'instrument-not-named'])
+    })
+
+    it('goes away once both are named', () => {
+        const named = recorded({
+            software: [{ name: 'Transkun', version: '2.0' }],
+            instrument: { name: 'Steinway & Sons with Welte-Mignon Vorsetzer', sameAs: [] }
+        })
+        expect(typesOf(named)).toEqual([])
+    })
+
+    it('reports a copy nobody is known to hold', () => {
+        const { keeper: _held, ...unheld } = recorded({})
+        expect(typesOf(unheld)).toContain('keeper-unknown')
     })
 })
 

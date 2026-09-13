@@ -60,24 +60,37 @@ derivation loads as a list of one.
 
 `readFrom` states what a copy's features were read from: the roll
 itself, a `scan` of it, an `analysis` somebody else measured on a
-scan, an `emulation` in which the roll has already been read into
-notes and commands, or a `recording` captured while the copy was
-played. Beside the kind it holds who carried the capture out, on what
-device, when, and a note. What is not known is left out.
+scan, a `reading` of the timed switches of a roll reader, an
+`emulation` in which the roll has already been read into notes and
+commands, or a `recording` of the copy being played on an instrument.
+Beside the kind it holds who carried the capture out, on what device,
+with what software, on which instrument a recorded copy was played,
+when, and a note. What is not known is left out.
 
 This says where the numbers of the edition come from and nothing
 about the state of the paper, which is a condition of the copy. In
 RDF it is `reo:capture`, an activity typed by what it read from; the
 file it produced is `crmdig:L11 had output`, the machine it ran on
-`crmdig:L12 happened on device`.
+`crmdig:L12 happened on device`, the software `crmdig:L23 used
+software or firmware`, the instrument `crm:P16 used specific object`.
 
 Nothing records that a copy is doubtful. `reservationsAbout` works
 out from what a copy states what the edition cannot vouch for in it:
 that it names no source, that the making of its source is
-undocumented, that its features are somebody else's reading, that its
-source bears no physical evidence, that no measuring software is
-recorded, that it is not calibrated. A reservation goes away when the
-gap it names is filled.
+undocumented, that no software or instrument is named for an
+emulation or a recording, that its features are somebody else's
+reading, that its source bears no physical evidence, that no measuring
+software is recorded, that it is not calibrated, that nobody is known
+to hold it. A reservation goes away when the gap it names is filled.
+
+A copy nobody can reach, such as one known only from a recording, has
+no features to carry the symbols of a version. It states instead
+which versions it is held to carry, in `carries`, each under a belief
+that says how certainly and why. `witnessesOf` gathers the copies of a
+version, whether their features carry its symbols or they state that
+they carry it, and `carriageProblems` reports a statement made beside
+features that carry symbols already, or one naming a version the
+edition lacks.
 
 ```ts
 import { reservationsAbout, stateSource } from 'linked-rolls'
