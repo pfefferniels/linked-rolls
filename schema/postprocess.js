@@ -85,29 +85,22 @@ function ensureDefaults(obj) {
 
 ensureDefaults(transformed);
 
-// Merge "see" fields (from @see JSDoc tags) into descriptions using a
-// structured marker that the HTML post-processor can detect reliably.
-// ts-json-schema-generator inserts a space before colons in tag values
-// (e.g. "crm :E21"), so we normalise that first.
-function mergeSeeIntoDescription(obj) {
+// The @see tags name the ontology term of a key or class; the docs read
+// them from a keyword of their own. ts-json-schema-generator inserts a
+// space before colons in tag values (e.g. "crm :E21").
+function renameSeeToOntology(obj) {
     if (Array.isArray(obj)) {
-        obj.forEach(mergeSeeIntoDescription);
+        obj.forEach(renameSeeToOntology);
     } else if (obj && typeof obj === 'object') {
         if (obj.see) {
-            const normalised = obj.see.replace(/ :/g, ':');
-            const marker = `[ontology: ${normalised}]`;
-            obj.description = obj.description
-                ? `${obj.description} ${marker}`
-                : marker;
+            obj.ontology = obj.see.replace(/ :/g, ':');
             delete obj.see;
         }
-        for (const value of Object.values(obj)) {
-            mergeSeeIntoDescription(value);
-        }
+        Object.values(obj).forEach(renameSeeToOntology);
     }
 }
 
-mergeSeeIntoDescription(transformed);
+renameSeeToOntology(transformed);
 
 fs.writeFileSync("schema.json", JSON.stringify(transformed, null, 2)
     .replaceAll('date-time', 'date')
