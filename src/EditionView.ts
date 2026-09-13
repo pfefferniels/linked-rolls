@@ -1,7 +1,7 @@
 import { Edition } from "./Edition";
 import { HorizontalSpan, AnyFeature, withBorneFeatures } from "./Feature";
 import { AnySymbol, Expression, Note } from "./Symbol";
-import { deletedBy, insertedBy, Version } from "./Version";
+import { deletedBy, insertedBy, principalDerivationOf, Version } from "./Version";
 import { NegotiatedEvent } from "./ReproducingSystem";
 import { systemIdOf, TrackerBar } from "./TrackerBar";
 import { isPaperStretch, RollCopy } from "./RollCopy";
@@ -143,8 +143,9 @@ export class EditionView {
         if (!v) return
 
         callback(v);
-        if (v.basedOn) {
-            this.travelUp(idOf(v.basedOn), callback);
+        const principal = principalDerivationOf(v)
+        if (principal) {
+            this.travelUp(idOf(principal), callback);
         }
     }
 
@@ -215,10 +216,11 @@ export class EditionView {
             carrying.has(copy.id) && systemIdOf(copy.production?.system) === system)
     }
 
+    /** The version the given one's text is read against, by its principal derivation. */
     predecessorOf(versionId: string): Readonly<Version> | undefined {
         const v = this.get<Version>(versionId)
-        if (!v?.basedOn) return
-        return this.get<Version>(idOf(v.basedOn))
+        const principal = v && principalDerivationOf(v)
+        return principal && this.get<Version>(idOf(principal))
     }
 
     /**
@@ -295,7 +297,8 @@ export class EditionView {
             inStack.add(id);
 
             let gen: number;
-            const basedOn = node.basedOn && idOf(node.basedOn);
+            const principal = principalDerivationOf(node);
+            const basedOn = principal && idOf(principal);
 
             if (basedOn === undefined) {
                 gen = 0; // root

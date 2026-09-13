@@ -94,8 +94,8 @@ describe('Export', () => {
         const doubted = () => {
             const doubting = smallEdition()
             const [a, b] = doubting.versions
-            b.basedOn = { ...b.basedOn!, '@annotation': annotation('unlikely') }
-            const note = a.edits[0].insert![0]
+            b.basedOn = [{ ...b.basedOn![0], '@annotation': annotation('unlikely') }]
+            const note = a.edits![0].insert![0]
             note.carriers[1] = { ...note.carriers[1], '@annotation': annotation('possible') }
             return doubting
         }
@@ -105,7 +105,7 @@ describe('Export', () => {
             const { '@id': _annotation, ...possible } = exportedAnnotation('possible')
             const { '@id': _other, ...unlikely } = exportedAnnotation('unlikely')
 
-            expect(exported.versions[1]).not.toHaveProperty('basedOn')
+            expect(exported.versions[1].basedOn).toEqual([])
             expect(exported.versions[0].edits[0].insert[0].carriers).toEqual([{ '@id': 'hole-note' }])
             expect(exported['@included']).toHaveLength(2)
             expect(exported['@included']).toContainEqual({
@@ -114,7 +114,7 @@ describe('Export', () => {
                 ...possible
             })
             expect(exported['@included']).toContainEqual({
-                '@id': { '@id': 'B', basedOn: { '@id': 'A' } },
+                '@id': { '@id': 'B', basedOn: [{ '@id': 'A' }] },
                 annotation: 'annotation-unlikely',
                 ...unlikely
             })
@@ -122,10 +122,10 @@ describe('Export', () => {
 
         it('states a reference held likely, with its belief on it', () => {
             const held = smallEdition()
-            held.versions[1].basedOn = { ...held.versions[1].basedOn!, '@annotation': annotation('likely') }
+            held.versions[1].basedOn = [{ ...held.versions[1].basedOn![0], '@annotation': annotation('likely') }]
 
             const exported = asJsonLd(held)
-            expect(exported.versions[1].basedOn).toEqual({ '@id': 'A', '@annotation': exportedAnnotation('likely') })
+            expect(exported.versions[1].basedOn).toEqual([{ '@id': 'A', '@annotation': exportedAnnotation('likely') }])
             expect(exported).not.toHaveProperty('@included')
         })
 

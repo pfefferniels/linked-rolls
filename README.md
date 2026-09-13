@@ -43,6 +43,19 @@ the keeper and the production metadata are nodes with a name and
 authority links, and the roll names its reproducing system. Exports
 are always in the current format.
 
+## What a version derives from
+
+A version names the versions it is held to derive from in `basedOn`,
+each under the belief it rests on. Its text is read against the
+principal derivation, the first of those held most certain, and one
+held unlikely or false never gives the text. The others stand as
+hypotheses, such as a contamination: `stateDerivation` adds one and
+`clearDerivation` takes it back. A version may leave out its `edits`
+where nobody can state them, as for a text that only a recording hints
+at. It then reads as the version it derives from, and
+`reservationsAboutVersion` says so. A file that names a single
+derivation loads as a list of one.
+
 ## Where a copy's features come from
 
 `readFrom` states what a copy's features were read from: the roll

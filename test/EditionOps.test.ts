@@ -74,7 +74,7 @@ const derived = () => editionOf(twoCopies(), [
 /** The same, its derivation stating the tolerance the two versions were collated at. */
 const derivedWithin = (tolerance: CollationTolerance): Edition => {
     const edition = derived()
-    edition.versions[1].basedOn!.collationTolerance = tolerance
+    edition.versions[1].basedOn![0].collationTolerance = tolerance
     return edition
 }
 
@@ -161,7 +161,7 @@ describe('connecting a version to another', () => {
         const next = produce(before, connectVersions(viewOf(before), 'B', 'A'))
         const child = next.versions[1]
 
-        expect(idOf(child.basedOn!)).toBe('A')
+        expect(idOf(child.basedOn![0])).toBe('A')
         expect(idsOf(noteIn(next).carriers)).toEqual(['hole-note', 'hole-note-second'])
         expect(child.edits.map(exchangeOf)).toEqual([
             [['extra'], []],
@@ -174,11 +174,11 @@ describe('connecting a version to another', () => {
     it('states the tolerance it collated at on the derivation', () => {
         const before = twoRoots()
         const connected = produce(before, connectVersions(viewOf(before), 'B', 'A'))
-        expect(connected.versions[1].basedOn!.collationTolerance).toEqual(defaultCollationTolerance)
+        expect(connected.versions[1].basedOn![0].collationTolerance).toEqual(defaultCollationTolerance)
 
         const tolerance = { toleranceStart: mm(1), toleranceEnd: mm(1) }
         const tight = produce(before, connectVersions(viewOf(before), 'B', 'A', tolerance))
-        expect(tight.versions[1].basedOn!.collationTolerance).toEqual(tolerance)
+        expect(tight.versions[1].basedOn![0].collationTolerance).toEqual(tolerance)
         expect(idsOf(noteIn(tight).carriers)).toEqual(['hole-note'])
     })
 
@@ -433,7 +433,7 @@ describe('deriving a version', () => {
         const created = next.versions[2]
 
         expect(editsOf(next, 'C').map(edit => edit.id)).toEqual(['e2', 'edit-aside'])
-        expect(idOf(created.basedOn!)).toBe('C')
+        expect(idOf(created.basedOn![0])).toBe('C')
         expect(created.versionType).toBe('unicum')
         expect(created.siglum).toBe('C_derived')
         expect(created.edits.map(edit => edit.id)).toEqual(['e1'])

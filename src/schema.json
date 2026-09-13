@@ -2270,8 +2270,11 @@
       "description": "A version is defined by the sum of edits applied to the version it is based on. For simple identification, a siglum is given to each version.",
       "properties": {
         "basedOn": {
-          "$ref": "#/definitions/Derivation",
-          "description": "If no derivation is defined, it is assumed that this version represents the mother roll.",
+          "description": "The versions this one is held to derive from, each under the belief it rests on. The text is read against the principal one (`principalDerivationOf`); the others stand as hypotheses, such as a contamination. A version that names none represents the mother roll.",
+          "items": {
+            "$ref": "#/definitions/Derivation"
+          },
+          "type": "array",
           "ontology": "lrmoo:R76 is derivative of"
         },
         "creation": {
@@ -2280,7 +2283,7 @@
           "ontology": "lrmoo:R17i was created by"
         },
         "edits": {
-          "description": "The list of edits that, applied to the base version, produce this version.",
+          "description": "The list of edits that, applied to the base version, produce this version. A hypothetical version whose changes nobody can state leaves it out; it then reads as the version it derives from.",
           "items": {
             "$ref": "#/definitions/Edit"
           },
@@ -2306,7 +2309,7 @@
         },
         "versionType": {
           "$ref": "#/definitions/VersionType",
-          "description": "Whether the version served as a master for reproductions or exists on one copy only.",
+          "description": "Whether the version served as a master for reproductions or exists on one copy only. Left out where that is not known, as for a version only a secondary witness hints at.",
           "ontology": "crm:P2 has type"
         },
         "@id": {
@@ -2321,13 +2324,11 @@
         }
       },
       "required": [
-        "edits",
         "@id",
         "motivations",
         "siglum",
         "system",
-        "@type",
-        "versionType"
+        "@type"
       ],
       "type": "object",
       "ontology": "lrmoo:F2 Expression"
