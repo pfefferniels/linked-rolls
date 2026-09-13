@@ -13,7 +13,7 @@
 <https://w3id.org/reo/>
     a owl:Ontology ;
     dcterms:title "Roll Edition Ontology"@en ;
-    dcterms:description """A small extension of CIDOC CRM and LRMoo for digital editions of piano rolls. It adds what those ontologies do not cover: the symbols a reproducing piano reads from a roll (notes and expression commands), the relations between such symbols that an editor states, and the edits by which one version of a roll becomes another. Everything else, from the physical copies and their holes to the recording, the versions and the editorial beliefs, is expressed with CIDOC CRM, LRMoo and CRMinf directly. The closed value lists of the format are the types at https://w3id.org/reo/type/."""@en ;
+    dcterms:description """A small extension of CIDOC CRM and LRMoo for digital editions of piano rolls. It adds the symbols a reproducing piano reads from a roll (notes and expression commands), the relations between such symbols that an editor states, and the edits by which one version of a roll becomes another. Everything else (physical copies and their holes, recording processes, versions, editorial beliefs) is expressed with CIDOC CRM, LRMoo and CRMinf directly. The closed value lists of the format are the types at https://w3id.org/reo/type/."""@en ;
     dcterms:creator "Niels Pfeffer" ;
     dcterms:created "2026-09-04"^^xsd:date ;
     dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
