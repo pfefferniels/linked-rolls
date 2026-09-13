@@ -120,7 +120,12 @@
     "role": {
       "@id": "crm:P2_has_type",
       "@type": "@vocab",
-      "@context": { "@vocab": "https://w3id.org/reo/type/" }
+      "@context": {
+        "@vocab": "https://w3id.org/reo/type/",
+        "pianist": "https://w3id.org/reo/type/pianist",
+        "publisher": "https://w3id.org/reo/type/publisher",
+        "transcription": "https://w3id.org/reo/type/transcription"
+      }
     },
 
     "ops": null,
@@ -177,7 +182,11 @@
         "kind": {
           "@id": "crm:P2_has_type",
           "@type": "@vocab",
-          "@context": { "@vocab": "https://w3id.org/reo/type/" }
+          "@context": {
+            "@vocab": "https://w3id.org/reo/type/",
+            "roll": "https://w3id.org/reo/type/roll",
+            "scan": "https://w3id.org/reo/type/scan"
+          }
         },
         "output": {
           "@id": "crmdig:L11_had_output",

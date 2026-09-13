@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import schema from '../src/schema.json'
 import context from '../src/spec/context.json'
+import { resolve } from './schema'
 
 type Json = any
 
@@ -23,14 +24,6 @@ const definedTerms = (ctx: Json, into = new Map<string, boolean>()): Map<string,
 }
 
 const terms = definedTerms(context['@context'])
-
-const resolve = (node: Json): Json => {
-    if (!node?.$ref) return node
-    const name = decodeURIComponent(node.$ref.replace('#/definitions/', ''))
-    const definition = (schema as Json).definitions[name]
-    if (!definition) throw new Error(`unresolved $ref ${node.$ref}`)
-    return definition
-}
 
 /** Every property key of the schema together with the keys above it. */
 const schemaKeys = (): { key: string, ancestors: string[] }[] => {
