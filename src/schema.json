@@ -2455,11 +2455,6 @@
           "description": "The reproducing system this version is coded for. One roll was often issued for several of them, and a version is a reading in one system's words: its expression types are that system's vocabulary and its notes sit on that bar's positions. A system the type vocabulary knows carries the IRI of its concept as `id`, from which the export takes the system's own context.",
           "ontology": "crm:P2 has type"
         },
-        "versionType": {
-          "$ref": "#/definitions/VersionType",
-          "description": "Whether the version served as a master for reproductions or exists on one copy only. Left out where that is not known, as for a version only a secondary witness hints at.",
-          "ontology": "crm:P2 has type"
-        },
         "@id": {
           "description": "A unique identifier for this object.",
           "type": "string"
@@ -2502,14 +2497,6 @@
       },
       "type": "object",
       "ontology": "lrmoo:F28 Expression Creation"
-    },
-    "VersionType": {
-      "description": "The type of a version. An 'edition' version may serve as the master for several roll copies; a 'unicum' version exists only on one specific copy.",
-      "enum": [
-        "edition",
-        "unicum"
-      ],
-      "type": "string"
     },
     "VerticalSpan": {
       "description": "Describes the vertical extent of a feature on the roll, measured in track numbers. Track numbers correspond to positions on the tracker bar.",

@@ -5,26 +5,6 @@ import { CollationTolerance, defaultCollationTolerance } from "./Collation";
 import { AnySymbol } from "./Symbol";
 import { WithId, WithNote, WithType } from "./utils";
 
-export const versionTypes = [
-    /**
-     * The roll is in a state where it is (possibly) used as
-     * the master roll for several new reproductions.
-     */
-    'edition',
-
-    /**
-     * A version that exists only on one specific copy of a roll.
-     */
-    'unicum'
-] as const
-
-/**
- * The type of a version. An 'edition' version may serve as the
- * master for several roll copies; a 'unicum' version exists only
- * on one specific copy.
- */
-export type VersionType = typeof versionTypes[number];
-
 /**
  * A motivation provides a reason or rationale for an editorial change.
  * Motivations are defined at the version level and referenced by edits.
@@ -109,14 +89,6 @@ export interface Version extends WithId, WithType<'Version'> {
      * @see crm:P2 has type
      */
     system: Concept
-
-    /**
-     * Whether the version served as a master for reproductions
-     * or exists on one copy only. Left out where that is not known,
-     * as for a version only a secondary witness hints at.
-     * @see crm:P2 has type
-     */
-    versionType?: VersionType
 
     /**
      * The versions this one is held to derive from, each under the

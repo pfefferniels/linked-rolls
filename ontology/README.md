@@ -9,8 +9,8 @@
 | Version | 1.0, in preparation |
 
 `reo.ttl` holds the classes and properties, `types.ttl` the closed
-value lists of the format (edit types, purposes, units, version and
-condition types and so on) as CRM types. The JSON-LD context in
+value lists of the format (edit types, purposes, units, condition
+types and so on) as CRM types. The JSON-LD context in
 `src/spec/context.json` maps every key of the format to a term of
 REO, CIDOC CRM, LRMoo, CRMinf, CRMdig or DCMI, or sets it to `null`
 to keep it out of the graph.

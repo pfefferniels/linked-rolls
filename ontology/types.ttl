@@ -1,5 +1,6 @@
 @prefix reot:    <https://w3id.org/reo/type/> .
 @prefix crm:     <http://www.cidoc-crm.org/cidoc-crm/> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
@@ -51,14 +52,18 @@ reot:staggering a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/r
     rdfs:comment "The reproducing system of the American Welte-Mignon (Licensee) rolls, 98 tracks at nine to the inch on a roll 11¼ inches wide, re-cut from the T-100 masters for a slower paper speed. It reads the commands of the T-100, laid out the same way minus the two motor tracks, so its commands are the scheme at https://w3id.org/reo/type/welte-t100/."@en .
 
 
-# Kind of a version (P2 has type on a version, an F2 Expression)
+# Kind of a version (P2 has type on a version, an F2 Expression). The
+# format no longer types versions: the copies that witness a version
+# say on how many it stands.
 
 reot:edition a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "edition"@en ;
-    rdfs:comment "A version of the roll that served, or may have served, as the master for reproductions."@en .
+    rdfs:comment "A version of the roll that served, or may have served, as the master for reproductions."@en ;
+    owl:deprecated true .
 reot:unicum a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "unicum"@en ;
-    rdfs:comment "A version of the roll found on one copy only."@en .
+    rdfs:comment "A version of the roll found on one copy only."@en ;
+    owl:deprecated true .
 
 
 # Kind of a condition state (P2 has type on an E3 Condition State)

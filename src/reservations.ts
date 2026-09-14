@@ -147,7 +147,6 @@ export const reservationsAbout = (copy: RollCopy): Reservation[] =>
 
 export const versionReservationTypes = [
     'text-not-stated',
-    'type-not-stated',
     'witnessed-by-statement-only'
 ] as const
 
@@ -161,12 +160,6 @@ const textStated: VersionCheck = (_view, version) =>
         note: 'The version does not state its edits, so it reads as the version it derives from.'
     }
 
-const typeStated: VersionCheck = (_view, version) =>
-    version.versionType ? undefined : {
-        type: 'type-not-stated',
-        note: 'The version does not say whether it served as a master for several copies or exists on one only.'
-    }
-
 const witnessedByFeatures: VersionCheck = (view, version) => {
     const witnesses = witnessesOf(view, version.id)
     return witnesses.length > 0 && witnesses.every(({ by }) => by === 'statement') ? {
@@ -175,7 +168,7 @@ const witnessedByFeatures: VersionCheck = (view, version) => {
     } : undefined
 }
 
-const versionChecks: readonly VersionCheck[] = [textStated, typeStated, witnessedByFeatures]
+const versionChecks: readonly VersionCheck[] = [textStated, witnessedByFeatures]
 
 /** What the edition cannot vouch for in a version, in the order the checks are listed. */
 export const reservationsAboutVersion = (view: EditionView, version: Readonly<Version>): Reservation<VersionReservationType>[] =>

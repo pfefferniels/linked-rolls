@@ -444,7 +444,6 @@ describe('deriving a version', () => {
 
         expect(editsOf(next, 'C').map(edit => edit.id)).toEqual(['e2', 'edit-aside'])
         expect(idOf(created.basedOn![0])).toBe('C')
-        expect(created.versionType).toBe('unicum')
         expect(created.siglum).toBe('C_derived')
         expect(created.edits.map(edit => edit.id)).toEqual(['e1'])
     })

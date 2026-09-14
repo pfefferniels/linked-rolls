@@ -105,7 +105,6 @@ const placements: Record<string, (value: string) => Json> = {
     method: value => copyWith({ features: [node('Writing', { method: value })] }),
     material: value => copyWith({ features: [node('GluedOn', { material: value })] }),
     purpose: value => copyWith({ modifications: [{ '@type': 'Addition', purpose: value }] }),
-    versionType: value => ({ versions: [node('Version', { versionType: value })] }),
     editType: value => ({ versions: [node('Version', { edits: [node('edit', { editType: value })] })] }),
     scope: value => expressionWith({ scope: value }),
     expressionType: value => expressionWith({ expressionType: value })

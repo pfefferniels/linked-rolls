@@ -123,7 +123,6 @@ export const createVersion = (siglum: string, copy: RollCopy): EditionOp =>
             id: v4(),
             siglum,
             system: systemOf(bar),
-            versionType: 'edition',
             edits: asSymbols(copy.features, bar).map(insertion),
             motivations: []
         })
@@ -812,7 +811,6 @@ export const deriveVersion = (versionId: string, editIds: readonly string[]): Ed
             id: v4(),
             siglum: `${version.siglum}_derived`,
             system: stateOf<Version>(version).system,
-            versionType: 'unicum',
             basedOn: [assignReference(versionId)],
             edits: moved,
             motivations: []

@@ -4,7 +4,6 @@ import { systemIdIn, systemOf, TrackerBar, translationBetween } from "./TrackerB
 import { trackerBars } from "./systems";
 import { welteT100 } from "./systems/welteT100/bar";
 import { Track } from "./Quantity";
-import { versionTypes } from "./Version";
 
 /**
  * Brings the JSON of an edition written by an earlier release of the
@@ -20,7 +19,7 @@ import { versionTypes } from "./Version";
  */
 type Json = any
 
-const versionTypeValues = new Set<string>(versionTypes)
+const retiredVersionTypes = new Set(['edition', 'unicum'])
 const conditionTypeValues = new Set<string>([...rollConditions, ...Object.values(conditions).flat()])
 
 const renamedKeys: Record<string, string> = {
@@ -39,13 +38,20 @@ const withRenamedKeys = (node: Json): Json =>
         : node
 
 const withTypology = (node: Json): Json => {
-    if (versionTypeValues.has(node['@type'])) {
-        return { ...node, '@type': 'Version', versionType: node['@type'] }
+    if (retiredVersionTypes.has(node['@type'])) {
+        return { ...node, '@type': 'Version' }
     }
     if (conditionTypeValues.has(node['@type'])) {
         return { ...node, '@type': 'ConditionState', conditionType: node['@type'] }
     }
     return node
+}
+
+/** A version once stated whether it served as a master or stood on one copy. */
+const withoutVersionType = (node: Json): Json => {
+    if (!Object.hasOwn(node, 'versionType')) return node
+    const { versionType: _retired, ...rest } = node
+    return rest
 }
 
 const withReferences = (node: Json): Json =>
@@ -122,7 +128,7 @@ const withoutEmptyKeeper = (node: Json): Json => {
 }
 
 const migrateNode = (node: Json): Json =>
-    [withRenamedKeys, withTypology, withReferences, withKeeper, withoutEmptyKeeper, withProductionNodes, withScale,
+    [withRenamedKeys, withTypology, withoutVersionType, withReferences, withKeeper, withoutEmptyKeeper, withProductionNodes, withScale,
         withDerivationList, withReadingKind]
         .reduce((result, step) => step(result), node)
 

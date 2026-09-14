@@ -47,12 +47,12 @@ const writtenBefore = (tolerance: CollationTolerance) => {
 const carriersOfNote = (edition: Edition) => idsOf(new EditionView(edition).get<Note>('note')!.carriers)
 
 describe('migrating a 0.1 edition', () => {
-    it('gives versions and conditions their typology keys', () => {
+    it('types versions as versions and gives conditions their typology key', () => {
         const migrated = migrate(edition01())
         expect(migrated.versions.length).toBeGreaterThan(0)
         migrated.versions.forEach((version: any) => {
             expect(version['@type']).toEqual('Version')
-            expect(['edition', 'unicum']).toContain(version.versionType)
+            expect(version).not.toHaveProperty('versionType')
         })
 
         const conditions = migrated.copies.flatMap((copy: any) => copy.conditions)
@@ -174,9 +174,15 @@ describe('migrating a 0.1 edition', () => {
 
     it('imports a 0.1 edition as the current model', () => {
         const imported = importJsonLd(edition01())
-        expect(imported.versions[0]).toMatchObject({ type: 'Version', versionType: 'edition' })
+        expect(imported.versions[0]).toMatchObject({ type: 'Version' })
         expect(imported.versions[0].system.id).toEqual('https://w3id.org/reo/type/system/welte-t100')
         expect(imported.copies[0].keeper).toEqual({ name: 'Stanford', sameAs: [] })
+    })
+
+    it('drops the type a version stated as an edition or a unicum', () => {
+        const migrated = migrate({ versions: [{ '@type': 'Version', '@id': 'A', versionType: 'unicum' }] })
+        expect(migrated.versions[0]).toMatchObject({ '@type': 'Version', '@id': 'A' })
+        expect(migrated.versions[0]).not.toHaveProperty('versionType')
     })
 })
 

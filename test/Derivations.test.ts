@@ -127,7 +127,7 @@ describe('connecting and removing where hypotheses are stated', () => {
 
 describe('a version that does not state its text', () => {
     const unstated = (): Version => {
-        const { edits, versionType, ...rest } = version('S', [], 'C')
+        const { edits, ...rest } = version('S', [], 'C')
         return rest
     }
 
@@ -135,7 +135,7 @@ describe('a version that does not state its text', () => {
         const view = new EditionView(editionWith(unstated()))
         expect(textOf(editionWith(unstated()), 'S')).toEqual(['note-c'])
         expect(reservationsAboutVersion(view, unstated()).map(reservation => reservation.type))
-            .toEqual(['text-not-stated', 'type-not-stated'])
+            .toEqual(['text-not-stated'])
         expect(reservationsAboutVersion(view, version('S', [], 'C'))).toEqual([])
     })
 

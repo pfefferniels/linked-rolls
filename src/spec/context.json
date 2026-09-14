@@ -256,11 +256,6 @@
     },
 
     "siglum": "reo:siglum",
-    "versionType": {
-      "@id": "crm:P2_has_type",
-      "@type": "@vocab",
-      "@context": { "@vocab": "https://w3id.org/reo/type/" }
-    },
     "basedOn": "lrmoo:R76_is_derivative_of",
     "edits": "reo:involvedEdit",
     "motivations": "@included",
