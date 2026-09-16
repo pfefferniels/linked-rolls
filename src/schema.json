@@ -2482,7 +2482,7 @@
       "type": "object"
     },
     "Version": {
-      "description": "A version is defined by the sum of edits applied to the version it is based on. For simple identification, a siglum is given to each version.",
+      "description": "A version is defined by the sum of edits applied to the version it is based on. What it is called is not stored with it: `siglaOf` reads the sigla off the stemma, so that a label never outlives the arrangement it describes.",
       "properties": {
         "basedOn": {
           "description": "The versions this one is held to derive from, each under the belief it rests on. The text is read against the principal one (`principalDerivationOf`); the others stand as hypotheses, such as a contamination. A version that names none represents the mother roll.",
@@ -2513,7 +2513,8 @@
           "type": "array"
         },
         "siglum": {
-          "description": "A short siglum to identify the version, e.g. \"A\" or \"B2\". A siglum is given once and not changed: its letter names the line the version was first recognised in, its number counts the versions admitted to that line. Where later work places the version elsewhere in the stemma, `basedOn` changes and the siglum stays.",
+          "deprecated": true,
+          "description": "A label a document carries from before the sigla were computed. Nothing should write one here and nothing should show one: what a version is called comes from `siglaOf`.",
           "type": "string",
           "ontology": "reo:siglum"
         },
@@ -2536,7 +2537,6 @@
       "required": [
         "@id",
         "motivations",
-        "siglum",
         "system",
         "@type"
       ],

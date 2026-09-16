@@ -114,14 +114,13 @@ const dropInsertions = (version: Draft<Version>, symbolIds: Ids) => {
  * version is a reading in that system's words, so it is coded for the
  * system the copy was cut for.
  */
-export const createVersion = (siglum: string, copy: RollCopy): EditionOp =>
+export const createVersion = (copy: RollCopy): EditionOp =>
     draft => {
         const bar = barOf(copy)
         draft.copies.push(copy)
         draft.versions.push({
             type: 'Version',
             id: v4(),
-            siglum,
             system: systemOf(bar),
             edits: asSymbols(copy.features, bar).map(insertion),
             motivations: []
@@ -800,20 +799,6 @@ export const removeVersion = (view: EditionView, versionId: string): EditionOp =
 export const removeSymbols = (versionId: string, symbolIds: readonly string[]): EditionOp =>
     onVersion(versionId, version => dropInsertions(version, new Set(symbolIds)))
 
-/**
- * The siglum for a version derived from this one: the line the siglum
- * names, and the next number free in it. A number already given stays
- * given, whatever the stemma does later.
- */
-const nextInLine = (versions: readonly { siglum: string }[], siglum: string): string => {
-    const [line] = siglum.match(/^\D*/) ?? [siglum]
-    const numbers = versions.flatMap(other => {
-        const match = other.siglum.match(/^(\D*)(\d*)$/)
-        return match && match[1] === line ? [Number(match[2] || 1)] : []
-    })
-    return `${line}${Math.max(1, ...numbers) + 1}`
-}
-
 /** Moves the edits into a new version based on this one. */
 export const deriveVersion = (versionId: string, editIds: readonly string[]): EditionOp =>
     onVersion(versionId, (version, draft) => {
@@ -823,7 +808,6 @@ export const deriveVersion = (versionId: string, editIds: readonly string[]): Ed
         draft.versions.push({
             type: 'Version',
             id: v4(),
-            siglum: nextInLine(draft.versions, version.siglum),
             system: stateOf<Version>(version).system,
             basedOn: [assignReference(versionId)],
             edits: moved,

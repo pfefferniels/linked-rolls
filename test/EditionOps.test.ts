@@ -80,7 +80,7 @@ const derivedWithin = (tolerance: CollationTolerance): Edition => {
 
 describe('creating a version from a copy', () => {
     it('adds the copy and a version inserting what the tracker bar reads on it', () => {
-        const next = produce(editionOf([], []), createVersion('A', copy('first', [
+        const next = produce(editionOf([], []), createVersion(copy('first', [
             hole('hole-note', 1000, 1010, 47),
             hole('hole-on', 990, 992, 95),
             hole('hole-unread', 995, 996, 0)
@@ -89,7 +89,7 @@ describe('creating a version from a copy', () => {
         const inserted = created.edits.map(edit => edit.insert ?? [])
 
         expect(next.copies.map(c => c.id)).toEqual(['first'])
-        expect(created.siglum).toBe('A')
+        expect(created.siglum).toBeUndefined()
         expect(created.basedOn).toBeUndefined()
         expect(inserted.map(symbols => symbols.length)).toEqual([1, 1])
         expect(inserted.flat().map(describeSymbol)).toEqual(['note 60', 'ForzandoOn'])
@@ -444,7 +444,7 @@ describe('deriving a version', () => {
 
         expect(editsOf(next, 'C').map(edit => edit.id)).toEqual(['e2', 'edit-aside'])
         expect(idOf(created.basedOn![0])).toBe('C')
-        expect(created.siglum).toBe('C2')
+        expect(created.siglum).toBeUndefined()
         expect(created.edits.map(edit => edit.id)).toEqual(['e1'])
     })
 })

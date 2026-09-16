@@ -67,21 +67,21 @@ export interface VersionCreation {
 }
 
 /**
- * A version is defined by the sum of edits applied
- * to the version it is based on. For simple identification,
- * a siglum is given to each version.
+ * A version is defined by the sum of edits applied to the version it is
+ * based on. What it is called is not stored with it: `siglaOf` reads the
+ * sigla off the stemma, so that a label never outlives the arrangement
+ * it describes.
  * @see lrmoo:F2 Expression
  */
 export interface Version extends WithId, WithType<'Version'> {
     /**
-     * A short siglum to identify the version, e.g. "A" or "B2". A siglum
-     * is given once and not changed: its letter names the line the version
-     * was first recognised in, its number counts the versions admitted to
-     * that line. Where later work places the version elsewhere in the
-     * stemma, `basedOn` changes and the siglum stays.
+     * A label a document carries from before the sigla were computed.
+     * Nothing should write one here and nothing should show one: what a
+     * version is called comes from `siglaOf`.
+     * @deprecated
      * @see reo:siglum
      */
-    siglum: string;
+    siglum?: string;
 
     /**
      * The reproducing system this version is coded for. One roll was
