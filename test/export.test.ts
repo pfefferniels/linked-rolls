@@ -3,7 +3,7 @@ import { importJsonLd } from '../src/importJsonLd';
 import * as path from 'path'
 import { readFileSync } from 'fs';
 import { asJsonLd } from '../src/asJsonLd';
-import { assignDate, assignObject, Certainty, dateOf, earliestOf, latestOf, notBefore } from '../src/Assumption';
+import { assignDate, assignObject, BeliefAdoption, Certainty, dateOf, earliestOf, latestOf, notBefore } from '../src/Assumption';
 import { edition as smallEdition } from './editionFixture';
 import { PaperSpeed } from '../src/RollCopy';
 import { systemOf } from '../src/TrackerBar';
@@ -139,6 +139,34 @@ describe('Export', () => {
             const dated = smallEdition()
             dated.roll.recordingEvent.date = { ...dated.roll.recordingEvent.date, '@annotation': annotation('possible') }
             expect(asJsonLd(dated).roll.recordingEvent.date['@annotation']).toEqual(exportedAnnotation('possible'))
+        })
+
+        /**
+         * A keeper read off a file header says so in the belief it carries.
+         * It stays on the copy even where it is held possible, as a date or
+         * an attribution does: only bare references can be quoted.
+         */
+        it('carries the reasons a keeper is stated for, through an export and back', () => {
+            const held = smallEdition()
+            const adoption: BeliefAdoption = {
+                type: 'beliefAdoption',
+                note: 'Named in the header of the MIDI file this copy was read from.'
+            }
+            held.copies[0].keeper = {
+                name: 'Philippe Gourlin',
+                sameAs: [],
+                '@annotation': {
+                    id: 'annotation-keeper',
+                    belief: { type: 'belief', id: 'belief-keeper', certainty: 'possible', reasons: [adoption] }
+                }
+            }
+
+            const keeper = asJsonLd(held).copies[0].keeper
+            expect(keeper.name).toBe('Philippe Gourlin')
+            expect(keeper['@annotation'].belief.reasons).toEqual([{ '@type': 'beliefAdoption', note: adoption.note }])
+
+            const back = importJsonLd(JSON.parse(JSON.stringify(asJsonLd(held))))
+            expect(back.copies[0].keeper).toEqual(held.copies[0].keeper)
         })
     })
 

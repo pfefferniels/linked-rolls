@@ -40,6 +40,12 @@ export interface GeneralRollCondition extends ConditionState<'general'> { }
  */
 export type RollConditionAssignment = ObjectAssumption<GeneralRollCondition | PaperStretch>
 
+/**
+ * The keeper a copy is held by, as an object assumption, so that the
+ * statement can carry the belief it rests on and the reasons for it.
+ */
+export type KeeperAssignment = ObjectAssumption<Agent>
+
 export const rollConditions = [
     'general',
     'paper-stretch'
@@ -325,10 +331,13 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
 
     /**
      * The institution or person holding this copy. Left out where it is
-     * not known, as for a copy known only from a recording.
+     * not known, as for a copy known only from a recording. An object
+     * assumption, so that a keeper read off a file header or adopted
+     * from a letter can say where it comes from. Who held the copy
+     * before is not stated here: P50 names the current keeper.
      * @see crm:P50 has current keeper
      */
-    keeper?: Agent
+    keeper?: KeeperAssignment
 
     /**
      * The physical features found on this copy, with shift

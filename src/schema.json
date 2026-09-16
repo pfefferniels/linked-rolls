@@ -932,6 +932,10 @@
       "type": "object",
       "ontology": "crminf:I5 Inference Making"
     },
+    "KeeperAssignment": {
+      "$ref": "#/definitions/ObjectAssumption%3CAgent%3E",
+      "description": "The keeper a copy is held by, as an object assumption, so that the statement can carry the belief it rests on and the reasons for it."
+    },
     "Margins<\"mm\">": {
       "description": "The margins on the treble and bass sides of the roll, in the unit the scan was measured in.",
       "properties": {
@@ -1399,6 +1403,60 @@
         }
       ],
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain."
+    },
+    "ObjectAssumption<Agent>": {
+      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
+      "properties": {
+        "@annotation": {
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement.",
+              "ontology": "crminf:J4i is subject of"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "name": {
+          "description": "The name, e.g. \"Grünfeld, Alfred\", \"Wien\", \"M. Welte & Söhne\".",
+          "type": "string",
+          "ontology": "rdfs:label"
+        },
+        "role": {
+          "$ref": "#/definitions/AgentRole",
+          "description": "The role of the agent in the context of the edition.",
+          "ontology": "crm:P2 has type"
+        },
+        "sameAs": {
+          "description": "Authority records for the same thing: GND, Wikidata, geonames or similar.",
+          "examples": [
+            "https://d-nb.info/gnd/116888652"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "ontology": "owl:sameAs"
+        },
+        "@id": {
+          "description": "A unique identifier for this object.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "sameAs"
+      ],
+      "type": "object"
     },
     "ObjectAssumption<ConditionState<\"general\">>": {
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
@@ -2192,8 +2250,8 @@
           "ontology": "crm:P56 bears feature"
         },
         "keeper": {
-          "$ref": "#/definitions/Agent",
-          "description": "The institution or person holding this copy. Left out where it is not known, as for a copy known only from a recording.",
+          "$ref": "#/definitions/KeeperAssignment",
+          "description": "The institution or person holding this copy. Left out where it is not known, as for a copy known only from a recording. An object assumption, so that a keeper read off a file header or adopted from a letter can say where it comes from. Who held the copy before is not stated here: P50 names the current keeper.",
           "ontology": "crm:P50 has current keeper"
         },
         "measurements": {
