@@ -60,10 +60,31 @@ export const featureTypes = ['Hole', 'Writing', 'Mark', 'GluedOn'] as const;
 
 export type FeatureType = typeof featureTypes[number];
 
+export const isFeatureType = (value: unknown): value is FeatureType =>
+    featureTypes.includes(value as FeatureType);
+
 /**
- * A physical feature on the roll, e.g. a perforation, a tear, a mark, etc.,
- * defined by its horizontal and vertical position and extent.
- * @see crm:E26 Physical Feature
+ * The term the graph states for each kind of feature. Holes, writings
+ * and marks are all human-made features and a patch is an object, so
+ * the classes tell a patch from the rest and nothing more: the kind is
+ * what holds the four apart.
+ *
+ * A JSON-LD term maps `@type` to a class and can state nothing besides,
+ * so an exported feature carries the kind under a `kind` key of its own.
+ * It is derived from the type on the way out and read off the type
+ * again on the way in, and so is no part of the model.
+ */
+export const featureKinds = {
+    Hole: 'hole',
+    Writing: 'writing',
+    Mark: 'mark',
+    GluedOn: 'glued-on'
+} as const satisfies Record<FeatureType, string>;
+
+/**
+ * A feature on the roll, e.g. a perforation, a writing, a mark or a
+ * glued-on patch, defined by its horizontal and vertical position and
+ * extent. Which kind of feature it is, its own type states.
  */
 export interface RollFeature<T extends FeatureType, DamageT extends string> extends WithId, WithType<T> {
     /**
@@ -113,6 +134,10 @@ export type FeatureConditionAssignment = ObjectAssumption<ConditionState<Feature
  * A hole (perforation) in the roll paper. Holes are the primary
  * carriers of musical information on piano rolls, as they trigger
  * notes and expression controls when passing over the tracker bar.
+ * A punched hole is a human-made feature: CRM counts "the information
+ * encoding features on mechanical or digital carriers" among the
+ * features purposely created by human activity.
+ * @see crm:E25 Human-Made Feature
  */
 export interface Hole extends RollFeature<'Hole', typeof conditions.Hole[number]> {
     /**
@@ -132,13 +157,18 @@ export interface Hole extends RollFeature<'Hole', typeof conditions.Hole[number]
  */
 export interface Trace<T extends FeatureType> extends RollFeature<T, typeof conditions[T][number]> { }
 
-export const writingMethods = ['Print', 'Handwriting', 'Stamp'] as const;
+export const writingMethods = ['print', 'handwriting', 'stamp'] as const;
 
 /**
  * The method by which a writing was produced on the roll:
  * printed, handwritten, or stamped.
  */
 export type WritingMethod = typeof writingMethods[number];
+
+export const markMethods = ['ink', 'pencil', 'crayon'] as const;
+
+/** The medium a mark was drawn in. */
+export type MarkMethod = typeof markMethods[number];
 
 /** The text a writing carries. It names no carriers of its own, the writing being its carrier. */
 export type Transcription = Omit<Text, 'carriers'>
@@ -153,7 +183,7 @@ export interface Writing extends Trace<'Writing'> {
     /**
      * The method by which this writing was produced
      * (e.g. through print, handwriting, or stamping).
-     * @see crm:P2 has type
+     * @see reo:method
      */
     method: WritingMethod;
 
@@ -167,11 +197,19 @@ export interface Writing extends Trace<'Writing'> {
 }
 
 /**
- * A visible mark on the roll, such as a pencil mark,
- * ink mark, or other non-textual annotation.
+ * A visible mark on the roll, such as a pencil circle, an ink stroke,
+ * or other non-textual annotation. What a mark was meant to say is a
+ * reading of it (crminf:I16 Meaning Comprehension) rather than a
+ * property of the feature, so its shape is not stated here.
  * @see crm:E25 Human-Made Feature
  */
-export interface Mark extends Trace<'Mark'> { }
+export interface Mark extends Trace<'Mark'> {
+    /**
+     * The medium the mark was drawn in, where it can be told.
+     * @see reo:method
+     */
+    method?: MarkMethod;
+}
 
 /**
  * A piece of material (paper or tape) glued onto the roll surface.
@@ -185,7 +223,7 @@ export interface GluedOn extends RollFeature<'GluedOn', typeof conditions.GluedO
      * The material of the glued-on feature.
      * @see crm:P45 consists of
      */
-    material: 'Paper' | 'Tape';
+    material: 'paper' | 'tape';
 
     /**
      * A glued-on feature itself may carry other features.
@@ -209,7 +247,7 @@ export type AnyFeature = Hole | Writing | Mark | GluedOn;
 export type NestedFeature = PartialBy<AnyFeature, 'horizontal' | 'vertical'>;
 
 export const isRollFeature = (obj: object): obj is AnyFeature => {
-    return 'type' in obj && featureTypes.includes(obj.type as FeatureType);
+    return 'type' in obj && isFeatureType(obj.type);
 }
 
 export const isGluedOn = <T extends NestedFeature>(feature: T): feature is T & GluedOn =>

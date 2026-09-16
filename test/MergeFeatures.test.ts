@@ -131,7 +131,7 @@ const writing = (id: string, text: string): Writing => ({
     id,
     horizontal: { unit: 'mm', from: mm(1000), to: mm(1004) },
     vertical: { unit: 'track', from: track(47) },
-    method: 'Handwriting',
+    method: 'handwriting',
     transcription: assignObject<Transcription>({ type: 'text', id: `${id}-text`, text })
 })
 

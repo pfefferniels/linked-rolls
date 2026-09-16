@@ -150,6 +150,27 @@ describe('migrating a 0.1 edition', () => {
         expect(copy.features[0]).toEqual({ depiction: 'iiif' })
     })
 
+    /**
+     * The writing methods and the patch materials were the only
+     * capitalised terms of the type vocabulary, and were lower-cased
+     * with the vocabulary still a draft.
+     */
+    it('lower-cases the writing methods and the patch materials', () => {
+        const borne = (feature: any) => [feature, ...(feature.features ?? [])]
+        const features = migrate(edition01()).copies
+            .flatMap((copy: any) => copy.features ?? [])
+            .flatMap(borne)
+
+        const stated = (key: string) => [...new Set(features.map((feature: any) => feature[key]).filter(Boolean))].sort()
+        expect(stated('method')).toEqual(['handwriting', 'print', 'stamp'])
+        expect(stated('material')).toEqual(['paper'])
+    })
+
+    it('lower-cases a term the copies in hand do not use', () => {
+        const migrated = migrate({ copies: [{ features: [{ '@type': 'GluedOn', material: 'Tape' }] }] })
+        expect(migrated.copies[0].features[0].material).toEqual('tape')
+    })
+
     it('leaves a current edition unchanged', () => {
         const once = migrate(edition01())
         expect(migrate(once)).toEqual(once)

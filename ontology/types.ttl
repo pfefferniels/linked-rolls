@@ -26,6 +26,25 @@ reot:treble a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/t
     rdfs:comment "The upper half of the keyboard, as controlled by the treble expression perforations."@en .
 
 
+# Kind of a physical feature (P2 has type on the feature). A hole, a
+# writing and a mark are all instances of E25 Human-Made Feature and a
+# patch is an E22 Human-Made Object, so the classes alone would leave
+# three of the four indistinguishable.
+
+reot:hole a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "hole"@en ;
+    rdfs:comment "A perforation in the roll paper, punched so that the reproducing mechanism reads it."@en .
+reot:writing a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "writing"@en ;
+    rdfs:comment "A feature that carries text: a printed label, a catalogue number, a stamp, a handwritten note. What it says is given by P128 carries."@en .
+reot:mark a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "mark"@en ;
+    rdfs:comment "A feature drawn on the roll that carries no text: a circle around a perforation, a stroke, a cross. What it was meant to say is a reading of it, an I16 Meaning Comprehension, and not a property of the feature."@en .
+reot:glued-on a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "glued-on"@en ;
+    rdfs:comment "A piece of paper or tape glued onto the roll, covering perforations or reinforcing the paper. It may itself bear features."@en .
+
+
 # Punching pattern of a hole (reo:pattern)
 
 reot:regular a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
@@ -138,17 +157,22 @@ reot:dating a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/t
 reot:glossing a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "glossing"@en .
 
 
-# Method by which a writing was put on the roll (P2 has type on the feature)
+# Method by which a writing or a mark was put on the roll (reo:method)
 
-reot:Print a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "print"@en .
-reot:Handwriting a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "handwriting"@en .
-reot:Stamp a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "stamp"@en .
+reot:print a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "print"@en .
+reot:handwriting a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "handwriting"@en .
+reot:stamp a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "stamp"@en .
+reot:ink a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "ink"@en .
+reot:pencil a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "pencil"@en .
+reot:crayon a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "crayon"@en ;
+    rdfs:comment "A coloured wax or grease pencil."@en .
 
 
 # Material of a glued-on patch (P45 consists of)
 
-reot:Paper a crm:E57_Material, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "paper"@en .
-reot:Tape a crm:E57_Material, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "tape"@en .
+reot:paper a crm:E57_Material, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "paper"@en .
+reot:tape a crm:E57_Material, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "tape"@en .
 
 
 # Units (P91 has unit)

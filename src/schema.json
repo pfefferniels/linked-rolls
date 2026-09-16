@@ -777,8 +777,8 @@
         "material": {
           "description": "The material of the glued-on feature.",
           "enum": [
-            "Paper",
-            "Tape"
+            "paper",
+            "tape"
           ],
           "type": "string",
           "ontology": "crm:P45 consists of"
@@ -810,7 +810,7 @@
       "ontology": "crm:E22 Human-Made Object"
     },
     "Hole": {
-      "description": "A hole (perforation) in the roll paper. Holes are the primary carriers of musical information on piano rolls, as they trigger notes and expression controls when passing over the tracker bar.",
+      "description": "A hole (perforation) in the roll paper. Holes are the primary carriers of musical information on piano rolls, as they trigger notes and expression controls when passing over the tracker bar. A punched hole is a human-made feature: CRM counts \"the information encoding features on mechanical or digital carriers\" among the features purposely created by human activity.",
       "properties": {
         "condition": {
           "$ref": "#/definitions/ObjectAssumption%3CConditionState%3C(%22partially-torn%22%7C%22missing-perforation%22)%3E%3E",
@@ -859,7 +859,8 @@
         "@type",
         "vertical"
       ],
-      "type": "object"
+      "type": "object",
+      "ontology": "crm:E25 Human-Made Feature"
     },
     "HorizontalSpan": {
       "description": "Describes the horizontal extent of a feature on the roll, measured in millimeters from the beginning of the roll. The `from` value is the start position and `to` is the end position.",
@@ -979,7 +980,7 @@
       "type": "object"
     },
     "Mark": {
-      "description": "A visible mark on the roll, such as a pencil mark, ink mark, or other non-textual annotation.",
+      "description": "A visible mark on the roll, such as a pencil circle, an ink stroke, or other non-textual annotation. What a mark was meant to say is a reading of it (crminf:I16 Meaning Comprehension) rather than a property of the feature, so its shape is not stated here.",
       "properties": {
         "condition": {
           "$ref": "#/definitions/ObjectAssumption%3CConditionState%3C(%22faded%22)%3E%3E",
@@ -995,6 +996,11 @@
           "$ref": "#/definitions/HorizontalSpan",
           "description": "Horizontal span of the feature on the roll.",
           "ontology": "crm:P43 has dimension"
+        },
+        "method": {
+          "$ref": "#/definitions/MarkMethod",
+          "description": "The medium the mark was drawn in, where it can be told.",
+          "ontology": "reo:method"
         },
         "vertical": {
           "$ref": "#/definitions/VerticalSpan",
@@ -1020,6 +1026,15 @@
       ],
       "type": "object",
       "ontology": "crm:E25 Human-Made Feature"
+    },
+    "MarkMethod": {
+      "description": "The medium a mark was drawn in.",
+      "enum": [
+        "ink",
+        "pencil",
+        "crayon"
+      ],
+      "type": "string"
     },
     "MeaningComprehension": {
       "description": "A meaning comprehension interprets or disambiguates the meaning of symbols or features. For example, interpreting a pencil mark as an instruction to add or remove a perforation or as the dating of the roll.",
@@ -2671,7 +2686,7 @@
         "method": {
           "$ref": "#/definitions/WritingMethod",
           "description": "The method by which this writing was produced (e.g. through print, handwriting, or stamping).",
-          "ontology": "crm:P2 has type"
+          "ontology": "reo:method"
         },
         "transcription": {
           "$ref": "#/definitions/ObjectAssumption%3CTranscription%3E",
@@ -2708,9 +2723,9 @@
     "WritingMethod": {
       "description": "The method by which a writing was produced on the roll: printed, handwritten, or stamped.",
       "enum": [
-        "Print",
-        "Handwriting",
-        "Stamp"
+        "print",
+        "handwriting",
+        "stamp"
       ],
       "type": "string"
     }

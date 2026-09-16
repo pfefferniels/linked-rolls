@@ -31,6 +31,15 @@ const renamedKeys: Record<string, string> = {
 
 const referenceKeys = ['alignedWith', 'pairedWith', 'basedOn']
 
+/**
+ * The five type terms that were capitalised while the rest of the
+ * vocabulary was not, under the keys that carry them.
+ */
+const lowerCasedTerms: Record<string, Record<string, string>> = {
+    method: { Print: 'print', Handwriting: 'handwriting', Stamp: 'stamp' },
+    material: { Paper: 'paper', Tape: 'tape' }
+}
+
 const named = (name: string) => ({ name, sameAs: [] })
 
 const withRenamedKeys = (node: Json): Json =>
@@ -54,6 +63,12 @@ const withoutVersionType = (node: Json): Json => {
     const { versionType: _retired, ...rest } = node
     return rest
 }
+
+const withLowerCaseTerms = (node: Json): Json =>
+    Object.entries(lowerCasedTerms).reduce((result, [key, terms]) => {
+        const lowered = terms[result[key]]
+        return lowered ? { ...result, [key]: lowered } : result
+    }, node)
 
 const withReferences = (node: Json): Json =>
     referenceKeys.reduce((result, key) => {
@@ -140,8 +155,8 @@ const withTimeSpanDates = (node: Json): Json => {
 }
 
 const migrateNode = (node: Json): Json =>
-    [withRenamedKeys, withTypology, withoutVersionType, withReferences, withKeeper, withoutEmptyKeeper, withProductionNodes, withScale,
-        withDerivationList, withReadingKind, withTimeSpanDates]
+    [withRenamedKeys, withTypology, withoutVersionType, withLowerCaseTerms, withReferences, withKeeper, withoutEmptyKeeper,
+        withProductionNodes, withScale, withDerivationList, withReadingKind, withTimeSpanDates]
         .reduce((result, step) => step(result), node)
 
 /** The items each walked, or the very same list where the walk changed none. */

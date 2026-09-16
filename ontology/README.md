@@ -37,8 +37,10 @@ ontology itself.
 ## Naming
 
 Terms carry plain names. Classes are written in upper camel case
-(`reo:Perforation`), properties and type instances in lower camel case
-(`reo:alignedWith`, `reo:treble`). Where a property is reo's own, its
+(`reo:Perforation`), properties in lower camel case
+(`reo:alignedWith`), and type instances in lower case, hyphenated
+where they run to more than one word (`reot:treble`,
+`reot:paper-stretch`). Where a property is reo's own, its
 local name is the JSON key it maps, unless that key is a plural or a
 verb (`copies`, `insert`); then the property takes the singular
 predicate (`reo:witness`, `reo:added`) and the context records the
@@ -53,8 +55,15 @@ A term is introduced only where those ontologies offer no equivalent.
 
 The namespace IRI is unversioned. Each release also lives under a
 versioned IRI such as `https://w3id.org/reo/1.0/` and declares it as
-`owl:versionIRI`. A released term is never renamed. A term that falls
-out of use is deprecated and kept.
+`owl:versionIRI`. From the first frozen release a term is never
+renamed: one that falls out of use is deprecated and kept. Until then
+the vocabulary may still be corrected in place. 1.0 is a draft, the
+w3id entry is not registered and nothing under it resolves, so no term
+can yet have been built on. On this ground the five capitalised terms
+of the writing methods and the patch materials (`reot:Print`,
+`reot:Handwriting`, `reot:Stamp`, `reot:Paper`, `reot:Tape`) were
+lower-cased in September 2026 to match the rest of the vocabulary, and
+`migrate` reads the old spellings.
 
 ## Publishing
 

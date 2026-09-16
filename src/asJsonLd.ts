@@ -1,6 +1,7 @@
 import { Edition } from "./Edition";
 import { systemIdIn } from "./TrackerBar";
 import { certaintyOf, isAsserted } from "./Assumption";
+import { featureKinds, isFeatureType } from "./Feature";
 import context from "./spec/context.json";
 
 export const exportDate = (date: Date) => {
@@ -27,6 +28,9 @@ const asJsonLdEntity = (obj: object) => {
         }
         else if (key === 'type') {
             result['@type'] = value
+            // A term maps @type to a class and can state nothing besides, so
+            // the kind of a feature is written out as a key of its own.
+            if (isFeatureType(value)) result['kind'] = featureKinds[value]
         }
         else if (key === 'id') {
             result['@id'] = value

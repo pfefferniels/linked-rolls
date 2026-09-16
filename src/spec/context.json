@@ -15,7 +15,7 @@
     "Edition": "lrmoo:F2_Expression",
     "Version": "lrmoo:F2_Expression",
     "RollCopy": "lrmoo:F5_Item",
-    "Hole": "crm:E26_Physical_Feature",
+    "Hole": "crm:E25_Human-Made_Feature",
     "Mark": "crm:E25_Human-Made_Feature",
     "Writing": "crm:E25_Human-Made_Feature",
     "GluedOn": "crm:E22_Human-Made_Object",
@@ -201,18 +201,18 @@
       "@id": "crm:P138i_has_representation",
       "@type": "@id"
     },
+    "kind": {
+      "@id": "crm:P2_has_type",
+      "@type": "@vocab",
+      "@context": {
+        "@vocab": "https://w3id.org/reo/type/",
+        "roll": "https://w3id.org/reo/type/roll",
+        "scan": "https://w3id.org/reo/type/scan"
+      }
+    },
     "readFrom": {
       "@id": "reo:capture",
       "@context": {
-        "kind": {
-          "@id": "crm:P2_has_type",
-          "@type": "@vocab",
-          "@context": {
-            "@vocab": "https://w3id.org/reo/type/",
-            "roll": "https://w3id.org/reo/type/roll",
-            "scan": "https://w3id.org/reo/type/scan"
-          }
-        },
         "output": {
           "@id": "crmdig:L11_had_output",
           "@type": "@id"
@@ -246,7 +246,7 @@
       "@context": { "@vocab": "https://w3id.org/reo/type/" }
     },
     "method": {
-      "@id": "crm:P2_has_type",
+      "@id": "reo:method",
       "@type": "@vocab",
       "@context": { "@vocab": "https://w3id.org/reo/type/" }
     },
@@ -254,7 +254,10 @@
     "material": {
       "@id": "crm:P45_consists_of",
       "@type": "@vocab",
-      "@context": { "@vocab": "https://w3id.org/reo/type/" }
+      "@context": {
+        "@vocab": "https://w3id.org/reo/type/",
+        "paper": "https://w3id.org/reo/type/paper"
+      }
     },
 
     "actor": "crm:P14_carried_out_by",

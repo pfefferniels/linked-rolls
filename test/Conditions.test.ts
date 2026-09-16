@@ -26,13 +26,13 @@ const writing: Writing = {
     type: 'Writing',
     id: 'label',
     ...at(20, 60),
-    method: 'Handwriting',
+    method: 'handwriting',
     transcription: assignObject<Transcription>({ type: 'text', id: 'label-text', text: 'Welte' })
 }
 
 const mark: Mark = { type: 'Mark', id: 'pencil', ...at(80, 90) }
 
-const patch: GluedOn = { type: 'GluedOn', id: 'patch', ...at(100, 140), material: 'Paper' }
+const patch: GluedOn = { type: 'GluedOn', id: 'patch', ...at(100, 140), material: 'paper' }
 
 /** A copy carrying one feature of each kind, and a version reading its hole as a note. */
 const withFeatures = (features: AnyFeature[] = [hole('hole-note', 1000, 1010, 47), writing, mark, patch]) =>

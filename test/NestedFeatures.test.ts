@@ -14,7 +14,7 @@ import { mm, track } from '../src/Quantity'
 const writing = (id: string, text: string): NestedFeature => ({
     type: 'Writing',
     id,
-    method: 'Print',
+    method: 'print',
     transcription: assignObject<Transcription>({ type: 'text', id: `${id}-text`, text })
 })
 
@@ -23,7 +23,7 @@ const patch = (id: string, from: number, to: number, features?: NestedFeature[])
     id,
     horizontal: { unit: 'mm', from: mm(from), to: mm(to) },
     vertical: { unit: 'track', from: track(40), to: track(57) },
-    material: 'Paper',
+    material: 'paper',
     ...(features && { features })
 })
 
