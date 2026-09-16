@@ -38,6 +38,16 @@ const edition = (): Edition => editionOf(
     ]
 )
 
+/** A, C on A and D on C, each inserting a note of its own, and one copy carrying all three. */
+const chain = (): Edition => editionOf(
+    [copy('roll', [hole('hole-a', 1000, 1010, 47), hole('hole-c', 1100, 1110, 49), hole('hole-d', 1200, 1210, 51)])],
+    [
+        version('A', [{ type: 'edit', id: 'edit-a', insert: [note('note-a', 60, 'hole-a')] }]),
+        version('C', [{ type: 'edit', id: 'edit-c', insert: [note('note-c', 62, 'hole-c')] }], 'A'),
+        version('D', [{ type: 'edit', id: 'edit-d', insert: [note('note-d', 64, 'hole-d')] }], 'C')
+    ]
+)
+
 /** The edition with the recorded copy stating it carries the versions, each under the certainty given. */
 const stating = (...statements: [string, Certainty][]): Edition =>
     statements.reduce((next, [versionId, certainty]) =>
@@ -89,7 +99,7 @@ describe('the witnesses of a version', () => {
     it('counts a copy by what the version inserts, and a statement with its certainty and belief', () => {
         const view = new EditionView(stating(['C', 'likely'], ['S', 'possible']))
 
-        expect(witnessesOf(view, 'A')).toEqual([{ copy: 'paper', by: 'carriers' }])
+        expect(witnessesOf(view, 'A')).toEqual([{ copy: 'paper', by: 'carriers', through: 'C' }])
         expect(witnessesOf(view, 'C')).toEqual([
             { copy: 'paper', by: 'carriers' },
             { copy: 'recorded', by: 'statement', certainty: 'likely', belief: belief('likely') }
@@ -97,11 +107,27 @@ describe('the witnesses of a version', () => {
         expect(witnessesOf(view, 'S')).toEqual([{ copy: 'recorded', by: 'statement', certainty: 'possible', belief: belief('possible') }])
     })
 
+    it('names the later version a copy bears witness through, and leaves the latest one it carries direct', () => {
+        const view = new EditionView(chain())
+        const through = (versionId: string) => witnessesOf(view, versionId).map(witness => witness.through)
+
+        expect(through('A')).toEqual(['D'])
+        expect(through('C')).toEqual(['D'])
+        expect(through('D')).toEqual([undefined])
+    })
+
+    it('reads past a version that inserts nothing, which leaves the text as it found it', () => {
+        const unstated = produce(chain(), draft => { draft.versions.push(version('E', [], 'D')) })
+
+        expect(witnessesOf(new EditionView(unstated), 'D')).toEqual([{ copy: 'roll', by: 'carriers' }])
+        expect(witnessesOf(new EditionView(unstated), 'E')).toEqual([])
+    })
+
     it('gathers the versions a copy bears witness to, in the order of the edition', () => {
         const view = new EditionView(stating(['S', 'possible'], ['C', 'likely']))
 
-        expect(versionsWitnessedBy(view, 'paper').map(({ version, by }) => [version, by]))
-            .toEqual([['A', 'carriers'], ['C', 'carriers']])
+        expect(versionsWitnessedBy(view, 'paper').map(({ version, by, through }) => [version, by, through]))
+            .toEqual([['A', 'carriers', 'C'], ['C', 'carriers', undefined]])
         expect(versionsWitnessedBy(view, 'recorded').map(({ version, certainty }) => [version, certainty]))
             .toEqual([['C', 'likely'], ['S', 'possible']])
     })

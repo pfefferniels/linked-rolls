@@ -149,8 +149,8 @@ export class EditionView {
         }
     }
 
-    /** The version and its ancestors, from the version up to the root. */
-    private lineageOf(versionId: string): Readonly<Version>[] {
+    /** The version and its ancestors along the principal line, from the version up to the root. */
+    lineageOf(versionId: string): Readonly<Version>[] {
         const lineage: Readonly<Version>[] = []
         this.travelUp(versionId, version => lineage.push(version))
         return lineage
