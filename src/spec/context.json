@@ -105,8 +105,21 @@
     },
     "place": "crm:P7_took_place_at",
     "date": {
-      "@id": "dcterms:date",
-      "@type": "xsd:date"
+      "@id": "crm:P4_has_time-span",
+      "@context": {
+        "within": {
+          "@id": "crm:P82_at_some_time_within",
+          "@type": "xsd:date"
+        },
+        "after": {
+          "@id": "crm:P82a_begin_of_the_begin",
+          "@type": "xsd:date"
+        },
+        "before": {
+          "@id": "crm:P82b_end_of_the_end",
+          "@type": "xsd:date"
+        }
+      }
     },
     "created": "lrmoo:R17_created",
     "copies": "reo:witness",
@@ -152,7 +165,11 @@
         "value": "crm:P90_has_value",
         "measuredBy": "crmdig:L23_used_software_or_firmware",
         "software": "rdfs:label",
-        "version": "owl:versionInfo"
+        "version": "owl:versionInfo",
+        "date": {
+          "@id": "dcterms:date",
+          "@type": "xsd:date"
+        }
       }
     },
     "production": {

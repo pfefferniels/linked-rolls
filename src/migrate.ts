@@ -4,6 +4,7 @@ import { systemIdIn, systemOf, TrackerBar, translationBetween } from "./TrackerB
 import { trackerBars } from "./systems";
 import { welteT100 } from "./systems/welteT100/bar";
 import { Track } from "./Quantity";
+import { isDateString } from "./utils";
 
 /**
  * Brings the JSON of an edition written by an earlier release of the
@@ -127,9 +128,20 @@ const withoutEmptyKeeper = (node: Json): Json => {
     return rest
 }
 
+/**
+ * A date was a value of its own before it was the time-span the event
+ * falls within. The datatype goes with it: the context now types each
+ * bound, and a `@type` left on the node would read as a class.
+ */
+const withTimeSpanDates = (node: Json): Json => {
+    if (!isDateString(node['@value'])) return node
+    const { '@value': within, '@type': _typed, ...rest } = node
+    return { ...rest, within }
+}
+
 const migrateNode = (node: Json): Json =>
     [withRenamedKeys, withTypology, withoutVersionType, withReferences, withKeeper, withoutEmptyKeeper, withProductionNodes, withScale,
-        withDerivationList, withReadingKind]
+        withDerivationList, withReadingKind, withTimeSpanDates]
         .reduce((result, step) => step(result), node)
 
 /** The items each walked, or the very same list where the walk changed none. */

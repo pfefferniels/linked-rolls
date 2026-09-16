@@ -256,43 +256,111 @@
       "ontology": "crm:E55 Type"
     },
     "DateAssignment": {
-      "description": "A date value wrapped as an assumption, so that the date can be annotated with a belief about its certainty and source.",
-      "properties": {
-        "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+      "anyOf": [
+        {
           "properties": {
-            "belief": {
-              "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement.",
-              "ontology": "crminf:J4i is subject of"
+            "@annotation": {
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+              "properties": {
+                "belief": {
+                  "$ref": "#/definitions/Belief",
+                  "description": "The belief held about the annotated statement.",
+                  "ontology": "crminf:J4i is subject of"
+                },
+                "@id": {
+                  "description": "A unique identifier for this object.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "belief",
+                "@id"
+              ],
+              "type": "object"
             },
-            "@id": {
-              "description": "A unique identifier for this object.",
+            "within": {
+              "format": "date",
               "type": "string"
             }
           },
           "required": [
-            "belief",
-            "@id"
+            "within"
           ],
           "type": "object"
         },
-        "@type": {
-          "const": "xsd:date",
-          "description": "The datatype of the value. Written on export so that RDF reads the value as a date rather than a string.",
-          "type": "string",
-          "ontology": "rdf:type"
+        {
+          "properties": {
+            "@annotation": {
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+              "properties": {
+                "belief": {
+                  "$ref": "#/definitions/Belief",
+                  "description": "The belief held about the annotated statement.",
+                  "ontology": "crminf:J4i is subject of"
+                },
+                "@id": {
+                  "description": "A unique identifier for this object.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "belief",
+                "@id"
+              ],
+              "type": "object"
+            },
+            "after": {
+              "format": "date",
+              "type": "string"
+            },
+            "before": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          "required": [
+            "after"
+          ],
+          "type": "object"
         },
-        "@value": {
-          "description": "The assumed value.",
-          "format": "date",
-          "type": "string"
+        {
+          "properties": {
+            "@annotation": {
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+              "properties": {
+                "belief": {
+                  "$ref": "#/definitions/Belief",
+                  "description": "The belief held about the annotated statement.",
+                  "ontology": "crminf:J4i is subject of"
+                },
+                "@id": {
+                  "description": "A unique identifier for this object.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "belief",
+                "@id"
+              ],
+              "type": "object"
+            },
+            "after": {
+              "format": "date",
+              "type": "string"
+            },
+            "before": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          "required": [
+            "before"
+          ],
+          "type": "object"
         }
-      },
-      "required": [
-        "@value"
       ],
-      "type": "object"
+      "description": "When something happened, as far as the edition can state it: the day it falls `within`, or the bounds it lies between. A bound nobody can give is left out, so `after` alone says \"not before\".",
+      "ontology": "crm:E52 Time-Span"
     },
     "Derivation": {
       "description": "A derivation names the version another one was derived from, together with the tolerance the two were collated at. How precisely the copies put a symbol depends on what they are and on how their features were obtained, so the tolerance can differ from derivation to derivation.",
@@ -638,8 +706,7 @@
         "date": {
           "$ref": "#/definitions/DateAssignment",
           "description": "When the capture took place.",
-          "format": "date",
-          "ontology": "dcterms:date"
+          "ontology": "crm:P4 has time-span"
         },
         "device": {
           "$ref": "#/definitions/Concept",
@@ -1074,7 +1141,7 @@
             "date": {
               "$ref": "#/definitions/DateAssignment",
               "description": "When the modification took place.",
-              "ontology": "dcterms:date"
+              "ontology": "crm:P4 has time-span"
             },
             "purpose": {
               "enum": [
@@ -1113,7 +1180,7 @@
             "date": {
               "$ref": "#/definitions/DateAssignment",
               "description": "When the modification took place.",
-              "ontology": "dcterms:date"
+              "ontology": "crm:P4 has time-span"
             },
             "purpose": {
               "const": "delabeling",
@@ -1951,7 +2018,7 @@
         "date": {
           "$ref": "#/definitions/DateAssignment",
           "description": "The date of production, if known.",
-          "ontology": "dcterms:date"
+          "ontology": "crm:P4 has time-span"
         },
         "paper": {
           "$ref": "#/definitions/Concept",
@@ -2001,7 +2068,7 @@
         "date": {
           "$ref": "#/definitions/DateAssignment",
           "description": "The recording date of the roll. This is a date assignment so that we can state e.g. the catalogue or the roll label which indicates the date of the recording.",
-          "ontology": "dcterms:date"
+          "ontology": "crm:P4 has time-span"
         },
         "place": {
           "$ref": "#/definitions/Place",
@@ -2487,7 +2554,7 @@
         "date": {
           "$ref": "#/definitions/DateAssignment",
           "description": "When it took place.",
-          "ontology": "dcterms:date"
+          "ontology": "crm:P4 has time-span"
         },
         "procedure": {
           "$ref": "#/definitions/Concept",

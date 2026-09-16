@@ -40,8 +40,24 @@ Files written by linked-rolls 0.1 load unchanged: `importJsonLd`
 recognises their shapes and brings them to the current format, in
 which versions and conditions carry a typology key beside their type,
 the keeper and the production metadata are nodes with a name and
-authority links, and the roll names its reproducing system. Exports
-are always in the current format.
+authority links, and the roll names its reproducing system. A date
+written as a value of its own is read as the day the event falls
+within. Exports are always in the current format.
+
+## How a date is stated
+
+A date is the time-span of the event rather than a value on it.
+`within` gives the day it falls within, and `after` and `before` give
+the bounds where nobody can give the day. A bound the edition does not
+know is left out, so `after` alone says "not before". In RDF the three
+become `P82 at some time within`, `P82a begin of the begin` and `P82b
+end of the end` on the `E52 Time-Span` the event has. `assignDate`,
+`notBefore` and `notAfter` build the three shapes, and `dateOf`,
+`earliestOf` and `latestOf` read them.
+
+Note that `before` and `after` mean something else on a perforation,
+where they order two onsets. The context defines them for a date
+within the date itself, so the two never meet.
 
 ## What a version derives from
 

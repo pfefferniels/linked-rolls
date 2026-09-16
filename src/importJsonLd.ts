@@ -1,10 +1,6 @@
 import { Edition } from "./Edition";
 import { migrate } from "./migrate";
-
-const isDate = (value: string) => {
-    const datePattern = /^\d{4}-\d{1,2}-\d{1,2}$/;
-    return datePattern.test(value);
-}
+import { isDateString } from "./utils";
 
 export const importDate = (str: string): Date => {
     const [y, m, d] = str.split('-').map(s => parseInt(s, 10))
@@ -18,7 +14,7 @@ type Json = any
 
 /** A value as the edition holds it: a date read, an entity converted, anything else as it stands. */
 const fromJsonLdValue = (value: Json): Json => {
-    if (typeof value === 'string') return isDate(value) ? importDate(value) : value
+    if (typeof value === 'string') return isDateString(value) ? importDate(value) : value
     if (Array.isArray(value)) return value.map(fromJsonLdValue)
     if (value !== null && typeof value === 'object') return fromJsonLdEntity(value)
     return value

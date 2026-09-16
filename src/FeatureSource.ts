@@ -131,8 +131,7 @@ export interface FeatureSource extends WithNote {
 
     /**
      * When the capture took place.
-     * @format date
-     * @see dcterms:date
+     * @see crm:P4 has time-span
      */
     date?: DateAssignment
 }

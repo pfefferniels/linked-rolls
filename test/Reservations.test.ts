@@ -6,7 +6,7 @@ import { reservationsAbout, ReservationType } from '../src/reservations'
 import { clearSource, stateSource } from '../src/editionOps'
 import { asJsonLd } from '../src/asJsonLd'
 import { importJsonLd } from '../src/importJsonLd'
-import { assignValue } from '../src/Assumption'
+import { assignDate } from '../src/Assumption'
 import { mm, px, track } from '../src/Quantity'
 import { copy, editionOf, hole } from './editionFixture'
 import { systemOf } from '../src/TrackerBar'
@@ -37,7 +37,7 @@ describe('reservations about a copy', () => {
         const documented = scanned({
             kind: 'scan',
             device: { name: 'Kodak i5850', sameAs: [] },
-            date: assignValue(new Date('2019-06-01'))
+            date: assignDate(new Date('2019-06-01'))
         })
 
         expect(typesOf(documented)).toEqual([])
@@ -51,7 +51,7 @@ describe('reservations about a copy', () => {
         const emulated = scanned({
             kind: 'emulation',
             output: 'https://example.org/wm225.mid',
-            date: assignValue(new Date('2015-01-01'))
+            date: assignDate(new Date('2015-01-01'))
         })
 
         expect(typesOf(emulated)).toEqual(['software-not-named', 'features-interpreted', 'no-physical-evidence'])
@@ -60,8 +60,8 @@ describe('reservations about a copy', () => {
     })
 
     it('keeps the physical evidence of an analysis while denying it to a roll reader, whose switches it measures', () => {
-        const analysed = scanned({ kind: 'analysis', date: assignValue(new Date()) })
-        const read = scanned({ kind: 'reading', date: assignValue(new Date()) })
+        const analysed = scanned({ kind: 'analysis', date: assignDate(new Date()) })
+        const read = scanned({ kind: 'reading', date: assignDate(new Date()) })
 
         expect(typesOf(analysed)).toEqual(['no-physical-evidence'])
         expect(typesOf(read)).toEqual(['no-physical-evidence'])
@@ -70,7 +70,7 @@ describe('reservations about a copy', () => {
     it('expects no measuring software where the roll itself was measured', () => {
         const byHand: RollCopy = {
             ...holed('by-hand'),
-            readFrom: { kind: 'roll', date: assignValue(new Date('2021-01-01')) },
+            readFrom: { kind: 'roll', date: assignDate(new Date('2021-01-01')) },
             measurements: { trackCalibration: { unit: 'mm', offset: mm(1), separation: 3, shift: track(0) } }
         }
 
@@ -108,7 +108,7 @@ describe('reservations about a copy', () => {
         const undocumented = scanned({ kind: 'scan' })
         const filled: RollCopy = {
             ...undocumented,
-            readFrom: { ...undocumented.readFrom!, date: assignValue(new Date('2019-06-01')) }
+            readFrom: { ...undocumented.readFrom!, date: assignDate(new Date('2019-06-01')) }
         }
 
         expect(typesOf(filled)).toEqual([])
@@ -118,7 +118,7 @@ describe('reservations about a copy', () => {
 describe('reservations about a copy known only from a recording', () => {
     const recorded = (source: Omit<FeatureSource, 'kind'>): RollCopy => ({
         ...copy('recorded', []),
-        readFrom: { kind: 'recording', date: assignValue(new Date(2016, 0, 1)), ...source }
+        readFrom: { kind: 'recording', date: assignDate(new Date(2016, 0, 1)), ...source }
     })
 
     it('asks for the software and the instrument, and nothing its missing features would have to say', () => {
@@ -161,7 +161,7 @@ describe('stating the source of a copy', () => {
             output: 'https://example.org/wm225.mid',
             note: 'MIDI from a third party; the emulator is not named.',
             // The format carries a date as YYYY-MM-DD in local time, so only a local midnight round-trips.
-            date: assignValue(new Date(2015, 0, 1))
+            date: assignDate(new Date(2015, 0, 1))
         }
         const stated = produce(edition(), stateSource('first', source))
 

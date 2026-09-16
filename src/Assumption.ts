@@ -169,16 +169,16 @@ export type ObjectAssumption<O extends object> =  Assumption & O
 export type ActorAssignment = ObjectAssumption<Person>
 
 /**
- * A date value wrapped as an assumption, so that the date
- * can be annotated with a belief about its certainty and source.
+ * When something happened, as far as the edition can state it: the day
+ * it falls `within`, or the bounds it lies between. A bound nobody can
+ * give is left out, so `after` alone says "not before".
+ * @see crm:E52 Time-Span
  */
-export type DateAssignment = ValueAssumption<Date> & {
-    /**
-     * The datatype of the value. Written on export so that
-     * RDF reads the value as a date rather than a string.
-     */
-    '@type'?: 'xsd:date'
-}
+export type DateAssignment = Assumption & (
+    | { within: Date }
+    | { after: Date, before?: Date }
+    | { before: Date, after?: Date }
+)
 
 export function valueOf<ValueT>(
     assumption: ValueAssumption<ValueT>
@@ -227,4 +227,25 @@ export function assignObject<O extends object>(
         ...obj
     }
 }
+
+/** A date the edition states: the day the event falls within. */
+export const assignDate = (within: Date): DateAssignment => ({ within })
+
+/** A date the edition can only bound from below, as in "not before 1924". */
+export const notBefore = (after: Date): DateAssignment => ({ after })
+
+/** A date the edition can only bound from above. */
+export const notAfter = (before: Date): DateAssignment => ({ before })
+
+/** The day the event falls within, where the edition states one. */
+export const dateOf = (assignment: DateAssignment): Date | undefined =>
+    'within' in assignment ? assignment.within : undefined
+
+/** The earliest the event can have happened, as far as the edition states it. */
+export const earliestOf = (assignment: DateAssignment): Date | undefined =>
+    'within' in assignment ? assignment.within : assignment.after
+
+/** The latest the event can have happened, as far as the edition states it. */
+export const latestOf = (assignment: DateAssignment): Date | undefined =>
+    'within' in assignment ? assignment.within : assignment.before
 

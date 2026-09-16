@@ -53,7 +53,7 @@ export interface VersionCreation {
 
     /**
      * When it took place.
-     * @see dcterms:date
+     * @see crm:P4 has time-span
      */
     date?: DateAssignment
 

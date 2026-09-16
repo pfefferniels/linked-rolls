@@ -3,7 +3,7 @@ import { AnyFeature, Hole } from '../src/Feature'
 import { RollCopy } from '../src/RollCopy'
 import { Expression, Note, Text } from '../src/Symbol'
 import { Version } from '../src/Version'
-import { assignReference, assignValue } from '../src/Assumption'
+import { assignDate, assignReference } from '../src/Assumption'
 import { mm, track } from '../src/Quantity'
 import { systemOf } from '../src/TrackerBar'
 import { welteT100 } from '../src/systems/welteT100/bar'
@@ -63,7 +63,7 @@ export const editionOf = (copies: RollCopy[], versions: Version[]): Edition => (
     creation: { publisher: nobody, publicationDate: new Date() },
     roll: {
         catalogueNumber: '',
-        recordingEvent: { recorded: { pianist: nobody, playing: '' }, place: nobody, date: assignValue(new Date()) }
+        recordingEvent: { recorded: { pianist: nobody, playing: '' }, place: nobody, date: assignDate(new Date()) }
     },
     copies,
     versions

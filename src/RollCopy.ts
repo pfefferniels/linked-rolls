@@ -103,7 +103,7 @@ export interface ProductionEvent {
 
     /**
      * The date of production, if known.
-     * @see dcterms:date
+     * @see crm:P4 has time-span
      */
     date?: DateAssignment
 
@@ -140,7 +140,7 @@ export type Modification = Partial<{
     actor: ActorAssignment
     /**
      * When the modification took place.
-     * @see dcterms:date
+     * @see crm:P4 has time-span
      */
     date: DateAssignment
 }> & ({

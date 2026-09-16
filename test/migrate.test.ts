@@ -184,6 +184,19 @@ describe('migrating a 0.1 edition', () => {
         expect(migrated.versions[0]).toMatchObject({ '@type': 'Version', '@id': 'A' })
         expect(migrated.versions[0]).not.toHaveProperty('versionType')
     })
+
+    /**
+     * A date was a value of its own, typed on the node, before it was the
+     * time-span the event falls within. The datatype goes with it: each
+     * bound is typed by the context now, and one left on the node would
+     * read as a class.
+     */
+    it('reads a date written as a value as the day it falls within', () => {
+        const date = migrate(edition01()).roll.recordingEvent.date
+        expect(date).toMatchObject({ within: '1905-01-20' })
+        expect(date).not.toHaveProperty('@value')
+        expect(date).not.toHaveProperty('@type')
+    })
 })
 
 describe('migrating an edition whose collation tolerance was the edition\'s', () => {

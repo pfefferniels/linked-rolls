@@ -3,7 +3,7 @@ import { importJsonLd } from '../src/importJsonLd';
 import * as path from 'path'
 import { readFileSync } from 'fs';
 import { asJsonLd } from '../src/asJsonLd';
-import { assignObject, assignValue, Certainty, valueOf } from '../src/Assumption';
+import { assignDate, assignObject, Certainty, dateOf, earliestOf, latestOf, notBefore } from '../src/Assumption';
 import { edition as smallEdition } from './editionFixture';
 import { PaperSpeed } from '../src/RollCopy';
 import { systemOf } from '../src/TrackerBar';
@@ -142,18 +142,37 @@ describe('Export', () => {
         })
     })
 
-    it('types annotated dates as xsd:date and reads them back', () => {
+    it('reads a date written as a value into the day it falls within', () => {
         const exported = asJsonLd(edition())
-        expect(exported.roll.recordingEvent.date).toMatchObject({
-            '@value': '1905-01-20',
-            '@type': 'xsd:date',
-        })
+        expect(exported.roll.recordingEvent.date).toMatchObject({ within: '1905-01-20' })
 
         const reimported = importJsonLd(exported)
         const date = reimported.roll.recordingEvent.date
-        expect(date['@value']).toBeInstanceOf(Date)
-        expect(date).not.toHaveProperty('type')
+        expect(dateOf(date)).toBeInstanceOf(Date)
+        expect(date).not.toHaveProperty('@value')
         expect(date).not.toHaveProperty('@type')
+        expect(date).not.toHaveProperty('type')
+    })
+
+    /**
+     * A copy nobody can date to the day is bounded instead. The bound
+     * that is not known stays out, which is what "not before" says.
+     */
+    it('carries a date bounded from below, with no upper bound', () => {
+        const bounded = edition()
+        bounded.copies[0].production = {
+            ...bounded.copies[0].production,
+            date: notBefore(new Date(1924, 8, 1))
+        }
+
+        const exported = asJsonLd(bounded)
+        expect(exported.copies[0].production.date).toEqual({ after: '1924-09-01' })
+
+        const back = importJsonLd(JSON.parse(JSON.stringify(exported)))
+        const date = back.copies[0].production!.date!
+        expect(earliestOf(date)?.getFullYear()).toBe(1924)
+        expect(latestOf(date)).toBeUndefined()
+        expect(dateOf(date)).toBeUndefined()
     })
 
     it('carries the system and the speed a copy was cut for, and the scale of its alignment only in the features', () => {
@@ -206,7 +225,7 @@ describe('the act that made a version', () => {
         edition.versions[1].system = systemOf(welteT98)
         edition.versions[1].creation = {
             actor: assignObject({ name: 'Kähle', sameAs: [] }),
-            date: assignValue(new Date(1927, 0, 1)),
+            date: assignDate(new Date(1927, 0, 1)),
             procedure: {
                 id: 'https://w3id.org/reo/type/procedure/system-transfer',
                 name: 'transfer to another reproducing system',
@@ -223,7 +242,7 @@ describe('the act that made a version', () => {
 
         expect(made.actor?.name).toBe('Kähle')
         expect(made.procedure?.id).toBe('https://w3id.org/reo/type/procedure/system-transfer')
-        expect(valueOf(made.date!).getFullYear()).toBe(1927)
+        expect(dateOf(made.date!)?.getFullYear()).toBe(1927)
     })
 
     it('carries the green version under its own vocabulary', () => {

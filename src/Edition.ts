@@ -76,7 +76,7 @@ export interface RecordingEvent {
      * The recording date of the roll. This is a date
      * assignment so that we can state e.g. the catalogue
      * or the roll label which indicates the date of the recording.
-     * @see dcterms:date
+     * @see crm:P4 has time-span
      */
     date: DateAssignment
 
