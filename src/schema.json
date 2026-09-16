@@ -2271,7 +2271,7 @@
           "ontology": "crm:P138i has representation"
         },
         "siglum": {
-          "description": "A short siglum to identify the copy, e.g. \"W1\" or \"S2\". A copy without one is named by its keeper.",
+          "description": "A short siglum to identify the copy, e.g. \"St1\" or \"Wi1\": letters for the collection the copy was read in, and a number counting the copies of the roll held there. A copy without one is named by its keeper.",
           "type": "string",
           "ontology": "reo:siglum"
         },
@@ -2446,7 +2446,7 @@
           "type": "array"
         },
         "siglum": {
-          "description": "A short siglum to identify the version, e.g. \"A\", \"B1\", \"B2_rev\", etc.",
+          "description": "A short siglum to identify the version, e.g. \"A\" or \"B2\". A siglum is given once and not changed: its letter names the line the version was first recognised in, its number counts the versions admitted to that line. Where later work places the version elsewhere in the stemma, `basedOn` changes and the siglum stays.",
           "type": "string",
           "ontology": "reo:siglum"
         },

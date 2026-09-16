@@ -74,7 +74,11 @@ export interface VersionCreation {
  */
 export interface Version extends WithId, WithType<'Version'> {
     /**
-     * A short siglum to identify the version, e.g. "A", "B1", "B2_rev", etc.
+     * A short siglum to identify the version, e.g. "A" or "B2". A siglum
+     * is given once and not changed: its letter names the line the version
+     * was first recognised in, its number counts the versions admitted to
+     * that line. Where later work places the version elsewhere in the
+     * stemma, `basedOn` changes and the siglum stays.
      * @see reo:siglum
      */
     siglum: string;

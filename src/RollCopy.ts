@@ -315,8 +315,10 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
     conditions: RollConditionAssignment[]
 
     /**
-     * A short siglum to identify the copy, e.g. "W1" or "S2". A copy
-     * without one is named by its keeper.
+     * A short siglum to identify the copy, e.g. "St1" or "Wi1": letters
+     * for the collection the copy was read in, and a number counting the
+     * copies of the roll held there. A copy without one is named by its
+     * keeper.
      * @see reo:siglum
      */
     siglum?: string
