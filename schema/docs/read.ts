@@ -14,7 +14,9 @@ type Kind = TypeExpression['kind']
 
 const rootKeywords = ['$ref', '$schema', 'definitions']
 const definitionAnnotations = ['description', 'ontology']
-const propertyAnnotations = ['description', 'ontology', 'examples']
+// `deprecated` comes from an @deprecated tag on the property. The docs
+// carry the description, which says what to use instead.
+const propertyAnnotations = ['description', 'ontology', 'examples', 'deprecated']
 const primitives: Primitive[] = ['string', 'number', 'integer', 'boolean', 'null']
 const definitionsPrefix = '#/definitions/'
 
