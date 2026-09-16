@@ -164,15 +164,21 @@ describe('the dynamics of a green roll', () => {
         // A comparison plot must not be able to put a curve fitted to a green
         // roll's drawn line beside one fitted to a red copy's curve without
         // saying which is which; their difference is the point of the comparison.
-        expect(dynamics(green, 'bass').instrument).toContain('unfitted starting values')
+        expect(dynamics(green, 'bass').instrument).toContain('genuine consensus')
         expect(dynamics(green, 'bass').instrument).toContain('T-98')
         expect(labelOf({ genuine: '184' })).toContain('genuine')
         expect(labelOf({ derived: '225' })).toContain('derived')
     })
 
-    it('offers no fitted instrument yet, and says which set is in use', () => {
-        expect(instrumentNames).toEqual([{ unfitted: 'starting-values' }])
-        expect(instrumentNameOf(defaultWelteT98Options.nuance)).toEqual({ unfitted: 'starting-values' })
+    it('plays on a fitted instrument by default, and says which set is in use', () => {
+        // Until the fits ran this was the unfitted starting values, and the test
+        // asserted so. A green edition now plays on the consensus across the
+        // lined green rolls unless the caller names another instrument.
+        expect(instrumentNameOf(defaultWelteT98Options.nuance)).toEqual({ genuine: 'consensus' })
+        expect(instrumentNames).toContainEqual({ genuine: 'consensus' })
+        expect(instrumentNames).toContainEqual({ genuine: '184' })
+        expect(instrumentNames).toContainEqual({ derived: '225' })
+        expect(instrumentNames).toContainEqual({ unfitted: 'starting-values' })
         const { nuance } = defaultWelteT98Options
         expect(instrumentNameOf({ ...nuance, bass: { ...nuance.bass, alpha: 0 } })).toBeUndefined()
     })
@@ -323,13 +329,13 @@ describe('the common unit both systems are in', () => {
     })
 
     it('does not assume the two hooks are in the same place', () => {
-        // No measurement of the T-98's hook exists on either scale, and the T-100's
-        // 0.77 is a fraction of a drawn span while the green prior of 0.45 is a
-        // weak one taken from what two programs assume by construction. Where each
-        // sits is what a fit against a drawn green line will be the first to say.
+        // The green hook was a weak prior taken from what two programs assume by
+        // construction, and the fit against the drawn green lines has now spoken:
+        // the two scales still put it in different places, and the green figure is
+        // measured rather than assumed.
         expect(defaultWelteT98Options.nuance.bass.mezzoforte)
             .not.toEqual(defaultWelteT100Options.nuance.bass.mezzoforte)
-        expect(nuanceOf(instrumentT98Of({ unfitted: 'starting-values' })!)).toEqual(defaultWelteT98Options.nuance)
+        expect(nuanceOf(instrumentT98Of({ genuine: 'consensus' })!)).toEqual(defaultWelteT98Options.nuance)
     })
 })
 

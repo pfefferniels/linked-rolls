@@ -51,10 +51,10 @@
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0",
-    "welte-mignon-emulator": "^1.0.0"
+    "welte-mignon-emulator": "^1.1.0"
   },
   "peerDependencies": {
-    "welte-mignon-emulator": "^1.0.0"
+    "welte-mignon-emulator": "^1.1.0"
   },
   "peerDependenciesMeta": {
     "welte-mignon-emulator": {

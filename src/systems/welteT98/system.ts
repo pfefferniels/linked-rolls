@@ -66,11 +66,19 @@ export type { WelteT98Instrument, WelteT98InstrumentName } from "welte-mignon-em
  * difference between the two, in the printed ordinate both scales share, is how
  * far the transfer of a red reading onto the green mechanism succeeded.
  *
- * Neither has been fitted yet, so both groups are empty and what a playback runs
- * on until then is the third group: the **unfitted** starting values, arithmetic
- * from Welte's regulation controls and the T-100 consensus with no green roll
- * behind any of it. A curve produced with them says so in its own `instrument`
- * field, and nothing should be published from them.
+ * Both are now fitted, on `welte-mignon-emulator` 1.1.0: five genuine
+ * instruments, one per lined green roll that could be read, a consensus across
+ * them, and the derived instrument for the one recording issued on both scales.
+ * The **unfitted** starting values remain as a third group, arithmetic from
+ * Welte's regulation controls with no green roll behind any of it, and a curve
+ * produced with them says so in its own `instrument` field.
+ *
+ * **Prefer a roll's own instrument where the roll is one of the five.** The
+ * green instruments disagree with one another far more than the red ones do:
+ * the consensus is held out at 0.121 on the bass where the per-roll instruments
+ * are 0.029 to 0.066, because a shared mechanism describes none of them well.
+ * That spread is a property of the instruments rather than of the fit, and
+ * Gottschewski's finding that they were out of regulation is visible in it.
  */
 export const instruments = { genuine: GENUINE, derived: DERIVED, unfitted: { 'starting-values': STARTING_VALUES } }
 
@@ -176,8 +184,8 @@ export type WelteT98Options = {
 
 export const defaultWelteT98Options: WelteT98Options = {
     spool: WELTE_T98_SPOOL,
-    nuance: nuanceOf(STARTING_VALUES),
-    instrument: { unfitted: 'starting-values' },
+    nuance: nuanceOf(GENUINE.consensus!),
+    instrument: { genuine: 'consensus' },
     pedals: pedalPresets.damping,
     velocity: defaultVelocityMap,
     pedalMode: 'continuous',
@@ -440,9 +448,10 @@ const perform = (
  * permanently open bore 100, and a long perforation on the bass sforzando-piano
  * line sends the roll back.
  *
- * Its constants are **not fitted**. `instruments.genuine` and
- * `instruments.derived` are empty until their fits run, and what a playback runs
- * on until then is the unfitted starting values, which every curve says.
+ * Its constants are fitted to the drawn nuance lines of five green rolls, and a
+ * playback runs on the consensus across them unless the caller names another
+ * instrument. Where the roll being played is one of the five, its own instrument
+ * is the better choice and `instruments.genuine` carries it.
  */
 export const welteT98System: ReproducingSystem<WelteT98Options> = {
     name: 'Welte-Mignon T98',
