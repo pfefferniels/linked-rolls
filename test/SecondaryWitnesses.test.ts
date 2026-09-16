@@ -142,6 +142,20 @@ describe('the witnesses of a version', () => {
         expect(typesFor('S')).toEqual(['text-not-stated', 'witnessed-by-statement-only'])
         expect(typesFor('C')).toEqual([])
     })
+
+    it('reports a version no copy carries at first hand, and says nothing of one with no witness at all', () => {
+        const next = chain()
+        const view = new EditionView(next)
+        const typesFor = (versionId: string) =>
+            reservationsAboutVersion(view, next.versions.find(candidate => candidate.id === versionId)!)
+                .map(reservation => reservation.type)
+
+        expect(typesFor('A')).toEqual(['no-direct-witness'])
+        expect(typesFor('C')).toEqual(['no-direct-witness'])
+        expect(typesFor('D')).toEqual([])
+        expect(reservationsAboutVersion(new EditionView(editionOf([], [version('X', [])])), version('X', [])))
+            .toEqual([])
+    })
 })
 
 describe('statements of carriage that cannot stand', () => {

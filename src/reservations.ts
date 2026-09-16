@@ -147,7 +147,8 @@ export const reservationsAbout = (copy: RollCopy): Reservation[] =>
 
 export const versionReservationTypes = [
     'text-not-stated',
-    'witnessed-by-statement-only'
+    'witnessed-by-statement-only',
+    'no-direct-witness'
 ] as const
 
 export type VersionReservationType = typeof versionReservationTypes[number]
@@ -168,7 +169,20 @@ const witnessedByFeatures: VersionCheck = (view, version) => {
     } : undefined
 }
 
-const versionChecks: readonly VersionCheck[] = [textStated, witnessedByFeatures]
+/**
+ * A version every copy reaches only through a version derived from it.
+ * Its text is a reconstruction from below, as a lost state's is, and
+ * nothing surviving shows it as it stood.
+ */
+const witnessedAtFirstHand: VersionCheck = (view, version) => {
+    const carriers = witnessesOf(view, version.id).filter(({ by }) => by === 'carriers')
+    return carriers.length > 0 && carriers.every(({ through }) => through !== undefined) ? {
+        type: 'no-direct-witness',
+        note: 'No copy carries it at first hand; it is attested only through the versions derived from it.'
+    } : undefined
+}
+
+const versionChecks: readonly VersionCheck[] = [textStated, witnessedByFeatures, witnessedAtFirstHand]
 
 /** What the edition cannot vouch for in a version, in the order the checks are listed. */
 export const reservationsAboutVersion = (view: EditionView, version: Readonly<Version>): Reservation<VersionReservationType>[] =>
