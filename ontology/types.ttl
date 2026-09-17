@@ -7,7 +7,10 @@
 
 # The closed value lists of the Roll Edition Format as CRM types. Each
 # local name is the string the format uses, so the JSON-LD context can
-# turn a value into its IRI without a lookup table.
+# turn a value into its IRI without a lookup table. Concepts an edition
+# names by its IRI rather than by that string, such as the systems and
+# the procedures, stand under a path of their own and take the CRM class
+# their property asks for.
 
 <https://w3id.org/reo/type/>
     a skos:ConceptScheme ;
@@ -54,6 +57,29 @@ reot:staggering a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/r
 <https://w3id.org/reo/type/system/welte-licensee> a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "Welte-Mignon (Licensee)"@en ;
     rdfs:comment "The reproducing system of the American Welte-Mignon (Licensee) rolls, 98 tracks at nine to the inch on a roll 11¼ inches wide, re-cut from the T-100 masters for a slower paper speed. It reads the commands of the T-100, laid out the same way minus the two motor tracks, so its commands are the scheme at https://w3id.org/reo/type/welte-t100/."@en .
+
+
+# Procedure followed in making a version (P33 used specific technique
+# on an F28 Expression Creation). P33 asks for an E29 Design or
+# Procedure, so these are not types. The transfers between two named
+# systems are narrower concepts of the general rule, since each runs by
+# rules of its own that can be stated. Which way one runs need not be
+# said here: the version names its system and its parent names the one
+# it came from.
+
+<https://w3id.org/reo/type/procedure/umstanzung> a crm:E29_Design_or_Procedure, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "Umstanzung"@de , "re-punching"@en ;
+    rdfs:comment "The rule by which a roll issued for one reproducing system was re-punched for another. The notes stand at their pitch and the expression is re-spelled in the words of the system the new version is coded for, so the edits of the version carry the rule out and naming it states the shared part of a transfer once instead of per command. A transfer none of the narrower concepts covers is named by this one."@en .
+
+<https://w3id.org/reo/type/procedure/umstanzung/welte-t100-to-welte-licensee> a crm:E29_Design_or_Procedure, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    skos:broader <https://w3id.org/reo/type/procedure/umstanzung> ;
+    rdfs:label "Umstanzung vom T-100 ins Licensee-System"@de , "re-punching, T-100 to Licensee"@en ;
+    rdfs:comment "The rule by which a T-100 roll was re-punched for the American Welte-Mignon (Licensee). The commands keep their words: the Licensee reads the T-100's lock-and-cancel coding, one perforation setting a function and a second cancelling it, which is what separates it from the green system rather than the track count (Phillips 2016, Table 4.3). They are laid out in the same order on a narrower bar of 98 positions at nine to the inch, without the two motor tracks, so that the note block and the treble valves sit two positions lower (Hagmann, pp. 40 f.; Phillips 2016, p. 123). The notes stand at their pitch. The paper is narrower and was cut for a slower speed, so the same performance runs a different length."@en .
+
+<https://w3id.org/reo/type/procedure/umstanzung/welte-t100-to-welte-green> a crm:E29_Design_or_Procedure, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    skos:broader <https://w3id.org/reo/type/procedure/umstanzung> ;
+    rdfs:label "Umstanzung vom T-100 ins grüne System"@de , "re-punching, T-100 to the green system"@en ;
+    rdfs:comment "The rule by which a T-100 roll was re-punched for the Welte-Mignon T-98 (green). The notes stand at their pitch, on the middle 80 of the system's 88 positions, which is the T-100's compass. The expression has to be re-spelled: the T-98 holds a function for as long as one perforation lasts where the T-100 latches it on with one perforation and cancels it with a second (Hagmann, pp. 89 f. and 100–103), so each pair of the T-100 becomes a single perforation running from the one to the other. The motor tracks fall away, and the rewind is driven by a long perforation on the bass sforzando-piano line rather than by a valve of its own. Lawson (The Pianola Journal 20, 2009, p. 26) reports that the name Kähle stands on some of the second master rolls at USC as the man who 'corrected' them for this system, and that part of the work was to re-lay the pedal tracks so that no perforation grew long enough to weaken the paper."@en .
 
 
 # Kind of a version (P2 has type on a version, an F2 Expression). The
