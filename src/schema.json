@@ -222,34 +222,66 @@
       "type": "object"
     },
     "Concept": {
-      "description": "A term from a vocabulary, such as a roll system or a kind of paper. A term the type vocabulary knows carries its IRI as `id`.",
-      "properties": {
-        "name": {
-          "description": "The name, e.g. \"Grünfeld, Alfred\", \"Wien\", \"M. Welte & Söhne\".",
-          "type": "string",
-          "ontology": "rdfs:label"
-        },
-        "sameAs": {
-          "description": "Authority records for the same thing: GND, Wikidata, geonames or similar.",
-          "examples": [
-            "https://d-nb.info/gnd/116888652"
-          ],
-          "items": {
-            "type": "string"
+      "anyOf": [
+        {
+          "properties": {
+            "name": {
+              "description": "The name, e.g. \"Grünfeld, Alfred\", \"Wien\", \"M. Welte & Söhne\".",
+              "type": "string",
+              "ontology": "rdfs:label"
+            },
+            "sameAs": {
+              "description": "Authority records for the same thing: GND, Wikidata, geonames or similar.",
+              "examples": [
+                "https://d-nb.info/gnd/116888652"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "ontology": "owl:sameAs"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
           },
-          "type": "array",
-          "ontology": "owl:sameAs"
+          "required": [
+            "@id"
+          ],
+          "type": "object"
         },
-        "@id": {
-          "description": "A unique identifier for this object.",
-          "type": "string"
+        {
+          "properties": {
+            "name": {
+              "description": "The name, e.g. \"Grünfeld, Alfred\", \"Wien\", \"M. Welte & Söhne\".",
+              "type": "string",
+              "ontology": "rdfs:label"
+            },
+            "sameAs": {
+              "description": "Authority records for the same thing: GND, Wikidata, geonames or similar.",
+              "examples": [
+                "https://d-nb.info/gnd/116888652"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "ontology": "owl:sameAs"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "sameAs"
+          ],
+          "type": "object"
         }
-      },
-      "required": [
-        "name",
-        "sameAs"
       ],
-      "type": "object",
+      "description": "A term from a vocabulary, such as a roll system, a procedure or a kind of paper.\n\nA term the type vocabulary declares is named by its IRI, and what it is called stands in the vocabulary rather than in the edition, so it needs no name of its own; `nameOf` reads one either way. A term the vocabulary does not have is given by name, which is then all there is to go on.",
       "ontology": "crm:E55 Type"
     },
     "DateAssignment": {

@@ -86,8 +86,16 @@ export type WithActor = {
 export interface Place extends Named { }
 
 /**
- * A term from a vocabulary, such as a roll system or a kind of
- * paper. A term the type vocabulary knows carries its IRI as `id`.
+ * A term from a vocabulary, such as a roll system, a procedure or a
+ * kind of paper.
+ *
+ * A term the type vocabulary declares is named by its IRI, and what it
+ * is called stands in the vocabulary rather than in the edition, so it
+ * needs no name of its own; `nameOf` reads one either way. A term the
+ * vocabulary does not have is given by name, which is then all there is
+ * to go on.
  * @see crm:E55 Type
  */
-export interface Concept extends Named, Partial<WithId> { }
+export type Concept =
+    | (WithId & Partial<Named>)
+    | (Named & Partial<WithId>)
