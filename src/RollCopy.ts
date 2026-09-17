@@ -132,10 +132,12 @@ export interface ProductionEvent {
     speed?: ObjectAssumption<PaperSpeed>
 
     /**
-     * The features the punching brought into being, which are the note
-     * and expression perforations. A reading of a scan finds every hole
-     * on the paper at once and states it here. A hole an editor reads as
-     * punched later belongs in the act that made it.
+     * The features the copy came from its punching with: the note and
+     * expression perforations, and now and then a mark the perforator
+     * left. A reading of a scan finds every hole on the paper at once
+     * and states it here, and a feature an editor reads as the work of
+     * a later hand belongs in the act that made it, whichever kind of
+     * feature it is.
      * @see crm:P108 has produced
      */
     produced?: AnyFeature[]
@@ -193,7 +195,9 @@ export type Modification = Partial<{
 
     /**
      * The features the act brought into being: a date written on the
-     * paper, a circle in pencil, a hole punched by hand.
+     * paper, a circle in pencil, a hole punched by hand. Any kind of
+     * feature may come of a later act, as any kind may come of the
+     * punching.
      * @see crm:P108 has produced
      */
     produced: AnyFeature[],

@@ -78,12 +78,17 @@ derivation loads as a list of one.
 ## What brought a feature about
 
 A copy states no list of features. Each feature stands in the act that
-brought it about: the perforations in the copy's own production, a
-writing or a mark in the `Alteration` that made it, a patch in the
-`Attachment` that glued it on. A `Removal` names by id what was taken
-off, which stood there before the act. A feature no later act is known
-to have made belongs to the punching, which is where a reading of a
-scan puts every hole it finds.
+brought it about: the copy's own production for what the punching made,
+an `Alteration` for what a later hand made, an `Attachment` for a patch
+glued on. A `Removal` names by id what was taken off, which stood there
+before the act.
+
+Which act a feature stands in says when it came about and by whose
+hand, and says nothing about what kind of feature it is. A hole may be
+punched by hand long after the roll was cut, and a mark may come from
+the factory, rarely though that happens. A feature no later act is
+known to have made belongs to the punching, which is where a reading of
+a scan puts every hole it finds.
 
 Three kinds of act rather than two, because the CRM tells them apart.
 E79 Part Addition asks that what is added be "a separate identifiable

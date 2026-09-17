@@ -493,7 +493,7 @@ const rewriteFeatures = (copy: Draft<RollCopy>, rewrite: Rewrite) => {
  * punched, being glued on, so `punched` says nothing of one.
  */
 export interface FeatureAct {
-    /** The copy was punched with it, which is where a reading of a scan puts every hole. */
+    /** The copy came from its punching with it, which is where a reading of a scan puts every hole. */
     punched?: boolean
 
     /** The act that brought this feature about brought the new one about as well. */
