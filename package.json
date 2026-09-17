@@ -45,8 +45,10 @@
   },
   "devDependencies": {
     "@types/jsonld": "^1.5.15",
+    "@types/n3": "^1.26.4",
     "@types/node": "^24.13.3",
     "jsonld": "^9.0.0",
+    "n3": "^2.7.12",
     "ts-json-schema-generator": "^2.9.0",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
