@@ -34,7 +34,7 @@ export type FeetPerMinute = Quantity<'ft/min'>
 export type MetersPerMinute = Quantity<'m/min'>
 /** How finely a scan was read: pixels of the image per inch of paper. */
 export type Resolution = Quantity<'px/in'>
-/** An angle, clockwise from the line across the roll. */
+/** An angle on the roll, turning from the line across the paper towards the end of the roll. */
 export type Degrees = Quantity<'deg'>
 
 /** Names a number in a unit. Partially apply it to make a constructor. */

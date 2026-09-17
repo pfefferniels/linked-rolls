@@ -782,7 +782,7 @@
         },
         "rotation": {
           "$ref": "#/definitions/Measure%3C%22deg%22%3E",
-          "description": "How far the patch was stuck on askew, clockwise from the line across the roll.",
+          "description": "How far the patch was stuck on askew. At zero its edges stand square to the roll, and the angle turns them towards the end of it, as a writing's reading direction turns.",
           "ontology": "reo:rotation"
         },
         "side": {
@@ -1458,7 +1458,7 @@
             },
             "rotation": {
               "$ref": "#/definitions/Measure%3C%22deg%22%3E",
-              "description": "How far the writing stands askew, clockwise from the line across the roll. A stamp pressed crooked and a label written along the roll rather than across it are both stated here.",
+              "description": "How far the writing stands askew. At zero it reads across the roll, from the bass side towards the treble, and the angle turns that reading direction towards the end of the roll, so that a right angle leaves it reading along the roll. A stamp pressed crooked and a label written lengthwise are both stated here.",
               "ontology": "reo:rotation"
             },
             "side": {
@@ -1588,7 +1588,7 @@
             },
             "rotation": {
               "$ref": "#/definitions/Measure%3C%22deg%22%3E",
-              "description": "How far the patch was stuck on askew, clockwise from the line across the roll.",
+              "description": "How far the patch was stuck on askew. At zero its edges stand square to the roll, and the angle turns them towards the end of it, as a writing's reading direction turns.",
               "ontology": "reo:rotation"
             },
             "side": {
@@ -3092,7 +3092,7 @@
         },
         "rotation": {
           "$ref": "#/definitions/Measure%3C%22deg%22%3E",
-          "description": "How far the writing stands askew, clockwise from the line across the roll. A stamp pressed crooked and a label written along the roll rather than across it are both stated here.",
+          "description": "How far the writing stands askew. At zero it reads across the roll, from the bass side towards the treble, and the angle turns that reading direction towards the end of the roll, so that a right angle leaves it reading along the roll. A stamp pressed crooked and a label written lengthwise are both stated here.",
           "ontology": "reo:rotation"
         },
         "side": {

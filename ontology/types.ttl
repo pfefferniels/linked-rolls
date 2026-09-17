@@ -194,7 +194,7 @@ reot:track a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3i
     rdfs:comment "A position across the roll counted in openings of the tracker bar, from the bass side."@en .
 reot:deg a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "degree"@en ;
-    rdfs:comment "An angle on the face of the roll, clockwise from the line across it."@en .
+    rdfs:comment "An angle on the roll, turning from the line across the paper towards the end of the roll, which reo:rotation states."@en .
 reot:px a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "pixel"@en ;
     rdfs:comment "A pixel of the scan the measurement was taken from."@en .

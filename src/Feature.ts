@@ -192,9 +192,11 @@ export interface Writing extends Trace<'Writing'> {
     transcription: ObjectAssumption<Transcription>;
 
     /**
-     * How far the writing stands askew, clockwise from the line across
-     * the roll. A stamp pressed crooked and a label written along the
-     * roll rather than across it are both stated here.
+     * How far the writing stands askew. At zero it reads across the
+     * roll, from the bass side towards the treble, and the angle turns
+     * that reading direction towards the end of the roll, so that a
+     * right angle leaves it reading along the roll. A stamp pressed
+     * crooked and a label written lengthwise are both stated here.
      * @see reo:rotation
      */
     rotation?: Measure<'deg'>;
@@ -230,8 +232,9 @@ export interface GluedOn extends RollFeature<'GluedOn', typeof conditions.GluedO
     material: 'paper' | 'tape';
 
     /**
-     * How far the patch was stuck on askew, clockwise from the line
-     * across the roll.
+     * How far the patch was stuck on askew. At zero its edges stand
+     * square to the roll, and the angle turns them towards the end of
+     * it, as a writing's reading direction turns.
      * @see reo:rotation
      */
     rotation?: Measure<'deg'>;
