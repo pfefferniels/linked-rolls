@@ -77,7 +77,7 @@ reo:Writing
     a owl:Class ;
     rdfs:subClassOf crm:E25_Human-Made_Feature ;
     rdfs:label "Writing"@en ;
-    rdfs:comment """This class comprises the features of a roll that carry text: a printed title, a stamped catalogue number, a date written by hand. What the text says is given by P128 carries, and how the writing was made by reo:method. A writing is a feature of the paper it stands on, which may be the roll itself or a patch glued onto it; the label as a piece of paper is an instance of reo:GluedOn, and the print on it a writing the label bears."""@en ;
+    rdfs:comment """This class comprises the features of a roll that carry text: a printed title, a stamped catalogue number, a date written by hand. What the text says is given by P128 carries, how the writing was made by reo:technique and what it was made with by reo:medium. A writing is a feature of the paper it stands on, which may be the roll itself or a patch glued onto it; the label as a piece of paper is an instance of reo:GluedOn, and the print on it a writing the label bears."""@en ;
     skos:example "the pencilled '225. Fritz. 18. Jan 09.' on the Stanford copy of WM 225"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
@@ -85,7 +85,7 @@ reo:Mark
     a owl:Class ;
     rdfs:subClassOf crm:E25_Human-Made_Feature ;
     rdfs:label "Mark"@en ;
-    rdfs:comment """This class comprises the features drawn on a roll that carry no text: a circle around a perforation, a stroke, a cross. What a mark was meant to say is a reading of it, an instance of I16 Meaning Comprehension in CRMinf, and no property of the feature; its shape is therefore not stated as a type. How it was drawn is given by reo:method."""@en ;
+    rdfs:comment """This class comprises the features drawn on a roll that carry no text: a circle around a perforation, a stroke, a cross. What a mark was meant to say is a reading of it, an instance of I16 Meaning Comprehension in CRMinf, and no property of the feature; its shape is therefore not stated as a type. How it was drawn is given by reo:technique and what it was drawn with by reo:medium."""@en ;
     skos:example "a pencil circle around a group of perforations, read as an instruction to punch"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
@@ -174,13 +174,20 @@ reo:pattern
     dcterms:bibliographicCitation "Phillips, Peter: Piano Rolls and Contemporary Player Pianos. The Catalogues, Technologies, Archiving and Accessibility. PhD thesis, Sydney Conservatorium of Music, University of Sydney, 2016." ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
-reo:method
+reo:technique
     a owl:ObjectProperty ;
-    rdfs:subPropertyOf crm:P2_has_type ;
     rdfs:domain [ a owl:Class ; owl:unionOf ( reo:Writing reo:Mark ) ] ;
     rdfs:range crm:E55_Type ;
-    rdfs:label "method"@en ;
-    rdfs:comment """This property states how a feature was made: a writing printed, handwritten or stamped, a mark drawn in ink, pencil or crayon. The values are the types print, handwriting, stamp, ink, pencil and crayon at https://w3id.org/reo/type/. What kind of feature it is, its class says."""@en ;
+    rdfs:label "technique"@en ;
+    rdfs:comment """This property states how a writing or a mark was put on the paper: printed, written by hand or stamped. The values are the types print, handwriting and stamp at https://w3id.org/reo/type/. It is a shortcut of the path P108i was produced by, E12 Production, P32 used general technique. It is stated on the feature rather than on the act, because the act is often not one the edition holds: the print on a label glued onto a roll was made in a printing shop, and what the edition records of that label is the gluing. What kind of feature it is, its class says."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:medium
+    a owl:ObjectProperty ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( reo:Writing reo:Mark ) ] ;
+    rdfs:range crm:E55_Type ;
+    rdfs:label "medium"@en ;
+    rdfs:comment """This property states what a writing or a mark was put on the paper with: ink, a pencil or a crayon. The values are the types ink, pencil and crayon at https://w3id.org/reo/type/. It is a shortcut of the path P108i was produced by, E12 Production, P125 used object of type, which is how the CRM names a kind of thing used where the thing itself is not identified, and no copy of a roll lets that pencil be identified. P32 used general technique, in which reo:technique ends, is itself a subproperty of P125 used object of type, so the two paths differ in their last step alone. The two are stated apart because they vary apart: a date may be handwritten in pencil, and a stamp leaves its ink as much as a pen does."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 

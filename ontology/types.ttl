@@ -183,11 +183,15 @@ reot:dating a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/t
 reot:glossing a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "glossing"@en .
 
 
-# Method by which a writing or a mark was put on the roll (reo:method)
+# Technique by which a writing or a mark was put on the roll (reo:technique)
 
 reot:print a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "print"@en .
 reot:handwriting a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "handwriting"@en .
 reot:stamp a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "stamp"@en .
+
+
+# Medium a writing or a mark was put on with (reo:medium)
+
 reot:ink a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "ink"@en .
 reot:pencil a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "pencil"@en .
 reot:crayon a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;

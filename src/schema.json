@@ -1024,10 +1024,10 @@
           "description": "Horizontal span of the feature on the roll.",
           "ontology": "crm:P43 has dimension"
         },
-        "method": {
-          "$ref": "#/definitions/MarkMethod",
-          "description": "The medium the mark was drawn in, where it can be told.",
-          "ontology": "reo:method"
+        "medium": {
+          "$ref": "#/definitions/Medium",
+          "description": "What it was put on with, where it can be told. A date may be known to be handwritten where the pencil cannot be told from the ink, and a stamp leaves its ink as much as a pen does, which is why the two are stated apart.",
+          "ontology": "reo:medium"
         },
         "side": {
           "description": "The face of the roll it lies on: the side that faces the reader as the roll plays, or the back of it.",
@@ -1037,6 +1037,11 @@
           ],
           "type": "string",
           "ontology": "reo:side"
+        },
+        "technique": {
+          "$ref": "#/definitions/Technique",
+          "description": "How the trace was put on the paper.",
+          "ontology": "reo:technique"
         },
         "vertical": {
           "$ref": "#/definitions/VerticalSpan",
@@ -1062,15 +1067,6 @@
       ],
       "type": "object",
       "ontology": "reo:Mark"
-    },
-    "MarkMethod": {
-      "description": "The medium a mark was drawn in.",
-      "enum": [
-        "ink",
-        "pencil",
-        "crayon"
-      ],
-      "type": "string"
     },
     "MeaningComprehension": {
       "description": "A meaning comprehension interprets or disambiguates the meaning of symbols or features. For example, interpreting a pencil mark as an instruction to add or remove a perforation or as the dating of the roll.",
@@ -1194,6 +1190,15 @@
       ],
       "type": "object",
       "ontology": "crm:E54 Dimension"
+    },
+    "Medium": {
+      "description": "What a trace was put on with.",
+      "enum": [
+        "ink",
+        "pencil",
+        "crayon"
+      ],
+      "type": "string"
     },
     "Millimeters": {
       "$ref": "#/definitions/Quantity%3C%22mm%22%3E",
@@ -1451,10 +1456,10 @@
               "description": "Horizontal span of the feature on the roll. Left out by a feature a patch bears.",
               "ontology": "crm:P43 has dimension"
             },
-            "method": {
-              "$ref": "#/definitions/WritingMethod",
-              "description": "The method by which this writing was produced (e.g. through print, handwriting, or stamping).",
-              "ontology": "reo:method"
+            "medium": {
+              "$ref": "#/definitions/Medium",
+              "description": "What it was put on with, where it can be told. A date may be known to be handwritten where the pencil cannot be told from the ink, and a stamp leaves its ink as much as a pen does, which is why the two are stated apart.",
+              "ontology": "reo:medium"
             },
             "rotation": {
               "$ref": "#/definitions/Measure%3C%22deg%22%3E",
@@ -1469,6 +1474,11 @@
               ],
               "type": "string",
               "ontology": "reo:side"
+            },
+            "technique": {
+              "$ref": "#/definitions/Technique",
+              "description": "A writing always states how it was put on the paper, which can be read off it where the medium cannot.",
+              "ontology": "reo:technique"
             },
             "transcription": {
               "$ref": "#/definitions/ObjectAssumption%3CTranscription%3E",
@@ -1493,7 +1503,7 @@
           },
           "required": [
             "@id",
-            "method",
+            "technique",
             "transcription",
             "@type"
           ],
@@ -1516,10 +1526,10 @@
               "description": "Horizontal span of the feature on the roll. Left out by a feature a patch bears.",
               "ontology": "crm:P43 has dimension"
             },
-            "method": {
-              "$ref": "#/definitions/MarkMethod",
-              "description": "The medium the mark was drawn in, where it can be told.",
-              "ontology": "reo:method"
+            "medium": {
+              "$ref": "#/definitions/Medium",
+              "description": "What it was put on with, where it can be told. A date may be known to be handwritten where the pencil cannot be told from the ink, and a stamp leaves its ink as much as a pen does, which is why the two are stated apart.",
+              "ontology": "reo:medium"
             },
             "side": {
               "description": "The face of the roll it lies on: the side that faces the reader as the roll plays, or the back of it.",
@@ -1529,6 +1539,11 @@
               ],
               "type": "string",
               "ontology": "reo:side"
+            },
+            "technique": {
+              "$ref": "#/definitions/Technique",
+              "description": "How the trace was put on the paper.",
+              "ontology": "reo:technique"
             },
             "vertical": {
               "$ref": "#/definitions/VerticalSpan",
@@ -2888,6 +2903,15 @@
       ],
       "type": "string"
     },
+    "Technique": {
+      "description": "How a trace was put on the paper.",
+      "enum": [
+        "print",
+        "handwriting",
+        "stamp"
+      ],
+      "type": "string"
+    },
     "Text": {
       "description": "A textual symbol, e.g. a label or annotation found on the roll.",
       "properties": {
@@ -3068,7 +3092,7 @@
       "ontology": "crm:E54 Dimension"
     },
     "Writing": {
-      "description": "A piece of writing found on the roll, such as a label, catalogue number, or annotation. Writings have a method of production and a transcription of their content.",
+      "description": "A piece of writing found on the roll, such as a label, catalogue number, or annotation. Writings state how they were made and a transcription of their content.",
       "properties": {
         "condition": {
           "$ref": "#/definitions/ObjectAssumption%3CConditionState%3C(%22illegible%22)%3E%3E",
@@ -3085,10 +3109,10 @@
           "description": "Horizontal span of the feature on the roll.",
           "ontology": "crm:P43 has dimension"
         },
-        "method": {
-          "$ref": "#/definitions/WritingMethod",
-          "description": "The method by which this writing was produced (e.g. through print, handwriting, or stamping).",
-          "ontology": "reo:method"
+        "medium": {
+          "$ref": "#/definitions/Medium",
+          "description": "What it was put on with, where it can be told. A date may be known to be handwritten where the pencil cannot be told from the ink, and a stamp leaves its ink as much as a pen does, which is why the two are stated apart.",
+          "ontology": "reo:medium"
         },
         "rotation": {
           "$ref": "#/definitions/Measure%3C%22deg%22%3E",
@@ -3103,6 +3127,11 @@
           ],
           "type": "string",
           "ontology": "reo:side"
+        },
+        "technique": {
+          "$ref": "#/definitions/Technique",
+          "description": "A writing always states how it was put on the paper, which can be read off it where the medium cannot.",
+          "ontology": "reo:technique"
         },
         "transcription": {
           "$ref": "#/definitions/ObjectAssumption%3CTranscription%3E",
@@ -3128,22 +3157,13 @@
       "required": [
         "horizontal",
         "@id",
-        "method",
+        "technique",
         "transcription",
         "@type",
         "vertical"
       ],
       "type": "object",
       "ontology": "reo:Writing"
-    },
-    "WritingMethod": {
-      "description": "The method by which a writing was produced on the roll: printed, handwritten, or stamped.",
-      "enum": [
-        "print",
-        "handwriting",
-        "stamp"
-      ],
-      "type": "string"
     }
   }
 }

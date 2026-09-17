@@ -14,7 +14,7 @@ import { mm, track } from '../src/Quantity'
 const writing = (id: string, text: string): NestedFeature => ({
     type: 'Writing',
     id,
-    method: 'print',
+    technique: 'print',
     transcription: assignObject<Transcription>({ type: 'text', id: `${id}-text`, text })
 })
 

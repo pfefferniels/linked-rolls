@@ -14,20 +14,20 @@ const at = (from: number, to: number) => ({
     vertical: { unit: 'track' as const, from: track(47) }
 })
 
-const mark = (id: string): Mark => ({ type: 'Mark', id, ...at(80, 90), method: 'pencil' })
+const mark = (id: string): Mark => ({ type: 'Mark', id, ...at(80, 90), medium: 'pencil' })
 
 const writing = (id: string, text: string): Writing => ({
     type: 'Writing',
     id,
     ...at(20, 60),
-    method: 'handwriting',
+    technique: 'handwriting',
     transcription: assignObject<Transcription>({ type: 'text', id: `${id}-text`, text })
 })
 
 const borne = (id: string): NestedFeature => ({
     type: 'Writing',
     id,
-    method: 'print',
+    technique: 'print',
     transcription: assignObject<Transcription>({ type: 'text', id: `${id}-text`, text: 'Welte' })
 })
 

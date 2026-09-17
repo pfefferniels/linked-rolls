@@ -51,7 +51,7 @@ const at = (from: number, to: number, position: number) => ({
 const stamp: NestedFeature = {
     type: 'Writing',
     id: 'stamp',
-    method: 'stamp',
+    technique: 'stamp',
     transcription: assignObject<Transcription>({ type: 'text', id: 'stamp-text', text: 'Welte' })
 }
 
@@ -59,13 +59,14 @@ const writing: Writing = {
     type: 'Writing',
     id: 'date',
     ...at(20, 60, 47),
-    method: 'handwriting',
+    technique: 'handwriting',
+    medium: 'pencil',
     side: 'verso',
     rotation: { value: degrees(12), unit: 'deg' },
     transcription: assignObject<Transcription>({ type: 'text', id: 'date-text', text: '20.I.1905' })
 }
 
-const mark: Mark = { type: 'Mark', id: 'circle', ...at(80, 90, 47), method: 'pencil' }
+const mark: Mark = { type: 'Mark', id: 'circle', ...at(80, 90, 47), medium: 'pencil' }
 
 const patch: GluedOn = {
     type: 'GluedOn', id: 'patch', ...at(100, 140, 47), material: 'paper', side: 'recto', features: [stamp]
@@ -136,10 +137,11 @@ describe('the kinds of feature', () => {
         expect(classOf(all, of('patch'))).toEqual([`${reo}GluedOn`])
     })
 
-    it('leave the making of a trace to a property of its own', async () => {
+    it('tell how a trace was made from what it was made with', async () => {
         const all = await triples()
-        expect(statedOf(all, of('date'), `${reo}method`)).toEqual([`${reot}handwriting`])
-        expect(statedOf(all, of('circle'), `${reo}method`)).toEqual([`${reot}pencil`])
+        expect(statedOf(all, of('date'), `${reo}technique`)).toEqual([`${reot}handwriting`])
+        expect(statedOf(all, of('date'), `${reo}medium`)).toEqual([`${reot}pencil`])
+        expect(statedOf(all, of('circle'), `${reo}medium`)).toEqual([`${reot}pencil`])
         expect(statedOf(all, of('patch'), `${crm}P45_consists_of`)).toEqual([`${reot}paper`])
     })
 

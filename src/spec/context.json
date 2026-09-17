@@ -246,8 +246,13 @@
       "@type": "@vocab",
       "@context": { "@vocab": "https://w3id.org/reo/type/" }
     },
-    "method": {
-      "@id": "reo:method",
+    "technique": {
+      "@id": "reo:technique",
+      "@type": "@vocab",
+      "@context": { "@vocab": "https://w3id.org/reo/type/" }
+    },
+    "medium": {
+      "@id": "reo:medium",
       "@type": "@vocab",
       "@context": { "@vocab": "https://w3id.org/reo/type/" }
     },

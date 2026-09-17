@@ -26,7 +26,7 @@ const writing: Writing = {
     type: 'Writing',
     id: 'label',
     ...at(20, 60),
-    method: 'handwriting',
+    technique: 'handwriting',
     transcription: assignObject<Transcription>({ type: 'text', id: 'label-text', text: 'Welte' })
 }
 

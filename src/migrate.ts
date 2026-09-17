@@ -1,4 +1,4 @@
-import { conditions, isFeatureType } from "./Feature";
+import { conditions, isFeatureType, media, techniques } from "./Feature";
 import { rollConditions } from "./RollCopy";
 import { systemIdIn, systemOf, TrackerBar, translationBetween } from "./TrackerBar";
 import { trackerBars } from "./systems";
@@ -33,7 +33,7 @@ const referenceKeys = ['alignedWith', 'pairedWith', 'basedOn']
 
 /**
  * The five type terms that were capitalised while the rest of the
- * vocabulary was not, under the keys that carry them.
+ * vocabulary was not, under the keys that carried them then.
  */
 const lowerCasedTerms: Record<string, Record<string, string>> = {
     method: { Print: 'print', Handwriting: 'handwriting', Stamp: 'stamp' },
@@ -69,6 +69,25 @@ const withLowerCaseTerms = (node: Json): Json =>
         const lowered = terms[result[key]]
         return lowered ? { ...result, [key]: lowered } : result
     }, node)
+
+/** The key each term of the one-time `method` belongs under. */
+const splitMethods: Record<string, 'technique' | 'medium'> = {
+    ...Object.fromEntries(techniques.map(term => [term, 'technique'] as const)),
+    ...Object.fromEntries(media.map(term => [term, 'medium'] as const))
+}
+
+/**
+ * How a writing or a mark was put on the paper and what it was put on
+ * with stood under one key, which left a handwriting no room to say it
+ * was pencilled. A term the format no longer knows stays where it is,
+ * so that it fails validation rather than being filed under a guess.
+ */
+const withSplitMethod = (node: Json): Json => {
+    const key = splitMethods[node.method]
+    if (!key) return node
+    const { method, ...rest } = node
+    return { ...rest, [key]: method }
+}
 
 const withReferences = (node: Json): Json =>
     referenceKeys.reduce((result, key) => {
@@ -248,7 +267,7 @@ const withTimeSpanDates = (node: Json): Json => {
 }
 
 const migrateNode = (node: Json): Json =>
-    [withRenamedKeys, withTypology, withoutVersionType, withLowerCaseTerms, withReferences, withKeeper, withoutEmptyKeeper,
+    [withRenamedKeys, withTypology, withoutVersionType, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
         withProductionNodes, withScale, withDerivationList, withReadingKind, withTimeSpanDates, withoutFeatureKind,
         withBorneFeaturesNamed, withFeaturesInActs]
         .reduce((result, step) => step(result), node)

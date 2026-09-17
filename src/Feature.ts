@@ -147,41 +147,53 @@ export interface OnAFace {
     side?: 'recto' | 'verso';
 }
 
+export const techniques = ['print', 'handwriting', 'stamp'] as const;
+
+/** How a trace was put on the paper. */
+export type Technique = typeof techniques[number];
+
+export const media = ['ink', 'pencil', 'crayon'] as const;
+
+/** What a trace was put on with. */
+export type Medium = typeof media[number];
+
 /**
  * A trace is a visible mark or writing on the roll surface.
  * Traces may fade over time.
  */
-export interface Trace<T extends FeatureType> extends RollFeature<T, typeof conditions[T][number]>, OnAFace { }
+export interface Trace<T extends FeatureType> extends RollFeature<T, typeof conditions[T][number]>, OnAFace {
+    /**
+     * How the trace was put on the paper.
+     * @see reo:technique
+     */
+    technique?: Technique;
 
-export const writingMethods = ['print', 'handwriting', 'stamp'] as const;
-
-/**
- * The method by which a writing was produced on the roll:
- * printed, handwritten, or stamped.
- */
-export type WritingMethod = typeof writingMethods[number];
-
-export const markMethods = ['ink', 'pencil', 'crayon'] as const;
-
-/** The medium a mark was drawn in. */
-export type MarkMethod = typeof markMethods[number];
+    /**
+     * What it was put on with, where it can be told. A date may be
+     * known to be handwritten where the pencil cannot be told from
+     * the ink, and a stamp leaves its ink as much as a pen does,
+     * which is why the two are stated apart.
+     * @see reo:medium
+     */
+    medium?: Medium;
+}
 
 /** The text a writing carries. It names no carriers of its own, the writing being its carrier. */
 export type Transcription = Omit<Text, 'carriers'>
 
 /**
  * A piece of writing found on the roll, such as a label,
- * catalogue number, or annotation. Writings have a method
- * of production and a transcription of their content.
+ * catalogue number, or annotation. Writings state how they were made
+ * and a transcription of their content.
  * @see reo:Writing
  */
 export interface Writing extends Trace<'Writing'> {
     /**
-     * The method by which this writing was produced
-     * (e.g. through print, handwriting, or stamping).
-     * @see reo:method
+     * A writing always states how it was put on the paper, which can
+     * be read off it where the medium cannot.
+     * @see reo:technique
      */
-    method: WritingMethod;
+    technique: Technique;
 
     /**
      * A transcription of the text content of the writing.
@@ -209,13 +221,7 @@ export interface Writing extends Trace<'Writing'> {
  * property of the feature, so its shape is not stated here.
  * @see reo:Mark
  */
-export interface Mark extends Trace<'Mark'> {
-    /**
-     * The medium the mark was drawn in, where it can be told.
-     * @see reo:method
-     */
-    method?: MarkMethod;
-}
+export interface Mark extends Trace<'Mark'> { }
 
 /**
  * A piece of material (paper or tape) glued onto the roll surface.

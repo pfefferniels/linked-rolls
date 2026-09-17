@@ -167,8 +167,27 @@ describe('migrating a 0.1 edition', () => {
         const features = migrate(edition01()).copies.flatMap(featuresIn)
 
         const stated = (key: string) => [...new Set(features.map((feature: any) => feature[key]).filter(Boolean))].sort()
-        expect(stated('method')).toEqual(['handwriting', 'print', 'stamp'])
+        expect(stated('technique')).toEqual(['handwriting', 'print', 'stamp'])
         expect(stated('material')).toEqual(['paper'])
+    })
+
+    /**
+     * How a trace was made and what it was made with stood under one
+     * key before they were told apart.
+     */
+    it('sorts the terms of the one-time method between technique and medium', () => {
+        const migrated = migrate({
+            copies: [{
+                '@type': 'RollCopy',
+                features: [
+                    { '@type': 'Writing', '@id': 'date', method: 'Handwriting' },
+                    { '@type': 'Mark', '@id': 'circle', method: 'pencil' }
+                ]
+            }]
+        })
+        const [date, circle] = featuresIn(migrated.copies[0])
+        expect(date).toEqual({ '@type': 'Writing', '@id': 'date', technique: 'handwriting' })
+        expect(circle).toEqual({ '@type': 'Mark', '@id': 'circle', medium: 'pencil' })
     })
 
     it('lower-cases a term the copies in hand do not use', () => {
@@ -244,7 +263,7 @@ describe('migrating a 0.1 edition', () => {
                 '@type': 'RollCopy',
                 features: [{
                     '@type': 'GluedOn', '@id': 'patch', material: 'paper',
-                    features: [{ '@type': 'Writing', method: 'print' }]
+                    features: [{ '@type': 'Writing', technique: 'print' }]
                 }],
                 modifications: []
             }]

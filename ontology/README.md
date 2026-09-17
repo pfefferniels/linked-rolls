@@ -69,7 +69,9 @@ lower-cased in September 2026 to match the rest of the vocabulary, and
 `migrate` reads the old spellings. On the same ground the four types
 for the kinds of feature were withdrawn again in the same month, the
 kinds having become classes (`reo:Hole`, `reo:Writing`, `reo:Mark`,
-`reo:GluedOn`).
+`reo:GluedOn`), and `reo:method` was split into `reo:technique` and
+`reo:medium`, having held two statements that vary apart. `migrate`
+reads the old key and sorts its terms between the two.
 
 ## Publishing
 
