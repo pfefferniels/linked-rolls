@@ -655,6 +655,36 @@ export const mergeObstacle = (features: readonly FeatureOrPatch[]): MergeObstacl
     return undefined
 }
 
+/** The acts of the copy that state any of the named features. */
+const actsHolding = (copy: RollCopy, named: Ids): FeatureOrPatch[][] =>
+    featuresByAct(copy).filter(features => features.some(feature => named.has(feature.id)))
+
+/**
+ * What stands in the way of reading the named features of the copy as
+ * one, which is the whole of what `mergeFeatures` asks: whether one act
+ * brought them all about, and what the features themselves say. An id
+ * the copy does not bear at a place of its own is passed over.
+ */
+const obstacleIn = (copy: RollCopy, featureIds: readonly string[]): MergeObstacle | undefined => {
+    const named = new Set(featureIds)
+    const acts = actsHolding(copy, named)
+    return acts.length > 1
+        ? 'different-acts'
+        : mergeObstacle((acts[0] ?? []).filter(feature => named.has(feature.id)))
+}
+
+/**
+ * What stands in the way of reading the features the ids name as one,
+ * as `mergeFeatures` will find it. `mergeObstacle` asks only what the
+ * features themselves say, which cannot reach `different-acts`: one
+ * feature is the work of one act, and where the features stand is the
+ * edition's business rather than theirs.
+ */
+export const mergeObstacleIn = (view: EditionView, featureIds: readonly string[]): MergeObstacle | undefined => {
+    const copy = featureIds.map(id => view.copyOf(id)).find(copy => copy !== undefined)
+    return copy ? obstacleIn(copy, featureIds) : 'fewer-than-two'
+}
+
 /** The items with the replacement in the place of the first it stands for, the others dropped. */
 const standingFor = <T,>(items: T[], stands: (item: T) => boolean, replacement: T): T[] => {
     const first = items.findIndex(stands)
@@ -726,15 +756,14 @@ const carryOver = (draft: Draft<Edition>, replaced: Ids, mergedId: string) => {
  */
 export const mergeFeatures = (copyId: string, featureIds: readonly string[]): EditionOp =>
     onCopy(copyId, (copy, draft) => {
-        const named = new Set(featureIds)
-        const holds = (features: readonly FeatureOrPatch[]) => features.some(feature => named.has(feature.id))
-        const acts = featuresByAct(stateOf<RollCopy>(copy)).filter(holds)
-        const toMerge = (acts[0] ?? []).filter(feature => named.has(feature.id))
-
-        const obstacle = acts.length > 1 ? 'different-acts' : mergeObstacle(toMerge)
+        const state = stateOf<RollCopy>(copy)
+        const obstacle = obstacleIn(state, featureIds)
         if (obstacle) {
             throw new Error(`The features of copy ${copyId} cannot be merged: ${obstacle}`)
         }
+
+        const named = new Set(featureIds)
+        const toMerge = (actsHolding(state, named)[0] ?? []).filter(feature => named.has(feature.id))
 
         const replaced = new Set(toMerge.map(feature => feature.id))
         const mergedId = v4()

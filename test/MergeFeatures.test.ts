@@ -6,7 +6,7 @@ import { AnyFeature, Hole, Mark, Transcription, Writing, conditions } from '../s
 import { ConditionState } from '../src/ConditionState'
 import { Note } from '../src/Symbol'
 import { ObjectAssumption, ReferenceAssumption, assignObject, assignReference, idsOf } from '../src/Assumption'
-import { mergeFeatures, mergeObstacle } from '../src/editionOps'
+import { mergeFeatures, mergeObstacle, mergeObstacleIn } from '../src/editionOps'
 import { featuresOf } from '../src/RollCopy'
 import { alteration, copy, editionOf, hole, note, version } from './editionFixture'
 import { mm, track } from '../src/Quantity'
@@ -126,6 +126,38 @@ describe('merging the features of a copy', () => {
 
         expect(() => produce(before, mergeFeatures('first', ['part-one', 'part-two'])))
             .toThrow('different-acts')
+    })
+})
+
+describe('asking of the edition what stands in the way', () => {
+    const obstacleIn = (edition: Edition, ...featureIds: string[]) =>
+        mergeObstacleIn(new EditionView(edition), featureIds)
+
+    const acrossActs = () => {
+        const edition = scan([partOne])
+        edition.copies[0].modifications = [alteration(partTwo)]
+        return edition
+    }
+
+    it('names the act as what keeps them apart, which the features alone cannot say', () => {
+        expect(obstacleIn(acrossActs(), 'part-one', 'part-two')).toBe('different-acts')
+        expect(mergeObstacle([partOne, partTwo])).toBeUndefined()
+    })
+
+    it('falls through to what the features say where one act brought them about', () => {
+        expect(obstacleIn(scan(), 'part-one', 'part-two')).toBeUndefined()
+        expect(obstacleIn(scan(), 'part-one', 'other')).toBe('different-tracks')
+    })
+
+    it('passes over an id the copy does not bear at a place of its own', () => {
+        expect(obstacleIn(scan(), 'part-one', 'nowhere')).toBe('fewer-than-two')
+        expect(obstacleIn(scan())).toBe('fewer-than-two')
+    })
+
+    it('says what the merge will do, so that an offer and the op agree', () => {
+        const across = acrossActs()
+        expect(obstacleIn(across, 'part-one', 'part-two')).toBe('different-acts')
+        expect(() => produce(across, mergeFeatures('first', ['part-one', 'part-two']))).toThrow('different-acts')
     })
 })
 
