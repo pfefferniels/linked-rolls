@@ -2385,7 +2385,7 @@
           "ontology": "crm:P126 employed"
         },
         "produced": {
-          "description": "The features the punching brought into being, which are the note and expression perforations. A reading of a scan finds every hole on the paper at once and states it here; a hole an editor reads as punched later belongs in the act that made it.",
+          "description": "The features the punching brought into being, which are the note and expression perforations. A reading of a scan finds every hole on the paper at once and states it here. A hole an editor reads as punched later belongs in the act that made it.",
           "items": {
             "$ref": "#/definitions/AnyFeature"
           },

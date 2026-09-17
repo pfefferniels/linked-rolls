@@ -1,10 +1,10 @@
 import { Edition } from "./Edition";
-import { HorizontalSpan, FeatureOrPatch, withBorneFeatures } from "./Feature";
+import { HorizontalSpan, FeatureOrPatch, NestedFeature, withBorneFeatures } from "./Feature";
 import { AnySymbol, Expression, Note } from "./Symbol";
 import { deletedBy, insertedBy, principalDerivationOf, Version } from "./Version";
 import { NegotiatedEvent } from "./ReproducingSystem";
 import { systemIdOf, TrackerBar } from "./TrackerBar";
-import { featuresOf, isPaperStretch, RollCopy } from "./RollCopy";
+import { featuresMadeBy, featuresOf, isPaperStretch, Modification, ProductionEvent, RollCopy } from "./RollCopy";
 import { idOf, idsOf } from "./Assumption";
 import { mean, Millimeters } from "./Quantity";
 
@@ -169,6 +169,25 @@ export class EditionView {
                     .map(feature => [feature.id, copy] as const)))
         }
         return this.copiesByFeature.get(featureId)
+    }
+
+    /**
+     * The act a copy states a feature in: the production event that
+     * punched it, or the modification that brought it about. A feature
+     * a patch bears came onto the copy with the patch, so the act is
+     * the one that glued the patch on. Two features stand in one act
+     * where this returns the very same object, which is what
+     * `mergeFeatures` asks before it reads them as one.
+     */
+    actOf(featureId: string): Readonly<ProductionEvent | Modification> | undefined {
+        const copy = this.copyOf(featureId)
+        if (!copy) return undefined
+
+        const states = (features: readonly NestedFeature[]): boolean =>
+            features.flatMap(withBorneFeatures).some(feature => feature.id === featureId)
+
+        if (states(copy.production?.produced ?? [])) return copy.production
+        return copy.modifications.find(act => states(featuresMadeBy(act)))
     }
 
     /**

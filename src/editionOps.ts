@@ -7,8 +7,8 @@ import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance 
 import { Edit, EditType } from "./Edit"
 import { collationToleranceOf, Derivation, editsOf, insertedBy, principalDerivationOf, Version } from "./Version"
 import {
-    asSymbols, barOf, featuresByAct, featuresOf, GeneralRollCondition, isPaperStretch, Modification, RollCopy,
-    ScaleReading, Shift, statesNothing
+    asSymbols, barOf, featuresByAct, featuresOf, GeneralRollCondition, isPaperStretch, Modification,
+    ModificationPurpose, RollCopy, ScaleReading, Shift, statesNothing
 } from "./RollCopy"
 import { systemOf, TrackerBar } from "./TrackerBar"
 import { substitutionsBetween } from "./substitution"
@@ -20,8 +20,8 @@ import {
     assignReference, idOf
 } from "./Assumption"
 import {
-    FeatureConditionAssignment, FeatureConditionType, FeatureOrPatch, HorizontalSpan, NestedFeature,
-    conditions as conditionsAllowed, featuresBorneBy, isGluedOn, withBorneFeatures
+    AnyFeature, FeatureConditionAssignment, FeatureConditionType, FeatureOrPatch, GluedOn, HorizontalSpan,
+    NestedFeature, conditions as conditionsAllowed, featuresBorneBy, isGluedOn, withBorneFeatures
 } from "./Feature"
 import { distance, Millimeters, mm, subtract } from "./Quantity"
 import { WithId } from "./utils"
@@ -485,6 +485,88 @@ const rewriteFeatures = (copy: Draft<RollCopy>, rewrite: Rewrite) => {
     }
     copy.modifications = pruned(state.modifications, rewritingAct(rewrite), statesNothing)
 }
+
+/**
+ * The act a feature an editor states belongs to: the punching of the
+ * copy, the act that brought another feature about, or, where neither
+ * is said, an act of its own for the purpose given. A patch is never
+ * punched, being glued on, so `punched` says nothing of one.
+ */
+export interface FeatureAct {
+    /** The copy was punched with it, which is where a reading of a scan puts every hole. */
+    punched?: boolean
+
+    /** The act that brought this feature about brought the new one about as well. */
+    beside?: string
+
+    /** What the act was for, where a new one is made for the feature. */
+    purpose?: ModificationPurpose
+}
+
+/** The features of the act that brought the named feature about, where that act produces features. */
+const producedBeside = (copy: Draft<RollCopy>, featureId: string): Draft<AnyFeature>[] | undefined => {
+    const names = (features: readonly Draft<FeatureOrPatch>[]) => features.some(feature => feature.id === featureId)
+    const punched = copy.production?.produced
+    if (punched && names(punched)) return punched
+
+    const act = copy.modifications.find(act => act.type === 'Alteration' && names(act.produced))
+    return act?.type === 'Alteration' ? act.produced : undefined
+}
+
+/** The patches of the attachment that glued the named one on. */
+const gluedBeside = (copy: Draft<RollCopy>, patchId: string): Draft<GluedOn>[] | undefined => {
+    const act = copy.modifications.find(act =>
+        act.type === 'Attachment' && act.added.some(patch => patch.id === patchId))
+    return act?.type === 'Attachment' ? act.added : undefined
+}
+
+/** The list the copy states a new feature in, making the act it belongs to where there is none. */
+const actFor = (copy: Draft<RollCopy>, patch: boolean, act: FeatureAct): Draft<FeatureOrPatch>[] => {
+    const beside = act.beside !== undefined
+        ? (patch ? gluedBeside(copy, act.beside) : producedBeside(copy, act.beside))
+        : undefined
+    if (beside) return beside
+
+    if (patch) {
+        const added: GluedOn[] = []
+        copy.modifications.push({ type: 'Attachment', added, ...(act.purpose && { purpose: act.purpose }) })
+        return added
+    }
+    if (act.punched) {
+        if (!copy.production) copy.production = {}
+        if (!copy.production.produced) copy.production.produced = []
+        return copy.production.produced
+    }
+
+    const produced: AnyFeature[] = []
+    copy.modifications.push({ type: 'Alteration', produced, ...(act.purpose && { purpose: act.purpose }) })
+    return produced
+}
+
+/**
+ * States that the copy bears the feature, in the act that brought it
+ * about: a patch was glued on by an attachment, anything else was
+ * produced, by the punching or by a later act. Which act, `FeatureAct`
+ * says; a `beside` that names nothing the copy bears is passed over and
+ * the feature goes into an act of its own.
+ */
+export const addFeature = (copyId: string, feature: FeatureOrPatch, act: FeatureAct = {}): EditionOp =>
+    onCopy(copyId, copy => {
+        actFor(copy, isGluedOn(feature), act).push(feature)
+    })
+
+/**
+ * States that the patch bears the feature. What a patch bears came onto
+ * the copy with the patch, so it belongs to no act of its own and
+ * states no place: it stands where the patch stands.
+ */
+export const addBorneFeature = (copyId: string, patchId: string, feature: NestedFeature): EditionOp =>
+    onCopy(copyId, copy => {
+        const patch = featuresOf(copy).flatMap(withBorneFeatures).find(borne => borne.id === patchId)
+        if (!patch || !isGluedOn(patch)) return
+        if (!patch.features) patch.features = []
+        patch.features.push(feature)
+    })
 
 /**
  * Takes the features off the copy, and out of the versions with what

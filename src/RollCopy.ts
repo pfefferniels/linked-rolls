@@ -402,14 +402,17 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
 }
 
 /** What an act brought onto the copy: what it produced or glued on, a removal nothing. */
-const madeBy = (modification: Modification): FeatureOrPatch[] => {
+export const featuresMadeBy = (modification: Modification): FeatureOrPatch[] => {
     if (modification.type === 'Alteration') return modification.produced
     return modification.type === 'Attachment' ? modification.added : []
 }
 
+/** Whether the act is one that modified the copy, rather than the production that punched it. */
+export const isModification = (act: ProductionEvent | Modification): act is Modification => 'type' in act
+
 /** Whether the act is left stating nothing: it produced, added or removed nothing. */
 export const statesNothing = (modification: Modification): boolean =>
-    modification.type === 'Removal' ? modification.removed.length === 0 : madeBy(modification).length === 0
+    modification.type === 'Removal' ? modification.removed.length === 0 : featuresMadeBy(modification).length === 0
 
 /**
  * The features of the copy act by act: what the punching produced
@@ -418,7 +421,7 @@ export const statesNothing = (modification: Modification): boolean =>
  * `withBorneFeatures` reaches those.
  */
 export const featuresByAct = (copy: Pick<RollCopy, 'production' | 'modifications'>): FeatureOrPatch[][] =>
-    [copy.production?.produced ?? [], ...copy.modifications.map(madeBy)]
+    [copy.production?.produced ?? [], ...copy.modifications.map(featuresMadeBy)]
 
 /** Every feature the copy states at a place of its own, whichever act made it. */
 export const featuresOf = (copy: Pick<RollCopy, 'production' | 'modifications'>): FeatureOrPatch[] =>
