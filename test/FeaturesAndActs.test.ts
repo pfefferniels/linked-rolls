@@ -9,7 +9,7 @@ import { Modification } from '../src/RollCopy'
 import { assignObject } from '../src/Assumption'
 import { asJsonLd } from '../src/asJsonLd'
 import { importJsonLd } from '../src/importJsonLd'
-import { mm, track } from '../src/Quantity'
+import { degrees, mm, track } from '../src/Quantity'
 import { copy, editionOf, hole, note, version } from './editionFixture'
 
 /**
@@ -60,12 +60,16 @@ const writing: Writing = {
     id: 'date',
     ...at(20, 60, 47),
     method: 'handwriting',
+    side: 'verso',
+    rotation: { value: degrees(12), unit: 'deg' },
     transcription: assignObject<Transcription>({ type: 'text', id: 'date-text', text: '20.I.1905' })
 }
 
 const mark: Mark = { type: 'Mark', id: 'circle', ...at(80, 90, 47), method: 'pencil' }
 
-const patch: GluedOn = { type: 'GluedOn', id: 'patch', ...at(100, 140, 47), material: 'paper', features: [stamp] }
+const patch: GluedOn = {
+    type: 'GluedOn', id: 'patch', ...at(100, 140, 47), material: 'paper', side: 'recto', features: [stamp]
+}
 
 const punched: AnyFeature[] = [hole('perforation', 10, 12, 47)]
 
@@ -137,6 +141,16 @@ describe('the kinds of feature', () => {
         expect(statedOf(all, of('date'), `${reo}method`)).toEqual([`${reot}handwriting`])
         expect(statedOf(all, of('circle'), `${reo}method`)).toEqual([`${reot}pencil`])
         expect(statedOf(all, of('patch'), `${crm}P45_consists_of`)).toEqual([`${reot}paper`])
+    })
+
+    it('state the face a trace lies on and how far it stands askew', async () => {
+        const all = await triples()
+        expect(statedOf(all, of('date'), `${reo}side`)).toEqual([`${reot}verso`])
+        expect(statedOf(all, of('patch'), `${reo}side`)).toEqual([`${reot}recto`])
+
+        const [dimension] = statedOf(all, of('date'), `${reo}rotation`)
+        expect(statedOf(all, dimension, `${crm}P90_has_value`)[0]).toMatch(/^"12"\^\^<?http:\/\/www.w3.org\/2001\/XMLSchema#integer/)
+        expect(statedOf(all, dimension, `${crm}P91_has_unit`)).toEqual([`${reot}deg`])
     })
 
     it('say nothing beside the class about what kind of feature they are', async () => {

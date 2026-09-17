@@ -780,6 +780,20 @@
           "type": "string",
           "ontology": "crm:P45 consists of"
         },
+        "rotation": {
+          "$ref": "#/definitions/Measure%3C%22deg%22%3E",
+          "description": "How far the patch was stuck on askew, clockwise from the line across the roll.",
+          "ontology": "reo:rotation"
+        },
+        "side": {
+          "description": "The face of the roll it lies on: the side that faces the reader as the roll plays, or the back of it.",
+          "enum": [
+            "recto",
+            "verso"
+          ],
+          "type": "string",
+          "ontology": "reo:side"
+        },
         "vertical": {
           "$ref": "#/definitions/VerticalSpan",
           "description": "Vertical span of the feature on the roll.",
@@ -1015,6 +1029,15 @@
           "description": "The medium the mark was drawn in, where it can be told.",
           "ontology": "reo:method"
         },
+        "side": {
+          "description": "The face of the roll it lies on: the side that faces the reader as the roll plays, or the back of it.",
+          "enum": [
+            "recto",
+            "verso"
+          ],
+          "type": "string",
+          "ontology": "reo:side"
+        },
         "vertical": {
           "$ref": "#/definitions/VerticalSpan",
           "description": "Vertical span of the feature on the roll.",
@@ -1083,6 +1106,28 @@
       ],
       "type": "object",
       "ontology": "crminf:I16 Meaning Comprehension"
+    },
+    "Measure<\"deg\">": {
+      "description": "A value together with the unit it was measured in, as a record states it.",
+      "properties": {
+        "unit": {
+          "const": "deg",
+          "description": "The unit of measurement.",
+          "type": "string",
+          "ontology": "crm:P91 has unit"
+        },
+        "value": {
+          "$ref": "#/definitions/Quantity%3C%22deg%22%3E",
+          "description": "The measured value.",
+          "ontology": "crm:P90 has value"
+        }
+      },
+      "required": [
+        "value",
+        "unit"
+      ],
+      "type": "object",
+      "ontology": "crm:E54 Dimension"
     },
     "Measure<\"mm\">": {
       "description": "A value together with the unit it was measured in, as a record states it.",
@@ -1411,6 +1456,20 @@
               "description": "The method by which this writing was produced (e.g. through print, handwriting, or stamping).",
               "ontology": "reo:method"
             },
+            "rotation": {
+              "$ref": "#/definitions/Measure%3C%22deg%22%3E",
+              "description": "How far the writing stands askew, clockwise from the line across the roll. A stamp pressed crooked and a label written along the roll rather than across it are both stated here.",
+              "ontology": "reo:rotation"
+            },
+            "side": {
+              "description": "The face of the roll it lies on: the side that faces the reader as the roll plays, or the back of it.",
+              "enum": [
+                "recto",
+                "verso"
+              ],
+              "type": "string",
+              "ontology": "reo:side"
+            },
             "transcription": {
               "$ref": "#/definitions/ObjectAssumption%3CTranscription%3E",
               "description": "A transcription of the text content of the writing. This is an object assumption so that the transcription can be annotated with a belief about its correctness.",
@@ -1461,6 +1520,15 @@
               "$ref": "#/definitions/MarkMethod",
               "description": "The medium the mark was drawn in, where it can be told.",
               "ontology": "reo:method"
+            },
+            "side": {
+              "description": "The face of the roll it lies on: the side that faces the reader as the roll plays, or the back of it.",
+              "enum": [
+                "recto",
+                "verso"
+              ],
+              "type": "string",
+              "ontology": "reo:side"
             },
             "vertical": {
               "$ref": "#/definitions/VerticalSpan",
@@ -1517,6 +1585,20 @@
               ],
               "type": "string",
               "ontology": "crm:P45 consists of"
+            },
+            "rotation": {
+              "$ref": "#/definitions/Measure%3C%22deg%22%3E",
+              "description": "How far the patch was stuck on askew, clockwise from the line across the roll.",
+              "ontology": "reo:rotation"
+            },
+            "side": {
+              "description": "The face of the roll it lies on: the side that faces the reader as the roll plays, or the back of it.",
+              "enum": [
+                "recto",
+                "verso"
+              ],
+              "type": "string",
+              "ontology": "reo:side"
             },
             "vertical": {
               "$ref": "#/definitions/VerticalSpan",
@@ -2406,6 +2488,9 @@
       "type": "object",
       "ontology": "lrmoo:F32 Item Production Event"
     },
+    "Quantity<\"deg\">": {
+      "type": "number"
+    },
     "Quantity<\"ft/min\">": {
       "type": "number"
     },
@@ -3004,6 +3089,20 @@
           "$ref": "#/definitions/WritingMethod",
           "description": "The method by which this writing was produced (e.g. through print, handwriting, or stamping).",
           "ontology": "reo:method"
+        },
+        "rotation": {
+          "$ref": "#/definitions/Measure%3C%22deg%22%3E",
+          "description": "How far the writing stands askew, clockwise from the line across the roll. A stamp pressed crooked and a label written along the roll rather than across it are both stated here.",
+          "ontology": "reo:rotation"
+        },
+        "side": {
+          "description": "The face of the roll it lies on: the side that faces the reader as the roll plays, or the back of it.",
+          "enum": [
+            "recto",
+            "verso"
+          ],
+          "type": "string",
+          "ontology": "reo:side"
         },
         "transcription": {
           "$ref": "#/definitions/ObjectAssumption%3CTranscription%3E",

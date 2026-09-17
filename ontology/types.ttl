@@ -175,6 +175,16 @@ reot:paper a crm:E57_Material, skos:Concept ; skos:inScheme <https://w3id.org/re
 reot:tape a crm:E57_Material, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "tape"@en .
 
 
+# Side of the paper a feature lies on (reo:side)
+
+reot:recto a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "recto"@en ;
+    rdfs:comment "The face of the roll that meets the tracker bar as it plays."@en .
+reot:verso a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "verso"@en ;
+    rdfs:comment "The back of the roll, away from the tracker bar."@en .
+
+
 # Units (P91 has unit)
 
 reot:mm a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
@@ -182,6 +192,9 @@ reot:mm a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.o
 reot:track a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "track"@en ;
     rdfs:comment "A position across the roll counted in openings of the tracker bar, from the bass side."@en .
+reot:deg a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "degree"@en ;
+    rdfs:comment "An angle on the face of the roll, clockwise from the line across it."@en .
 reot:px a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "pixel"@en ;
     rdfs:comment "A pixel of the scan the measurement was taken from."@en .

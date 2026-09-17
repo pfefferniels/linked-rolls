@@ -2,7 +2,7 @@ import { ObjectAssumption } from "./Assumption";
 import { ConditionState } from "./ConditionState";
 import { Text } from "./Symbol";
 import { PartialBy, WithId, WithType } from "./utils";
-import { Millimeters, Track } from "./Quantity";
+import { Measure, Millimeters, Track } from "./Quantity";
 
 /**
  * Describes the horizontal extent of a feature on the roll,
@@ -135,10 +135,23 @@ export interface Hole extends RollFeature<'Hole', typeof conditions.Hole[number]
 }
 
 /**
+ * Something that lies on a face of the paper rather than through it. A
+ * hole is not one: it goes through, and is on both faces at once.
+ */
+export interface OnAFace {
+    /**
+     * The face of the roll it lies on: the side that faces the reader
+     * as the roll plays, or the back of it.
+     * @see reo:side
+     */
+    side?: 'recto' | 'verso';
+}
+
+/**
  * A trace is a visible mark or writing on the roll surface.
  * Traces may fade over time.
  */
-export interface Trace<T extends FeatureType> extends RollFeature<T, typeof conditions[T][number]> { }
+export interface Trace<T extends FeatureType> extends RollFeature<T, typeof conditions[T][number]>, OnAFace { }
 
 export const writingMethods = ['print', 'handwriting', 'stamp'] as const;
 
@@ -177,6 +190,14 @@ export interface Writing extends Trace<'Writing'> {
      * @see crm:P128 carries
      */
     transcription: ObjectAssumption<Transcription>;
+
+    /**
+     * How far the writing stands askew, clockwise from the line across
+     * the roll. A stamp pressed crooked and a label written along the
+     * roll rather than across it are both stated here.
+     * @see reo:rotation
+     */
+    rotation?: Measure<'deg'>;
 }
 
 /**
@@ -201,12 +222,19 @@ export interface Mark extends Trace<'Mark'> {
  * such as writings or additional holes.
  * @see reo:GluedOn
  */
-export interface GluedOn extends RollFeature<'GluedOn', typeof conditions.GluedOn[number]> {
+export interface GluedOn extends RollFeature<'GluedOn', typeof conditions.GluedOn[number]>, OnAFace {
     /**
      * The material of the glued-on feature.
      * @see crm:P45 consists of
      */
     material: 'paper' | 'tape';
+
+    /**
+     * How far the patch was stuck on askew, clockwise from the line
+     * across the roll.
+     * @see reo:rotation
+     */
+    rotation?: Measure<'deg'>;
 
     /**
      * A glued-on feature itself may carry other features.

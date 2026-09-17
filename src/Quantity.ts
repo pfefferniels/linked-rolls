@@ -12,7 +12,7 @@ declare const unit: unique symbol
  * The units a record may state. A `Measure` is limited to these, since
  * they are what the `unit` field is allowed to say.
  */
-export type Unit = 'mm' | 'cm' | 'px' | 'track' | 's' | 'ms' | 'ft/min' | 'm/min' | 'px/in'
+export type Unit = 'mm' | 'cm' | 'px' | 'track' | 's' | 'ms' | 'ft/min' | 'm/min' | 'px/in' | 'deg'
 
 // Any unit name may be branded, so that a consumer can carry its own
 // units, such as a drawing's coordinates, through the same operations.
@@ -34,6 +34,8 @@ export type FeetPerMinute = Quantity<'ft/min'>
 export type MetersPerMinute = Quantity<'m/min'>
 /** How finely a scan was read: pixels of the image per inch of paper. */
 export type Resolution = Quantity<'px/in'>
+/** An angle, clockwise from the line across the roll. */
+export type Degrees = Quantity<'deg'>
 
 /** Names a number in a unit. Partially apply it to make a constructor. */
 export const quantity = <U extends string>(value: number): Quantity<U> => value as Quantity<U>
@@ -47,6 +49,7 @@ export const milliseconds = quantity<'ms'>
 export const feetPerMinute = quantity<'ft/min'>
 export const metersPerMinute = quantity<'m/min'>
 export const pixelsPerInch = quantity<'px/in'>
+export const degrees = quantity<'deg'>
 
 /**
  * A value together with the unit it was measured in, as a record

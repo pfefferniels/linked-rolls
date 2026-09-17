@@ -177,10 +177,29 @@ reo:pattern
 reo:method
     a owl:ObjectProperty ;
     rdfs:subPropertyOf crm:P2_has_type ;
-    rdfs:domain crm:E25_Human-Made_Feature ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( reo:Writing reo:Mark ) ] ;
     rdfs:range crm:E55_Type ;
     rdfs:label "method"@en ;
     rdfs:comment """This property states how a feature was made: a writing printed, handwritten or stamped, a mark drawn in ink, pencil or crayon. The values are the types print, handwriting, stamp, ink, pencil and crayon at https://w3id.org/reo/type/. What kind of feature it is, its class says."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+
+reo:side
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf crm:P2_has_type ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( reo:Writing reo:Mark reo:GluedOn ) ] ;
+    rdfs:range crm:E55_Type ;
+    rdfs:label "side"@en ;
+    rdfs:comment """This property states which face of the paper a feature lies on: the types recto and verso at https://w3id.org/reo/type/. A hole takes no side, going through the paper and lying on both faces at once, which is why the domain names the three kinds that sit on one. Recto is the face that meets the tracker bar as the roll plays."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:rotation
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf crm:P43_has_dimension ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( reo:Writing reo:GluedOn ) ] ;
+    rdfs:range crm:E54_Dimension ;
+    rdfs:label "rotation"@en ;
+    rdfs:comment """This property states how far a writing or a patch stands askew on the paper, clockwise from the line across the roll, as a dimension in degrees (P90 has value, P91 has unit with the type deg). It is a subproperty of P43 has dimension rather than that property itself, so that an angle is told apart from the horizontal and vertical extents, which are dimensions of the same feature. A mark takes no rotation: the angle of a stroke is its shape, and what a mark's shape means is a reading of it rather than a property of it."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 

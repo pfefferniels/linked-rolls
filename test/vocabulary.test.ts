@@ -94,6 +94,10 @@ const punched = (feature: Json): Json => copyWith({ production: { produced: [fea
 const gluedOn = (patch: Json): Json =>
     copyWith({ modifications: [{ '@type': 'Attachment', added: [patch] }] })
 
+/** A feature a later hand brought about, which is where a writing or a mark belongs. */
+const altered = (feature: Json): Json =>
+    copyWith({ modifications: [{ '@type': 'Alteration', produced: [feature] }] })
+
 const expressionWith = (fields: Json, systemContext?: string): Json => ({
     versions: [{
         ...(systemContext && { '@context': systemContext }),
@@ -108,7 +112,8 @@ const placements: Record<string, (value: string) => Json> = {
     conditionType: value => copyWith({ conditions: [{ '@type': 'ConditionState', conditionType: value }] }),
     unit: value => punched(node('Hole', { horizontal: { unit: value, from: 1, to: 2 } })),
     pattern: value => punched(node('Hole', { pattern: value })),
-    method: value => punched(node('Writing', { method: value })),
+    method: value => altered(node('Writing', { method: value })),
+    side: value => altered(node('Writing', { side: value })),
     material: value => gluedOn(node('GluedOn', { material: value })),
     purpose: value => copyWith({ modifications: [{ '@type': 'Alteration', purpose: value }] }),
     editType: value => ({ versions: [node('Version', { edits: [node('edit', { editType: value })] })] }),
