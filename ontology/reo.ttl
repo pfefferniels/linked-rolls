@@ -35,7 +35,7 @@ reo:Perforation
     a owl:Class ;
     rdfs:subClassOf crm:E90_Symbolic_Object ;
     rdfs:label "Perforation"@en ;
-    rdfs:comment """This class comprises the symbols a reproducing piano reads from a roll: the notes it sounds and the commands that govern its mechanism. A perforation is what a hole or a group of holes means once it is read against a tracker bar. The hole itself is an instance of E25 Human-Made Feature typed 'hole', borne by a copy of the roll (P56 bears feature) and carrying the perforation (P128 carries). One perforation may be carried by holes on several copies of the same roll. A version of the roll, an instance of F2 Expression, is composed of its perforations (P106 is composed of). The measured position of a perforation is that of the holes carrying it; the properties aligned with, before, after and paired with let an editor state where that measurement should give way."""@en ;
+    rdfs:comment """This class comprises the symbols a reproducing piano reads from a roll: the notes it sounds and the commands that govern its mechanism. A perforation is what a hole or a group of holes means once it is read against a tracker bar. The hole itself is an instance of reo:Hole, borne by a copy of the roll (P56 bears feature) and carrying the perforation (P128 carries). One perforation may be carried by holes on several copies of the same roll. A version of the roll, an instance of F2 Expression, is composed of its perforations (P106 is composed of). The measured position of a perforation is that of the holes carrying it; the properties aligned with, before, after and paired with let an editor state where that measurement should give way."""@en ;
     skos:example "the first note of Grünfeld's Träumerei on the Welte-Mignon roll WM 225, recorded in Wien in 1905"@en ,
                  "the sustain pedal command that opens the same roll"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
@@ -55,6 +55,46 @@ reo:Expression
     rdfs:comment """This class comprises perforations that act on the reproducing mechanism rather than sound a note: dynamic commands such as crescendo, forzando and mezzoforte, the pedals, and motor functions such as rewind. The kind of command is given by P2 has type with one of the expression types at https://w3id.org/reo/type/; the half of the keyboard it acts on by scope. The name follows the vocabulary of the reproducing piano, where these are the expression perforations read by the expression box. It is unrelated to F2 Expression in LRMoo, which is the class of the roll's versions."""@en ;
     skos:example "a 'slow crescendo off' on a Welte-Mignon T-100 roll, aligned with the note it belongs to"@en ,
                  "the 'forzando on' and 'forzando off' pair that accents a single chord"@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:RollCopy
+    a owl:Class ;
+    rdfs:subClassOf lrmoo:F5_Item, crm:E22_Human-Made_Object ;
+    rdfs:label "Roll Copy"@en ;
+    rdfs:comment """This class comprises the surviving physical copies of a roll. A copy is an instance of F5 Item, being an exemplar in which a version of the roll was published, and an instance of E22 Human-Made Object, being a made thing that bears features: P56 bears feature takes an E19 Physical Object, which F5 Item alone is not. Both statements hold of every copy and no class of CIDOC CRM or LRMoo makes them together, which is why this class is declared."""@en ;
+    skos:example "the copy of WM 225 held at Stanford, read from the scan of its paper"@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:Hole
+    a owl:Class ;
+    rdfs:subClassOf crm:E25_Human-Made_Feature ;
+    rdfs:label "Hole"@en ;
+    rdfs:comment """This class comprises the perforations punched in the paper of a roll, which is what a reproducing piano reads. A hole is a human-made feature of the paper: the scope note of E25 Human-Made Feature states that it includes "the information encoding features on mechanical or digital carriers". What a hole means once it is read against a tracker bar is a perforation in the sense of reo:Perforation, which the hole carries (P128 carries). The punching pattern is given by reo:pattern."""@en ;
+    skos:example "the hole carrying the first note of Grünfeld's Träumerei on the Stanford copy of WM 225"@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:Writing
+    a owl:Class ;
+    rdfs:subClassOf crm:E25_Human-Made_Feature ;
+    rdfs:label "Writing"@en ;
+    rdfs:comment """This class comprises the features of a roll that carry text: a printed title, a stamped catalogue number, a date written by hand. What the text says is given by P128 carries, and how the writing was made by reo:method. A writing is a feature of the paper it stands on, which may be the roll itself or a patch glued onto it; the label as a piece of paper is an instance of reo:GluedOn, and the print on it a writing the label bears."""@en ;
+    skos:example "the pencilled '225. Fritz. 18. Jan 09.' on the Stanford copy of WM 225"@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:Mark
+    a owl:Class ;
+    rdfs:subClassOf crm:E25_Human-Made_Feature ;
+    rdfs:label "Mark"@en ;
+    rdfs:comment """This class comprises the features drawn on a roll that carry no text: a circle around a perforation, a stroke, a cross. What a mark was meant to say is a reading of it, an instance of I16 Meaning Comprehension in CRMinf, and no property of the feature; its shape is therefore not stated as a type. How it was drawn is given by reo:method."""@en ;
+    skos:example "a pencil circle around a group of perforations, read as an instruction to punch"@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:GluedOn
+    a owl:Class ;
+    rdfs:subClassOf crm:E22_Human-Made_Object ;
+    rdfs:label "Glued-On"@en ;
+    rdfs:comment """This class comprises the pieces of paper and tape glued onto a roll, which cover perforations or reinforce the paper. A patch is an object and not a feature: it was "a separate identifiable whole prior to" the act of gluing, as the scope note of E79 Part Addition requires of what is added, where a hole or a pencil line comes into being in the act that makes it. What it is made of is given by P45 consists of, and it may bear features of its own (P56 bears feature)."""@en ;
+    skos:example "the printed label glued to the leader of the Stanford copy of WM 225"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:Edit
@@ -127,7 +167,7 @@ reo:scope
 reo:pattern
     a owl:ObjectProperty ;
     rdfs:subPropertyOf crm:P2_has_type ;
-    rdfs:domain crm:E25_Human-Made_Feature ;
+    rdfs:domain reo:Hole ;
     rdfs:range crm:E55_Type ;
     rdfs:label "pattern"@en ;
     rdfs:comment """This property states the punching pattern of a hole: how a long perforation is broken into a chain of holes by bridges of paper, and whether the rows of holes align across the tracks. The values are the types regular, accelerating and staggering at https://w3id.org/reo/type/, following the distinction drawn by Phillips (2016)."""@en ;
@@ -140,7 +180,7 @@ reo:method
     rdfs:domain crm:E25_Human-Made_Feature ;
     rdfs:range crm:E55_Type ;
     rdfs:label "method"@en ;
-    rdfs:comment """This property states how a feature was made: a writing printed, handwritten or stamped, a mark drawn in ink, pencil or crayon. The values are the types print, handwriting, stamp, ink, pencil and crayon at https://w3id.org/reo/type/. What kind of feature it is, plain P2 has type says; this property is a subproperty of it, so that the two statements stay apart."""@en ;
+    rdfs:comment """This property states how a feature was made: a writing printed, handwritten or stamped, a mark drawn in ink, pencil or crayon. The values are the types print, handwriting, stamp, ink, pencil and crayon at https://w3id.org/reo/type/. What kind of feature it is, its class says."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 

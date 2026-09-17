@@ -14,13 +14,14 @@
 
     "Edition": "lrmoo:F2_Expression",
     "Version": "lrmoo:F2_Expression",
-    "RollCopy": "lrmoo:F5_Item",
-    "Hole": "crm:E25_Human-Made_Feature",
-    "Mark": "crm:E25_Human-Made_Feature",
-    "Writing": "crm:E25_Human-Made_Feature",
-    "GluedOn": "crm:E22_Human-Made_Object",
-    "Addition": "crm:E79_Part_Addition",
+    "RollCopy": "reo:RollCopy",
+    "Hole": "reo:Hole",
+    "Mark": "reo:Mark",
+    "Writing": "reo:Writing",
+    "GluedOn": "reo:GluedOn",
+    "Attachment": "crm:E79_Part_Addition",
     "Removal": "crm:E80_Part_Removal",
+    "Alteration": "crm:E12_Production",
     "ConditionState": "crm:E3_Condition_State",
     "note": "reo:Note",
     "expression": "reo:Expression",
@@ -194,25 +195,25 @@
     "description": "crm:P3_has_note",
     "factor": "rdf:value",
     "keeper": "crm:P50_has_current_keeper",
-    "features": "crm:P56_bears_feature",
+    "features": "crm:P46_is_composed_of",
     "carries": "crm:P128_carries",
     "modifications": "crm:P31i_was_modified_by",
     "scan": {
       "@id": "crm:P138i_has_representation",
       "@type": "@id"
     },
-    "kind": {
-      "@id": "crm:P2_has_type",
-      "@type": "@vocab",
-      "@context": {
-        "@vocab": "https://w3id.org/reo/type/",
-        "roll": "https://w3id.org/reo/type/roll",
-        "scan": "https://w3id.org/reo/type/scan"
-      }
-    },
     "readFrom": {
       "@id": "reo:capture",
       "@context": {
+        "kind": {
+          "@id": "crm:P2_has_type",
+          "@type": "@vocab",
+          "@context": {
+            "@vocab": "https://w3id.org/reo/type/",
+            "roll": "https://w3id.org/reo/type/roll",
+            "scan": "https://w3id.org/reo/type/scan"
+          }
+        },
         "output": {
           "@id": "crmdig:L11_had_output",
           "@type": "@id"
@@ -261,10 +262,8 @@
     },
 
     "actor": "crm:P14_carried_out_by",
-    "added": {
-      "@id": "crm:P111_added",
-      "@type": "@id"
-    },
+    "produced": "crm:P108_has_produced",
+    "added": "crm:P111_added",
     "removed": {
       "@id": "crm:P113_removed",
       "@type": "@id"
@@ -273,6 +272,23 @@
       "@id": "crm:P21_had_general_purpose",
       "@type": "@vocab",
       "@context": { "@vocab": "https://w3id.org/reo/type/" }
+    },
+
+    "bears": {
+      "@id": "crm:P56_bears_feature",
+      "@type": "@id"
+    },
+    "composedOf": {
+      "@id": "crm:P46_is_composed_of",
+      "@type": "@id"
+    },
+    "augmented": {
+      "@id": "crm:P110_augmented",
+      "@type": "@id"
+    },
+    "diminished": {
+      "@id": "crm:P112_diminished",
+      "@type": "@id"
     },
 
     "siglum": "reo:siglum",

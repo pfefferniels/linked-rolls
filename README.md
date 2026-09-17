@@ -42,7 +42,10 @@ which versions and conditions carry a typology key beside their type,
 the keeper and the production metadata are nodes with a name and
 authority links, and the roll names its reproducing system. A date
 written as a value of its own is read as the day the event falls
-within. Exports are always in the current format.
+within. A copy that held its features in one list, naming by id what a
+modification had added, has each feature put into the act that brought
+it about, and a feature a patch bears that was left unnamed is named
+after the patch. Exports are always in the current format.
 
 ## How a date is stated
 
@@ -71,6 +74,30 @@ where nobody can state them, as for a text that only a recording hints
 at. It then reads as the version it derives from, and
 `reservationsAboutVersion` says so. A file that names a single
 derivation loads as a list of one.
+
+## What brought a feature about
+
+A copy states no list of features. Each feature stands in the act that
+brought it about: the perforations in the copy's own production, a
+writing or a mark in the `Alteration` that made it, a patch in the
+`Attachment` that glued it on. A `Removal` names by id what was taken
+off, which stood there before the act. A feature no later act is known
+to have made belongs to the punching, which is where a reading of a
+scan puts every hole it finds.
+
+Three kinds of act rather than two, because the CRM tells them apart.
+E79 Part Addition asks that what is added be "a separate identifiable
+whole prior to" the act, which a glued-on label is and a pencil line is
+not: drawing, writing and punching bring a feature into being and are
+productions (E12), which state what they made with P108 has produced.
+
+The export states what that shape only implies. A copy bears every
+feature its acts brought about (P56 bears feature) and is composed of
+the patches glued onto it (P46 is composed of, a patch being an object
+rather than a feature); an attachment augments the copy and a removal
+diminishes it. The four keys are derived on the way out and read off
+again on the way in, so they are no part of the edition, and they are
+the one place where the JSON tree and the graph differ in shape.
 
 ## Where a copy's features come from
 

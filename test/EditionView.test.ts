@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { EditionView } from '../src/EditionView'
-import { copy, editionOf, expression, hole, note, version } from './editionFixture'
+import { copy, cutFor, editionOf, expression, hole, note, version } from './editionFixture'
 import { mm } from '../src/Quantity'
 import { Expression, Note } from '../src/Symbol'
 import { welteT100 } from '../src/systems/welteT100/bar'
@@ -103,8 +103,7 @@ const twoIssues = () => {
         [
             { ...copy('red', [hole('hole-red', 1000, 1010, 47)]) },
             {
-                ...copy('green', [hole('hole-green', 1000, 1010, 45)]),
-                production: { system: systemOf(welteT98) },
+                ...cutFor(copy('green', [hole('hole-green', 1000, 1010, 45)]), systemOf(welteT98)),
                 ops: ['stretched'] as Array<'shifted' | 'stretched'>,
                 measurements: { scale: 1.29072 }
             }
@@ -165,8 +164,7 @@ describe('the paper a version ran on', () => {
     it('reports copies of one system that disagree instead of averaging them', () => {
         const edition = twoIssues()
         edition.copies.push({
-            ...copy('green-other', [hole('hole-green-other', 1000, 1010, 45)]),
-            production: { system: systemOf(welteT98) },
+            ...cutFor(copy('green-other', [hole('hole-green-other', 1000, 1010, 45)]), systemOf(welteT98)),
             ops: ['stretched'],
             measurements: { scale: 1.35 }
         })

@@ -88,6 +88,12 @@ const node = (type: string, fields: Json): Json => ({ '@type': type, '@id': `${t
 
 const copyWith = (fields: Json): Json => ({ copies: [node('RollCopy', fields)] })
 
+/** A feature as the copy states it: in the act that brought it about. */
+const punched = (feature: Json): Json => copyWith({ production: { produced: [feature] } })
+
+const gluedOn = (patch: Json): Json =>
+    copyWith({ modifications: [{ '@type': 'Attachment', added: [patch] }] })
+
 const expressionWith = (fields: Json, systemContext?: string): Json => ({
     versions: [{
         ...(systemContext && { '@context': systemContext }),
@@ -100,11 +106,11 @@ const placements: Record<string, (value: string) => Json> = {
     kind: value => copyWith({ readFrom: { kind: value } }),
     role: value => copyWith({ keeper: { name: 'keeper', role: value } }),
     conditionType: value => copyWith({ conditions: [{ '@type': 'ConditionState', conditionType: value }] }),
-    unit: value => copyWith({ features: [node('Hole', { horizontal: { unit: value, from: 1, to: 2 } })] }),
-    pattern: value => copyWith({ features: [node('Hole', { pattern: value })] }),
-    method: value => copyWith({ features: [node('Writing', { method: value })] }),
-    material: value => copyWith({ features: [node('GluedOn', { material: value })] }),
-    purpose: value => copyWith({ modifications: [{ '@type': 'Addition', purpose: value }] }),
+    unit: value => punched(node('Hole', { horizontal: { unit: value, from: 1, to: 2 } })),
+    pattern: value => punched(node('Hole', { pattern: value })),
+    method: value => punched(node('Writing', { method: value })),
+    material: value => gluedOn(node('GluedOn', { material: value })),
+    purpose: value => copyWith({ modifications: [{ '@type': 'Alteration', purpose: value }] }),
     editType: value => ({ versions: [node('Version', { edits: [node('edit', { editType: value })] })] }),
     scope: value => expressionWith({ scope: value }),
     expressionType: value => expressionWith({ expressionType: value })

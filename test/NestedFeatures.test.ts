@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { Edition } from '../src/Edition'
 import { GluedOn, NestedFeature, Transcription, withBorneFeatures } from '../src/Feature'
-import { Modification, RollCopy } from '../src/RollCopy'
+import { featuresOf, RollCopy } from '../src/RollCopy'
 import {
     AnyArgumentation, Assumption, Belief, MeaningComprehension, assignObject, assignReference
 } from '../src/Assumption'
 import { mergeFeatures, mergeObstacle, removeCopy, removeFeatures, symbolsCarriedOnlyBy } from '../src/editionOps'
-import { copy, editionOf, hole, label, note, version } from './editionFixture'
+import { attachment, copy, editionOf, hole, label, note, version } from './editionFixture'
 import { mm, track } from '../src/Quantity'
 
 /** A writing as a patch bears it, standing where the patch stands and stating no place of its own. */
@@ -27,8 +27,6 @@ const patch = (id: string, from: number, to: number, features?: NestedFeature[])
     ...(features && { features })
 })
 
-const addition = (...added: string[]): Modification => ({ type: 'Addition', purpose: 'labeling', added })
-
 const comprehension = (...comprehends: string[]): MeaningComprehension =>
     ({ type: 'meaningComprehension', comprehends })
 
@@ -46,16 +44,14 @@ const believed = (...reasons: AnyArgumentation[]): Assumption => ({
  */
 const labelled = (...reasons: AnyArgumentation[]): Edition => {
     const first: RollCopy = {
-        ...copy('first', [
-            patch('label-patch', 280, 340, [
+        ...copy('first', [hole('hole-note', 1000, 1010, 47)]),
+        modifications: [
+            attachment(patch('label-patch', 280, 340, [
                 writing('title', 'Träumerei'),
                 patch('stamp-patch', 300, 310, [writing('stamp', 'Welte')])
-            ]),
-            patch('tape', 500, 520),
-            patch('tape-too', 522, 540),
-            hole('hole-note', 1000, 1010, 47)
-        ]),
-        modifications: [addition('label-patch', 'title', 'stamp'), addition('tape', 'tape-too')]
+            ])),
+            attachment(patch('tape', 500, 520), patch('tape-too', 522, 540))
+        ]
     }
     const second: RollCopy = {
         ...copy('second', [hole('own', 2000, 2010, 47)]),
@@ -76,10 +72,11 @@ const labelled = (...reasons: AnyArgumentation[]): Edition => {
 }
 
 const featureIds = (edition: Edition, copyId = 'first') =>
-    edition.copies.find(c => c.id === copyId)!.features.flatMap(withBorneFeatures).map(feature => feature.id)
+    featuresOf(edition.copies.find(c => c.id === copyId)!).flatMap(withBorneFeatures).map(feature => feature.id)
 
+/** The patches each attachment glued on, by id. */
 const addedIn = (edition: Edition) => edition.copies[0].modifications.flatMap(modification =>
-    modification.type === 'Addition' ? [modification.added] : [])
+    modification.type === 'Attachment' ? [modification.added.map(patch => patch.id)] : [])
 
 const beliefOf = (annotated: Assumption): Belief => annotated['@annotation']!.belief
 
@@ -92,7 +89,7 @@ const insertedIds = (edition: Edition) =>
 describe('removing what a patch bears', () => {
     it('takes what a patch bears out of the copy with the patch, as deep as the bearing goes', () => {
         expect(featureIds(produce(labelled(), removeFeatures('first', ['label-patch']))))
-            .toEqual(['tape', 'tape-too', 'hole-note'])
+            .toEqual(['hole-note', 'tape', 'tape-too'])
     })
 
     it('strikes what a patch bore from a modification and from a comprehension', () => {
@@ -112,8 +109,8 @@ describe('removing what a patch bears', () => {
     it('takes a feature of a patch back on its own, the patch staying where it is', () => {
         const next = produce(labelled(comprehension('title', 'stamp')), removeFeatures('first', ['title']))
 
-        expect(featureIds(next)).toEqual(['label-patch', 'stamp-patch', 'stamp', 'tape', 'tape-too', 'hole-note'])
-        expect(addedIn(next)).toEqual([['label-patch', 'stamp'], ['tape', 'tape-too']])
+        expect(featureIds(next)).toEqual(['hole-note', 'label-patch', 'stamp-patch', 'stamp', 'tape', 'tape-too'])
+        expect(addedIn(next)).toEqual([['label-patch'], ['tape', 'tape-too']])
         expect(comprehendedBy(next)).toEqual([['stamp']])
         expect(insertedIds(next)).toEqual(['note'])
     })
@@ -121,8 +118,8 @@ describe('removing what a patch bears', () => {
     it('reaches a patch glued onto a patch', () => {
         const next = produce(labelled(comprehension('stamp')), removeFeatures('first', ['stamp-patch']))
 
-        expect(featureIds(next)).toEqual(['label-patch', 'title', 'tape', 'tape-too', 'hole-note'])
-        expect(addedIn(next)).toEqual([['label-patch', 'title'], ['tape', 'tape-too']])
+        expect(featureIds(next)).toEqual(['hole-note', 'label-patch', 'title', 'tape', 'tape-too'])
+        expect(addedIn(next)).toEqual([['label-patch'], ['tape', 'tape-too']])
         expect(comprehendedBy(next)).toEqual([])
     })
 
@@ -150,10 +147,10 @@ describe('removing a copy that bears a patch', () => {
 describe('merging where a patch bears features', () => {
     it('passes over an id naming a feature of a patch', () => {
         const next = produce(labelled(comprehension('title')), mergeFeatures('first', ['tape', 'tape-too', 'title']))
-        const mergedId = next.copies[0].features[1].id
+        const [mergedId] = addedIn(next)[1]
 
-        expect(featureIds(next)).toEqual(['label-patch', 'title', 'stamp-patch', 'stamp', mergedId, 'hole-note'])
-        expect(addedIn(next)).toEqual([['label-patch', 'title', 'stamp'], [mergedId]])
+        expect(featureIds(next)).toEqual(['hole-note', 'label-patch', 'title', 'stamp-patch', 'stamp', mergedId])
+        expect(addedIn(next)).toEqual([['label-patch'], [mergedId]])
         expect(comprehendedBy(next)).toEqual([['title']])
     })
 

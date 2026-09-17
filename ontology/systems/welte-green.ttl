@@ -1,0 +1,30 @@
+@prefix green:   <https://w3id.org/reo/type/welte-green/> .
+@prefix crm:     <http://www.cidoc-crm.org/cidoc-crm/> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+# The commands of the Welte-Mignon T-98, as its tracker bar reads them.
+# Each local name is the string the format uses for expressionType; the
+# system's JSON-LD context sends the values here.
+
+<https://w3id.org/reo/type/welte-green/>
+    a skos:ConceptScheme ;
+    dcterms:title "Welte-Mignon T-98 expression types"@en ;
+    dcterms:description "The expression commands of the Welte-Mignon T-98 (green Welte), cf. Hagmann, Anhang 11 (p. 179) and Phillips, p. 121. Where the T-100 latches a function on with one perforation and cancels it with a second, the T-98 holds it for as long as one continuous perforation lasts (Hagmann, pp. 89 f. and 100–103), so none of these commands is an On or an Off. The bass and treble halves of the keyboard have a set each; scope tells them apart."@en ;
+    dcterms:subject <https://w3id.org/reo/type/system/welte-green> ;
+    dcterms:isPartOf <https://w3id.org/reo/type/> ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> .
+
+green:SustainPedal a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-green/> ; rdfs:label "sustain pedal"@en ;
+    rdfs:comment "Holds the dampers off for as long as the perforation lasts."@en .
+green:SoftPedal a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-green/> ; rdfs:label "soft pedal"@en ;
+    rdfs:comment "Holds the hammer rail forward for as long as the perforation lasts."@en .
+green:Mezzoforte a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-green/> ; rdfs:label "mezzoforte"@en ;
+    rdfs:comment "Arrests the expression bellows at its middle position for as long as the perforation lasts."@en .
+green:Crescendo a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-green/> ; rdfs:label "crescendo"@en ;
+    rdfs:comment "Drives the expression bellows towards forte for as long as the perforation lasts; it falls back when the perforation ends."@en .
+green:SforzandoForte a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-green/> ; rdfs:label "sforzando forte"@en ;
+    rdfs:comment "Pulls the expression towards forte through the fast conduit. The valve is named for the end of the range it pulls towards, the T-98 having no separate cancelling command."@en .
+green:SforzandoPiano a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/welte-green/> ; rdfs:label "sforzando piano"@en ;
+    rdfs:comment "Pulls the expression towards piano through the fast conduit. The bass position of this valve doubles as the rewind, which a perforation far longer than any commanded sforzando drives, so the rewind is read off its length rather than off a line of its own."@en .

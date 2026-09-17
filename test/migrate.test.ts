@@ -46,6 +46,14 @@ const writtenBefore = (tolerance: CollationTolerance) => {
 
 const carriersOfNote = (edition: Edition) => idsOf(new EditionView(edition).get<Note>('note')!.carriers)
 
+/** Every feature of a migrated copy, whichever act states it, and whatever a patch bears. */
+const featuresIn = (copy: any): any[] => {
+    const borne = (feature: any): any[] => [feature, ...(feature.features ?? []).flatMap(borne)]
+    return [copy.production ?? {}, ...(copy.modifications ?? [])]
+        .flatMap((act: any) => [...(act.produced ?? []), ...(act.added ?? [])])
+        .flatMap(borne)
+}
+
 describe('migrating a 0.1 edition', () => {
     it('types versions as versions and gives conditions their typology key', () => {
         const migrated = migrate(edition01())
@@ -156,10 +164,7 @@ describe('migrating a 0.1 edition', () => {
      * with the vocabulary still a draft.
      */
     it('lower-cases the writing methods and the patch materials', () => {
-        const borne = (feature: any) => [feature, ...(feature.features ?? [])]
-        const features = migrate(edition01()).copies
-            .flatMap((copy: any) => copy.features ?? [])
-            .flatMap(borne)
+        const features = migrate(edition01()).copies.flatMap(featuresIn)
 
         const stated = (key: string) => [...new Set(features.map((feature: any) => feature[key]).filter(Boolean))].sort()
         expect(stated('method')).toEqual(['handwriting', 'print', 'stamp'])
@@ -167,13 +172,84 @@ describe('migrating a 0.1 edition', () => {
     })
 
     it('lower-cases a term the copies in hand do not use', () => {
-        const migrated = migrate({ copies: [{ features: [{ '@type': 'GluedOn', material: 'Tape' }] }] })
-        expect(migrated.copies[0].features[0].material).toEqual('tape')
+        const migrated = migrate({
+            copies: [{ '@type': 'RollCopy', features: [{ '@type': 'GluedOn', '@id': 'tape', material: 'Tape' }] }]
+        })
+        expect(featuresIn(migrated.copies[0])[0].material).toEqual('tape')
     })
 
     it('leaves a current edition unchanged', () => {
         const once = migrate(edition01())
         expect(migrate(once)).toEqual(once)
+    })
+
+    /**
+     * A copy held its features in one list and a modification named by
+     * id what it had added. Each feature now stands in the act that
+     * brought it about, and what no act names was punched.
+     */
+    it('puts every feature into the act that brought it about', () => {
+        const copies = migrate(edition01()).copies
+        copies.forEach((copy: any) => {
+            expect(copy).not.toHaveProperty('features')
+            expect(copy.production.produced.length).toBeGreaterThan(0)
+            copy.modifications.forEach((act: any) =>
+                expect(act['@type']).toBeOneOf(['Attachment', 'Alteration', 'Removal']))
+        })
+
+        const kinds = (act: any) => [...(act.produced ?? []), ...(act.added ?? [])].map((f: any) => f['@type'])
+        expect(copies.flatMap((copy: any) => copy.modifications).map((act: any) => [act['@type'], kinds(act)]))
+            .toEqual([
+                ['Alteration', ['Writing']],
+                // the one act that named two writings and two patches
+                ['Alteration', ['Writing', 'Writing']],
+                ['Attachment', ['GluedOn', 'GluedOn']],
+                ['Alteration', new Array(8).fill('Hole')],
+                ['Alteration', ['Writing']],
+                ['Alteration', ['Writing']],
+                // the repair on the third copy, which named nothing to begin with
+                ['Alteration', []]
+            ])
+        expect(copies.flatMap(featuresIn).length).toEqual(edition01().copies.flatMap((copy: any) =>
+            copy.features.flatMap((feature: any) => [feature, ...(feature.features ?? [])])).length)
+    })
+
+    it('splits an addition that named both a patch and a feature into two acts', () => {
+        const feature = (type: string, id: string) => ({ '@type': type, '@id': id })
+        const migrated = migrate({
+            copies: [{
+                '@type': 'RollCopy',
+                features: [feature('GluedOn', 'patch'), feature('Writing', 'label'), feature('Hole', 'punched')],
+                modifications: [{ '@type': 'Addition', purpose: 'labeling', added: ['patch', 'label'] }]
+            }]
+        })
+
+        expect(migrated.copies[0].modifications).toEqual([
+            { '@type': 'Alteration', purpose: 'labeling', produced: [feature('Writing', 'label')] },
+            { '@type': 'Attachment', purpose: 'labeling', added: [feature('GluedOn', 'patch')] }
+        ])
+        expect(migrated.copies[0].production.produced).toEqual([feature('Hole', 'punched')])
+    })
+
+    it('keeps an addition that named nothing, as an act that produced nothing', () => {
+        const migrated = migrate({
+            copies: [{ '@type': 'RollCopy', features: [], modifications: [{ '@type': 'Addition', purpose: 'repair' }] }]
+        })
+        expect(migrated.copies[0].modifications).toEqual([{ '@type': 'Alteration', purpose: 'repair', produced: [] }])
+    })
+
+    it('names a feature a patch bears that the file left unnamed', () => {
+        const migrated = migrate({
+            copies: [{
+                '@type': 'RollCopy',
+                features: [{
+                    '@type': 'GluedOn', '@id': 'patch', material: 'paper',
+                    features: [{ '@type': 'Writing', method: 'print' }]
+                }],
+                modifications: []
+            }]
+        })
+        expect(featuresIn(migrated.copies[0])[1]).toMatchObject({ '@id': 'patch-1', '@type': 'Writing' })
     })
 
     it('records the scale of an aligned copy beside its paper-stretch condition', () => {

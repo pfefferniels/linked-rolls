@@ -26,25 +26,6 @@ reot:treble a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/t
     rdfs:comment "The upper half of the keyboard, as controlled by the treble expression perforations."@en .
 
 
-# Kind of a physical feature (P2 has type on the feature). A hole, a
-# writing and a mark are all instances of E25 Human-Made Feature and a
-# patch is an E22 Human-Made Object, so the classes alone would leave
-# three of the four indistinguishable.
-
-reot:hole a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
-    rdfs:label "hole"@en ;
-    rdfs:comment "A perforation in the roll paper, punched so that the reproducing mechanism reads it."@en .
-reot:writing a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
-    rdfs:label "writing"@en ;
-    rdfs:comment "A feature that carries text: a printed label, a catalogue number, a stamp, a handwritten note. What it says is given by P128 carries."@en .
-reot:mark a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
-    rdfs:label "mark"@en ;
-    rdfs:comment "A feature drawn on the roll that carries no text: a circle around a perforation, a stroke, a cross. What it was meant to say is a reading of it, an I16 Meaning Comprehension, and not a property of the feature."@en .
-reot:glued-on a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
-    rdfs:label "glued-on"@en ;
-    rdfs:comment "A piece of paper or tape glued onto the roll, covering perforations or reinforcing the paper. It may itself bear features."@en .
-
-
 # Punching pattern of a hole (reo:pattern)
 
 reot:regular a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
@@ -65,6 +46,10 @@ reot:staggering a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/r
 <https://w3id.org/reo/type/system/welte-t100> a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "Welte-Mignon T-100"@en ;
     rdfs:comment "The reproducing system of the red Welte rolls, 100 tracks on a roll 328 mm wide; its commands are the scheme at https://w3id.org/reo/type/welte-t100/."@en .
+
+<https://w3id.org/reo/type/system/welte-green> a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "Welte-Mignon T-98"@en ;
+    rdfs:comment "The reproducing system of the green Welte rolls, 98 tracks at nine to the inch on paper 286 mm wide, with 88 note positions between the expression valves. It holds a command for as long as one perforation lasts where the T-100 latches it on and off, so its commands are a scheme of its own at https://w3id.org/reo/type/welte-green/."@en .
 
 <https://w3id.org/reo/type/system/welte-licensee> a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "Welte-Mignon (Licensee)"@en ;
@@ -128,6 +113,21 @@ reot:recording a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/re
 reot:pianist a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "pianist"@en .
 reot:editor a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "editor"@en .
 reot:publisher a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "publisher"@en .
+reot:transcription a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "transcription"@en ;
+    rdfs:comment "The editor read the writings on the copies and put down what they say."@en .
+reot:collation a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "collation"@en ;
+    rdfs:comment "The editor compared the copies and decided which perforations of one stand for which of another."@en .
+reot:encoding a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "encoding"@en ;
+    rdfs:comment "The editor brought the readings into the format."@en .
+reot:commentary a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "commentary"@en ;
+    rdfs:comment "The editor wrote the notes that state what the evidence is held to show and why."@en .
+reot:proofreading a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "proofreading"@en ;
+    rdfs:comment "The editor checked the edition against the copies and against itself."@en .
 
 
 # Kind of an edit (P2 has type on reo:Edit)

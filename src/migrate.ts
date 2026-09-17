@@ -1,4 +1,4 @@
-import { conditions } from "./Feature";
+import { conditions, isFeatureType } from "./Feature";
 import { rollConditions } from "./RollCopy";
 import { systemIdIn, systemOf, TrackerBar, translationBetween } from "./TrackerBar";
 import { trackerBars } from "./systems";
@@ -125,16 +125,109 @@ const isSingleDerivation = (basedOn: Json): boolean =>
 const withDerivationList = (node: Json): Json =>
     isSingleDerivation(node.basedOn) ? { ...node, basedOn: [node.basedOn] } : node
 
+/** The features a copy states at a place of its own, in either shape. */
+const featuresOf = (copy: Json): Json[] => [
+    ...(Array.isArray(copy.features) ? copy.features : []),
+    ...(Array.isArray(copy.production?.produced) ? copy.production.produced : [])
+]
+
 /**
  * A copy read on a roll reader was stated as a recording before a sound
  * recording could be one. A sound recording gives no holes, so a recording
  * with holes is a reading.
  */
 const withReadingKind = (node: Json): Json =>
-    node.readFrom?.kind === 'recording' && Array.isArray(node.features)
-        && node.features.some((feature: Json) => feature?.['@type'] === 'Hole')
+    node.readFrom?.kind === 'recording'
+        && featuresOf(node).some((feature: Json) => feature?.['@type'] === 'Hole')
         ? { ...node, readFrom: { ...node.readFrom, kind: 'reading' } }
         : node
+
+/** A feature written while the kind of a feature was a type beside its class. */
+const withoutFeatureKind = (node: Json): Json => {
+    if (!isFeatureType(node['@type']) || !Object.hasOwn(node, 'kind')) return node
+    const { kind: _typed, ...rest } = node
+    return rest
+}
+
+const isPatch = (feature: Json): boolean => feature?.['@type'] === 'GluedOn'
+
+/**
+ * A feature a patch bears was sometimes written without an id, and what
+ * has no id can be referred to from nowhere: neither by a reading of it
+ * nor by the statement that the copy bears it. It is named after the
+ * patch and the place it stands in.
+ */
+const withBorneFeaturesNamed = (node: Json): Json => {
+    const bearer = node['@id']
+    if (typeof bearer !== 'string' || !Array.isArray(node.features)) return node
+    if (node.features.every((feature: Json) => typeof feature?.['@id'] === 'string')) return node
+
+    return {
+        ...node,
+        features: node.features.map((feature: Json, index: number) =>
+            feature && typeof feature === 'object' && typeof feature['@id'] !== 'string'
+                ? { '@id': `${bearer}-${index + 1}`, ...feature }
+                : feature)
+    }
+}
+
+/**
+ * A copy held its features in one list and a modification named by id
+ * what it had added. Each feature now stands in the act that brought it
+ * about: a patch in an attachment, a feature an act names in an
+ * alteration, and everything else in the production of the copy, which
+ * is the punching. An addition naming both a patch and a feature
+ * becomes two acts, since gluing something on and drawing something are
+ * not one act.
+ *
+ * A feature a patch bears is not moved: it has no place of its own, and
+ * it came onto the copy with the patch.
+ */
+const withFeaturesInActs = (node: Json): Json => {
+    if (node['@type'] !== 'RollCopy' || !Array.isArray(node.features)) return node
+
+    const { features, modifications, ...rest } = node
+    const byId = new Map<string, Json>(features
+        .filter((feature: Json) => typeof feature?.['@id'] === 'string')
+        .map((feature: Json) => [feature['@id'], feature]))
+    const taken = new Set<string>()
+
+    /** The features the modification named, each going to the first act that names it. */
+    const namedBy = (modification: Json): Json[] =>
+        (Array.isArray(modification.added) ? modification.added : [])
+            .flatMap((id: Json) => {
+                if (typeof id !== 'string' || taken.has(id) || !byId.has(id)) return []
+                taken.add(id)
+                return [byId.get(id)]
+            })
+
+    const acts = (Array.isArray(modifications) ? modifications : []).flatMap((modification: Json): Json[] => {
+        if (modification?.['@type'] !== 'Addition') return [modification]
+
+        const { added: _named, ...act } = modification
+        const held = namedBy(modification)
+        const glued = held.filter(isPatch)
+        const made = held.filter(feature => !isPatch(feature))
+        if (glued.length === 0) return [{ ...act, '@type': 'Alteration', produced: made }]
+
+        return [
+            ...(made.length > 0 ? [{ ...act, '@type': 'Alteration', produced: made }] : []),
+            { ...act, '@type': 'Attachment', added: glued }
+        ]
+    })
+
+    const left = features.filter((feature: Json) => !taken.has(feature?.['@id']))
+    const punched = left.filter((feature: Json) => !isPatch(feature))
+    const loose = left.filter(isPatch)
+
+    return {
+        ...rest,
+        ...((rest.production || punched.length > 0) && {
+            production: { ...rest.production, ...(punched.length > 0 && { produced: punched }) }
+        }),
+        modifications: [...acts, ...(loose.length > 0 ? [{ '@type': 'Attachment', added: loose }] : [])]
+    }
+}
 
 /** A keeper nobody could name was written as an empty one before a copy could leave it out. */
 const withoutEmptyKeeper = (node: Json): Json => {
@@ -156,7 +249,8 @@ const withTimeSpanDates = (node: Json): Json => {
 
 const migrateNode = (node: Json): Json =>
     [withRenamedKeys, withTypology, withoutVersionType, withLowerCaseTerms, withReferences, withKeeper, withoutEmptyKeeper,
-        withProductionNodes, withScale, withDerivationList, withReadingKind, withTimeSpanDates]
+        withProductionNodes, withScale, withDerivationList, withReadingKind, withTimeSpanDates, withoutFeatureKind,
+        withBorneFeaturesNamed, withFeaturesInActs]
         .reduce((result, step) => step(result), node)
 
 /** The items each walked, or the very same list where the walk changed none. */

@@ -231,7 +231,7 @@ export function readFromStanfordAton(
         id: v4(),
         ops: [],
         conditions: [],
-        production: { system: systemOf(system) },
+        production: { system: systemOf(system), produced: features },
         modifications: [],
         ...((scan ?? stanford) && { scan: scan ?? stanford?.scan }),
         measurements: {
@@ -257,7 +257,6 @@ export function readFromStanfordAton(
             }),
             trackCalibration: calibration,
             ...(measuredBy && { measuredBy })
-        },
-        features
+        }
     }
 }

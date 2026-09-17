@@ -4,7 +4,7 @@ import { Edition } from '../src/Edition'
 import { EditionView, Path } from '../src/EditionView'
 import { Edit } from '../src/Edit'
 import { AnySymbol, Expression, Note, placementsOf } from '../src/Symbol'
-import { PaperSpeed, PaperStretch } from '../src/RollCopy'
+import { featuresOf, PaperSpeed, PaperStretch } from '../src/RollCopy'
 import { constraintProblems } from '../src/constraints'
 import { Assumption, assignObject, idOf, idsOf } from '../src/Assumption'
 import { CollationTolerance, defaultCollationTolerance } from '../src/Collation'
@@ -13,7 +13,7 @@ import {
     detachVersion, mergeEdits, nameCopy, pairPerforations, placePerforation, removeFeatures, removeReason, removeSymbols,
     removeVersion, setCertainty, splitEdit, unalignCopy, unpairPerforation, unplacePerforation
 } from '../src/editionOps'
-import { copy, edition, editionOf, expression, hole, note, version } from './editionFixture'
+import { copy, cutFor, edition, editionOf, expression, hole, note, version } from './editionFixture'
 import { feetPerMinute, mm, track } from '../src/Quantity'
 import { systemOf } from '../src/TrackerBar'
 import { welteT98 } from '../src/systems/welteT98/bar'
@@ -100,7 +100,7 @@ describe('creating a version from a copy', () => {
 describe('aligning a copy', () => {
     const stretch = assignObject<PaperStretch>({ type: 'ConditionState', conditionType: 'paper-stretch', factor: 1.5 })
     const shift = { horizontal: mm(2), vertical: track(1) }
-    const holeOf = (edition: Edition) => edition.copies[1].features[0]
+    const holeOf = (edition: Edition) => featuresOf(edition.copies[1])[0]
 
     const speed = assignObject<PaperSpeed>({ value: feetPerMinute(8), unit: 'ft/min' })
 
@@ -282,7 +282,7 @@ describe('removing features from a copy', () => {
     it('strips the carrier and keeps a symbol another feature still carries', () => {
         const next = produce(edition(), removeFeatures('second', ['hole-note-second']))
 
-        expect(next.copies[1].features).toEqual([])
+        expect(featuresOf(next.copies[1])).toEqual([])
         expect(idsOf(noteIn(next).carriers)).toEqual(['hole-note'])
         expect(insertedIds(next.versions[0].edits[0])).toEqual(['note', 'other-note', 'forzando-off', 'forzando-on', 'label'])
     })
@@ -290,7 +290,7 @@ describe('removing features from a copy', () => {
     it('takes a symbol with its last carrier, and every reference to it', () => {
         const next = produce(edition(), removeFeatures('first', ['hole-other-note', 'hole-on']))
 
-        expect(next.copies[0].features.map(feature => feature.id)).toEqual(['hole-note', 'hole-off'])
+        expect(featuresOf(next.copies[0]).map(feature => feature.id)).toEqual(['hole-note', 'hole-off'])
         expect(insertedIds(next.versions[0].edits[0])).toEqual(['note', 'forzando-off', 'label'])
         expect('alignedWith' in noteIn(next)).toBe(false)
         expect('pairedWith' in noteIn(next)).toBe(false)
@@ -550,13 +550,10 @@ const twoIssues = () => editionOf(
             hole('hole-cresc-off', 1100, 1102, 3),
             hole('hole-motor-on', 20, 22, 10)
         ]),
-        {
-            ...copy('green', [
-                hole('hole-note-green', 1000, 1010, 45),
-                hole('hole-cresc', 900, 1100, 4)
-            ]),
-            production: { system: systemOf(welteT98) }
-        }
+        cutFor(copy('green', [
+            hole('hole-note-green', 1000, 1010, 45),
+            hole('hole-cresc', 900, 1100, 4)
+        ]), systemOf(welteT98))
     ],
     [
         version('A', [{

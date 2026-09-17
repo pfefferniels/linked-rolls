@@ -5,7 +5,7 @@ import { TrackerBar } from "./TrackerBar";
 import { welteT100 } from "./systems/welteT100/bar";
 import { trackerBarOf } from "./systems";
 import { TrackCalibration } from "./TrackCalibration";
-import { AnyFeature } from "./Feature";
+import { AnyFeature, FeatureOrPatch, GluedOn } from "./Feature";
 import { ActorAssignment, assignReference, DateAssignment, ObjectAssumption, ReferenceAssumption } from "./Assumption";
 import { WithId, WithType } from "./utils";
 import { Agent, Concept } from "./Agent";
@@ -130,13 +130,38 @@ export interface ProductionEvent {
      * @see reo:paperSpeed
      */
     speed?: ObjectAssumption<PaperSpeed>
+
+    /**
+     * The features the punching brought into being, which are the note
+     * and expression perforations. A reading of a scan finds every hole
+     * on the paper at once and states it here. A hole an editor reads as
+     * punched later belongs in the act that made it.
+     * @see crm:P108 has produced
+     */
+    produced?: AnyFeature[]
 }
 
+export const modificationPurposes = [
+    'musical-improvement',
+    'technical-improvement',
+    'repair',
+    'labeling',
+    'control',
+    'dating',
+    'glossing'
+] as const
+
+/** What a modification of a copy was for, as far as it can be told. */
+export type ModificationPurpose = typeof modificationPurposes[number]
+
 /**
- * This type denotes identifiable activities that modified
- * the roll copy after its production, e.g. annotations, repairs,
- * etc.
- * @see crm:E79 Part Addition, crm:E80 Part Removal
+ * An identifiable act that changed the roll copy after it was punched.
+ * Three kinds of act are told apart, because the CRM tells them apart.
+ * E79 Part Addition asks that what is added be "a separate identifiable
+ * whole prior to" the act, which a label glued on is and a pencil line
+ * is not: drawing, writing and punching bring a feature into being and
+ * are productions.
+ * @see crm:E79 Part Addition, crm:E80 Part Removal, crm:E12 Production
  */
 export type Modification = Partial<{
     /**
@@ -150,49 +175,58 @@ export type Modification = Partial<{
      */
     date: DateAssignment
 }> & ({
-    type: 'Addition',
+    type: 'Attachment',
 
     /**
+     * The patches glued onto the copy, each with whatever it bears.
      * @see crm:P111 added
      */
-    added: string[],
+    added: GluedOn[],
 
     /**
      * @see crm:P21 had general purpose
      */
-    purpose:
-    'musical-improvement' |
-    'technical-improvement' |
-    'repair' |
-    'labeling' |
-    'control' |
-    'dating' |
-    'glossing'
+    purpose?: ModificationPurpose
+
+} | {
+    type: 'Alteration',
+
+    /**
+     * The features the act brought into being: a date written on the
+     * paper, a circle in pencil, a hole punched by hand.
+     * @see crm:P108 has produced
+     */
+    produced: AnyFeature[],
+
+    /**
+     * @see crm:P21 had general purpose
+     */
+    purpose?: ModificationPurpose
 
 } | {
     type: 'Removal',
 
     /**
+     * What was taken off the copy, by id. It stood there before the act
+     * and is named rather than stated here. Removals are read from what
+     * they leave behind, such as a bright spot where a label sat.
      * @see crm:P113 removed
      */
     removed: string[],
 
     /**
-     * Usually, roll features are being added.
-     * Sometimes however, we may see traces of features
-     * that have been removed, e.g. through bright spots on
-     * the roll.
      * @see crm:P21 had general purpose
      */
-    purpose: 'delabeling'
+    purpose?: 'delabeling'
 })
 
 /**
- * A physical copy of a roll, held at a specific location.
- * Each roll copy has its own set of features, measurements,
- * conditions, and modifications. Multiple copies of the same
- * roll may exist across different archives or collections.
- * @see lrmoo:F5 Item
+ * A physical copy of a roll, held at a specific location. Each roll
+ * copy has its own measurements, conditions and modifications, and
+ * states its features in the act that brought each of them about.
+ * Multiple copies of the same roll may exist across different archives
+ * or collections.
+ * @see reo:RollCopy
  */
 export interface RollCopy extends WithType<'RollCopy'>, WithId {
     /**
@@ -340,13 +374,6 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
     keeper?: KeeperAssignment
 
     /**
-     * The physical features found on this copy, with shift
-     * and stretch already applied when `ops` says so.
-     * @see crm:P56 bears feature
-     */
-    features: AnyFeature[]
-
-    /**
      * @see crm:P31i was modified by
      */
     modifications: Modification[]
@@ -373,6 +400,29 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
      */
     carries?: ReferenceAssumption[]
 }
+
+/** What an act brought onto the copy: what it produced or glued on, a removal nothing. */
+const madeBy = (modification: Modification): FeatureOrPatch[] => {
+    if (modification.type === 'Alteration') return modification.produced
+    return modification.type === 'Attachment' ? modification.added : []
+}
+
+/** Whether the act is left stating nothing: it produced, added or removed nothing. */
+export const statesNothing = (modification: Modification): boolean =>
+    modification.type === 'Removal' ? modification.removed.length === 0 : madeBy(modification).length === 0
+
+/**
+ * The features of the copy act by act: what the punching produced
+ * first, then what each modification produced or glued on. A feature a
+ * patch bears states no place of its own and is not among them;
+ * `withBorneFeatures` reaches those.
+ */
+export const featuresByAct = (copy: Pick<RollCopy, 'production' | 'modifications'>): FeatureOrPatch[][] =>
+    [copy.production?.produced ?? [], ...copy.modifications.map(madeBy)]
+
+/** Every feature the copy states at a place of its own, whichever act made it. */
+export const featuresOf = (copy: Pick<RollCopy, 'production' | 'modifications'>): FeatureOrPatch[] =>
+    featuresByAct(copy).flat()
 
 /**
  * Whether the condition is the stretch or shrinkage of the paper. A
@@ -407,7 +457,7 @@ export const barOf = (copy: Pick<RollCopy, 'production'>): TrackerBar =>
  * scan; it is the reading that stops.
  */
 export function asSymbols(
-    features: AnyFeature[],
+    features: readonly FeatureOrPatch[],
     bar: TrackerBar
 ): AnySymbol[] {
     const holes = features.filter(feature => feature.type === 'Hole')
@@ -432,7 +482,7 @@ export function asSymbols(
  * cannot read, and not at all where it reads them all.
  */
 export function unreadTracks(
-    features: AnyFeature[],
+    features: readonly FeatureOrPatch[],
     bar: TrackerBar
 ): Map<Track, number> {
     const counts = new Map<Track, number>()

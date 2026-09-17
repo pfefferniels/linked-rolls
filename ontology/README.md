@@ -50,6 +50,9 @@ term that exists. There are no CRM-style numbers.
 Every class is a subclass of a CIDOC CRM, LRMoo or CRMinf class, and
 every property is a subproperty of a CRM property where one applies.
 A term is introduced only where those ontologies offer no equivalent.
+A class is also introduced where the CRM leaves under one class
+several kinds of thing an edition has to tell apart, as CRMtex does
+with `TX1 Written Text` under `E25 Human-Made Feature`.
 
 ## Versioning
 
@@ -63,7 +66,10 @@ can yet have been built on. On this ground the five capitalised terms
 of the writing methods and the patch materials (`reot:Print`,
 `reot:Handwriting`, `reot:Stamp`, `reot:Paper`, `reot:Tape`) were
 lower-cased in September 2026 to match the rest of the vocabulary, and
-`migrate` reads the old spellings.
+`migrate` reads the old spellings. On the same ground the four types
+for the kinds of feature were withdrawn again in the same month, the
+kinds having become classes (`reo:Hole`, `reo:Writing`, `reo:Mark`,
+`reo:GluedOn`).
 
 ## Publishing
 
@@ -75,8 +81,9 @@ publishes them, the Turtle files and the context on GitHub Pages:
 | Ontology page | https://pfefferniels.github.io/linked-rolls/reo/ |
 | Type vocabulary | https://pfefferniels.github.io/linked-rolls/reo/type/ |
 | T-100 expression types | https://pfefferniels.github.io/linked-rolls/reo/type/welte-t100/ |
-| Turtle | `…/reo/reo.ttl`, `…/reo/types.ttl`, `…/reo/type/welte-t100/welte-t100.ttl` |
-| Contexts | `…/reo/context.jsonld`, `…/reo/welte-t100/context.jsonld` |
+| T-98 expression types | https://pfefferniels.github.io/linked-rolls/reo/type/welte-green/ |
+| Turtle | `…/reo/reo.ttl`, `…/reo/types.ttl`, `…/reo/type/welte-t100/welte-t100.ttl`, `…/reo/type/welte-green/welte-green.ttl` |
+| Contexts | `…/reo/context.jsonld`, and one per system under `…/reo/welte-t100/`, `…/reo/welte-green/` and `…/reo/welte-licensee/` |
 
 The w3id.org entry is not registered yet, so the namespace IRIs do not
 resolve at present. Once it is, it redirects to these locations.

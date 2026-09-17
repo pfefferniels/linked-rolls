@@ -219,9 +219,8 @@ export function readFromPhillipsEroll(
         ops: [],
         conditions: [],
         measurements: {},
-        production: { system: systemOf(system) },
+        production: { system: systemOf(system), produced: features },
         modifications: [],
-        features,
         readFrom: {
             kind: 'reading',
             actor: assignObject({ name: 'Phillips, Peter', sameAs: [] }),

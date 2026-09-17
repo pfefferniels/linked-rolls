@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { paperSpeedOfSpencerAnn, readFromSpencerBar, readSpencerAnn, SPENCER_ROWS_PER_INCH } from '../src/readers/spencerBar'
-import { asSymbols, unreadTracks } from '../src/RollCopy'
+import { asSymbols, featuresOf, unreadTracks } from '../src/RollCopy'
 import { Expression, Note } from '../src/Symbol'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
@@ -38,31 +38,31 @@ describe('reading a Spencer e-roll file', () => {
     const copy = readFromSpencerBar(spencerBar(events))
 
     it('pairs the events of a position into holes', () => {
-        expect(copy.features).toHaveLength(7)
-        expect(copy.features.every(feature => feature.type === 'Hole')).toBe(true)
+        expect(featuresOf(copy)).toHaveLength(7)
+        expect(featuresOf(copy).every(feature => feature.type === 'Hole')).toBe(true)
     })
 
     it('places the holes at 400 rows to the inch', () => {
-        const [first] = copy.features
+        const [first] = featuresOf(copy)
         expect(SPENCER_ROWS_PER_INCH).toEqual(400)
         expect(first.horizontal.from).toBeCloseTo(1380 / 400 * MM_PER_INCH, 9)
         expect(first.horizontal.to).toBeCloseTo((1380 + 913) / 400 * MM_PER_INCH, 9)
     })
 
     it('orders the holes by their beginning', () => {
-        const starts = copy.features.map(feature => feature.horizontal.from)
+        const starts = featuresOf(copy).map(feature => feature.horizontal.from)
         expect(starts).toEqual([...starts].sort((a, b) => a - b))
     })
 
     it('keeps a hole open across the events of other positions', () => {
-        const note = copy.features.find(feature => feature.vertical.from === 45)!
-        const forzando = copy.features.find(feature => feature.vertical.from === 5)!
+        const note = featuresOf(copy).find(feature => feature.vertical.from === 45)!
+        const forzando = featuresOf(copy).find(feature => feature.vertical.from === 5)!
         expect(note.horizontal.from).toBeLessThan(forzando.horizontal.from)
         expect(note.horizontal.to).toBeGreaterThan(forzando.horizontal.to)
     })
 
     it('leaves no hole on a position the bar cannot read', () => {
-        expect([...unreadTracks(copy.features, welteLicensee).keys()]).toEqual([])
+        expect([...unreadTracks(featuresOf(copy), welteLicensee).keys()]).toEqual([])
     })
 
     /**
@@ -72,7 +72,7 @@ describe('reading a Spencer e-roll file', () => {
      * the meanings come out the same as a T-100 copy's would.
      */
     it('reads the Licensee positions on the Licensee bar', () => {
-        const symbols = asSymbols(copy.features, welteLicensee)
+        const symbols = asSymbols(featuresOf(copy), welteLicensee)
         const pitches = symbols.filter((symbol): symbol is Note => symbol.type === 'note').map(symbol => symbol.pitch)
         expect(pitches).toEqual([24, 103, 60])
 
@@ -92,9 +92,9 @@ describe('reading a Spencer e-roll file', () => {
 
     it('takes another resolution and another system', () => {
         const other = readFromSpencerBar(spencerBar(events), { rowsPerInch: 200, system: welteT100 })
-        expect(other.features[0].horizontal.from).toBeCloseTo(copy.features[0].horizontal.from * 2, 9)
-        expect(other.features.map(feature => feature.vertical.from)).toContain(9)
-        expect(other.features.map(feature => feature.vertical.from)).not.toContain(11)
+        expect(featuresOf(other)[0].horizontal.from).toBeCloseTo(featuresOf(copy)[0].horizontal.from * 2, 9)
+        expect(featuresOf(other).map(feature => feature.vertical.from)).toContain(9)
+        expect(featuresOf(other).map(feature => feature.vertical.from)).not.toContain(11)
         expect(other.production?.system?.id).toEqual('https://w3id.org/reo/type/system/welte-t100')
     })
 
@@ -103,12 +103,12 @@ describe('reading a Spencer e-roll file', () => {
             spencerBar([[10, 99], [5, 99], [5, 45], [5, 45]]),
             { system: welteLicensee }
         )
-        expect(beyondTheBar.features.map(feature => feature.vertical.from)).toEqual([45])
+        expect(featuresOf(beyondTheBar).map(feature => feature.vertical.from)).toEqual([45])
     })
 
     it('reads distances of more than one byte', () => {
         const far = readFromSpencerBar(spencerBar([[100000, 45], [5, 45]]))
-        expect(far.features[0].horizontal.from).toBeCloseTo(100000 / 400 * MM_PER_INCH, 9)
+        expect(featuresOf(far)[0].horizontal.from).toBeCloseTo(100000 / 400 * MM_PER_INCH, 9)
     })
 
     it('rejects a file that is not one', () => {

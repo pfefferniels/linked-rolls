@@ -1,10 +1,10 @@
 import { Edition } from "./Edition";
-import { HorizontalSpan, AnyFeature, withBorneFeatures } from "./Feature";
+import { HorizontalSpan, FeatureOrPatch, withBorneFeatures } from "./Feature";
 import { AnySymbol, Expression, Note } from "./Symbol";
 import { deletedBy, insertedBy, principalDerivationOf, Version } from "./Version";
 import { NegotiatedEvent } from "./ReproducingSystem";
 import { systemIdOf, TrackerBar } from "./TrackerBar";
-import { isPaperStretch, RollCopy } from "./RollCopy";
+import { featuresOf, isPaperStretch, RollCopy } from "./RollCopy";
 import { idOf, idsOf } from "./Assumption";
 import { mean, Millimeters } from "./Quantity";
 
@@ -156,15 +156,15 @@ export class EditionView {
         return lineage
     }
 
-    carriersOf(symbol: AnySymbol): Readonly<AnyFeature>[] {
-        return this.getAll<AnyFeature>(idsOf(symbol.carriers));
+    carriersOf(symbol: AnySymbol): Readonly<FeatureOrPatch>[] {
+        return this.getAll<FeatureOrPatch>(idsOf(symbol.carriers));
     }
 
     /** The copy a feature sits on, a patch and everything it bears included. */
     copyOf(featureId: string): Readonly<RollCopy> | undefined {
         if (!this.copiesByFeature) {
             this.copiesByFeature = new Map(this.edition.copies.flatMap(copy =>
-                copy.features
+                featuresOf(copy)
                     .flatMap(withBorneFeatures)
                     .map(feature => [feature.id, copy] as const)))
         }
@@ -237,7 +237,7 @@ export class EditionView {
      * position a semitone away on either bar.
      */
     placeOf(symbol: AnySymbol): Readonly<HorizontalSpan> | undefined {
-        const carriers = this.getAll<AnyFeature>(idsOf(symbol.carriers))
+        const carriers = this.getAll<FeatureOrPatch>(idsOf(symbol.carriers))
         if (carriers.length === 0) return
 
         return {

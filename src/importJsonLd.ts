@@ -1,5 +1,5 @@
 import { Edition } from "./Edition";
-import { isFeatureType } from "./Feature";
+import { derivedKeys } from "./asJsonLd";
 import { migrate } from "./migrate";
 import { isDateString } from "./utils";
 
@@ -22,15 +22,15 @@ const fromJsonLdValue = (value: Json): Json => {
 }
 
 /**
- * A node without what the export derived from it. A feature's kind is
- * written out so that the graph holds the kinds apart, and says nothing
- * the type does not say again.
+ * A node without what the export derived from it. A copy bears the
+ * features its acts brought about, and the graph has to be told so.
+ * In the edition the act that made a feature is the one place it
+ * stands.
  */
-const asStated = (json: Record<string, Json>): Record<string, Json> => {
-    if (!isFeatureType(json['@type'])) return json
-    const { kind: _derived, ...rest } = json
-    return rest
-}
+const asStated = (json: Record<string, Json>): Record<string, Json> =>
+    Object.keys(json).some(key => derivedKeys.has(key))
+        ? Object.fromEntries(Object.entries(json).filter(([key]) => !derivedKeys.has(key)))
+        : json
 
 /**
  * An entity with its keywords read as plain keys. The input is left as

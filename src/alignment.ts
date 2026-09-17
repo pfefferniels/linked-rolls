@@ -1,5 +1,5 @@
-import { AnyFeature } from "./Feature";
-import { RollCopy, Shift } from "./RollCopy";
+import { FeatureOrPatch } from "./Feature";
+import { featuresOf, RollCopy, Shift } from "./RollCopy";
 import { TrackerBar } from "./TrackerBar";
 import { welteT100 } from "./systems/welteT100/bar";
 import { add, Millimeters, mm, Quantity, scale, Unit } from "./Quantity";
@@ -24,7 +24,7 @@ const back = (shift: Shift): Shift =>
 export const applyShift = (shift: Shift, copy: RollCopy) => {
     if (copy.ops.includes('shifted')) return
 
-    copy.features.forEach(feature => {
+    featuresOf(copy).forEach(feature => {
         move(feature.horizontal, shift.horizontal)
         move(feature.vertical, shift.vertical)
     })
@@ -36,7 +36,7 @@ export const applyShift = (shift: Shift, copy: RollCopy) => {
 export const applyScale = (factor: number, copy: RollCopy) => {
     if (copy.ops.includes('stretched')) return
 
-    copy.features.forEach(feature => stretch(feature.horizontal, factor))
+    featuresOf(copy).forEach(feature => stretch(feature.horizontal, factor))
     copy.ops = [...copy.ops, 'stretched']
     copy.measurements.scale = factor
 }
@@ -47,7 +47,7 @@ export const revertShift = (copy: RollCopy) => {
     if (!copy.ops.includes('shifted') || !shift) return
 
     const reversed = back(shift)
-    copy.features.forEach(feature => {
+    featuresOf(copy).forEach(feature => {
         move(feature.horizontal, reversed.horizontal)
         move(feature.vertical, reversed.vertical)
     })
@@ -60,7 +60,7 @@ export const revertScale = (copy: RollCopy) => {
     const factor = copy.measurements.scale
     if (!copy.ops.includes('stretched') || factor === undefined) return
 
-    copy.features.forEach(feature => stretch(feature.horizontal, 1 / factor))
+    featuresOf(copy).forEach(feature => stretch(feature.horizontal, 1 / factor))
     copy.ops = copy.ops.filter(op => op !== 'stretched')
     delete copy.measurements.scale
 }
@@ -100,7 +100,7 @@ interface Line {
 const byPlace = (x: Onset, y: Onset): number => x.at - y.at || x.pitch - y.pitch
 
 /** The notes the bar reads off the features, in the order they pass it. */
-const noteOnsets = (features: readonly AnyFeature[], bar: TrackerBar): Onset[] =>
+const noteOnsets = (features: readonly FeatureOrPatch[], bar: TrackerBar): Onset[] =>
     features
         .flatMap((feature): Onset[] => {
             if (feature.type !== 'Hole') return []
@@ -245,8 +245,8 @@ const resultOf = ({ line, matches }: Fit): AlignmentResult | undefined => {
  * have already been put onto the edition's bar, that bar reads it.
  */
 export function alignFeatures(
-    rollA: readonly AnyFeature[],
-    rollB: readonly AnyFeature[],
+    rollA: readonly FeatureOrPatch[],
+    rollB: readonly FeatureOrPatch[],
     barA: TrackerBar = welteT100,
     barB: TrackerBar = barA
 ): AlignmentResult | undefined {

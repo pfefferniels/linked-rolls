@@ -85,12 +85,9 @@
         },
         {
           "$ref": "#/definitions/Mark"
-        },
-        {
-          "$ref": "#/definitions/GluedOn"
         }
       ],
-      "description": "The union of all physical feature types that can appear on a roll: holes (perforations), writings (labels, annotations), marks (pencil, ink), and glued-on patches (paper, tape)."
+      "description": "The features proper: a hole, a writing and a mark are all human-made features, and each of them is borne by whatever it sits on. A patch is an object glued onto the paper and stands apart from them."
     },
     "AnySymbol": {
       "anyOf": [
@@ -767,7 +764,7 @@
             "$ref": "#/definitions/NestedFeature"
           },
           "type": "array",
-          "ontology": "crm:P56 bears feature"
+          "ontology": "crm:P46 is composed of"
         },
         "horizontal": {
           "$ref": "#/definitions/HorizontalSpan",
@@ -797,6 +794,22 @@
           "description": "The type discriminator for this object.",
           "type": "string",
           "ontology": "rdf:type"
+        },
+        "bears": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "@id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "@id"
+            ]
+          },
+          "description": "The features the patch bears. Derived on export.",
+          "ontology": "crm:P56 bears feature"
         }
       },
       "required": [
@@ -807,7 +820,7 @@
         "vertical"
       ],
       "type": "object",
-      "ontology": "crm:E22 Human-Made Object"
+      "ontology": "reo:GluedOn"
     },
     "Hole": {
       "description": "A hole (perforation) in the roll paper. Holes are the primary carriers of musical information on piano rolls, as they trigger notes and expression controls when passing over the tracker bar. A punched hole is a human-made feature: CRM counts \"the information encoding features on mechanical or digital carriers\" among the features purposely created by human activity.",
@@ -860,7 +873,7 @@
         "vertical"
       ],
       "type": "object",
-      "ontology": "crm:E25 Human-Made Feature"
+      "ontology": "reo:Hole"
     },
     "HorizontalSpan": {
       "description": "Describes the horizontal extent of a feature on the roll, measured in millimeters from the beginning of the roll. The `from` value is the start position and `to` is the end position.",
@@ -1025,7 +1038,7 @@
         "vertical"
       ],
       "type": "object",
-      "ontology": "crm:E25 Human-Made Feature"
+      "ontology": "reo:Mark"
     },
     "MarkMethod": {
       "description": "The medium a mark was drawn in.",
@@ -1151,8 +1164,9 @@
               "ontology": "crm:P14 carried out by"
             },
             "added": {
+              "description": "The patches glued onto the copy, each with whatever it bears.",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/GluedOn"
               },
               "type": "array",
               "ontology": "crm:P111 added"
@@ -1163,28 +1177,68 @@
               "ontology": "crm:P4 has time-span"
             },
             "purpose": {
-              "enum": [
-                "musical-improvement",
-                "technical-improvement",
-                "repair",
-                "labeling",
-                "control",
-                "dating",
-                "glossing"
-              ],
-              "type": "string",
+              "$ref": "#/definitions/ModificationPurpose",
               "ontology": "crm:P21 had general purpose"
             },
             "@type": {
-              "const": "Addition",
+              "const": "Attachment",
+              "type": "string",
+              "description": "The type discriminator for this object.",
+              "ontology": "rdf:type"
+            },
+            "augmented": {
+              "type": "object",
+              "properties": {
+                "@id": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "@id"
+              ],
+              "description": "The copy the patches were glued onto. Derived on export.",
+              "ontology": "crm:P110 augmented"
+            }
+          },
+          "required": [
+            "added",
+            "@type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "actor": {
+              "$ref": "#/definitions/ActorAssignment",
+              "description": "Who carried out the modification.",
+              "ontology": "crm:P14 carried out by"
+            },
+            "date": {
+              "$ref": "#/definitions/DateAssignment",
+              "description": "When the modification took place.",
+              "ontology": "crm:P4 has time-span"
+            },
+            "produced": {
+              "description": "The features the act brought into being: a date written on the paper, a circle in pencil, a hole punched by hand.",
+              "items": {
+                "$ref": "#/definitions/AnyFeature"
+              },
+              "type": "array",
+              "ontology": "crm:P108 has produced"
+            },
+            "purpose": {
+              "$ref": "#/definitions/ModificationPurpose",
+              "ontology": "crm:P21 had general purpose"
+            },
+            "@type": {
+              "const": "Alteration",
               "type": "string",
               "description": "The type discriminator for this object.",
               "ontology": "rdf:type"
             }
           },
           "required": [
-            "added",
-            "purpose",
+            "produced",
             "@type"
           ],
           "type": "object"
@@ -1203,11 +1257,11 @@
             },
             "purpose": {
               "const": "delabeling",
-              "description": "Usually, roll features are being added. Sometimes however, we may see traces of features that have been removed, e.g. through bright spots on the roll.",
               "type": "string",
               "ontology": "crm:P21 had general purpose"
             },
             "removed": {
+              "description": "What was taken off the copy, by id. It stood there before the act and is named rather than stated here. Removals are read from what they leave behind, such as a bright spot where a label sat.",
               "items": {
                 "type": "string"
               },
@@ -1219,18 +1273,43 @@
               "type": "string",
               "description": "The type discriminator for this object.",
               "ontology": "rdf:type"
+            },
+            "diminished": {
+              "type": "object",
+              "properties": {
+                "@id": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "@id"
+              ],
+              "description": "The copy something was taken off. Derived on export.",
+              "ontology": "crm:P112 diminished"
             }
           },
           "required": [
-            "purpose",
             "removed",
             "@type"
           ],
           "type": "object"
         }
       ],
-      "description": "This type denotes identifiable activities that modified the roll copy after its production, e.g. annotations, repairs, etc.",
-      "ontology": "crm:E79 Part Addition, crm:E80 Part Removal"
+      "description": "An identifiable act that changed the roll copy after it was punched. Three kinds of act are told apart, because the CRM tells them apart. E79 Part Addition asks that what is added be \"a separate identifiable whole prior to\" the act, which a label glued on is and a pencil line is not: drawing, writing and punching bring a feature into being and are productions.",
+      "ontology": "crm:E79 Part Addition, crm:E80 Part Removal, crm:E12 Production"
+    },
+    "ModificationPurpose": {
+      "description": "What a modification of a copy was for, as far as it can be told.",
+      "enum": [
+        "musical-improvement",
+        "technical-improvement",
+        "repair",
+        "labeling",
+        "control",
+        "dating",
+        "glossing"
+      ],
+      "type": "string"
     },
     "Motivation": {
       "description": "A motivation provides a reason or rationale for an editorial change. Motivations are defined at the version level and referenced by edits.",
@@ -1259,8 +1338,226 @@
       "ontology": "crm:E33 Linguistic Object"
     },
     "NestedFeature": {
-      "$ref": "#/definitions/PartialBy%3CAnyFeature%2C(%22horizontal%22%7C%22vertical%22)%3E",
-      "description": "A feature borne by another feature. It states no place of its own, the feature bearing it standing in one."
+      "description": "A feature borne by another feature. It states no place of its own, the feature bearing it standing in one.",
+      "anyOf": [
+        {
+          "properties": {
+            "condition": {
+              "$ref": "#/definitions/ObjectAssumption%3CConditionState%3C(%22partially-torn%22%7C%22missing-perforation%22)%3E%3E",
+              "description": "This can be used e.g. to indicate a perforation which is torn out or in any other way damaged.",
+              "ontology": "crm:P44 has condition"
+            },
+            "depiction": {
+              "description": "IIIF region pointing to a depiction of this feature in the scan.",
+              "type": "string",
+              "ontology": "crm:P138i has representation"
+            },
+            "horizontal": {
+              "$ref": "#/definitions/HorizontalSpan",
+              "description": "Horizontal span of the feature on the roll. Left out by a feature a patch bears.",
+              "ontology": "crm:P43 has dimension"
+            },
+            "pattern": {
+              "description": "The punching pattern of the hole. Regular holes have evenly-spaced bridges, accelerating holes have decreasing bridge widths, and staggering holes do not align in rows across the tracks, the mark of an asynchronous perforator with a separate driver for each punch (Phillips 2016, p. 112).",
+              "enum": [
+                "regular",
+                "accelerating",
+                "staggering"
+              ],
+              "type": "string",
+              "ontology": "reo:pattern"
+            },
+            "vertical": {
+              "$ref": "#/definitions/VerticalSpan",
+              "description": "Vertical span of the feature on the roll. Left out by a feature a patch bears.",
+              "ontology": "crm:P43 has dimension"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            },
+            "@type": {
+              "const": "Hole",
+              "description": "The type discriminator for this object.",
+              "type": "string",
+              "ontology": "rdf:type"
+            }
+          },
+          "required": [
+            "@id",
+            "@type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "condition": {
+              "$ref": "#/definitions/ObjectAssumption%3CConditionState%3C(%22illegible%22)%3E%3E",
+              "description": "This can be used e.g. to indicate a perforation which is torn out or in any other way damaged.",
+              "ontology": "crm:P44 has condition"
+            },
+            "depiction": {
+              "description": "IIIF region pointing to a depiction of this feature in the scan.",
+              "type": "string",
+              "ontology": "crm:P138i has representation"
+            },
+            "horizontal": {
+              "$ref": "#/definitions/HorizontalSpan",
+              "description": "Horizontal span of the feature on the roll. Left out by a feature a patch bears.",
+              "ontology": "crm:P43 has dimension"
+            },
+            "method": {
+              "$ref": "#/definitions/WritingMethod",
+              "description": "The method by which this writing was produced (e.g. through print, handwriting, or stamping).",
+              "ontology": "reo:method"
+            },
+            "transcription": {
+              "$ref": "#/definitions/ObjectAssumption%3CTranscription%3E",
+              "description": "A transcription of the text content of the writing. This is an object assumption so that the transcription can be annotated with a belief about its correctness.",
+              "ontology": "crm:P128 carries"
+            },
+            "vertical": {
+              "$ref": "#/definitions/VerticalSpan",
+              "description": "Vertical span of the feature on the roll. Left out by a feature a patch bears.",
+              "ontology": "crm:P43 has dimension"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            },
+            "@type": {
+              "const": "Writing",
+              "description": "The type discriminator for this object.",
+              "type": "string",
+              "ontology": "rdf:type"
+            }
+          },
+          "required": [
+            "@id",
+            "method",
+            "transcription",
+            "@type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "condition": {
+              "$ref": "#/definitions/ObjectAssumption%3CConditionState%3C(%22faded%22)%3E%3E",
+              "description": "This can be used e.g. to indicate a perforation which is torn out or in any other way damaged.",
+              "ontology": "crm:P44 has condition"
+            },
+            "depiction": {
+              "description": "IIIF region pointing to a depiction of this feature in the scan.",
+              "type": "string",
+              "ontology": "crm:P138i has representation"
+            },
+            "horizontal": {
+              "$ref": "#/definitions/HorizontalSpan",
+              "description": "Horizontal span of the feature on the roll. Left out by a feature a patch bears.",
+              "ontology": "crm:P43 has dimension"
+            },
+            "method": {
+              "$ref": "#/definitions/MarkMethod",
+              "description": "The medium the mark was drawn in, where it can be told.",
+              "ontology": "reo:method"
+            },
+            "vertical": {
+              "$ref": "#/definitions/VerticalSpan",
+              "description": "Vertical span of the feature on the roll. Left out by a feature a patch bears.",
+              "ontology": "crm:P43 has dimension"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            },
+            "@type": {
+              "const": "Mark",
+              "description": "The type discriminator for this object.",
+              "type": "string",
+              "ontology": "rdf:type"
+            }
+          },
+          "required": [
+            "@id",
+            "@type"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "condition": {
+              "$ref": "#/definitions/ObjectAssumption%3CConditionState%3C(%22detaching%22%7C%22ripped%22)%3E%3E",
+              "description": "This can be used e.g. to indicate a perforation which is torn out or in any other way damaged.",
+              "ontology": "crm:P44 has condition"
+            },
+            "depiction": {
+              "description": "IIIF region pointing to a depiction of this feature in the scan.",
+              "type": "string",
+              "ontology": "crm:P138i has representation"
+            },
+            "features": {
+              "description": "A glued-on feature itself may carry other features. Nested features do not need to be positioned explicitly.",
+              "items": {
+                "$ref": "#/definitions/NestedFeature"
+              },
+              "type": "array",
+              "ontology": "crm:P46 is composed of"
+            },
+            "horizontal": {
+              "$ref": "#/definitions/HorizontalSpan",
+              "description": "Horizontal span of the feature on the roll. Left out by a feature a patch bears.",
+              "ontology": "crm:P43 has dimension"
+            },
+            "material": {
+              "description": "The material of the glued-on feature.",
+              "enum": [
+                "paper",
+                "tape"
+              ],
+              "type": "string",
+              "ontology": "crm:P45 consists of"
+            },
+            "vertical": {
+              "$ref": "#/definitions/VerticalSpan",
+              "description": "Vertical span of the feature on the roll. Left out by a feature a patch bears.",
+              "ontology": "crm:P43 has dimension"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            },
+            "@type": {
+              "const": "GluedOn",
+              "description": "The type discriminator for this object.",
+              "type": "string",
+              "ontology": "rdf:type"
+            },
+            "bears": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "@id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "@id"
+                ]
+              },
+              "description": "The features the patch bears. Derived on export.",
+              "ontology": "crm:P56 bears feature"
+            }
+          },
+          "required": [
+            "@id",
+            "material",
+            "@type"
+          ],
+          "type": "object"
+        }
+      ]
     },
     "Note": {
       "description": "A note symbol, representing a single pitched musical event on the roll. The pitch is encoded via the tracker bar position (track number).",
@@ -2034,17 +2331,6 @@
       ],
       "type": "object"
     },
-    "PartialBy<AnyFeature,(\"horizontal\"|\"vertical\")>": {
-      "properties": {
-        "horizontal": {
-          "$ref": "#/definitions/AnyFeature"
-        },
-        "vertical": {
-          "$ref": "#/definitions/AnyFeature"
-        }
-      },
-      "type": "object"
-    },
     "Person": {
       "$ref": "#/definitions/Agent",
       "description": "An agent that is a person."
@@ -2097,6 +2383,14 @@
           "$ref": "#/definitions/Concept",
           "description": "The paper the roll copy was cut on.",
           "ontology": "crm:P126 employed"
+        },
+        "produced": {
+          "description": "The features the punching brought into being, which are the note and expression perforations. A reading of a scan finds every hole on the paper at once and states it here; a hole an editor reads as punched later belongs in the act that made it.",
+          "items": {
+            "$ref": "#/definitions/AnyFeature"
+          },
+          "type": "array",
+          "ontology": "crm:P108 has produced"
         },
         "speed": {
           "$ref": "#/definitions/ObjectAssumption%3CPaperSpeed%3E",
@@ -2238,7 +2532,7 @@
       "description": "An assignment of a condition (general or paper-stretch) to a roll copy, annotatable with a belief about its certainty."
     },
     "RollCopy": {
-      "description": "A physical copy of a roll, held at a specific location. Each roll copy has its own set of features, measurements, conditions, and modifications. Multiple copies of the same roll may exist across different archives or collections.",
+      "description": "A physical copy of a roll, held at a specific location. Each roll copy has its own measurements, conditions and modifications, and states its features in the act that brought each of them about. Multiple copies of the same roll may exist across different archives or collections.",
       "properties": {
         "carries": {
           "description": "The versions this copy is held to carry, where its features are not read into symbols, as for a copy known only from a recording. Each statement carries the belief it rests on.",
@@ -2255,14 +2549,6 @@
           },
           "type": "array",
           "ontology": "crm:P44 has condition"
-        },
-        "features": {
-          "description": "The physical features found on this copy, with shift and stretch already applied when `ops` says so.",
-          "items": {
-            "$ref": "#/definitions/AnyFeature"
-          },
-          "type": "array",
-          "ontology": "crm:P56 bears feature"
         },
         "keeper": {
           "$ref": "#/definitions/KeeperAssignment",
@@ -2424,11 +2710,42 @@
           "description": "The type discriminator for this object.",
           "type": "string",
           "ontology": "rdf:type"
+        },
+        "bears": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "@id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "@id"
+            ]
+          },
+          "description": "The features the copy bears, whichever of its acts brought them about. Derived on export.",
+          "ontology": "crm:P56 bears feature"
+        },
+        "composedOf": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "@id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "@id"
+            ]
+          },
+          "description": "The patches glued onto the copy. A patch is an object rather than a feature, so it is stated as a part. Derived on export.",
+          "ontology": "crm:P46 is composed of"
         }
       },
       "required": [
         "conditions",
-        "features",
         "@id",
         "measurements",
         "modifications",
@@ -2436,7 +2753,7 @@
         "@type"
       ],
       "type": "object",
-      "ontology": "lrmoo:F5 Item"
+      "ontology": "reo:RollCopy"
     },
     "Shift": {
       "description": "A shift correction applied to a roll copy to align it with other copies. The shift is defined as horizontal (along the roll length, in mm) and vertical (across tracks).",
@@ -2718,7 +3035,7 @@
         "vertical"
       ],
       "type": "object",
-      "ontology": "crm:E25 Human-Made Feature"
+      "ontology": "reo:Writing"
     },
     "WritingMethod": {
       "description": "The method by which a writing was produced on the roll: printed, handwritten, or stamped.",

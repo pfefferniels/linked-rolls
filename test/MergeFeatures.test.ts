@@ -7,7 +7,8 @@ import { ConditionState } from '../src/ConditionState'
 import { Note } from '../src/Symbol'
 import { ObjectAssumption, ReferenceAssumption, assignObject, assignReference, idsOf } from '../src/Assumption'
 import { mergeFeatures, mergeObstacle } from '../src/editionOps'
-import { copy, editionOf, hole, note, version } from './editionFixture'
+import { featuresOf } from '../src/RollCopy'
+import { alteration, copy, editionOf, hole, note, version } from './editionFixture'
 import { mm, track } from '../src/Quantity'
 
 const depicted = (feature: Hole, region: string): Hole => ({ ...feature, depiction: region })
@@ -42,13 +43,13 @@ const scan = (features: AnyFeature[] = [partOne, partTwo, elsewhere]) => edition
 const merge = (edition: Edition, ...featureIds: string[]) =>
     produce(edition, mergeFeatures('first', featureIds))
 
-const featuresOf = (edition: Edition) => edition.copies[0].features
+const featuresIn = (edition: Edition) => featuresOf(edition.copies[0])
 const carriersOf = (edition: Edition, symbolId: string) =>
     idsOf(new EditionView(edition).get<Note>(symbolId)!.carriers)
 
 describe('merging the features of a copy', () => {
     it('replaces them with one spanning them all, the gap between them included', () => {
-        const [merged, ...rest] = featuresOf(merge(scan(), 'part-one', 'part-two'))
+        const [merged, ...rest] = featuresIn(merge(scan(), 'part-one', 'part-two'))
 
         expect(rest.map(feature => feature.id)).toEqual(['other'])
         expect(merged.type).toBe('Hole')
@@ -58,12 +59,12 @@ describe('merging the features of a copy', () => {
     })
 
     it('drops the depiction, a region showing one half depicting no more than that half', () => {
-        expect('depiction' in featuresOf(merge(scan(), 'part-one', 'part-two'))[0]).toBe(false)
+        expect('depiction' in featuresIn(merge(scan(), 'part-one', 'part-two'))[0]).toBe(false)
     })
 
     it('lets the merged feature carry what the halves carried', () => {
         const next = merge(scan(), 'part-one', 'part-two')
-        const mergedId = featuresOf(next)[0].id
+        const mergedId = featuresIn(next)[0].id
 
         expect(carriersOf(next, 'one')).toEqual([mergedId])
         expect(carriersOf(next, 'two')).toEqual([mergedId])
@@ -84,7 +85,7 @@ describe('merging the features of a copy', () => {
             }])]
         )
         const next = merge(before, 'part-one', 'part-two')
-        const mergedId = featuresOf(next)[0].id
+        const mergedId = featuresIn(next)[0].id
 
         expect(new EditionView(next).get<Note>('one')!.carriers)
             .toEqual([{ ...believed, id: mergedId }])
@@ -92,7 +93,7 @@ describe('merging the features of a copy', () => {
 
     it('keeps the condition the one half states, holding of the whole perforation', () => {
         const next = merge(scan([partOne, { ...partTwo, condition: torn }]), 'part-one', 'part-two')
-        const [merged] = featuresOf(next)
+        const [merged] = featuresIn(next)
 
         expect(merged.condition).toEqual(torn)
         expect(merged.horizontal).toEqual({ unit: 'mm', from: 1000, to: 1010 })
@@ -102,7 +103,7 @@ describe('merging the features of a copy', () => {
         const before = scan()
         const next = merge(before, 'part-one', 'part-two')
 
-        expect(featuresOf(next)[1]).toBe(featuresOf(before)[2])
+        expect(featuresIn(next)[1]).toBe(featuresIn(before)[2])
         expect(next.versions[1]).toBe(before.versions[1])
         expect(next.versions[0].edits[0].insert![2]).toBe(before.versions[0].edits[0].insert![2])
     })
@@ -116,6 +117,15 @@ describe('merging the features of a copy', () => {
         expect(() => merge(scan(), 'part-one', 'other')).toThrow('different-tracks')
         expect(() => merge(scan(), 'part-one')).toThrow('fewer-than-two')
         expect(() => merge(scan(), 'part-one', 'nowhere')).toThrow('fewer-than-two')
+    })
+
+    /** One feature is the work of one act: what two acts made cannot be read as one thing. */
+    it('refuses halves that two different acts brought about', () => {
+        const before = scan([partOne])
+        before.copies[0].modifications = [alteration(partTwo)]
+
+        expect(() => produce(before, mergeFeatures('first', ['part-one', 'part-two'])))
+            .toThrow('different-acts')
     })
 })
 

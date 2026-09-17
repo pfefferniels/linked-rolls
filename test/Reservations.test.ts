@@ -8,7 +8,7 @@ import { asJsonLd } from '../src/asJsonLd'
 import { importJsonLd } from '../src/importJsonLd'
 import { assignDate } from '../src/Assumption'
 import { mm, px, track } from '../src/Quantity'
-import { copy, editionOf, hole } from './editionFixture'
+import { copy, cutFor, editionOf, hole } from './editionFixture'
 import { systemOf } from '../src/TrackerBar'
 import { welteT98 } from '../src/systems/welteT98/bar'
 
@@ -86,22 +86,14 @@ describe('reservations about a copy', () => {
     })
 
     it('reports a copy the edition cannot place in a system', () => {
-        const { production: _named, ...unplaced } = holed('unplaced')
-        expect(typesOf(unplaced)).toContain('system-unknown')
+        expect(typesOf(cutFor(holed('unplaced'), undefined))).toContain('system-unknown')
 
-        const foreign: RollCopy = {
-            ...holed('foreign'),
-            production: { system: { id: 'https://example.org/system/duo-art', name: 'Duo-Art', sameAs: [] } }
-        }
-        expect(typesOf(foreign)).toContain('system-unknown')
+        const duoArt = { id: 'https://example.org/system/duo-art', name: 'Duo-Art', sameAs: [] }
+        expect(typesOf(cutFor(holed('foreign'), duoArt))).toContain('system-unknown')
     })
 
     it('says nothing about a copy that names a system it has a bar for', () => {
-        const green: RollCopy = {
-            ...holed('green'),
-            production: { system: systemOf(welteT98) }
-        }
-        expect(typesOf(green)).not.toContain('system-unknown')
+        expect(typesOf(cutFor(holed('green'), systemOf(welteT98)))).not.toContain('system-unknown')
     })
 
     it('goes away once the gap is filled', () => {

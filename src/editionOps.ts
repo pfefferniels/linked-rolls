@@ -6,7 +6,10 @@ import { AnyPerforation, AnySymbol, Expression, PlacementRelation, isPerforation
 import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance } from "./Collation"
 import { Edit, EditType } from "./Edit"
 import { collationToleranceOf, Derivation, editsOf, insertedBy, principalDerivationOf, Version } from "./Version"
-import { asSymbols, barOf, GeneralRollCondition, isPaperStretch, Modification, RollCopy, ScaleReading, Shift } from "./RollCopy"
+import {
+    asSymbols, barOf, featuresByAct, featuresOf, GeneralRollCondition, isPaperStretch, Modification, RollCopy,
+    ScaleReading, Shift, statesNothing
+} from "./RollCopy"
 import { systemOf, TrackerBar } from "./TrackerBar"
 import { substitutionsBetween } from "./substitution"
 import { trackerBarOf } from "./systems"
@@ -17,7 +20,7 @@ import {
     assignReference, idOf
 } from "./Assumption"
 import {
-    AnyFeature, FeatureConditionAssignment, FeatureConditionType, HorizontalSpan, NestedFeature,
+    FeatureConditionAssignment, FeatureConditionType, FeatureOrPatch, HorizontalSpan, NestedFeature,
     conditions as conditionsAllowed, featuresBorneBy, isGluedOn, withBorneFeatures
 } from "./Feature"
 import { distance, Millimeters, mm, subtract } from "./Quantity"
@@ -45,9 +48,9 @@ const onVersion = (versionId: string, op: (version: Draft<Version>, draft: Draft
         if (version) op(version, draft)
     }
 
-const onFeature = (copyId: string, featureId: string, op: (feature: Draft<AnyFeature>) => void): EditionOp =>
+const onFeature = (copyId: string, featureId: string, op: (feature: Draft<FeatureOrPatch>) => void): EditionOp =>
     onCopy(copyId, copy => {
-        const feature = copy.features.find(f => f.id === featureId)
+        const feature = featuresOf(copy).find(f => f.id === featureId)
         if (feature) op(feature)
     })
 
@@ -122,7 +125,7 @@ export const createVersion = (copy: RollCopy): EditionOp =>
             type: 'Version',
             id: v4(),
             system: systemOf(bar),
-            edits: asSymbols(copy.features, bar).map(insertion),
+            edits: asSymbols(featuresOf(copy), bar).map(insertion),
             motivations: []
         })
     }
@@ -243,8 +246,8 @@ export const addGeneralCondition = (copyId: string, condition: ObjectAssumption<
  * type narrowed to is the weaker statement, holding of a condition any
  * kind of feature may be in.
  */
-const allows = (feature: AnyFeature, condition: FeatureConditionAssignment):
-    condition is NonNullable<AnyFeature['condition']> => {
+const allows = (feature: FeatureOrPatch, condition: FeatureConditionAssignment):
+    condition is NonNullable<FeatureOrPatch['condition']> => {
     const allowed: readonly FeatureConditionType[] = conditionsAllowed[feature.type]
     return allowed.includes(condition.conditionType)
 }
@@ -268,7 +271,7 @@ export const stateFeatureCondition = (
 
 /** The ids of every feature the copy bears, those a patch bears among them. */
 const featureIdsOf = (copy: RollCopy): Ids =>
-    new Set(copy.features.flatMap(withBorneFeatures).map(feature => feature.id))
+    new Set(featuresOf(copy).flatMap(withBorneFeatures).map(feature => feature.id))
 
 /**
  * A symbol every carrier of which lies among the features loses its
@@ -366,36 +369,34 @@ const isBelief = (record: object): record is Belief =>
 const isComprehension = (reason: AnyArgumentation): reason is MeaningComprehension =>
     reason.type === 'meaningComprehension'
 
-/** What the modification names, be it as added or as removed. */
-const membersOf = (modification: Modification): string[] =>
-    modification.type === 'Addition' ? modification.added : modification.removed
-
-const namesNothing = (modification: Modification): boolean => membersOf(modification).length === 0
-
 const comprehendsNothing = (reason: AnyArgumentation): boolean =>
     isComprehension(reason) && reason.comprehends.length === 0
 
-/** The modification with what it names rewritten, or the very same one where that leaves it as it was. */
+/**
+ * The modification with what it names rewritten, or the very same one
+ * where that leaves it as it was. Only a removal names anything by id:
+ * what an act produced or glued on it states itself.
+ */
 const renamingMembers = (rename: Rename) => (modification: Modification): Modification =>
-    modification.type === 'Addition'
-        ? replacing(modification, 'added', rename(modification.added))
-        : replacing(modification, 'removed', rename(modification.removed))
+    modification.type === 'Removal'
+        ? replacing(modification, 'removed', rename(modification.removed))
+        : modification
 
 /** The reason with what a comprehension comprehends rewritten; any other reason names nothing of the kind. */
 const renamingComprehended = (rename: Rename) => (reason: AnyArgumentation): AnyArgumentation =>
     isComprehension(reason) ? replacing(reason, 'comprehends', rename(reason.comprehends)) : reason
 
 /**
- * The record with the ids it names rewritten: what a copy's
- * modifications added or removed, and what the comprehensions among a
- * belief's reasons comprehend. A modification or a comprehension the
- * rewriting emptied goes with what it named; one that named nothing
- * before stays, as an edit that was empty before it does.
+ * The record with the ids it names rewritten: what a copy's removals
+ * removed, and what the comprehensions among a belief's reasons
+ * comprehend. A removal or a comprehension the rewriting emptied goes
+ * with what it named; one that named nothing before stays, as an edit
+ * that was empty before it does.
  */
 const renaming = (rename: Rename) => (record: object): object => {
     if (isCopy(record)) {
         return replacing(record, 'modifications',
-            pruned(record.modifications, renamingMembers(rename), namesNothing))
+            pruned(record.modifications, renamingMembers(rename), statesNothing))
     }
     if (isBelief(record)) {
         return replacing(record, 'reasons',
@@ -461,17 +462,42 @@ const withoutBorne = <T extends NestedFeature>(feature: T, named: Ids): T => {
 const withoutFeatures = <T extends NestedFeature>(features: T[], named: Ids): T[] =>
     mapped(without(features, feature => named.has(feature.id)), feature => withoutBorne(feature, named))
 
+/** A rewriting of the features an act states, whichever kind of feature it states. */
+type Rewrite = <T extends FeatureOrPatch>(features: T[]) => T[]
+
+/** The act with its features rewritten, or the very same one where the rewriting left them. */
+const rewritingAct = (rewrite: Rewrite) => (modification: Modification): Modification => {
+    if (modification.type === 'Alteration') return replacing(modification, 'produced', rewrite(modification.produced))
+    if (modification.type === 'Attachment') return replacing(modification, 'added', rewrite(modification.added))
+    return modification
+}
+
+/**
+ * Writes the rewriting onto the features of every act of the copy, and
+ * takes out an act it left with nothing to state.
+ */
+const rewriteFeatures = (copy: Draft<RollCopy>, rewrite: Rewrite) => {
+    const state = stateOf<RollCopy>(copy)
+    const produced = state.production?.produced
+    if (produced && copy.production) {
+        const rewritten = rewrite(produced)
+        if (rewritten !== produced) copy.production.produced = rewritten
+    }
+    copy.modifications = pruned(state.modifications, rewritingAct(rewrite), statesNothing)
+}
+
 /**
  * Takes the features off the copy, and out of the versions with what
  * only they carried. A feature may be named wherever the copy bears it:
  * a patch goes with everything glued onto it, and a feature of a patch
- * may be taken back on its own, the patch staying where it is.
+ * may be taken back on its own, the patch staying where it is. An act
+ * left having produced or added nothing goes as well.
  */
 export const removeFeatures = (copyId: string, featureIds: readonly string[]): EditionOp =>
     onCopy(copyId, (copy, draft) => {
         const named = new Set(featureIds)
-        const features = stateOf<AnyFeature[]>(copy.features)
-        copy.features = withoutFeatures(features, named)
+        const features = featuresOf(stateOf<RollCopy>(copy))
+        rewriteFeatures(copy, <T extends FeatureOrPatch>(stated: T[]) => withoutFeatures(stated, named))
         forgetFeatures(draft, new Set(goneWith(features, named)))
     })
 
@@ -506,14 +532,14 @@ const sayTheSame = (a: unknown, b: unknown): boolean => {
  * identity: two patches bear the same only where they bear the very
  * same features, so that no merge takes a feature of a patch away.
  */
-const nature = (feature: AnyFeature): object => {
+const nature = (feature: FeatureOrPatch): object => {
     const { id, horizontal, depiction, condition, ...rest } = feature
     return isGluedOn(feature) && feature.features
         ? { ...rest, features: feature.features.map(borne => borne.id) }
         : rest
 }
 
-const conditionsOf = (features: readonly AnyFeature[]) =>
+const conditionsOf = (features: readonly FeatureOrPatch[]) =>
     features.flatMap(feature => feature.condition ? [feature.condition] : [])
 
 /** Why several features cannot be replaced by one. */
@@ -523,6 +549,7 @@ export type MergeObstacle =
     | 'different-tracks'
     | 'differing-conditions'
     | 'unlike-features'
+    | 'different-acts'
 
 /**
  * What stands in the way of reading the features as one, or nothing
@@ -532,7 +559,7 @@ export type MergeObstacle =
  * asked: whether a gap is a bridge of the perforator, a tear or two
  * perforations of their own is the editor's reading.
  */
-export const mergeObstacle = (features: readonly AnyFeature[]): MergeObstacle | undefined => {
+export const mergeObstacle = (features: readonly FeatureOrPatch[]): MergeObstacle | undefined => {
     if (features.length < 2) return 'fewer-than-two'
 
     const [first, ...rest] = features
@@ -554,7 +581,7 @@ const standingFor = <T,>(items: T[], stands: (item: T) => boolean, replacement: 
     return items.flatMap((item, i) => i === first ? [replacement] : stands(item) ? [] : [item])
 }
 
-const spanning = (features: readonly AnyFeature[]): HorizontalSpan => ({
+const spanning = (features: readonly FeatureOrPatch[]): HorizontalSpan => ({
     unit: 'mm',
     from: mm(Math.min(...features.map(feature => feature.horizontal.from))),
     to: mm(Math.max(...features.map(feature => feature.horizontal.to)))
@@ -566,9 +593,9 @@ const spanning = (features: readonly AnyFeature[]): HorizontalSpan => ({
  * others being alike in all but their place. The depiction goes: a
  * region of the scan showing one part depicts no more than that part.
  */
-const mergedFrom = (features: readonly AnyFeature[]): AnyFeature => {
+const mergedFrom = <T extends FeatureOrPatch>(features: readonly T[], id: string): T => {
     const stating = features.find(feature => feature.condition) ?? features[0]
-    const merged: AnyFeature = { ...stating, id: v4(), horizontal: spanning(features) }
+    const merged: T = { ...stating, id, horizontal: spanning(features) }
     delete merged.depiction
     return merged
 }
@@ -609,7 +636,8 @@ const carryOver = (draft: Draft<Edition>, replaced: Ids, mergedId: string) => {
  * Only the features the copy bears itself are merged. A feature of a
  * patch states no place along the roll of its own, so there is nothing
  * for a merge to span, and an id naming one is passed over as an id the
- * copy does not bear is.
+ * copy does not bear is. Features of two different acts are not merged
+ * either: one feature is the work of one act.
  *
  * Throws where the features cannot stand for one; `mergeObstacle`
  * says beforehand whether they can.
@@ -617,19 +645,23 @@ const carryOver = (draft: Draft<Edition>, replaced: Ids, mergedId: string) => {
 export const mergeFeatures = (copyId: string, featureIds: readonly string[]): EditionOp =>
     onCopy(copyId, (copy, draft) => {
         const named = new Set(featureIds)
-        const features = stateOf<AnyFeature[]>(copy.features)
-        const toMerge = features.filter(feature => named.has(feature.id))
+        const holds = (features: readonly FeatureOrPatch[]) => features.some(feature => named.has(feature.id))
+        const acts = featuresByAct(stateOf<RollCopy>(copy)).filter(holds)
+        const toMerge = (acts[0] ?? []).filter(feature => named.has(feature.id))
 
-        const obstacle = mergeObstacle(toMerge)
+        const obstacle = acts.length > 1 ? 'different-acts' : mergeObstacle(toMerge)
         if (obstacle) {
             throw new Error(`The features of copy ${copyId} cannot be merged: ${obstacle}`)
         }
 
         const replaced = new Set(toMerge.map(feature => feature.id))
-        const merged = mergedFrom(toMerge)
-        copy.features = standingFor(features, feature => replaced.has(feature.id), merged)
-        carryOver(draft, replaced, merged.id)
-        renameReferences(draft, ids => standingFor(ids, id => replaced.has(id), merged.id))
+        const mergedId = v4()
+        rewriteFeatures(copy, <T extends FeatureOrPatch>(stated: T[]) => {
+            const stands = (feature: T) => replaced.has(feature.id)
+            return stated.some(stands) ? standingFor(stated, stands, mergedFrom(stated.filter(stands), mergedId)) : stated
+        })
+        carryOver(draft, replaced, mergedId)
+        renameReferences(draft, ids => standingFor(ids, id => replaced.has(id), mergedId))
     })
 
 /** The carriers of each collated symbol pass to its counterpart. */

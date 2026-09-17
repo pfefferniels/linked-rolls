@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'fs'
 import * as path from 'path'
-import { asSymbols, calibrationOf, unreadTracks } from '../src/RollCopy'
+import { asSymbols, calibrationOf, featuresOf, unreadTracks } from '../src/RollCopy'
 import { readFromStanfordAton } from '../src/readers/stanfordAton'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
@@ -22,7 +22,7 @@ const aton = readFileSync(
 )
 
 const countByExpression = (copy: ReturnType<typeof readFromStanfordAton>, bar = welteT100) =>
-    asSymbols(copy.features, bar)
+    asSymbols(featuresOf(copy), bar)
         .filter((symbol): symbol is Expression => symbol.type === 'expression')
         .reduce((counts, symbol) => {
             const key = `${symbol.scope} ${symbol.expressionType}`
@@ -30,7 +30,7 @@ const countByExpression = (copy: ReturnType<typeof readFromStanfordAton>, bar = 
         }, new Map<string, number>())
 
 const pitchesOf = (copy: ReturnType<typeof readFromStanfordAton>, bar = welteT100) =>
-    asSymbols(copy.features, bar)
+    asSymbols(featuresOf(copy), bar)
         .filter(symbol => symbol.type === 'note')
         .map(symbol => symbol.pitch)
 
@@ -44,7 +44,7 @@ describe('reading a Stanford analysis file', () => {
     })
 
     it('leaves no hole on a position the bar cannot read', () => {
-        expect([...unreadTracks(copy.features, welteT100).keys()]).toEqual([])
+        expect([...unreadTracks(featuresOf(copy), welteT100).keys()]).toEqual([])
     })
 
     /**
@@ -108,7 +108,7 @@ describe('reading a Stanford analysis file', () => {
         const asLicensee = readFromStanfordAton(aton, { system: welteLicensee })
         expect(asLicensee.production?.system?.id).toEqual('https://w3id.org/reo/type/system/welte-licensee')
         expect(asLicensee.measurements.trackCalibration?.shift).toEqual(-5)
-        expect([...unreadTracks(asLicensee.features, welteLicensee).keys()]).toEqual([])
+        expect([...unreadTracks(featuresOf(asLicensee), welteLicensee).keys()]).toEqual([])
 
         expect(pitchesOf(asLicensee, welteLicensee)).toEqual(pitchesOf(copy))
 
@@ -130,7 +130,7 @@ describe('reading a Stanford analysis file', () => {
 
         // the first chain of the file attacks at row 8083
         const resolution = copy.measurements.scanResolution!.value
-        expect(inPixels(copy.features[0].horizontal.from, resolution)).toBeCloseTo(8083, 6)
+        expect(inPixels(featuresOf(copy)[0].horizontal.from, resolution)).toBeCloseTo(8083, 6)
     })
 
     it('states no resolution where the file gives none', () => {
@@ -147,8 +147,8 @@ describe('reading a Stanford analysis file', () => {
     it('takes an explicit shift when the rewind is not to be trusted', () => {
         const uncalibrated = readFromStanfordAton(aton, { trackShift: track(0) })
         expect(uncalibrated.measurements.trackCalibration?.shift).toEqual(0)
-        expect(uncalibrated.features[0].vertical.from)
-            .toEqual(copy.features[0].vertical.from + 3)
+        expect(featuresOf(uncalibrated)[0].vertical.from)
+            .toEqual(featuresOf(copy)[0].vertical.from + 3)
     })
 
     it('puts a track back on the image column it was measured at', () => {
@@ -159,7 +159,7 @@ describe('reading a Stanford analysis file', () => {
 
     it('points at the scan Stanford keeps under the DRUID', () => {
         expect(copy.scan).toEqual('https://stacks.stanford.edu/image/iiif/mf320jq4997%2Fmf320jq4997_0001/')
-        expect(copy.features[0].depiction).toContain('mf320jq4997_0001')
+        expect(featuresOf(copy)[0].depiction).toContain('mf320jq4997_0001')
     })
 
     /**
@@ -197,10 +197,10 @@ describe('reading a Stanford analysis file', () => {
         ].join('\n')
         const withBadHead = readFromStanfordAton(aton.replace('@@END: HOLES', `@@END: HOLES\n${badHead}`))
 
-        const rescued = withBadHead.features.filter(feature => feature.horizontal.from > 4229 && feature.horizontal.from < 4231)
+        const rescued = featuresOf(withBadHead).filter(feature => feature.horizontal.from > 4229 && feature.horizontal.from < 4231)
         expect(rescued).toHaveLength(1)
         expect(rescued[0].vertical.from).toEqual(welteT100.rewindTrack)
-        expect(withBadHead.features).toHaveLength(copy.features.length + 1)
+        expect(featuresOf(withBadHead)).toHaveLength(featuresOf(copy).length + 1)
     })
 
     /**
@@ -213,7 +213,7 @@ describe('reading a Stanford analysis file', () => {
             scan: '/facsimiles/WR0225_02'
         })
         expect(elsewhere.scan).toEqual('/facsimiles/WR0225_02')
-        expect(elsewhere.features.every(feature => feature.depiction === undefined)).toBe(true)
+        expect(featuresOf(elsewhere).every(feature => feature.depiction === undefined)).toBe(true)
     })
 })
 
@@ -266,7 +266,7 @@ describe('calibrating a scan whose rewind cannot be found', () => {
         })
 
         expect(copy.measurements.trackCalibration?.shift).toEqual(-12)
-        expect([...unreadTracks(copy.features, welteT98).keys()]).toEqual([])
+        expect([...unreadTracks(featuresOf(copy), welteT98).keys()]).toEqual([])
 
         const pitches = pitchesOf(copy, welteT98)
         expect(Math.min(...pitches)).toEqual(21)

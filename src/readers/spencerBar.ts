@@ -148,9 +148,8 @@ export function readFromSpencerBar(
         ops: [],
         conditions: [],
         measurements: {},
-        production: { system: systemOf(system) },
-        modifications: [],
-        features
+        production: { system: systemOf(system), produced: features },
+        modifications: []
     }
 }
 

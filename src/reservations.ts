@@ -1,5 +1,5 @@
 import { bearsPhysicalEvidence, isMeasured, sourceLabels } from "./FeatureSource";
-import { calibrationOf, RollCopy } from "./RollCopy";
+import { calibrationOf, featuresOf, RollCopy } from "./RollCopy";
 import { trackerBarOf } from "./systems";
 import { Version } from "./Version";
 import { EditionView } from "./EditionView";
@@ -122,7 +122,7 @@ const keeperKnown: Check = copy =>
 
 /** A check on what a copy's features leave open, which has nothing to say of a copy without any. */
 const onFeatures = (check: Check): Check => copy =>
-    copy.features.length > 0 ? check(copy) : undefined
+    featuresOf(copy).length > 0 ? check(copy) : undefined
 
 const checks: readonly Check[] = [
     sourceStated,

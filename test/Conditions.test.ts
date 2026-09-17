@@ -3,10 +3,10 @@ import { produce } from 'immer'
 import { Edition } from '../src/Edition'
 import { AnyFeature, FeatureConditionType, GluedOn, Mark, Transcription, Writing } from '../src/Feature'
 import { ConditionState } from '../src/ConditionState'
-import { GeneralRollCondition, PaperStretch } from '../src/RollCopy'
+import { featuresOf, GeneralRollCondition, PaperStretch } from '../src/RollCopy'
 import { ObjectAssumption, assignObject } from '../src/Assumption'
 import { addGeneralCondition, stateFeatureCondition } from '../src/editionOps'
-import { copy, editionOf, hole, note, version } from './editionFixture'
+import { attachment, copy, editionOf, hole, note, version } from './editionFixture'
 import { mm, track } from '../src/Quantity'
 
 const damage = <T extends FeatureConditionType>(conditionType: T): ObjectAssumption<ConditionState<T>> =>
@@ -34,16 +34,16 @@ const mark: Mark = { type: 'Mark', id: 'pencil', ...at(80, 90) }
 
 const patch: GluedOn = { type: 'GluedOn', id: 'patch', ...at(100, 140), material: 'paper' }
 
-/** A copy carrying one feature of each kind, and a version reading its hole as a note. */
-const withFeatures = (features: AnyFeature[] = [hole('hole-note', 1000, 1010, 47), writing, mark, patch]) =>
+/** A copy carrying one feature of each kind, the patch glued on, and a version reading its hole as a note. */
+const withFeatures = (features: AnyFeature[] = [hole('hole-note', 1000, 1010, 47), writing, mark]) =>
     editionOf(
-        [copy('first', features)],
+        [{ ...copy('first', features), modifications: [attachment(patch)] }],
         [version('A', [{ type: 'edit', id: 'edit-a', insert: [note('note', 60, 'hole-note')] }])]
     )
 
-const featuresOf = (edition: Edition) => edition.copies[0].features
+const featuresIn = (edition: Edition) => featuresOf(edition.copies[0])
 const conditionOf = (edition: Edition, featureId: string) =>
-    featuresOf(edition).find(feature => feature.id === featureId)?.condition
+    featuresIn(edition).find(feature => feature.id === featureId)?.condition
 
 describe('adding a condition to a copy', () => {
     const stretched = (): Edition => {
@@ -110,7 +110,7 @@ describe('stating the condition of a feature', () => {
         const before = withFeatures()
         const next = state(before, 'hole-note', damage('partially-torn'))
 
-        expect(featuresOf(next)[1]).toBe(featuresOf(before)[1])
+        expect(featuresIn(next)[1]).toBe(featuresIn(before)[1])
         expect(next.versions[0]).toBe(before.versions[0])
     })
 })

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { write } from 'midifile-ts'
 import { CONTROL_OFFSET, readFromPhillipsEroll } from '../src/readers/phillipsEroll'
-import { asSymbols, unreadTracks } from '../src/RollCopy'
+import { asSymbols, featuresOf, unreadTracks } from '../src/RollCopy'
 import { Expression, Note } from '../src/Symbol'
 import { TrackerBar } from '../src/TrackerBar'
 import { welteT100 } from '../src/systems/welteT100/bar'
@@ -73,39 +73,39 @@ describe('reading one of Phillips’s e-roll files', () => {
     const copy = readFromPhillipsEroll(eroll(perforations))
 
     it('reads every perforation as a hole', () => {
-        expect(copy.features).toHaveLength(perforations.length)
-        expect(copy.features.every(feature => feature.type === 'Hole')).toBe(true)
+        expect(featuresOf(copy)).toHaveLength(perforations.length)
+        expect(featuresOf(copy).every(feature => feature.type === 'Hole')).toBe(true)
     })
 
     it('puts a position where the bar has it, counting from one', () => {
-        expect(copy.features.map(feature => feature.vertical.from).sort((a, b) => a - b))
+        expect(featuresOf(copy).map(feature => feature.vertical.from).sort((a, b) => a - b))
             .toEqual([2, 6, 11, 45, 90, 93])
     })
 
     it('leaves no hole on a track the bar does not read', () => {
-        expect(unreadTracks(copy.features, welteT100).size).toBe(0)
+        expect(unreadTracks(featuresOf(copy), welteT100).size).toBe(0)
     })
 
     it('turns elapsed time into paper at the speed the system states', () => {
-        const [first] = copy.features.sort((a, b) => a.horizontal.from - b.horizontal.from)
+        const [first] = featuresOf(copy).sort((a, b) => a.horizontal.from - b.horizontal.from)
         expect(first.horizontal.from).toBeCloseTo(100 / TICKS_PER_MM, 6)
         expect(first.horizontal.to).toBeCloseTo(130 / TICKS_PER_MM, 6)
     })
 
     it('orders the holes by their beginning', () => {
-        const starts = copy.features.map(feature => feature.horizontal.from)
+        const starts = featuresOf(copy).map(feature => feature.horizontal.from)
         expect(starts).toEqual([...starts].sort((a, b) => a - b))
     })
 
     it('reads the expression positions, not only the notes', () => {
-        const symbols = asSymbols(copy.features, welteT100)
+        const symbols = asSymbols(featuresOf(copy), welteT100)
         const expressions = symbols.filter((symbol): symbol is Expression => symbol.type === 'expression')
         expect(expressions.map(expression => expression.expressionType).sort())
             .toEqual(['ForzandoOn', 'MezzoforteOn', 'SustainPedalOn'])
     })
 
     it('sounds the notes as he does, since he numbers them by pitch', () => {
-        const notes = asSymbols(copy.features, welteT100).filter((symbol): symbol is Note => symbol.type === 'note')
+        const notes = asSymbols(featuresOf(copy), welteT100).filter((symbol): symbol is Note => symbol.type === 'note')
         expect(notes.map(note => note.pitch).sort((a, b) => a - b)).toEqual([24, 58, 103])
     })
 
@@ -128,10 +128,10 @@ describe('reading a Licensee e-roll on the Licensee bar', () => {
     })
 
     it('keeps the Licensee positions and reads them as that bar does', () => {
-        const symbols = asSymbols(copy.features, welteLicensee)
+        const symbols = asSymbols(featuresOf(copy), welteLicensee)
         expect(symbols.filter(symbol => symbol.type === 'expression').map(s => (s as Expression).expressionType).sort())
             .toEqual(['SustainPedalOff', 'SustainPedalOn'])
-        expect(copy.features.map(feature => feature.vertical.from).sort((a, b) => a - b))
+        expect(featuresOf(copy).map(feature => feature.vertical.from).sort((a, b) => a - b))
             .toEqual([9, 91, 92])
     })
 
@@ -146,7 +146,7 @@ describe('the options of the e-roll reader', () => {
         const copy = readFromPhillipsEroll(eroll([[11, 0, 384]]), {
             placeAt: elapsed => mm(elapsed * 100)
         })
-        const [hole] = copy.features
+        const [hole] = featuresOf(copy)
         expect(hole.horizontal.from).toBeCloseTo(0, 9)
         expect(hole.horizontal.to).toBeCloseTo(60, 9)
     })
@@ -155,12 +155,12 @@ describe('the options of the e-roll reader', () => {
         const slow = readFromPhillipsEroll(eroll([[11, 0, 768]], welteT100, 384, 1_200_000), {
             placeAt: elapsed => mm(elapsed)
         })
-        expect(slow.features[0].horizontal.to).toBeCloseTo(seconds(2.4), 6)
+        expect(featuresOf(slow)[0].horizontal.to).toBeCloseTo(seconds(2.4), 6)
     })
 
     it('takes a control offset of its own', () => {
         const copy = readFromPhillipsEroll(eroll([[6, 0, 100]]), { controlOffset: 14 })
-        expect(copy.features[0].vertical.from).toBe(6)
+        expect(featuresOf(copy)[0].vertical.from).toBe(6)
     })
 
     it('refuses a bar whose control offset nobody has measured', () => {

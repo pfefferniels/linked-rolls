@@ -64,27 +64,10 @@ export const isFeatureType = (value: unknown): value is FeatureType =>
     featureTypes.includes(value as FeatureType);
 
 /**
- * The term the graph states for each kind of feature. Holes, writings
- * and marks are all human-made features and a patch is an object, so
- * the classes tell a patch from the rest and nothing more: the kind is
- * what holds the four apart.
- *
- * A JSON-LD term maps `@type` to a class and can state nothing besides,
- * so an exported feature carries the kind under a `kind` key of its own.
- * It is derived from the type on the way out and read off the type
- * again on the way in, and so is no part of the model.
- */
-export const featureKinds = {
-    Hole: 'hole',
-    Writing: 'writing',
-    Mark: 'mark',
-    GluedOn: 'glued-on'
-} as const satisfies Record<FeatureType, string>;
-
-/**
  * A feature on the roll, e.g. a perforation, a writing, a mark or a
  * glued-on patch, defined by its horizontal and vertical position and
- * extent. Which kind of feature it is, its own type states.
+ * extent. Each kind of feature is a class of its own, which its type
+ * names.
  */
 export interface RollFeature<T extends FeatureType, DamageT extends string> extends WithId, WithType<T> {
     /**
@@ -137,7 +120,7 @@ export type FeatureConditionAssignment = ObjectAssumption<ConditionState<Feature
  * A punched hole is a human-made feature: CRM counts "the information
  * encoding features on mechanical or digital carriers" among the
  * features purposely created by human activity.
- * @see crm:E25 Human-Made Feature
+ * @see reo:Hole
  */
 export interface Hole extends RollFeature<'Hole', typeof conditions.Hole[number]> {
     /**
@@ -177,7 +160,7 @@ export type Transcription = Omit<Text, 'carriers'>
  * A piece of writing found on the roll, such as a label,
  * catalogue number, or annotation. Writings have a method
  * of production and a transcription of their content.
- * @see crm:E25 Human-Made Feature
+ * @see reo:Writing
  */
 export interface Writing extends Trace<'Writing'> {
     /**
@@ -201,7 +184,7 @@ export interface Writing extends Trace<'Writing'> {
  * or other non-textual annotation. What a mark was meant to say is a
  * reading of it (crminf:I16 Meaning Comprehension) rather than a
  * property of the feature, so its shape is not stated here.
- * @see crm:E25 Human-Made Feature
+ * @see reo:Mark
  */
 export interface Mark extends Trace<'Mark'> {
     /**
@@ -216,7 +199,7 @@ export interface Mark extends Trace<'Mark'> {
  * Glued-on features are typically used to cover perforations (for corrections)
  * or to reinforce damaged areas. They may themselves carry other features
  * such as writings or additional holes.
- * @see crm:E22 Human-Made Object
+ * @see reo:GluedOn
  */
 export interface GluedOn extends RollFeature<'GluedOn', typeof conditions.GluedOn[number]> {
     /**
@@ -228,25 +211,38 @@ export interface GluedOn extends RollFeature<'GluedOn', typeof conditions.GluedO
     /**
      * A glued-on feature itself may carry other features.
      * Nested features do not need to be positioned explicitly.
-     * @see crm:P56 bears feature
+     * @see crm:P46 is composed of
      */
     features?: NestedFeature[];
 }
 
 /**
- * The union of all physical feature types that can appear on a roll:
- * holes (perforations), writings (labels, annotations), marks (pencil, ink),
- * and glued-on patches (paper, tape).
+ * The features proper: a hole, a writing and a mark are all human-made
+ * features, and each of them is borne by whatever it sits on. A patch
+ * is an object glued onto the paper and stands apart from them.
  */
-export type AnyFeature = Hole | Writing | Mark | GluedOn;
+export type AnyFeature = Hole | Writing | Mark;
+
+/**
+ * Anything found at a place of its own on the roll: a feature or a
+ * glued-on patch. E24 Physical Human-Made Thing is the class both fall
+ * under, E22 and E25 being its subclasses.
+ */
+export type FeatureOrPatch = AnyFeature | GluedOn;
+
+/**
+ * A feature without the place it would state of its own. The union is
+ * distributed over, so that each kind of feature keeps its own keys.
+ */
+type Unplaced<T> = T extends FeatureOrPatch ? PartialBy<T, 'horizontal' | 'vertical'> : never;
 
 /**
  * A feature borne by another feature. It states no place of its own,
  * the feature bearing it standing in one.
  */
-export type NestedFeature = PartialBy<AnyFeature, 'horizontal' | 'vertical'>;
+export type NestedFeature = Unplaced<FeatureOrPatch>;
 
-export const isRollFeature = (obj: object): obj is AnyFeature => {
+export const isRollFeature = (obj: object): obj is FeatureOrPatch => {
     return 'type' in obj && isFeatureType(obj.type);
 }
 

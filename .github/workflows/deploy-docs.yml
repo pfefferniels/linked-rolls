@@ -54,16 +54,21 @@ jobs:
         run: |
           pip install pylode
           mkdir -p docs/reo/type/welte-t100 docs/reo/welte-t100
+          mkdir -p docs/reo/type/welte-green docs/reo/welte-green docs/reo/welte-licensee
           pylode ontology/reo.ttl -o docs/reo/index.html
           pylode ontology/types.ttl -o docs/reo/type/index.html
           pylode ontology/systems/welte-t100.ttl -o docs/reo/type/welte-t100/index.html
+          pylode ontology/systems/welte-green.ttl -o docs/reo/type/welte-green/index.html
 
       - name: Publish the ontology files and the contexts
         run: |
           cp ontology/reo.ttl ontology/types.ttl docs/reo/
           cp ontology/systems/welte-t100.ttl docs/reo/type/welte-t100/
+          cp ontology/systems/welte-green.ttl docs/reo/type/welte-green/
           cp src/spec/context.json docs/reo/context.jsonld
           cp src/spec/welte-t100.context.json docs/reo/welte-t100/context.jsonld
+          cp src/spec/welte-t98.context.json docs/reo/welte-green/context.jsonld
+          cp src/spec/welte-licensee.context.json docs/reo/welte-licensee/context.jsonld
 
       - uses: actions/configure-pages@v6
 

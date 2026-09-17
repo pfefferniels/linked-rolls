@@ -1,6 +1,7 @@
 import { Edition } from '../src/Edition'
-import { AnyFeature, Hole } from '../src/Feature'
-import { RollCopy } from '../src/RollCopy'
+import { AnyFeature, GluedOn, Hole } from '../src/Feature'
+import { Modification, RollCopy } from '../src/RollCopy'
+import { Concept } from '../src/Agent'
 import { Expression, Note, Text } from '../src/Symbol'
 import { Version } from '../src/Version'
 import { assignDate, assignReference } from '../src/Assumption'
@@ -15,7 +16,8 @@ export const hole = (id: string, from: number, to: number, position: number): Ho
     vertical: { unit: 'track', from: track(position) }
 })
 
-export const copy = (id: string, features: AnyFeature[]): RollCopy => ({
+/** A copy whose features are those its punching produced, which is where a reading puts them. */
+export const copy = (id: string, produced: AnyFeature[]): RollCopy => ({
     type: 'RollCopy',
     id,
     ops: [],
@@ -23,9 +25,20 @@ export const copy = (id: string, features: AnyFeature[]): RollCopy => ({
     conditions: [],
     modifications: [],
     keeper: { name: id, sameAs: [] },
-    production: { system: systemOf(welteT100) },
-    features
+    production: { system: systemOf(welteT100), produced }
 })
+
+/** The copy as cut for another system, the features its punching produced staying where they are. */
+export const cutFor = (copy: RollCopy, system: Concept | undefined): RollCopy =>
+    ({ ...copy, production: { ...copy.production, system } })
+
+/** An act gluing the patches onto a copy. */
+export const attachment = (...added: GluedOn[]): Modification =>
+    ({ type: 'Attachment', purpose: 'labeling', added })
+
+/** An act bringing features about on a copy: a writing, a mark, a hole punched by hand. */
+export const alteration = (...produced: AnyFeature[]): Modification =>
+    ({ type: 'Alteration', purpose: 'glossing', produced })
 
 export const note = (id: string, pitch: number, ...carriers: string[]): Note => ({
     type: 'note',

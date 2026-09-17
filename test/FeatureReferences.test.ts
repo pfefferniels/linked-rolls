@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { Edition } from '../src/Edition'
-import { Modification, RollCopy } from '../src/RollCopy'
+import { featuresOf, Modification, RollCopy } from '../src/RollCopy'
+import { Hole } from '../src/Feature'
 import { AnyArgumentation, Assumption, Belief, MeaningComprehension } from '../src/Assumption'
 import { mergeFeatures, removeCopy, removeFeatures } from '../src/editionOps'
 import { copy, editionOf, hole, note, version } from './editionFixture'
 
-const addition = (...added: string[]): Modification => ({ type: 'Addition', purpose: 'repair', added })
+const repair = (...produced: Hole[]): Modification => ({ type: 'Alteration', purpose: 'repair', produced })
 
 const comprehension = (...comprehends: string[]): MeaningComprehension =>
     ({ type: 'meaningComprehension', comprehends })
@@ -17,20 +18,21 @@ const believed = (...reasons: AnyArgumentation[]): Assumption => ({
 })
 
 /**
- * A copy bearing three patches, two of which a note is read off and one
- * standing apart, with its condition held true for the given reasons.
+ * A copy repaired three times over, two of the holes punched by hand
+ * read as notes and one standing apart, with its condition held true
+ * for the given reasons. The third repair states no hole at all.
  */
 const repaired = (modifications: Modification[], ...reasons: AnyArgumentation[]): RollCopy => ({
-    ...copy('first', [
-        hole('patch', 1000, 1010, 47),
-        hole('patch-too', 1012, 1020, 47),
-        hole('apart', 1100, 1110, 49)
-    ]),
+    ...copy('first', []),
     modifications,
     conditions: [{ type: 'ConditionState', conditionType: 'general', ...believed(...reasons) }]
 })
 
-const repairs = () => [addition('patch', 'patch-too'), addition('apart'), addition()]
+const repairs = () => [
+    repair(hole('patch', 1000, 1010, 47), hole('patch-too', 1012, 1020, 47)),
+    repair(hole('apart', 1100, 1110, 49)),
+    repair()
+]
 
 const roll = (modifications: Modification[] = repairs(), ...reasons: AnyArgumentation[]): Edition => editionOf(
     [repaired(modifications, ...reasons)],
@@ -52,8 +54,11 @@ const datedBy = (edition: Edition, ...reasons: AnyArgumentation[]): Edition => (
     }
 })
 
+/** What each act of the copy states: the features it produced, or the ids a removal names. */
 const modificationsOf = (edition: Edition) => edition.copies[0].modifications.map(modification =>
-    modification.type === 'Addition' ? modification.added : modification.removed)
+    modification.type === 'Alteration'
+        ? modification.produced.map(feature => feature.id)
+        : modification.type === 'Removal' ? modification.removed : [])
 
 const beliefOf = (annotated: Assumption): Belief => annotated['@annotation']!.belief
 
@@ -65,12 +70,12 @@ const comprehendedBy = (belief: Belief) => belief.reasons.map(reason =>
     reason.type === 'meaningComprehension' ? reason.comprehends : reason.type)
 
 describe('removing what a modification or a comprehension names', () => {
-    it('strikes the feature the copy no longer holds from the modification that added it', () => {
+    it('takes the feature the copy no longer holds out of the act that produced it', () => {
         expect(modificationsOf(produce(roll(), removeFeatures('first', ['patch-too']))))
             .toEqual([['patch'], ['apart'], []])
     })
 
-    it('drops a modification left naming nothing, keeping one that named nothing before', () => {
+    it('drops an act left holding nothing, keeping one that held nothing before', () => {
         expect(modificationsOf(produce(roll(), removeFeatures('first', ['patch', 'patch-too']))))
             .toEqual([['apart'], []])
     })
@@ -138,9 +143,9 @@ describe('removing what a modification or a comprehension names', () => {
 
 describe('merging what a modification or a comprehension names', () => {
     const merged = (edition: Edition) => produce(edition, mergeFeatures('first', ['patch', 'patch-too']))
-    const featureIdOf = (edition: Edition) => edition.copies[0].features[0].id
+    const featureIdOf = (edition: Edition) => featuresOf(edition.copies[0])[0].id
 
-    it('names the merged feature once where a modification named the halves', () => {
+    it('leaves the act that produced the halves holding the merged feature', () => {
         const next = merged(roll())
 
         expect(modificationsOf(next)).toEqual([[featureIdOf(next)], ['apart'], []])
@@ -152,7 +157,7 @@ describe('merging what a modification or a comprehension names', () => {
         expect(comprehendedBy(conditionBelief(next))).toEqual([['apart', featureIdOf(next)]])
     })
 
-    it('leaves a modification that names neither half as it was', () => {
+    it('leaves an act that holds neither half as it was', () => {
         const before = roll()
         const next = merged(before)
 

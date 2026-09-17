@@ -4,7 +4,7 @@ import { AnyPerforation, AnySymbol, Expression, PlacementRelation, isPerforation
 import { keyOf } from "./TrackerBar"
 import { trackerBarOf } from "./systems"
 import { barOf } from "./RollCopy"
-import { AnyFeature } from "./Feature"
+import { FeatureOrPatch } from "./Feature"
 import { Version } from "./Version"
 
 export type ConstraintProblem = {
@@ -114,7 +114,7 @@ const carriersOffTheirMeaning = (
     version: string,
     perforations: readonly AnyPerforation[]
 ): ConstraintProblem[] => {
-    const misread = (carrier: AnyFeature, symbol: AnyPerforation): boolean => {
+    const misread = (carrier: FeatureOrPatch, symbol: AnyPerforation): boolean => {
         const copy = view.copyOf(carrier.id)
         if (!copy) return false
 
