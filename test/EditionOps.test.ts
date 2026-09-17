@@ -10,8 +10,8 @@ import { Assumption, assignObject, idOf, idsOf } from '../src/Assumption'
 import { CollationTolerance, defaultCollationTolerance } from '../src/Collation'
 import {
     addReason, alignCopy, clearBelief, collateSymbols, connectVersions, createBelief, createVersion, deriveVersion,
-    detachVersion, mergeEdits, nameCopy, pairPerforations, placePerforation, removeFeatures, removeReason, removeSymbols,
-    removeVersion, setCertainty, splitEdit, unalignCopy, unpairPerforation, unplacePerforation
+    detachVersion, mergeEdits, nameCopy, pairCommands, placeCommand, removeFeatures, removeReason, removeSymbols,
+    removeVersion, setCertainty, splitEdit, unalignCopy, unpairCommand, unplaceCommand
 } from '../src/editionOps'
 import { copy, cutFor, edition, editionOf, expression, hole, note, version } from './editionFixture'
 import { feetPerMinute, mm, track } from '../src/Quantity'
@@ -386,7 +386,7 @@ describe('merging edits', () => {
 
     /**
      * The green version's edits carry the transfer out. A red pair
-     * giving way to one held green perforation says the same thing in
+     * giving way to one held green command says the same thing in
      * the other system's words; calling it a corrected error, as the
      * rules for one system do, would say the editor made a mistake.
      */
@@ -449,10 +449,10 @@ describe('deriving a version', () => {
     })
 })
 
-describe('placing and pairing perforations', () => {
+describe('placing and pairing commands', () => {
     it('states the placement on the follower where it was inserted', () => {
         const before = edition()
-        const next = produce(before, placePerforation(viewOf(before), 'forzando-off', 'note', 'alignedWith'))
+        const next = produce(before, placeCommand(viewOf(before), 'forzando-off', 'note', 'alignedWith'))
 
         expect(next.versions[0].edits[0].insert?.find(symbol => symbol.id === 'forzando-off'))
             .toMatchObject({ alignedWith: { id: 'note' } })
@@ -462,8 +462,8 @@ describe('placing and pairing perforations', () => {
     it('places one way at most, a new statement taking the place of the old', () => {
         const before = edition()
         const view = viewOf(before)
-        const placed = produce(before, placePerforation(view, 'forzando-off', 'note', 'before'))
-        const next = produce(placed, placePerforation(view, 'forzando-off', 'other-note', 'after'))
+        const placed = produce(before, placeCommand(view, 'forzando-off', 'note', 'before'))
+        const next = produce(placed, placeCommand(view, 'forzando-off', 'other-note', 'after'))
 
         expect(placementsOf(forzandoOffIn(next))).toEqual([{ relation: 'after', reference: { id: 'other-note' } }])
         expect('before' in forzandoOffIn(next)).toBe(false)
@@ -472,8 +472,8 @@ describe('placing and pairing perforations', () => {
     it('takes a placement back without leaving a key behind', () => {
         const before = edition()
         const view = viewOf(before)
-        const placed = produce(before, placePerforation(view, 'forzando-off', 'note', 'before'))
-        const next = produce(placed, unplacePerforation(view, 'forzando-off'))
+        const placed = produce(before, placeCommand(view, 'forzando-off', 'note', 'before'))
+        const next = produce(placed, unplaceCommand(view, 'forzando-off'))
 
         expect(placementsOf(forzandoOffIn(next))).toEqual([])
         expect('before' in forzandoOffIn(next)).toBe(false)
@@ -482,12 +482,12 @@ describe('placing and pairing perforations', () => {
     it('states a pair on one side only, and takes it back from that side', () => {
         const before = edition()
         const view = viewOf(before)
-        const paired = produce(before, pairPerforations(view, 'forzando-off', 'forzando-on'))
+        const paired = produce(before, pairCommands(view, 'forzando-off', 'forzando-on'))
 
         expect(forzandoOffIn(paired).pairedWith).toEqual({ id: 'forzando-on' })
         expect(viewOf(paired).get<Expression>('forzando-on')?.pairedWith).toBeUndefined()
 
-        const next = produce(paired, unpairPerforation(view, 'forzando-off'))
+        const next = produce(paired, unpairCommand(view, 'forzando-off'))
         expect('pairedWith' in forzandoOffIn(next)).toBe(false)
     })
 
@@ -495,13 +495,13 @@ describe('placing and pairing perforations', () => {
         const before = edition()
         const view = viewOf(before)
 
-        expect(produce(before, placePerforation(view, 'label', 'note', 'alignedWith'))).toBe(before)
-        expect(produce(before, pairPerforations(view, 'nothing', 'note'))).toBe(before)
+        expect(produce(before, placeCommand(view, 'label', 'note', 'alignedWith'))).toBe(before)
+        expect(produce(before, pairCommands(view, 'nothing', 'note'))).toBe(before)
     })
 
-    it('binds every version carrying the perforation, which the checks tell apart', () => {
+    it('binds every version carrying the command, which the checks tell apart', () => {
         const before = edition()
-        const next = produce(before, pairPerforations(viewOf(before), 'forzando-off', 'forzando-on'))
+        const next = produce(before, pairCommands(viewOf(before), 'forzando-off', 'forzando-on'))
 
         expect(constraintProblems(viewOf(next)))
             .toContainEqual({ version: 'B', symbol: 'forzando-off', problem: 'partner-missing' })
@@ -586,7 +586,7 @@ describe('attaching a version coded for another system', () => {
         return produce(before, connectVersions(viewOf(before), 'B', 'A'))
     }
 
-    it('says in one edit that a held perforation stands for a latched pair', () => {
+    it('says in one edit that a held command stands for a latched pair', () => {
         const replacement = editsOf(attached(), 'B')
             .find(edit => (edit.insert ?? []).some(symbol => symbol.id === 'cresc-green'))!
 

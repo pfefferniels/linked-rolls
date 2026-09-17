@@ -18,7 +18,7 @@ const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'ut
 
 /**
  * A fresh edition for every test, with the first version's placed
- * perforations at hand: three expressions and a note, in order of place.
+ * commands at hand: three expressions and a note, in order of place.
  */
 const setUp = () => {
     const edition = importJsonLd(JSON.parse(file))
@@ -70,7 +70,7 @@ const setUp = () => {
     return { edition, view, version, first, second, third, note, onsetOf, lengthOf, placeBeside, gap, emulate }
 }
 
-describe('aligning a perforation with another', () => {
+describe('aligning a command with another', () => {
     it('takes the onset of the reference and keeps its length', () => {
         const { first, note, onsetOf, lengthOf, emulate } = setUp()
         first.alignedWith = assignReference(note.id)
@@ -91,7 +91,7 @@ describe('aligning a perforation with another', () => {
         expect(placedAs(second).from).toEqual(onsetOf(note))
     })
 
-    it('leaves a perforation whose reference is absent where it is', () => {
+    it('leaves a command whose reference is absent where it is', () => {
         const { first, onsetOf, emulate } = setUp()
         first.alignedWith = assignReference('nowhere')
 
@@ -99,7 +99,7 @@ describe('aligning a perforation with another', () => {
     })
 })
 
-describe('placing a perforation before or after another', () => {
+describe('placing a command before or after another', () => {
     it('leaves it where the measurement already has it on that side', () => {
         const { first, note, onsetOf, placeBeside, emulate } = setUp()
         placeBeside(first, note, [-5, -3, -4])
@@ -147,7 +147,7 @@ describe('placing a perforation before or after another', () => {
     })
 })
 
-describe('pairing two perforations', () => {
+describe('pairing two commands', () => {
     it('moves the partner by the same distance', () => {
         const { first, second, note, onsetOf, emulate } = setUp()
         first.alignedWith = assignReference(note.id)
@@ -235,7 +235,7 @@ describe('reporting constraints that cannot hold', () => {
         expect(problemsWith(view, version.id, second.id)).toEqual(['after-reference-missing'])
     })
 
-    it('reports a perforation placed relative to itself or in several ways', () => {
+    it('reports a command placed relative to itself or in several ways', () => {
         const { view, version, first, second, note } = setUp()
         first.before = assignReference(first.id)
         second.alignedWith = assignReference(note.id)
@@ -245,14 +245,14 @@ describe('reporting constraints that cannot hold', () => {
         expect(problemsWith(view, version.id, second.id)).toEqual(['placed-several-ways'])
     })
 
-    it('reports a perforation paired with itself', () => {
+    it('reports a command paired with itself', () => {
         const { view, version, first } = setUp()
         first.pairedWith = assignReference(first.id)
 
         expect(problemsWith(view, version.id, first.id)).toEqual(['paired-with-itself'])
     })
 
-    it('reports a perforation claimed by several pairs', () => {
+    it('reports a command claimed by several pairs', () => {
         const { view, version, first, second, third } = setUp()
         first.pairedWith = assignReference(second.id)
         third.pairedWith = assignReference(second.id)

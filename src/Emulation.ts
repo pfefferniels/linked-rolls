@@ -1,7 +1,7 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { idOf } from "./Assumption";
 import { EditionView } from "./EditionView";
-import { AnySymbol, isPerforation, pairsAmong, placementsOf } from "./Symbol";
+import { AnySymbol, isCommand, pairsAmong, placementsOf } from "./Symbol";
 import { Version } from "./Version";
 import {
     AnyPerformedRollFeature,
@@ -154,7 +154,7 @@ export class Emulation<Options extends object> {
     /**
      * Moves the negotiated events to where their statements put them.
      * The view supplies the copies, whose measurements decide how far
-     * before or after its reference a perforation goes, and a punch
+     * before or after its reference a command goes, and a punch
      * diameter, or a millimetre, where no copy agrees with a statement.
      */
     applyConstraints(view: EditionView) {
@@ -179,7 +179,7 @@ export class Emulation<Options extends object> {
 
         this.negotiatedEvents =
             view.snapshot(version.id)
-                .filter(isPerforation)
+                .filter(isCommand)
                 .map(symbol => view.simplifySymbol(symbol, this.system.trackerBar))
                 .filter(event => event !== null)
                 .filter(inScope)
@@ -238,8 +238,8 @@ export class Emulation<Options extends object> {
         // both pedals start at rest
         events.push(controller(MIDIControlEvents.SUSTAIN, 0), controller(MIDIControlEvents.SOFT_PEDAL, 0))
 
-        // a pedal step is labelled with its perforation only where that
-        // perforation changes, so the file is not swamped with labels
+        // a pedal step is labelled with its command only where that
+        // command changes, so the file is not swamped with labels
         const lastCause: Partial<Record<PerformedPedalEvent['type'], string>> = {}
 
         let currentTick = 0

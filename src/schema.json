@@ -101,7 +101,7 @@
           "$ref": "#/definitions/Text"
         }
       ],
-      "description": "A symbol can be either a note, an expression, or a text. Notes and expressions are perforations; texts are carried by writings."
+      "description": "A symbol can be either a note, an expression, or a text. Notes and expressions are commands; texts are carried by writings."
     },
     "Argumentation": {
       "description": "An argumentation provides reasons for a belief and may be associated with a person carrying out that argumentation.",
@@ -622,21 +622,21 @@
       "type": "string"
     },
     "Expression": {
-      "description": "An expression symbol, representing a perforation on the roll that governs dynamics, pedaling, or mechanical functions of the reproducing piano. Each expression has a scope (bass or treble) and a specific expression type.",
+      "description": "An expression symbol, representing a command that governs dynamics, pedaling, or mechanical functions of the reproducing piano rather than sounding a note. Each expression has a scope (bass or treble) and a specific expression type.",
       "properties": {
         "after": {
           "$ref": "#/definitions/ReferenceAssumption",
-          "description": "A perforation whose onset this one follows when the roll is performed, the counterpart of `before`. This points to the perforation by its `@id`.",
+          "description": "A command whose onset this one follows when the roll is performed, the counterpart of `before`. This points to the command by its `@id`.",
           "ontology": "reo:after"
         },
         "alignedWith": {
           "$ref": "#/definitions/ReferenceAssumption",
-          "description": "In piano rolls, perforations are often aligned with other perforations, e.g. a \"crescendo off\" might be logically aligned to the start of a note perforation. This points to the perforation by its `@id`.",
+          "description": "In piano rolls, commands are often aligned with other commands, e.g. a \"crescendo off\" might be logically aligned to the start of a note. This points to the command by its `@id`.",
           "ontology": "reo:alignedWith"
         },
         "before": {
           "$ref": "#/definitions/ReferenceAssumption",
-          "description": "A perforation whose onset this one precedes when the roll is performed, without saying by how much: a \"crescendo off\" ends before the note it leads to begins, even where the copies disagree on it. Where the measurement has it so, nothing moves; where it does not, this one is placed before the reference as far as the copies that agree put it. This points to the perforation by its `@id`.",
+          "description": "A command whose onset this one precedes when the roll is performed, without saying by how much: a \"crescendo off\" ends before the note it leads to begins, even where the copies disagree on it. Where the measurement has it so, nothing moves; where it does not, this one is placed before the reference as far as the copies that agree put it. This points to the command by its `@id`.",
           "ontology": "reo:before"
         },
         "carriers": {
@@ -648,13 +648,13 @@
           "ontology": "crm:P128i is carried by"
         },
         "expressionType": {
-          "description": "The command the perforation gives, named as the reproducing system of the roll names it: \"SustainPedalOn\", \"ForzandoOff\" and so on for the Welte-Mignon T-100. The tracker bar of the system lists the values it reads.",
+          "description": "The kind of command, named as the reproducing system of the roll names it: \"SustainPedalOn\", \"ForzandoOff\" and so on for the Welte-Mignon T-100. The tracker bar of the system lists the values it reads.",
           "type": "string",
           "ontology": "crm:P2 has type"
         },
         "pairedWith": {
           "$ref": "#/definitions/ReferenceAssumption",
-          "description": "The perforation this one forms a pair with, e.g. a \"forzando on\" with its \"forzando off\". Any two perforations may be paired. The distance between the two is fixed: whatever displaces the one displaces the other. The relation is symmetric and is stated on one side only. This points to the perforation by its `@id`.",
+          "description": "The command this one forms a pair with, e.g. a \"forzando on\" with its \"forzando off\". Any two commands may be paired. The distance between the two is fixed: whatever displaces the one displaces the other. The relation is symmetric and is stated on one side only. This points to the command by its `@id`.",
           "ontology": "reo:pairedWith"
         },
         "scope": {
@@ -684,7 +684,7 @@
       "ontology": "reo:Expression"
     },
     "ExpressionScope": {
-      "description": "The scope of an expression perforation, indicating whether it applies to the bass or treble register of the piano.",
+      "description": "The scope of an expression command, indicating whether it applies to the bass or treble register of the piano.",
       "enum": [
         "bass",
         "treble"
@@ -1646,17 +1646,17 @@
       "properties": {
         "after": {
           "$ref": "#/definitions/ReferenceAssumption",
-          "description": "A perforation whose onset this one follows when the roll is performed, the counterpart of `before`. This points to the perforation by its `@id`.",
+          "description": "A command whose onset this one follows when the roll is performed, the counterpart of `before`. This points to the command by its `@id`.",
           "ontology": "reo:after"
         },
         "alignedWith": {
           "$ref": "#/definitions/ReferenceAssumption",
-          "description": "In piano rolls, perforations are often aligned with other perforations, e.g. a \"crescendo off\" might be logically aligned to the start of a note perforation. This points to the perforation by its `@id`.",
+          "description": "In piano rolls, commands are often aligned with other commands, e.g. a \"crescendo off\" might be logically aligned to the start of a note. This points to the command by its `@id`.",
           "ontology": "reo:alignedWith"
         },
         "before": {
           "$ref": "#/definitions/ReferenceAssumption",
-          "description": "A perforation whose onset this one precedes when the roll is performed, without saying by how much: a \"crescendo off\" ends before the note it leads to begins, even where the copies disagree on it. Where the measurement has it so, nothing moves; where it does not, this one is placed before the reference as far as the copies that agree put it. This points to the perforation by its `@id`.",
+          "description": "A command whose onset this one precedes when the roll is performed, without saying by how much: a \"crescendo off\" ends before the note it leads to begins, even where the copies disagree on it. Where the measurement has it so, nothing moves; where it does not, this one is placed before the reference as far as the copies that agree put it. This points to the command by its `@id`.",
           "ontology": "reo:before"
         },
         "carriers": {
@@ -1669,7 +1669,7 @@
         },
         "pairedWith": {
           "$ref": "#/definitions/ReferenceAssumption",
-          "description": "The perforation this one forms a pair with, e.g. a \"forzando on\" with its \"forzando off\". Any two perforations may be paired. The distance between the two is fixed: whatever displaces the one displaces the other. The relation is symmetric and is stated on one side only. This points to the perforation by its `@id`.",
+          "description": "The command this one forms a pair with, e.g. a \"forzando on\" with its \"forzando off\". Any two commands may be paired. The distance between the two is fixed: whatever displaces the one displaces the other. The relation is symmetric and is stated on one side only. This points to the command by its `@id`.",
           "ontology": "reo:pairedWith"
         },
         "pitch": {

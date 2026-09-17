@@ -58,7 +58,7 @@ end of the end` on the `E52 Time-Span` the event has. `assignDate`,
 `notBefore` and `notAfter` build the three shapes, and `dateOf`,
 `earliestOf` and `latestOf` read them.
 
-Note that `before` and `after` mean something else on a perforation,
+Note that `before` and `after` mean something else on a command,
 where they order two onsets. The context defines them for a date
 within the date itself, so the two never meet.
 
@@ -223,25 +223,25 @@ repository.
 
 ### Alignment, order and pairing
 
-A perforation takes its place from the holes that carry it. Four fields
-on a perforation let an editor state where the measurement should give
-way. `alignedWith` names another perforation whose onset this one takes
+A command takes its place from the holes that carry it. Four fields
+on a command let an editor state where the measurement should give
+way. `alignedWith` names another command whose onset this one takes
 in the performance, as a "crescendo off" is meant to fall on the note
-it belongs to. `before` and `after` name a perforation whose onset this
+it belongs to. `before` and `after` name a command whose onset this
 one precedes or follows, without saying by how much: where the copies
 disagree on which side of a note an expression falls, the statement
-settles the order. A perforation the measurement already has on the
+settles the order. A command the measurement already has on the
 stated side keeps its place. One it does not is put on that side, as
 far from the reference as the copies that agree with the statement put
-it, and a punch diameter away where none does. A perforation makes one
+it, and a punch diameter away where none does. A command makes one
 of these three statements at most. `pairedWith` names a partner whose
 distance to this one is fixed, as a "forzando on" belongs with its
 "forzando off": whatever displaces the one displaces the other. Any two
-perforations may be paired, the relation is symmetric, and it is stated
+commands may be paired, the relation is symmetric, and it is stated
 on one side only. All are applied when a version is emulated.
 `constraintProblems` lists, version by version, the cases in which the
 statements cannot hold: a reference or partner that is absent, a
-perforation placed relative to itself or in several ways at once, one
+command placed relative to itself or in several ways at once, one
 claimed by several pairs, or a pair whose members are both placed.
 
 ## Building

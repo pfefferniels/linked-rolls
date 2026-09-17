@@ -28,51 +28,51 @@ export const isSymbol = (object: any): object is AnySymbol => {
     );
 }
 
-export const isPerforation = (symbol: object | undefined): symbol is AnyPerforation =>
+export const isCommand = (symbol: object | undefined): symbol is AnyCommand =>
     symbol !== undefined && 'type' in symbol && (symbol.type === 'note' || symbol.type === 'expression')
 
 /**
- * A perforation is a symbol that is typically encoded as a single punched
- * hole or a group of punched holes in the physical carrier.
- * However, it might also have different physical appearences.
- * @see reo:Perforation
+ * A command is what the tracker bar reads from a perforation, or from a
+ * group of them: the note it sounds, or the function it operates. It is
+ * typically carried by a single punched hole or a chain of them, but it
+ * might also have different physical appearences.
+ * @see reo:Command
  */
-export interface Perforation<T extends string> extends Symbol<T> {
+export interface Command<T extends string> extends Symbol<T> {
     /**
-     * In piano rolls, perforations are often aligned with other
-     * perforations, e.g. a "crescendo off" might be logically
-     * aligned to the start of a note perforation. This points
-     * to the perforation by its `@id`.
+     * In piano rolls, commands are often aligned with other commands,
+     * e.g. a "crescendo off" might be logically aligned to the start of
+     * a note. This points to the command by its `@id`.
      * @see reo:alignedWith
      */
     alignedWith?: ReferenceAssumption;
 
     /**
-     * A perforation whose onset this one precedes when the roll is
+     * A command whose onset this one precedes when the roll is
      * performed, without saying by how much: a "crescendo off" ends
      * before the note it leads to begins, even where the copies
      * disagree on it. Where the measurement has it so, nothing moves;
      * where it does not, this one is placed before the reference as
-     * far as the copies that agree put it. This points to the
-     * perforation by its `@id`.
+     * far as the copies that agree put it. This points to the command
+     * by its `@id`.
      * @see reo:before
      */
     before?: ReferenceAssumption;
 
     /**
-     * A perforation whose onset this one follows when the roll is
+     * A command whose onset this one follows when the roll is
      * performed, the counterpart of `before`. This points to the
-     * perforation by its `@id`.
+     * command by its `@id`.
      * @see reo:after
      */
     after?: ReferenceAssumption;
 
     /**
-     * The perforation this one forms a pair with, e.g. a "forzando on"
-     * with its "forzando off". Any two perforations may be paired.
+     * The command this one forms a pair with, e.g. a "forzando on"
+     * with its "forzando off". Any two commands may be paired.
      * The distance between the two is fixed: whatever displaces the
      * one displaces the other. The relation is symmetric and is stated
-     * on one side only. This points to the perforation by its `@id`.
+     * on one side only. This points to the command by its `@id`.
      * @see reo:pairedWith
      */
     pairedWith?: ReferenceAssumption;
@@ -80,7 +80,7 @@ export interface Perforation<T extends string> extends Symbol<T> {
 
 export const placementRelations = ['alignedWith', 'before', 'after'] as const
 
-/** The ways a perforation may be placed relative to another. */
+/** The ways a command may be placed relative to another. */
 export type PlacementRelation = typeof placementRelations[number]
 
 type Placeable = Partial<Record<PlacementRelation, ReferenceAssumption>>
@@ -88,25 +88,25 @@ type Placeable = Partial<Record<PlacementRelation, ReferenceAssumption>>
 export type Placement = { relation: PlacementRelation; reference: ReferenceAssumption }
 
 /**
- * The statements placing a perforation relative to others, alignment
- * first. A perforation is meant to make one at most; the first is the
- * one a performance applies.
+ * The statements placing a command relative to others, alignment first.
+ * A command is meant to make one at most; the first is the one a
+ * performance applies.
  */
-export const placementsOf = (perforation: Placeable): Placement[] =>
+export const placementsOf = (command: Placeable): Placement[] =>
     placementRelations.flatMap(relation => {
-        const reference = perforation[relation]
+        const reference = command[relation]
         return reference ? [{ relation, reference }] : []
     })
 
 type Pairable = WithId & { pairedWith?: ReferenceAssumption }
 
 /**
- * The pairs among the given perforations, each once and in the order
- * the pairing is stated. A pair whose partner is absent is left out.
+ * The pairs among the given commands, each once and in the order the
+ * pairing is stated. A pair whose partner is absent is left out.
  */
-export const pairsAmong = <S extends Pairable>(perforations: readonly S[]): [S, S][] => {
-    const byId = new Map(perforations.map(p => [p.id, p]))
-    return perforations
+export const pairsAmong = <S extends Pairable>(commands: readonly S[]): [S, S][] => {
+    const byId = new Map(commands.map(p => [p.id, p]))
+    return commands
         .filter((p): p is S & Required<Pairable> => p.pairedWith !== undefined)
         .map((p): [S, S | undefined] => [p, byId.get(idOf(p.pairedWith))])
         .filter((pair): pair is [S, S] => pair[1] !== undefined)
@@ -117,7 +117,7 @@ export const pairsAmong = <S extends Pairable>(perforations: readonly S[]): [S, 
  * The pitch is encoded via the tracker bar position (track number).
  * @see reo:Note
  */
-export interface Note extends Perforation<'note'> {
+export interface Note extends Command<'note'> {
     /**
      * The MIDI pitch number of the note (e.g. 60 for middle C).
      * @see reo:pitch
@@ -126,20 +126,20 @@ export interface Note extends Perforation<'note'> {
 }
 
 /**
- * The scope of an expression perforation, indicating whether it
- * applies to the bass or treble register of the piano.
+ * The scope of an expression command, indicating whether it applies to
+ * the bass or treble register of the piano.
  * @see reo:scope
  */
 export type ExpressionScope = 'bass' | 'treble';
 
 /**
- * An expression symbol, representing a perforation on the roll
- * that governs dynamics, pedaling, or mechanical functions of the
- * reproducing piano. Each expression has a scope (bass or treble)
+ * An expression symbol, representing a command that governs dynamics,
+ * pedaling, or mechanical functions of the reproducing piano rather
+ * than sounding a note. Each expression has a scope (bass or treble)
  * and a specific expression type.
  * @see reo:Expression
  */
-export interface Expression extends Perforation<'expression'> {
+export interface Expression extends Command<'expression'> {
     /**
      * Whether this expression applies to the bass or treble register.
      * @see reo:scope
@@ -147,10 +147,10 @@ export interface Expression extends Perforation<'expression'> {
     scope: ExpressionScope;
 
     /**
-     * The command the perforation gives, named as the reproducing
-     * system of the roll names it: "SustainPedalOn", "ForzandoOff"
-     * and so on for the Welte-Mignon T-100. The tracker bar of the
-     * system lists the values it reads.
+     * The kind of command, named as the reproducing system of the roll
+     * names it: "SustainPedalOn", "ForzandoOff" and so on for the
+     * Welte-Mignon T-100. The tracker bar of the system lists the
+     * values it reads.
      * @see crm:P2 has type
      */
     expressionType: string;
@@ -173,12 +173,12 @@ export interface Text extends Symbol<'text'> {
 
 /**
  * A symbol can be either a note, an expression, or a text.
- * Notes and expressions are perforations; texts are carried by writings.
+ * Notes and expressions are commands; texts are carried by writings.
  */
 export type AnySymbol =
     | Note
     | Expression
     | Text
 
-export type AnyPerforation = Note | Expression
+export type AnyCommand = Note | Expression
 

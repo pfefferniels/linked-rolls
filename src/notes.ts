@@ -4,7 +4,7 @@
  * `{{<id>}}`, where the id is the entity's, and is resolved when the note
  * is shown.
  *
- * An entity the edition gives no name to, a perforation or an edit, needs
+ * An entity the edition gives no name to, a command or an edit, needs
  * the note's own words to stand in the sentence: `{{<id>|die Stanzung bei
  * 7364,7 mm}}`. The name wins where the edition has one, so a siglum
  * still follows the stemma and a written-out label cannot freeze it.

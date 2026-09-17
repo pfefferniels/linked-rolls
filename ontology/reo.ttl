@@ -31,28 +31,28 @@
 # Classes
 #################################################################
 
-reo:Perforation
+reo:Command
     a owl:Class ;
     rdfs:subClassOf crm:E90_Symbolic_Object ;
-    rdfs:label "Perforation"@en ;
-    rdfs:comment """This class comprises the symbols a reproducing piano reads from a roll: the notes it sounds and the commands that govern its mechanism. A perforation is what a hole or a group of holes means once it is read against a tracker bar. The hole itself is an instance of reo:Hole, borne by a copy of the roll (P56 bears feature) and carrying the perforation (P128 carries). One perforation may be carried by holes on several copies of the same roll. A version of the roll, an instance of F2 Expression, is composed of its perforations (P106 is composed of). The measured position of a perforation is that of the holes carrying it; the properties aligned with, before, after and paired with let an editor state where that measurement should give way."""@en ;
+    rdfs:label "Command"@en ;
+    rdfs:comment """This class comprises the symbols a reproducing piano reads from a roll: the notes it sounds and the functions it operates. A command is what a hole or a group of holes means once it is read against a tracker bar. The hole itself is an instance of reo:Hole, borne by a copy of the roll (P56 bears feature) and carrying the command (P128 carries). One command may be carried by holes on several copies of the same roll. A version of the roll, an instance of F2 Expression, is composed of its commands (P106 is composed of). The measured position of a command is that of the holes carrying it; the properties aligned with, before, after and paired with let an editor state where that measurement should give way. The name comes from the mechanism: a perforation is a thing in the paper of one copy, while an instance of this class is what the machine is told to do."""@en ;
     skos:example "the first note of Grünfeld's Träumerei on the Welte-Mignon roll WM 225, recorded in Wien in 1905"@en ,
                  "the sustain pedal command that opens the same roll"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:Note
     a owl:Class ;
-    rdfs:subClassOf reo:Perforation ;
+    rdfs:subClassOf reo:Command ;
     rdfs:label "Note"@en ;
-    rdfs:comment """This class comprises perforations that sound a pitch. The pitch is stated as a MIDI note number (pitch). Its duration follows from the extent of the carrying hole along the roll and is not stated separately."""@en ;
+    rdfs:comment """This class comprises the commands that sound a pitch. The pitch is stated as a MIDI note number (pitch). Its duration follows from the extent of the carrying hole along the roll and is not stated separately."""@en ;
     skos:example "the note c′ (MIDI 60) with which Grünfeld's Träumerei begins on WM 225"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:Expression
     a owl:Class ;
-    rdfs:subClassOf reo:Perforation ;
+    rdfs:subClassOf reo:Command ;
     rdfs:label "Expression"@en ;
-    rdfs:comment """This class comprises perforations that act on the reproducing mechanism rather than sound a note: dynamic commands such as crescendo, forzando and mezzoforte, the pedals, and motor functions such as rewind. The kind of command is given by P2 has type with one of the expression types at https://w3id.org/reo/type/; the half of the keyboard it acts on by scope. The name follows the vocabulary of the reproducing piano, where these are the expression perforations read by the expression box. It is unrelated to F2 Expression in LRMoo, which is the class of the roll's versions."""@en ;
+    rdfs:comment """This class comprises the commands that act on the reproducing mechanism rather than sound a note: dynamic commands such as crescendo, forzando and mezzoforte, the pedals, and motor functions such as rewind. The kind of command is given by P2 has type with one of the expression types at https://w3id.org/reo/type/; the half of the keyboard it acts on by scope. The name follows the vocabulary of the reproducing piano, where these are the expression perforations read by the expression box. It is unrelated to F2 Expression in LRMoo, which is the class of the roll's versions."""@en ;
     skos:example "a 'slow crescendo off' on a Welte-Mignon T-100 roll, aligned with the note it belongs to"@en ,
                  "the 'forzando on' and 'forzando off' pair that accents a single chord"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
@@ -69,7 +69,7 @@ reo:Hole
     a owl:Class ;
     rdfs:subClassOf crm:E25_Human-Made_Feature ;
     rdfs:label "Hole"@en ;
-    rdfs:comment """This class comprises the perforations punched in the paper of a roll, which is what a reproducing piano reads. A hole is a human-made feature of the paper: the scope note of E25 Human-Made Feature states that it includes "the information encoding features on mechanical or digital carriers". What a hole means once it is read against a tracker bar is a perforation in the sense of reo:Perforation, which the hole carries (P128 carries). The punching pattern is given by reo:pattern."""@en ;
+    rdfs:comment """This class comprises the perforations punched in the paper of a roll, which is what a reproducing piano reads. A hole is a human-made feature of the paper: the scope note of E25 Human-Made Feature states that it includes "the information encoding features on mechanical or digital carriers". What a hole means once it is read against a tracker bar is a command in the sense of reo:Command, which the hole carries (P128 carries). The punching pattern is given by reo:pattern."""@en ;
     skos:example "the hole carrying the first note of Grünfeld's Träumerei on the Stanford copy of WM 225"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
@@ -102,44 +102,44 @@ reo:Edit
     rdfs:subClassOf crm:E7_Activity ;
     rdfs:label "Edit"@en ;
     rdfs:comment """This class comprises the single changes by which one version of a roll is turned into another: adding symbols, removing them, or both, which amounts to replacing. The creation of the new version, an instance of F28 Expression Creation, consists of its edits (P9 consists of). The kind of change is given by P2 has type, the reason by P17 was motivated by. Uncertainty about an edit, for instance whether a pencil mark on a copy was meant as an instruction to punch, is expressed with CRMinf on the statement, not by a property of this class."""@en ;
-    skos:example "the prolongation of a crescendo perforation between versions A and B of WM 225, motivated by 'Verlängerter Bereich ohne Verschiebung'"@en ;
+    skos:example "the prolongation of a crescendo command between versions A and B of WM 225, motivated by 'Verlängerter Bereich ohne Verschiebung'"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 
 #################################################################
-# Properties of perforations
+# Properties of commands
 #################################################################
 
 reo:alignedWith
     a owl:ObjectProperty ;
-    rdfs:domain reo:Perforation ;
-    rdfs:range reo:Perforation ;
+    rdfs:domain reo:Command ;
+    rdfs:range reo:Command ;
     rdfs:label "aligned with"@en ;
-    rdfs:comment """This property associates a perforation with another perforation whose onset it takes when the roll is performed. It records the editorial statement that the measured offset between the two is not meant: a 'crescendo off' falls on the note it belongs to. The property is not symmetric. The aligned perforation follows, the one it is aligned with keeps its measured place."""@en ;
+    rdfs:comment """This property associates a command with another command whose onset it takes when the roll is performed. It records the editorial statement that the measured offset between the two is not meant: a 'crescendo off' falls on the note it belongs to. The property is not symmetric. The aligned command follows, the one it is aligned with keeps its measured place."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:before
     a owl:ObjectProperty ;
-    rdfs:domain reo:Perforation ;
-    rdfs:range reo:Perforation ;
+    rdfs:domain reo:Command ;
+    rdfs:range reo:Command ;
     rdfs:label "before"@en ;
-    rdfs:comment """This property associates a perforation with another perforation whose onset it precedes when the roll is performed, without saying by how much. It records the editorial statement that the order of the two is meant even where the copies disagree on it: a 'crescendo off' ends before the note it leads to begins. The property is not symmetric. A perforation the measurement already has before its reference keeps its place; one it does not is put before the reference as far as the copies that agree with the statement put it."""@en ;
+    rdfs:comment """This property associates a command with another command whose onset it precedes when the roll is performed, without saying by how much. It records the editorial statement that the order of the two is meant even where the copies disagree on it: a 'crescendo off' ends before the note it leads to begins. The property is not symmetric. A command the measurement already has before its reference keeps its place; one it does not is put before the reference as far as the copies that agree with the statement put it."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:after
     a owl:ObjectProperty ;
-    rdfs:domain reo:Perforation ;
-    rdfs:range reo:Perforation ;
+    rdfs:domain reo:Command ;
+    rdfs:range reo:Command ;
     rdfs:label "after"@en ;
-    rdfs:comment """This property associates a perforation with another perforation whose onset it follows when the roll is performed, without saying by how much: the counterpart of before. A perforation is placed by one of aligned with, before and after at most."""@en ;
+    rdfs:comment """This property associates a command with another command whose onset it follows when the roll is performed, without saying by how much: the counterpart of before. A command is placed by one of aligned with, before and after at most."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:pairedWith
     a owl:ObjectProperty , owl:SymmetricProperty ;
-    rdfs:domain reo:Perforation ;
-    rdfs:range reo:Perforation ;
+    rdfs:domain reo:Command ;
+    rdfs:range reo:Command ;
     rdfs:label "paired with"@en ;
-    rdfs:comment """This property associates two perforations whose distance from one another is fixed: whatever displaces the one displaces the other, as a 'forzando on' belongs with its 'forzando off'. Any two perforations may be paired. The property is symmetric and is stated on one side only. A perforation belongs to at most one pair, and the members of a pair are not themselves placed relative to anything, whether aligned with it, before it or after it."""@en ;
+    rdfs:comment """This property associates two commands whose distance from one another is fixed: whatever displaces the one displaces the other, as a 'forzando on' belongs with its 'forzando off'. Any two commands may be paired. The property is symmetric and is stated on one side only. A command belongs to at most one pair, and the members of a pair are not themselves placed relative to anything, whether aligned with it, before it or after it."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:pitch
@@ -156,7 +156,7 @@ reo:scope
     rdfs:domain reo:Expression ;
     rdfs:range crm:E55_Type ;
     rdfs:label "scope"@en ;
-    rdfs:comment """This property states which half of the keyboard an expression perforation acts on. On rolls for the Welte-Mignon and most other reproducing systems the expression is split at a fixed point into a bass and a treble half, each with its own set of commands. The values are the types bass and treble at https://w3id.org/reo/type/."""@en ;
+    rdfs:comment """This property states which half of the keyboard an expression command acts on. On rolls for the Welte-Mignon and most other reproducing systems the expression is split at a fixed point into a bass and a treble half, each with its own set of commands. The values are the types bass and treble at https://w3id.org/reo/type/."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 
@@ -212,7 +212,7 @@ reo:added
     rdfs:domain reo:Edit ;
     rdfs:range crm:E90_Symbolic_Object ;
     rdfs:label "added"@en ;
-    rdfs:comment """This property associates an edit with a symbol it adds to the version being created: a perforation, or a text written onto the roll."""@en ;
+    rdfs:comment """This property associates an edit with a symbol it adds to the version being created: a command, or a text written onto the roll."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:removed

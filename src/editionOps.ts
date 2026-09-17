@@ -2,7 +2,7 @@ import { current, Draft, isDraft } from "immer"
 import { v4 } from "uuid"
 import { EditionView, getAt, Path } from "./EditionView"
 import { Edition } from "./Edition"
-import { AnyPerforation, AnySymbol, Expression, PlacementRelation, isPerforation, placementRelations } from "./Symbol"
+import { AnyCommand, AnySymbol, Expression, PlacementRelation, isCommand, placementRelations } from "./Symbol"
 import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance } from "./Collation"
 import { Edit, EditType } from "./Edit"
 import { collationToleranceOf, Derivation, editsOf, insertedBy, principalDerivationOf, Version } from "./Version"
@@ -289,15 +289,15 @@ export const symbolsCarriedOnlyBy = (edition: Edition, copyId: string): AnySymbo
 
 const references = [...placementRelations, 'pairedWith'] as const
 
-/** The perforation without its references to the dropped symbols, or the very same one where it makes none. */
-const forgettingReferences = (perforation: AnyPerforation, dropped: Ids): AnyPerforation => {
+/** The command without its references to the dropped symbols, or the very same one where it makes none. */
+const forgettingReferences = (command: AnyCommand, dropped: Ids): AnyCommand => {
     const stale = references.filter(relation => {
-        const reference = perforation[relation]
+        const reference = command[relation]
         return reference !== undefined && dropped.has(idOf(reference))
     })
-    if (stale.length === 0) return perforation
+    if (stale.length === 0) return command
 
-    const kept = { ...perforation }
+    const kept = { ...command }
     stale.forEach(relation => { delete kept[relation] })
     return kept
 }
@@ -306,7 +306,7 @@ const forgettingReferences = (perforation: AnyPerforation, dropped: Ids): AnyPer
 const forgettingCarriers = (features: Ids, dropped: Ids) => (symbol: AnySymbol): AnySymbol => {
     const carriers = without(symbol.carriers, carrier => features.has(idOf(carrier)))
     const relieved: AnySymbol = carriers === symbol.carriers ? symbol : { ...symbol, carriers }
-    return isPerforation(relieved) ? forgettingReferences(relieved, dropped) : relieved
+    return isCommand(relieved) ? forgettingReferences(relieved, dropped) : relieved
 }
 
 /** The edit without the dropped symbols and the features, or the very same edit where it had none of them. */
@@ -833,7 +833,7 @@ export const connectVersions = (
     const matched = new Set(collations.map(({ counterpart }) => counterpart.id))
 
     /**
-     * Where the child is coded for another system, a held perforation of
+     * Where the child is coded for another system, a held command of
      * its own often stands for a latched pair of the parent's. Saying so
      * as one edit is the transfer being carried out, and leaving the two
      * apart would make the apparatus a list of unexplained losses beside
@@ -1082,44 +1082,44 @@ export const splitEdit = (versionId: string, toSplit: Edit): EditionOp => {
 }
 
 /**
- * Runs the change on the perforation the view locates by id, in whichever
+ * Runs the change on the command the view locates by id, in whichever
  * version inserted it. A statement made there holds in every version
- * that carries the perforation.
+ * that carries the command.
  */
-const onPerforation = (view: EditionView, id: string, op: (perforation: Draft<AnyPerforation>) => void): EditionOp =>
+const onCommand = (view: EditionView, id: string, op: (command: Draft<AnyCommand>) => void): EditionOp =>
     draft => {
         const path = view.getPath(id)
         const symbol = path && getAt<Draft<AnySymbol>>(path, draft)
-        if (isPerforation(symbol)) op(symbol)
+        if (isCommand(symbol)) op(symbol)
     }
 
-const clearPlacement = (perforation: Draft<AnyPerforation>) =>
-    placementRelations.forEach(relation => { delete perforation[relation] })
+const clearPlacement = (command: Draft<AnyCommand>) =>
+    placementRelations.forEach(relation => { delete command[relation] })
 
 /** States how the follower is placed relative to the reference, in place of any earlier statement. */
-export const placePerforation = (
+export const placeCommand = (
     view: EditionView,
     followerId: string,
     referenceId: string,
     relation: PlacementRelation
 ): EditionOp =>
-    onPerforation(view, followerId, perforation => {
-        clearPlacement(perforation)
-        perforation[relation] = assignReference(referenceId)
+    onCommand(view, followerId, command => {
+        clearPlacement(command)
+        command[relation] = assignReference(referenceId)
     })
 
-export const unplacePerforation = (view: EditionView, followerId: string): EditionOp =>
-    onPerforation(view, followerId, clearPlacement)
+export const unplaceCommand = (view: EditionView, followerId: string): EditionOp =>
+    onCommand(view, followerId, clearPlacement)
 
 /** The pair is stated on `statingId` only, as the format asks. */
-export const pairPerforations = (view: EditionView, statingId: string, partnerId: string): EditionOp =>
-    onPerforation(view, statingId, perforation => {
-        perforation.pairedWith = assignReference(partnerId)
+export const pairCommands = (view: EditionView, statingId: string, partnerId: string): EditionOp =>
+    onCommand(view, statingId, command => {
+        command.pairedWith = assignReference(partnerId)
     })
 
-export const unpairPerforation = (view: EditionView, statingId: string): EditionOp =>
-    onPerforation(view, statingId, perforation => {
-        delete perforation.pairedWith
+export const unpairCommand = (view: EditionView, statingId: string): EditionOp =>
+    onCommand(view, statingId, command => {
+        delete command.pairedWith
     })
 
 const onAssumptionAt = (path: Path, op: (assumption: Draft<Assumption>) => void): EditionOp =>

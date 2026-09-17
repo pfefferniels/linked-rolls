@@ -129,7 +129,7 @@ describe('the pedals of a version', () => {
         expect(inTransit).toBeGreaterThan(100)
     })
 
-    it('emits a run of controller steps for every perforation', () => {
+    it('emits a run of controller steps for every command', () => {
         expect(pedalEvents.length).toBeGreaterThan(200)
         pedalEvents.forEach(event => {
             expect(event.value).toBeGreaterThanOrEqual(0)
@@ -138,7 +138,7 @@ describe('the pedals of a version', () => {
         expect(new Set(pedalEvents.map(event => event.value)).size).toBeGreaterThan(2)
     })
 
-    it('attributes each step to a pedal perforation', () => {
+    it('attributes each step to a pedal command', () => {
         const pedals = new Set(emulation.negotiatedEvents
             .filter(event => event.type === 'expression' && event.expressionType.startsWith('SustainPedal'))
             .map(event => event.id))
@@ -182,7 +182,7 @@ describe('the MIDI of a version', () => {
         expect(new Set(sustain.map(event => (event as { value: number }).value)).size).toBeGreaterThan(2)
     })
 
-    it('labels every pedal perforation that moves the pedal', () => {
+    it('labels every pedal command that moves the pedal', () => {
         const labels = new Set(track
             .filter(event => event.type === 'meta' && event.subtype === 'text')
             .map(event => (event as { text: string }).text))

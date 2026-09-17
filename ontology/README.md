@@ -37,7 +37,7 @@ ontology itself.
 ## Naming
 
 Terms carry plain names. Classes are written in upper camel case
-(`reo:Perforation`), properties in lower camel case
+(`reo:Command`), properties in lower camel case
 (`reo:alignedWith`), and type instances in lower case, hyphenated
 where they run to more than one word (`reot:treble`,
 `reot:paper-stretch`). Where a property is reo's own, its

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { AnySymbol, Expression } from '../src/Symbol'
 import { HorizontalSpan } from '../src/Feature'
 import { mm } from '../src/Quantity'
-import { commandOf, substitutionsBetween } from '../src/substitution'
+import { operationOf, substitutionsBetween } from '../src/substitution'
 
 const at = (from: number, to: number): HorizontalSpan => ({ unit: 'mm', from: mm(from), to: mm(to) })
 
@@ -17,26 +17,26 @@ const locate = (symbol: AnySymbol) => places.get(symbol.id)
 
 describe('what a Welte command operates', () => {
     it('puts the red and the green word for one function together', () => {
-        expect(commandOf('SlowCrescendoOn')?.operates).toBe('crescendo')
-        expect(commandOf('Crescendo')?.operates).toBe('crescendo')
-        expect(commandOf('SlowCrescendoOn')?.spelling).toBe('on')
-        expect(commandOf('Crescendo')?.spelling).toBe('held')
+        expect(operationOf('SlowCrescendoOn')?.operates).toBe('crescendo')
+        expect(operationOf('Crescendo')?.operates).toBe('crescendo')
+        expect(operationOf('SlowCrescendoOn')?.spelling).toBe('on')
+        expect(operationOf('Crescendo')?.spelling).toBe('held')
     })
 
     it('answers the red sforzando with both green ones', () => {
-        expect(commandOf('ForzandoOn')?.operates).toBe('sforzando')
-        expect(commandOf('SforzandoForte')?.operates).toBe('sforzando')
-        expect(commandOf('SforzandoPiano')?.operates).toBe('sforzando')
+        expect(operationOf('ForzandoOn')?.operates).toBe('sforzando')
+        expect(operationOf('SforzandoForte')?.operates).toBe('sforzando')
+        expect(operationOf('SforzandoPiano')?.operates).toBe('sforzando')
     })
 
     it('knows nothing of a command the green scale has no word for', () => {
-        expect(commandOf('MotorOn')).toBeUndefined()
-        expect(commandOf('Rewind')).toBeUndefined()
-        expect(commandOf('ElectricCutOff')).toBeUndefined()
+        expect(operationOf('MotorOn')).toBeUndefined()
+        expect(operationOf('Rewind')).toBeUndefined()
+        expect(operationOf('ElectricCutOff')).toBeUndefined()
     })
 })
 
-describe('substituting a held perforation for a latched pair', () => {
+describe('substituting a held command for a latched pair', () => {
     it('pairs a green crescendo with the red pair it stands for', () => {
         const on = command('on', 'SlowCrescendoOn', 'bass', 1000, 1002)
         const off = command('off', 'SlowCrescendoOff', 'bass', 1200, 1202)

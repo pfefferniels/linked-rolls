@@ -250,7 +250,7 @@ describe('the pedals', () => {
         expect(pedalPresetOf({ ...pedalPresets.brushing, fallMs: 1 })).toBeUndefined()
     })
 
-    it('emits a run of controller steps and attributes each to a perforation', () => {
+    it('emits a run of controller steps and attributes each to a command', () => {
         const steps = green.events.filter((event): event is PerformedPedalEvent => event.type === 'damper')
         expect(steps.length).toBeGreaterThan(20)
         const pedals = new Set(GREEN.filter(event =>

@@ -1,6 +1,6 @@
 import { EditionView } from "./EditionView"
 import { idOf } from "./Assumption"
-import { AnyPerforation, AnySymbol, Expression, PlacementRelation, isPerforation, pairsAmong, placementsOf } from "./Symbol"
+import { AnyCommand, AnySymbol, Expression, PlacementRelation, isCommand, pairsAmong, placementsOf } from "./Symbol"
 import { keyOf } from "./TrackerBar"
 import { trackerBarOf } from "./systems"
 import { barOf } from "./RollCopy"
@@ -31,37 +31,37 @@ const missingReference: Record<PlacementRelation, ConstraintProblem['problem']> 
     after: 'after-reference-missing'
 }
 
-const problemsIn = (version: string, perforations: readonly AnyPerforation[]): ConstraintProblem[] => {
-    const ids = new Set(perforations.map(p => p.id))
+const problemsIn = (version: string, commands: readonly AnyCommand[]): ConstraintProblem[] => {
+    const ids = new Set(commands.map(p => p.id))
     const report = (symbol: string, problem: ConstraintProblem['problem']): ConstraintProblem =>
         ({ version, symbol, problem })
 
-    const missingReferences = perforations
+    const missingReferences = commands
         .flatMap(p => placementsOf(p)
             .filter(({ reference }) => !ids.has(idOf(reference)))
             .map(({ relation }) => report(p.id, missingReference[relation])))
 
-    const selfPlaced = perforations
+    const selfPlaced = commands
         .filter(p => placementsOf(p).some(({ reference }) => idOf(reference) === p.id))
         .map(p => report(p.id, 'placed-relative-to-itself'))
 
-    const placedSeveralWays = perforations
+    const placedSeveralWays = commands
         .filter(p => placementsOf(p).length > 1)
         .map(p => report(p.id, 'placed-several-ways'))
 
-    const missingPartners = perforations
+    const missingPartners = commands
         .filter(p => p.pairedWith && !ids.has(idOf(p.pairedWith)))
         .map(p => report(p.id, 'partner-missing'))
 
-    const selfPaired = perforations
+    const selfPaired = commands
         .filter(p => p.pairedWith && idOf(p.pairedWith) === p.id)
         .map(p => report(p.id, 'paired-with-itself'))
 
-    const pairs = pairsAmong(perforations)
+    const pairs = pairsAmong(commands)
     const pairsPerId = pairs
         .flatMap(([one, other]) => one === other ? [one] : [one, other])
         .reduce((counts, p) => counts.set(p.id, (counts.get(p.id) ?? 0) + 1), new Map<string, number>())
-    const inSeveralPairs = perforations
+    const inSeveralPairs = commands
         .filter(p => (pairsPerId.get(p.id) ?? 0) > 1)
         .map(p => report(p.id, 'in-several-pairs'))
 
@@ -112,9 +112,9 @@ const typesNotOnTheBar = (version: Version, snapshot: readonly AnySymbol[]): Con
 const carriersOffTheirMeaning = (
     view: EditionView,
     version: string,
-    perforations: readonly AnyPerforation[]
+    commands: readonly AnyCommand[]
 ): ConstraintProblem[] => {
-    const misread = (carrier: FeatureOrPatch, symbol: AnyPerforation): boolean => {
+    const misread = (carrier: FeatureOrPatch, symbol: AnyCommand): boolean => {
         const copy = view.copyOf(carrier.id)
         if (!copy) return false
 
@@ -124,7 +124,7 @@ const carriersOffTheirMeaning = (
             .some(meaning => keyOf(meaning) === keyOf(symbol))
     }
 
-    return perforations
+    return commands
         .filter(symbol => view.carriersOf(symbol).some(carrier => misread(carrier, symbol)))
         .map(symbol => ({ version, symbol: symbol.id, problem: 'carrier-on-another-track' as const }))
 }
@@ -145,7 +145,7 @@ const paperDisagreed = (view: EditionView, version: Version): ConstraintProblem[
 
 /**
  * Where the edition cannot hold as stated, version by version: a
- * placement or pairing reference absent from the version, a perforation
+ * placement or pairing reference absent from the version, a command
  * placed relative to itself or in several ways at once, one claimed by
  * several pairs, a pair whose members are both placed and so cannot
  * keep their distance and follow their references at once, an
@@ -155,12 +155,12 @@ const paperDisagreed = (view: EditionView, version: Version): ConstraintProblem[
 export const constraintProblems = (view: EditionView): ConstraintProblem[] =>
     view.edition.versions.flatMap(version => {
         const snapshot = view.snapshot(version.id)
-        const perforations = snapshot.filter(isPerforation)
+        const commands = snapshot.filter(isCommand)
 
         return [
-            ...problemsIn(version.id, perforations),
+            ...problemsIn(version.id, commands),
             ...typesNotOnTheBar(version, snapshot),
-            ...carriersOffTheirMeaning(view, version.id, perforations),
+            ...carriersOffTheirMeaning(view, version.id, commands),
             ...paperDisagreed(view, version)
         ]
     })

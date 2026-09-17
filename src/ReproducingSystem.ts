@@ -57,8 +57,8 @@ export interface PerformedNoteOffEvent extends PerformedNoteEvent<'noteOff'> { }
 
 /**
  * One step of a pedal. A pedal driven by a bellows takes time to travel,
- * so a single perforation results in a run of these; `performs` is the
- * perforation whose reading the step follows from.
+ * so a single command results in a run of these; `performs` is the
+ * command whose reading the step follows from.
  */
 export interface PerformedPedalEvent extends PerformedRollFeature<'damper' | 'hammerRail'> {
     /** 0 with the pedal up and 127 with it fully down. */

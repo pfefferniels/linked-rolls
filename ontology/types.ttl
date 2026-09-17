@@ -16,14 +16,14 @@
     dcterms:isPartOf <https://w3id.org/reo/> .
 
 
-# Scope of an expression perforation (reo:scope)
+# Scope of an expression command (reo:scope)
 
 reot:bass a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "bass"@en ;
-    rdfs:comment "The lower half of the keyboard, as controlled by the bass expression perforations."@en .
+    rdfs:comment "The lower half of the keyboard, as controlled by the bass expression commands."@en .
 reot:treble a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "treble"@en ;
-    rdfs:comment "The upper half of the keyboard, as controlled by the treble expression perforations."@en .
+    rdfs:comment "The upper half of the keyboard, as controlled by the treble expression commands."@en .
 
 
 # Punching pattern of a hole (reo:pattern)
@@ -118,7 +118,7 @@ reot:transcription a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.or
     rdfs:comment "The editor read the writings on the copies and put down what they say."@en .
 reot:collation a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "collation"@en ;
-    rdfs:comment "The editor compared the copies and decided which perforations of one stand for which of another."@en .
+    rdfs:comment "The editor compared the copies and decided which commands of one stand for which of another."@en .
 reot:encoding a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "encoding"@en ;
     rdfs:comment "The editor brought the readings into the format."@en .
