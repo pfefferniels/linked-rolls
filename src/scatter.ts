@@ -9,6 +9,7 @@ import {
 } from "./statistics"
 import { AnySymbol } from "./Symbol"
 import { groupBy } from "./utils"
+import { deletedBy, insertedBy, Version } from "./Version"
 
 /**
  * How far the copies of a roll disagree about where a symbol lies, and
@@ -50,7 +51,15 @@ const sitsOn = (view: EditionView, copies: ReadonlySet<string>) => (feature: Rea
  * that reads it: no second symbol is left to match it against. Which
  * copies a version was established from is therefore not something the
  * edition still states once the collation has run, and the caller
- * names them.
+ * names them. `sidesOf` says which copies attest each side of a
+ * derivation, which is the way to name them rather than by hand.
+ *
+ * The copies named are one **side** of a comparison and the rest are
+ * the other, so the displacement is signed and its sign is the caller's
+ * choice. Naming a set that is not a side yields a well formed
+ * measurement of something else: one copy's own noise against a mixture
+ * of both sides, which is no window any collation used and is wider
+ * than the truth.
  *
  * A symbol only one side carries measures nothing and is passed over,
  * which leaves out exactly the insertions and the deletions.
@@ -167,7 +176,14 @@ export interface Scatter {
      */
     k: number
 
-    /** The window that follows: `k` times the scatter, centred on the median. */
+    /**
+     * The window that follows: `k` times the scatter, centred on the
+     * median. Its offsets run in the direction of the sample, the
+     * copies named less the rest, so a window measured over the
+     * parent's copies carries them negated. `toleranceAcross` is what
+     * turns these into the window a derivation stores, and it asks
+     * which side was named; storing one of these directly does not.
+     */
     tolerance: CollationTolerance
 
     /** How far the sample departs from the normal shape, at either end. */
@@ -298,25 +314,103 @@ const covering = (windows: readonly Window[]): Window => {
 }
 
 /**
- * One window admitting what every sample's own window admits. A
- * derivation states a single tolerance while the samples differ, and
- * covering them keeps each sample within the budget of chance
- * departures its own threshold was chosen for. Nothing where there is
- * no sample.
+ * Which side of a derivation a measurement was taken over: the version
+ * derived, or the version it is read against.
  */
-export const toleranceAcross = (scatters: readonly Scatter[]): CollationTolerance | undefined => {
+export type Side = 'child' | 'parent'
+
+/**
+ * One window admitting what every sample's own window admits, in the
+ * direction a collation applies it.
+ *
+ * A derivation states a single tolerance while the samples differ, and
+ * covering them keeps each sample within the budget of chance
+ * departures its own threshold was chosen for.
+ *
+ * `named` says whose copies the scatters were measured over, and it is
+ * asked for rather than assumed because nothing else can tell. A window
+ * measured over the parent's copies runs the other way, and stored
+ * unturned its offsets sit on the wrong side of the readings: the width
+ * is unaffected, so nothing in the magnitude looks wrong, and the
+ * departures are unaffected too, since they are taken about the
+ * sample's own median. Only the collation is wrong, and it is wrong in
+ * both directions at once, separating readings that belong together and
+ * merging readings that do not. Nothing where there is no sample.
+ */
+export const toleranceAcross = (
+    scatters: readonly Scatter[],
+    named: Side
+): CollationTolerance | undefined => {
     if (scatters.length === 0) return undefined
 
+    const towardsChild = named === 'child' ? 1 : -1
     const start = covering(scatters.map(({ tolerance }) =>
         ({ offset: offsetStartOf(tolerance), tolerance: tolerance.toleranceStart })))
     const end = covering(scatters.map(({ tolerance }) =>
         ({ offset: offsetEndOf(tolerance), tolerance: tolerance.toleranceEnd })))
 
     return {
-        offsetStart: start.offset,
+        offsetStart: mm(towardsChild * start.offset),
         toleranceStart: start.tolerance,
-        offsetEnd: end.offset,
+        offsetEnd: mm(towardsChild * end.offset),
         toleranceEnd: end.tolerance
+    }
+}
+
+/** How many of a side's symbols a copy bears. */
+export interface Attestation {
+    copy: string
+    symbols: number
+}
+
+/** The copies attesting each side of a derivation, each side in order of how much it bears. */
+export interface Sides {
+    /** The copies bearing what the child inserts: the reading the derivation moves to. */
+    child: Attestation[]
+
+    /** The copies bearing what the child strikes from the parent: the reading it moves from. */
+    parent: Attestation[]
+}
+
+const copiesBearing = (view: EditionView, symbols: readonly Readonly<AnySymbol>[]): Attestation[] => {
+    const tally = symbols.reduce((counts, symbol) => {
+        const bearers = new Set(view.carriersOf(symbol).flatMap(carrier => {
+            const copy = view.copyOf(carrier.id)
+            return copy ? [copy.id] : []
+        }))
+        bearers.forEach(copy => counts.set(copy, (counts.get(copy) ?? 0) + 1))
+        return counts
+    }, new Map<string, number>())
+
+    return [...tally]
+        .map(([copy, symbols]) => ({ copy, symbols }))
+        .sort((a, b) => b.symbols - a.symbols)
+}
+
+/**
+ * Which copies attest each side of a version's derivation, read off the
+ * edits themselves: the copies bearing what it inserts stand for the
+ * reading it moves to, and those bearing what it strikes for the
+ * reading it moves from.
+ *
+ * This is the way to name a side. Counting only the copies that bear a
+ * version's own text will not do it, because a collation hands a
+ * child's carriers up to the parent's symbols, so a descendant's copies
+ * come to bear an ancestor's readings and look like its own. The
+ * deletions are not exposed to that: what a version strikes is attested
+ * by the copies that read it before the version departed from it.
+ *
+ * A fully collated edge inserts and deletes nothing and so attests
+ * neither side, which is the case where the edition has genuinely
+ * stopped saying and an editor has to.
+ */
+export const sidesOf = (view: EditionView, versionId: string): Sides | undefined => {
+    const version = view.get<Version>(versionId)
+    if (!version) return undefined
+
+    return {
+        child: copiesBearing(view, insertedBy(version)),
+        parent: copiesBearing(view, view.getAll<AnySymbol>(deletedBy(version)))
     }
 }
 

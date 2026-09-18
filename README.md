@@ -100,14 +100,29 @@ displacements an editor is looking for are in the sample, and a
 standard deviation would grow towards them until they no longer stood
 out.
 
+The copies named are one **side** of the comparison and the rest are
+the other, so which copies to name is the first question and the
+edition no longer answers it: a collation hands a child's carriers up
+to the parent's symbols, so a descendant's copies come to bear an
+ancestor's readings and look like its own. `sidesOf` reads the sides
+off the edits instead, the copies bearing what a version inserts
+standing for the reading it moves to and those bearing what it strikes
+for the reading it moves from. Naming a set that is not a side measures
+one copy's noise against a mixture of both sides, which is wider than
+the truth.
+
 The tolerance that follows is the scatter times a threshold fixed by
 the size of the sample, the point beyond which fewer than one reading
 is expected to fall by chance (`departureThreshold`). For the few
 hundred readings an edge of a stemma yields this lands a little above
 three. `toleranceAcross` covers several samples with one window, since
 a derivation states one tolerance while notes and expressions scatter
-differently, and `inferredTolerance` builds the belief the number rests
-on, to annotate `collationTolerance` with. It is held likely and not
+differently. It asks which side was measured, because a window is
+signed: the offset runs from the parent to the child, and one stored
+the other way round has the right width and the wrong centre, so it
+separates readings that belong together and merges readings that do
+not while nothing in the number looks wrong. `inferredTolerance` builds
+the belief the number rests on, to annotate `collationTolerance` with. It is held likely and not
 true: the tolerance follows from the sample only as far as the sample
 is normal, which is what the reported excess kurtosis and tail counts
 are there to show.

@@ -36,13 +36,20 @@ export interface CollationTolerance {
     toleranceEnd: Millimeters
 
     /**
-     * How much later the collated copy puts the start of a feature than
-     * the copy it is read against, where the two differ systematically.
-     * Nothing where they do not.
+     * How much later the derived version puts the start of a feature
+     * than the version it is read against, where the two differ
+     * systematically. Nothing where they do not.
+     *
+     * The direction is the one a collation measures in, the child less
+     * the parent, and it is not symmetric: stored the other way round
+     * the window sits on the wrong side of the readings and merges what
+     * it should separate. A measurement taken over the parent's copies
+     * gives the negative of this, which is what `toleranceAcross` asks
+     * the side for.
      */
     offsetStart?: Millimeters
 
-    /** The same at the end of a feature. */
+    /** The same at the end of a feature, in the same direction. */
     offsetEnd?: Millimeters
 }
 

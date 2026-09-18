@@ -208,11 +208,11 @@
       "properties": {
         "offsetEnd": {
           "$ref": "#/definitions/Millimeters",
-          "description": "The same at the end of a feature."
+          "description": "The same at the end of a feature, in the same direction."
         },
         "offsetStart": {
           "$ref": "#/definitions/Millimeters",
-          "description": "How much later the collated copy puts the start of a feature than the copy it is read against, where the two differ systematically. Nothing where they do not."
+          "description": "How much later the derived version puts the start of a feature than the version it is read against, where the two differ systematically. Nothing where they do not.\n\nThe direction is the one a collation measures in, the child less the parent, and it is not symmetric: stored the other way round the window sits on the wrong side of the readings and merges what it should separate. A measurement taken over the parent's copies gives the negative of this, which is what `toleranceAcross` asks the side for."
         },
         "toleranceEnd": {
           "$ref": "#/definitions/Millimeters",
@@ -1932,11 +1932,11 @@
         },
         "offsetEnd": {
           "$ref": "#/definitions/Millimeters",
-          "description": "The same at the end of a feature."
+          "description": "The same at the end of a feature, in the same direction."
         },
         "offsetStart": {
           "$ref": "#/definitions/Millimeters",
-          "description": "How much later the collated copy puts the start of a feature than the copy it is read against, where the two differ systematically. Nothing where they do not."
+          "description": "How much later the derived version puts the start of a feature than the version it is read against, where the two differ systematically. Nothing where they do not.\n\nThe direction is the one a collation measures in, the child less the parent, and it is not symmetric: stored the other way round the window sits on the wrong side of the readings and merges what it should separate. A measurement taken over the parent's copies gives the negative of this, which is what `toleranceAcross` asks the side for."
         },
         "toleranceEnd": {
           "$ref": "#/definitions/Millimeters",

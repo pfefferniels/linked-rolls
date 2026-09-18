@@ -5,7 +5,7 @@ import { Millimeters, mm } from '../src/Quantity'
 import { normalQuantile } from '../src/statistics'
 import { admits, offsetEndOf, offsetStartOf } from '../src/Collation'
 import {
-    departureThreshold, inferredTolerance, readingsOf, Scatter, scatterOf, scatterOfCopy, toleranceAcross
+    departureThreshold, inferredTolerance, readingsOf, Scatter, scatterOf, scatterOfCopy, sidesOf, toleranceAcross
 } from '../src/scatter'
 import { copy, editionOf, expression, hole, note, version } from './editionFixture'
 
@@ -188,7 +188,7 @@ describe('one tolerance over samples that scatter differently', () => {
             'A', 'witness')
 
     it('admits the whole reach of each sample, notes and expressions alike', () => {
-        const covering = toleranceAcross(bothSamples())!
+        const covering = toleranceAcross(bothSamples(), 'child')!
 
         bothSamples().forEach(({ tolerance }) => {
             const atStart = (from: Millimeters) => ({ from, to: offsetEndOf(tolerance) })
@@ -198,7 +198,7 @@ describe('one tolerance over samples that scatter differently', () => {
     })
 
     it('is no wider than it must be, taking the widest sample where they share a centre', () => {
-        const covering = toleranceAcross(bothSamples())!
+        const covering = toleranceAcross(bothSamples(), 'child')!
         const widest = Math.max(...bothSamples().map(({ tolerance }) => tolerance.toleranceStart))
 
         expect(covering.toleranceStart).toBeGreaterThanOrEqual(widest)
@@ -206,7 +206,67 @@ describe('one tolerance over samples that scatter differently', () => {
     })
 
     it('is nothing where there is no sample', () => {
-        expect(toleranceAcross([])).toBeUndefined()
+        expect(toleranceAcross([], 'child')).toBeUndefined()
+    })
+})
+
+describe('the direction a window is stored in', () => {
+    const scatters = () =>
+        scatterOfCopy(new EditionView(witnessed(normalSample(400, 0.6, 0.9))), 'A', 'witness')
+
+    it('turns a window measured over the parent, leaving its width alone', () => {
+        const asChild = toleranceAcross(scatters(), 'child')!
+        const asParent = toleranceAcross(scatters(), 'parent')!
+
+        expect(offsetStartOf(asChild)).toBeCloseTo(0.6, 2)
+        expect(offsetStartOf(asParent)).toBeCloseTo(-0.6, 2)
+        expect(asParent.toleranceStart).toBe(asChild.toleranceStart)
+        expect(asParent.toleranceEnd).toBe(asChild.toleranceEnd)
+    })
+
+    /**
+     * The reason the side is asked for. A window stored the wrong way
+     * round has the right width and the wrong centre, so it separates
+     * readings that belong together and merges readings that do not,
+     * and nothing in the number looks wrong.
+     */
+    it('decides collations that the width alone would not', () => {
+        const asChild = toleranceAcross(scatters(), 'child')!
+        const flipped = toleranceAcross(scatters(), 'parent')!
+        const nearTheEdge = {
+            from: mm(offsetStartOf(asChild) + asChild.toleranceStart * 0.9),
+            to: offsetEndOf(asChild)
+        }
+
+        expect(admits(asChild, nearTheEdge)).toBe(true)
+        expect(admits(flipped, nearTheEdge)).toBe(false)
+    })
+})
+
+describe('which copies attest each side of a derivation', () => {
+    it('reads the child off what it inserts and the parent off what it strikes', () => {
+        const edition = witnessed([0.2, 0.3])
+        edition.versions.push({
+            ...version('B', [{
+                type: 'edit',
+                id: 'edit-b',
+                insert: [note('own', 61, 'witness-0')],
+                delete: ['note-1']
+            }], 'A')
+        })
+
+        const sides = sidesOf(new EditionView(edition), 'B')!
+        expect(sides.child.map(attested => attested.copy)).toEqual(['witness'])
+        expect(sides.parent.map(attested => attested.copy)).toEqual(['ground', 'witness'])
+    })
+
+    it('attests neither side for a version that inserts and strikes nothing', () => {
+        const sides = sidesOf(new EditionView(witnessed([0.2])), 'A')!
+        expect(sides.parent).toEqual([])
+    })
+
+    it('is nothing for a version the edition does not have', () => {
+        expect(sidesOf(new EditionView(witnessed([0.2])), 'nothing')).toBeUndefined()
     })
 })
 
