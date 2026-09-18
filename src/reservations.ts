@@ -178,7 +178,7 @@ const witnessedAtFirstHand: VersionCheck = (view, version) => {
     const carriers = witnessesOf(view, version.id).filter(({ by }) => by === 'carriers')
     return carriers.length > 0 && carriers.every(({ through }) => through !== undefined) ? {
         type: 'no-direct-witness',
-        note: 'No copy carries it at first hand; it is attested only through the versions derived from it.'
+        note: 'No copy carries it at first hand; its text is a reconstruction from the versions derived from it.'
     } : undefined
 }
 

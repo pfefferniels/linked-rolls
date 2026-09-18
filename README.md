@@ -80,6 +80,16 @@ sigla off the stemma as it stands, so a label never outlives the
 arrangement it describes, and nothing should cite one without saying
 which state of the edition it belongs to.
 
+Handed an `EditionView`, which knows the copies as well, `siglaOf`
+lowercases the versions no copy's features carry at first hand, as
+editions mark a state nothing surviving shows: r3 stands to R3 as a
+reconstructed state stands to a witnessed one. A version reached only
+through the versions derived from it is lowercased, and so is one a
+copy does no more than state it carries, since a statement gives no
+readings. `attestedVersions` reports the same fact on its own. Handed
+the versions alone, `siglaOf` cannot tell and leaves every siglum in
+capitals.
+
 ## The tolerance a derivation was collated at
 
 `collationTolerance` on a derivation is the window two readings of one

@@ -1,8 +1,10 @@
 import { idOf } from './Assumption.js'
 import { Edition } from './Edition.js'
+import { EditionView } from './EditionView.js'
 import { systemIdOf } from './TrackerBar.js'
 import { trackerBarOf } from './systems/index.js'
 import { principalDerivationOf, Version } from './Version.js'
+import { attestedVersions } from './witnesses.js'
 
 /** The letter the versions of a system are labelled with. */
 const letters: ReadonlyMap<string, string> = new Map([
@@ -31,13 +33,9 @@ const letterOf = (version: Version): string => {
  *
  * The main line runs through the child that has descendants of its own;
  * where several have, the one with the most, and where none has, the line
- * ends and the children hang off it as branches. So a siglum says where a
- * version sits in this stemma, and it is computed anew when the stemma
- * changes. Nothing should cite one without saying which state it belongs
- * to.
+ * ends and the children hang off it as branches.
  */
-export const siglaOf = (edition: Pick<Edition, 'versions'>): ReadonlyMap<string, string> => {
-    const versions = edition.versions
+const alongTheStemma = (versions: readonly Version[]): ReadonlyMap<string, string> => {
     const byId = new Map(versions.map(version => [version.id, version]))
 
     const parentOf = (version: Version): Version | undefined => {
@@ -109,6 +107,41 @@ export const siglaOf = (edition: Pick<Edition, 'versions'>): ReadonlyMap<string,
     return sigla
 }
 
+/**
+ * What the sigla are read off: the versions alone, or a view, which knows
+ * the copies as well and so can tell which versions a witness shows.
+ */
+export type Stemma = Pick<Edition, 'versions'> | EditionView
+
+const isView = (stemma: Stemma): stemma is EditionView => !('versions' in stemma)
+
+/**
+ * The sigla with the inferred versions in lowercase, as editions mark a
+ * state nothing surviving shows. The letter still names the system and
+ * the number still counts the generation.
+ */
+const marking = (sigla: ReadonlyMap<string, string>, attested: ReadonlySet<string>): ReadonlyMap<string, string> =>
+    new Map([...sigla].map(([id, siglum]) => [id, attested.has(id) ? siglum : siglum.toLowerCase()]))
+
+/**
+ * The siglum of every version, as the stemma stands: where it sits
+ * (`alongTheStemma`) and, given a view, whether any copy shows it.
+ *
+ * A version no copy's features carry at first hand is inferred, whether
+ * it is reached only through the versions derived from it or a copy does
+ * no more than state that it carries it. Its siglum is lowercased, so
+ * that r3 stands to R3 as a reconstructed state stands to a witnessed
+ * one. Handed the versions alone, the sigla cannot tell and stay in
+ * capitals throughout.
+ *
+ * A siglum is computed anew when the stemma or the copies change, so
+ * nothing should cite one without saying which state it belongs to.
+ */
+export const siglaOf = (stemma: Stemma): ReadonlyMap<string, string> =>
+    isView(stemma)
+        ? marking(alongTheStemma(stemma.edition.versions), attestedVersions(stemma))
+        : alongTheStemma(stemma.versions)
+
 /** The siglum of one version as the stemma stands, or nothing where the edition holds no such version. */
-export const siglumOf = (edition: Pick<Edition, 'versions'>, versionId: string): string | undefined =>
-    siglaOf(edition).get(versionId)
+export const siglumOf = (stemma: Stemma, versionId: string): string | undefined =>
+    siglaOf(stemma).get(versionId)

@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest'
+import { produce } from 'immer'
 import { assignReference } from '../src/Assumption'
+import { EditionView } from '../src/EditionView'
+import { stateCarriage } from '../src/editionOps'
 import { siglaOf, siglumOf } from '../src/sigla'
 import { systemOf, TrackerBar } from '../src/TrackerBar'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteT98 } from '../src/systems/welteT98/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
+import { Edition } from '../src/Edition'
 import { Version } from '../src/Version'
+import { copy, editionOf, hole, note } from './editionFixture'
 
 const version = (id: string, bar: TrackerBar, basedOn?: string): Version => ({
     type: 'Version',
@@ -14,6 +19,12 @@ const version = (id: string, bar: TrackerBar, basedOn?: string): Version => ({
     edits: [],
     motivations: [],
     ...(basedOn ? { basedOn: [assignReference(basedOn)] } : {})
+})
+
+/** The version with a note of its own, carried by the holes named. */
+const inserting = (version: Version, ...carriers: string[]): Version => ({
+    ...version,
+    edits: [{ type: 'edit', id: `edit-${version.id}`, insert: [note(`note-${version.id}`, 60, ...carriers)] }]
 })
 
 const siglaFor = (versions: Version[]) => Object.fromEntries(siglaOf({ versions }))
@@ -129,5 +140,47 @@ describe('reading the sigla off the stemma', () => {
 
     it('leaves a version nothing answers for out of the sigla', () => {
         expect(siglumOf({ versions: [] }, 'nowhere')).toBeUndefined()
+    })
+})
+
+/**
+ * Three states in one line, and a branch off the first that nothing
+ * carries. One copy stops at the first state, another carries all three.
+ */
+const stemma = () => editionOf(
+    [
+        copy('early', [hole('root-early', 1000, 1010, 47)]),
+        copy('late', [
+            hole('root-late', 1000, 1010, 47),
+            hole('second-late', 1100, 1110, 49),
+            hole('third-late', 1200, 1210, 51)
+        ])
+    ],
+    [
+        inserting(version('root', welteT100), 'root-early', 'root-late'),
+        inserting(version('second', welteT100, 'root'), 'second-late'),
+        inserting(version('third', welteT100, 'second'), 'third-late'),
+        inserting(version('branch', welteT100, 'root'), 'nowhere')
+    ]
+)
+
+const siglaIn = (edition: Edition) => Object.fromEntries(siglaOf(new EditionView(edition)))
+
+describe('marking the versions no witness shows', () => {
+    it('lowercases a version every copy reaches through a later one, and one nothing carries at all', () => {
+        expect(siglaIn(stemma())).toEqual({ root: 'R1', second: 'r2', third: 'R3', branch: 'r1.1' })
+        expect(siglumOf(new EditionView(stemma()), 'second')).toBe('r2')
+    })
+
+    it('leaves a version a copy does no more than state it carries in lowercase', () => {
+        const stated = produce(
+            produce(stemma(), draft => { draft.copies.push(copy('recording', [])) }),
+            stateCarriage('recording', 'second'))
+
+        expect(siglaIn(stated).second).toBe('r2')
+    })
+
+    it('keeps every siglum in capitals where it is handed the versions alone', () => {
+        expect(siglaFor(stemma().versions)).toEqual({ root: 'R1', second: 'R2', third: 'R3', branch: 'R1.1' })
     })
 })

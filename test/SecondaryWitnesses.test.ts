@@ -7,7 +7,7 @@ import { RollCopy } from '../src/RollCopy'
 import { Version } from '../src/Version'
 import { Edition } from '../src/Edition'
 import { addCopy, clearCarriage, EditionOp, removeVersion, stateCarriage } from '../src/editionOps'
-import { carriageProblems, versionsWitnessedBy, witnessesOf } from '../src/witnesses'
+import { attestedVersions, carriageProblems, versionsWitnessedBy, witnessesOf } from '../src/witnesses'
 import { reservationsAboutVersion } from '../src/reservations'
 import { asJsonLd } from '../src/asJsonLd'
 import { importJsonLd } from '../src/importJsonLd'
@@ -121,6 +121,11 @@ describe('the witnesses of a version', () => {
 
         expect(witnessesOf(new EditionView(unstated), 'D')).toEqual([{ copy: 'roll', by: 'carriers' }])
         expect(witnessesOf(new EditionView(unstated), 'E')).toEqual([])
+    })
+
+    it('gathers the versions carried at first hand, passing over those a statement alone attests', () => {
+        expect(attestedVersions(new EditionView(chain()))).toEqual(new Set(['D']))
+        expect(attestedVersions(new EditionView(stating(['S', 'possible'])))).toEqual(new Set(['C']))
     })
 
     it('gathers the versions a copy bears witness to, in the order of the edition', () => {

@@ -77,6 +77,15 @@ const carriersIn = (view: EditionView): Carriers => {
     }
 }
 
+/**
+ * The versions a copy's features carry at first hand: for every copy,
+ * the latest state it bears. A version left out is reached only through
+ * the versions derived from it, or is attested by statement alone, and
+ * its text is a reconstruction rather than a reading.
+ */
+export const attestedVersions = (view: EditionView): ReadonlySet<string> =>
+    new Set(carriersIn(view).latestOf.values())
+
 const witnessesIn = (carriers: Carriers, view: EditionView, versionId: string): Witness[] => {
     const carrying = carriers.copiesOf.get(versionId) ?? []
     const byCarriers = carrying.map((copy): Witness => {
