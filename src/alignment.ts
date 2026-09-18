@@ -2,7 +2,7 @@ import { FeatureOrPatch } from "./Feature.js";
 import { featuresOf, RollCopy, Shift } from "./RollCopy.js";
 import { TrackerBar } from "./TrackerBar.js";
 import { welteT100 } from "./systems/welteT100/bar.js";
-import { add, Millimeters, mm, Quantity, scale, Unit } from "./Quantity.js";
+import { add, Millimeters, mm, Quantity, scale, subtract, Unit } from "./Quantity.js";
 
 type Ends<U extends Unit> = { from: Quantity<U>, to?: Quantity<U> }
 
@@ -63,6 +63,49 @@ export const revertScale = (copy: RollCopy) => {
     featuresOf(copy).forEach(feature => stretch(feature.horizontal, 1 / factor))
     copy.ops = copy.ops.filter(op => op !== 'stretched')
     delete copy.measurements.scale
+}
+
+const holesOf = (copy: RollCopy) => featuresOf(copy).filter(feature => feature.type === 'Hole')
+
+/**
+ * Takes the extension a pneumatic reader adds off the ends of the
+ * copy's holes, and records how much was taken.
+ *
+ * Such a reader reports how long a valve stayed open, and a valve is
+ * held on past the perforation that opened it, so its holes run longer
+ * than the punched slots while their onsets agree. Left in, the
+ * difference is not a difference between copies at all: a collation
+ * comparing this copy's hole ends against a scanned copy's compares a
+ * pneumatic on-time with a punched slot, and reads the one as a
+ * lengthening of the other.
+ *
+ * The extension is a property of the reader rather than of the roll,
+ * and on the material measured so far it is a constant: it does not
+ * grow with the length of the perforation, there is no shortest
+ * on-time the valve cannot fall below, and it does not run along the
+ * roll with the paper speed as far as one roll can show. What it does
+ * vary with is the port that read it, by about half a millimetre either
+ * way and without any gradient across the bar, which is measured but
+ * too coarse to model from one roll.
+ *
+ * Only holes are touched. What a writing or a mark spans is no valve.
+ */
+export const shortenHoles = (extension: Millimeters, copy: RollCopy) => {
+    if (copy.ops.includes('shortened')) return
+
+    holesOf(copy).forEach(hole => { hole.horizontal.to = subtract(hole.horizontal.to, extension) })
+    copy.ops = [...copy.ops, 'shortened']
+    copy.measurements.readerExtension = extension
+}
+
+/** Puts the reader's extension back on the copy's holes, as far as one was taken off. */
+export const revertShortening = (copy: RollCopy) => {
+    const extension = copy.measurements.readerExtension
+    if (!copy.ops.includes('shortened') || extension === undefined) return
+
+    holesOf(copy).forEach(hole => { hole.horizontal.to = add(hole.horizontal.to, extension) })
+    copy.ops = copy.ops.filter(op => op !== 'shortened')
+    delete copy.measurements.readerExtension
 }
 
 /**

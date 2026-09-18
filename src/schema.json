@@ -2828,6 +2828,10 @@
               "description": "The average diameter of punched holes.",
               "ontology": "reo:punchDiameter"
             },
+            "readerExtension": {
+              "$ref": "#/definitions/Millimeters",
+              "description": "How much longer this copy's reading of a hole ran than the perforation that caused it, where that was taken off the ends again. A pneumatic reader reports how long a valve stayed open, which exceeds the perforation that opened it, so its holes are overlong by a constant while its onsets agree. Nothing for a copy read by other means, whose holes are the punched slots themselves. Not exported to RDF."
+            },
             "scale": {
               "description": "The factor this copy's features were scaled by to align them with the others. What it is put down to is stated apart: a paper-stretch condition, or the speed the copy was cut for. Not exported to RDF.",
               "type": "number"
@@ -2861,7 +2865,8 @@
           "items": {
             "enum": [
               "shifted",
-              "stretched"
+              "stretched",
+              "shortened"
             ],
             "type": "string"
           },

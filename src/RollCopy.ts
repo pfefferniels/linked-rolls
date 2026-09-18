@@ -238,7 +238,7 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
      * (e.g. 'shifted', 'stretched') to normalize measurements
      * for comparison with other copies. Not exported to RDF.
      */
-    ops: Array<'shifted' | 'stretched'>
+    ops: Array<'shifted' | 'stretched' | 'shortened'>
 
     /**
      * Physical measurements of this roll copy, including
@@ -301,6 +301,18 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
          * Not exported to RDF.
          */
         scale: number
+
+        /**
+         * How much longer this copy's reading of a hole ran than the
+         * perforation that caused it, where that was taken off the ends
+         * again. A pneumatic reader reports how long a valve stayed
+         * open, which exceeds the perforation that opened it, so its
+         * holes are overlong by a constant while its onsets agree.
+         * Nothing for a copy read by other means, whose holes are the
+         * punched slots themselves.
+         * Not exported to RDF.
+         */
+        readerExtension: Millimeters
 
         /**
          * The resolution this copy's scan was read at, along the roll.

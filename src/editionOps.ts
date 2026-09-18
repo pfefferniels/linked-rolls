@@ -14,7 +14,7 @@ import { systemOf, TrackerBar } from "./TrackerBar.js"
 import { Substitution, substitutionsBetween } from "./substitution.js"
 import { trackerBarOf } from "./systems/index.js"
 import { FeatureSource } from "./FeatureSource.js"
-import { applyShift, applyScale, revertShift, revertScale } from "./alignment.js"
+import { applyShift, applyScale, revertShift, revertScale, revertShortening, shortenHoles } from "./alignment.js"
 import {
     AnyArgumentation, Assumption, Belief, Certainty, MeaningComprehension, ObjectAssumption, ReferenceAssumption,
     assignReference, idOf
@@ -173,6 +173,18 @@ export const unalignCopy = (copyId: string): EditionOp =>
         revertShift(copy)
         copy.conditions = without(copy.conditions, isPaperStretch)
     })
+
+/**
+ * Takes the extension a pneumatic reader adds off the ends of the
+ * copy's holes, and records how much was taken, so that its lengths
+ * can be compared with a scanned copy's at all.
+ */
+export const shortenCopy = (copyId: string, extension: Millimeters): EditionOp =>
+    onCopy(copyId, copy => shortenHoles(extension, copy))
+
+/** Puts the reader's extension back on the copy's holes. */
+export const unshortenCopy = (copyId: string): EditionOp =>
+    onCopy(copyId, copy => revertShortening(copy))
 
 /** States what the copy's features were read from, in place of any earlier statement. */
 export const stateSource = (copyId: string, source: FeatureSource): EditionOp =>

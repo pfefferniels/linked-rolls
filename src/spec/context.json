@@ -155,6 +155,7 @@
       "@context": {
         "shift": null,
         "scale": null,
+        "readerExtension": null,
         "trackCalibration": null,
         "margins": null,
         "dimensions": "reo:dimensions",

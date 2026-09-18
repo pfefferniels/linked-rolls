@@ -143,6 +143,33 @@ and the onset alone 39, so neither test is idle, but a difference at the
 end is as often a punch measured badly as a punch genuinely prolonged,
 and the two are not worth confusing.
 
+## What a reader adds to a hole
+
+A copy read pneumatically rather than scanned reports how long a valve
+stayed open, and a valve is held on past the perforation that opened it,
+so its holes run longer than the punched slots while their onsets agree.
+Left in, that is not a difference between copies: a collation comparing
+such a copy's hole ends against a scanned copy's compares an on-time
+with a slot, and reads the one as a lengthening of the other.
+
+`shortenHoles` takes the extension off and records it on the copy,
+`revertShortening` puts it back, and `readFromPhillipsEroll` will take
+it off at import. Only holes are touched, what a writing spans being no
+valve. The figure is measured against the other copies rather than
+derived from the bar, since Phillips gives only the difference between
+two bars and not the absolute.
+
+On welte225.org that figure is about 1.6 mm, and its shape is simple. It
+does not grow with the length of the perforation: the ratio of the read
+length to the true one falls from 1.34 on the shortest punches to 1.01
+on the longest, which is what a constant added to everything does. There
+is no shortest on-time the valve cannot fall below. It shows no run
+along the roll, though one roll's span of paper speed is too narrow to
+tell a constant in millimetres from a constant in time. What it does
+vary with is the port that read it, by about half a millimetre either
+way and with no gradient across the bar, which is measured but too
+coarse to model from a single roll.
+
 ## Collating a derivation a second time
 
 A collated symbol is one symbol carrying every copy that reads it, so a

@@ -4,6 +4,7 @@ import { assignObject } from "../Assumption.js";
 import { Hole } from "../Feature.js";
 import { RollCopy } from "../RollCopy.js";
 import { systemOf, TrackerBar } from "../TrackerBar.js";
+import { shortenHoles } from "../alignment.js";
 import { welteT100 } from "../systems/welteT100/bar.js";
 import { welteLicensee } from "../systems/welteLicensee/bar.js";
 import { inMetersPerMinute, Millimeters, mm, Seconds, seconds, Track, track } from "../Quantity.js";
@@ -27,16 +28,21 @@ import { inMetersPerMinute, Millimeters, mm, Seconds, seconds, Track, track } fr
  * perforation, the height of the tracker bar hole and the paper speed
  * (p. 180).
  *
- * That extension is not subtracted. Doing so would need the absolute
- * hole height of the Welte bar, where he gives only the 0.5 mm by which
- * it exceeds the Licensee's. So the end of a hole on this copy is a
- * pneumatic on-time where the end of a scanned copy's hole is a punched
- * slot, and the two are not the same quantity. It shows in a collation:
- * across welte225.org his notes run about 1.8 mm longer than the other
- * copies read them, while the onsets agree. Until it is corrected, a
- * comparison of hole ends against this copy measures the reader as much
- * as the roll, and `offsetEnd` on the derivation absorbs the systematic
- * part of it.
+ * Left in, that extension is not a difference between copies at all:
+ * the end of a hole here is a pneumatic on-time where the end of a
+ * scanned copy's hole is a punched slot, so a collation comparing the
+ * two reads the one as a lengthening of the other. `extension` takes it
+ * off at the end of every hole, and the copy records what was taken.
+ *
+ * How much to take off is measured rather than derived, since he gives
+ * only the 0.5 mm by which the Welte bar's holes exceed the Licensee's
+ * and not the absolute. Across welte225.org it comes to about 1.6 mm,
+ * and the shape of it is simple: a constant, not growing with the
+ * length of the perforation, with no shortest on-time the valve cannot
+ * fall below, and with no run along the roll that one roll's span of
+ * paper speed could show. The port that read it matters by about half a
+ * millimetre either way, without any gradient across the bar, which is
+ * measured but too coarse to model from one roll.
  */
 
 /**
@@ -78,6 +84,20 @@ export interface PhillipsErollOptions {
      * account for it.
      */
     placeAt?: (elapsed: Seconds) => Millimeters
+
+    /**
+     * How much longer a valve is held on than the perforation that
+     * opened it, taken off the end of every hole so that these lengths
+     * can be compared with a scanned copy's. Nothing leaves the holes
+     * as the reader reported them, which is what every copy read before
+     * this option existed states.
+     *
+     * The copy records what was taken, and `revertShortening` puts it
+     * back, so a figure revised later needs no second import. On
+     * welte225.org the extension measures about 1.6 mm, with no
+     * dependence on how long the perforation is.
+     */
+    extension?: Millimeters
 }
 
 /** A note as the file spells it, in ticks. */
@@ -199,7 +219,8 @@ export function readFromPhillipsEroll(
     {
         system = welteT100,
         controlOffset,
-        placeAt
+        placeAt,
+        extension
     }: PhillipsErollOptions = {}
 ): RollCopy {
     const file = read(new Uint8Array(buffer))
@@ -228,7 +249,7 @@ export function readFromPhillipsEroll(
         }]
     })
 
-    return {
+    const copy: RollCopy = {
         type: 'RollCopy',
         id: v4(),
         ops: [],
@@ -242,6 +263,9 @@ export function readFromPhillipsEroll(
             note: 'Read on Phillips’s pneumatic roll reader. The places are elapsed time put back onto the paper, and a hole runs as long as its switch stayed open, which is longer than the perforation.'
         }
     }
+
+    if (extension !== undefined) shortenHoles(extension, copy)
+    return copy
 }
 
 /** The bars his files are known to be numbered by. */
