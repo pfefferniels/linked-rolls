@@ -1042,14 +1042,42 @@ export const separateReadings = (
 
     const inserted = new Set(insertedBy(version).map(symbol => symbol.id))
     const stated = editsOf(version)
-    const separations = shared.map(({ symbol, mine }): Edit => ({
-        type: 'edit',
-        id: v4(),
-        insert: [readingOf(symbol, [...mine])],
+    const separations = shared.map(({ symbol, mine }) => ({
+        was: symbol.id,
+        reading: readingOf(symbol, [...mine]),
         // A symbol the version inserts itself stays where it is, minus
         // the carriers that leave it. Only one it inherits is exchanged.
-        ...(inserted.has(symbol.id) ? {} : { delete: [symbol.id] })
+        exchanged: !inserted.has(symbol.id)
     }))
+
+    const separationEdits = separations.map(({ was, reading, exchanged }): Edit => ({
+        type: 'edit',
+        id: v4(),
+        insert: [reading],
+        ...(exchanged ? { delete: [was] } : {})
+    }))
+
+    /**
+     * What a symbol the version exchanged now stands as, for the
+     * versions reading their text through this one. A descendant that
+     * struck the old symbol meant to strike the reading, and the
+     * reading is now carried by its replacement; a deletion left naming
+     * the old one would strike nothing and let the rejected reading
+     * back into the descendant's text.
+     */
+    const standsFor = new Map(separations
+        .filter(({ exchanged }) => exchanged)
+        .map(({ was, reading }) => [was, reading.id]))
+
+    const restruck = (edit: Readonly<Edit>): Edit =>
+        edit.delete?.some(id => standsFor.has(id))
+            ? { ...edit, delete: edit.delete.map(id => standsFor.get(id) ?? id) }
+            : edit
+
+    const downstream = new Set(view.edition.versions
+        .filter(other => other.id !== versionId
+            && view.lineageOf(other.id).some(ancestor => ancestor.id === versionId))
+        .map(other => other.id))
 
     return onVersion(versionId, (version, draft) => {
         shared.forEach(({ symbol, theirs }) => {
@@ -1057,7 +1085,15 @@ export const separateReadings = (
             const target = path && getAt<Draft<AnySymbol>>(path, draft)
             if (target) target.carriers = theirs
         })
-        version.edits = [...stated, ...separations]
+        version.edits = [...stated, ...separationEdits]
+
+        draft.versions
+            .filter(other => downstream.has(other.id))
+            .forEach(other => {
+                const before = editsOf(stateOf<Version>(other))
+                const after = before.map(restruck)
+                if (after.some((edit, i) => edit !== before[i])) other.edits = after
+            })
     })
 }
 

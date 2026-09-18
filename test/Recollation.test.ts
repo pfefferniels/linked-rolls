@@ -184,6 +184,59 @@ describe('separating a side that several copies attest', () => {
     })
 })
 
+/**
+ * An ancestor, a version separating a side of it, and a descendant that
+ * had struck one of the ancestor's symbols from its own text. The
+ * descendant reads through the separating version, so what it struck is
+ * replaced under it.
+ */
+const withADescendant = (): Edition => editionOf(
+    [
+        copy('ground', [hole('ground-0', 0, 10, 47), hole('ground-1', 100, 110, 47)]),
+        copy('witness', [hole('witness-0', 0.2, 10.2, 47), hole('witness-1', 100.2, 110.2, 47)])
+    ],
+    [
+        version('A', [{
+            type: 'edit',
+            id: 'edit-a',
+            insert: [
+                note('shared-0', 60, 'ground-0', 'witness-0'),
+                note('shared-1', 60, 'ground-1', 'witness-1')
+            ]
+        }]),
+        version('B', [], 'A'),
+        { ...version('C', [{ type: 'edit', id: 'edit-c', delete: ['shared-0'] }], 'B') }
+    ]
+)
+
+describe('separating under a version that already struck what it shares', () => {
+    const separated = (): Edition => {
+        const before = withADescendant()
+        return produce(before, separateReadings(viewOf(before), 'B', new Set(['witness'])))
+    }
+
+    it('leaves the descendant reading what it read before', () => {
+        expect(textOf(withADescendant(), 'C')).toEqual(['shared-1'])
+        expect(textOf(separated(), 'C').length).toBe(1)
+    })
+
+    /**
+     * The descendant struck a reading, and separating replaced that
+     * reading with another symbol standing for it. A deletion naming
+     * only the symbol that went would strike nothing, and the reading
+     * the descendant rejected would come back into its text.
+     */
+    it('carries the deletion over to the symbol that stands in its place', () => {
+        const after = separated()
+        const struck = editsIn(after, 'C').flatMap(edit => edit.delete ?? [])
+        const inBsText = viewOf(after).snapshot('B').map(symbol => symbol.id)
+
+        expect(struck.length).toBe(1)
+        expect(struck).not.toEqual(['shared-0'])
+        expect(inBsText).toContain(struck[0])
+    })
+})
+
 describe('collating a derivation again at a tolerance arrived at afterwards', () => {
     const recollated = (): Edition => {
         const separated = produce(collated(), separateReadings(viewOf(collated()), 'B', new Set(['witness'])))
