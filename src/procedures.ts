@@ -1,4 +1,4 @@
-import { Concept } from "./Agent"
+import { Concept } from "./Agent.js"
 
 const PROCEDURE_IRI = 'https://w3id.org/reo/type/procedure/'
 

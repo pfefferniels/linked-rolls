@@ -1,6 +1,6 @@
-import { Assumption } from "./Assumption";
-import { AnySymbol } from "./Symbol";
-import { WithId } from "./utils";
+import { Assumption } from "./Assumption.js";
+import { AnySymbol } from "./Symbol.js";
+import { WithId } from "./utils.js";
 
 export const editTypes = [
     /**

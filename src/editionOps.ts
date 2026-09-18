@@ -1,30 +1,30 @@
 import { current, Draft, isDraft } from "immer"
 import { v4 } from "uuid"
-import { EditionView, getAt, Path } from "./EditionView"
-import { Edition } from "./Edition"
-import { AnyCommand, AnySymbol, Expression, PlacementRelation, isCommand, placementRelations } from "./Symbol"
-import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance, isCollationsOwn } from "./Collation"
-import { Edit, EditType } from "./Edit"
-import { collationToleranceOf, Derivation, editsOf, insertedBy, principalDerivationOf, Version } from "./Version"
+import { EditionView, getAt, Path } from "./EditionView.js"
+import { Edition } from "./Edition.js"
+import { AnyCommand, AnySymbol, Expression, PlacementRelation, isCommand, placementRelations } from "./Symbol.js"
+import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance, isCollationsOwn } from "./Collation.js"
+import { Edit, EditType } from "./Edit.js"
+import { collationToleranceOf, Derivation, editsOf, insertedBy, principalDerivationOf, Version } from "./Version.js"
 import {
     asSymbols, barOf, featuresByAct, featuresOf, GeneralRollCondition, isPaperStretch, Modification,
     ModificationPurpose, RollCopy, ScaleReading, Shift, statesNothing
-} from "./RollCopy"
-import { systemOf, TrackerBar } from "./TrackerBar"
-import { Substitution, substitutionsBetween } from "./substitution"
-import { trackerBarOf } from "./systems"
-import { FeatureSource } from "./FeatureSource"
-import { applyShift, applyScale, revertShift, revertScale } from "./alignment"
+} from "./RollCopy.js"
+import { systemOf, TrackerBar } from "./TrackerBar.js"
+import { Substitution, substitutionsBetween } from "./substitution.js"
+import { trackerBarOf } from "./systems/index.js"
+import { FeatureSource } from "./FeatureSource.js"
+import { applyShift, applyScale, revertShift, revertScale } from "./alignment.js"
 import {
     AnyArgumentation, Assumption, Belief, Certainty, MeaningComprehension, ObjectAssumption, ReferenceAssumption,
     assignReference, idOf
-} from "./Assumption"
+} from "./Assumption.js"
 import {
     AnyFeature, FeatureConditionAssignment, FeatureConditionType, FeatureOrPatch, GluedOn, HorizontalSpan,
     NestedFeature, conditions as conditionsAllowed, featuresBorneBy, isGluedOn, withBorneFeatures
-} from "./Feature"
-import { distance, Millimeters, mm, subtract } from "./Quantity"
-import { WithId } from "./utils"
+} from "./Feature.js"
+import { distance, Millimeters, mm, subtract } from "./Quantity.js"
+import { WithId } from "./utils.js"
 
 /**
  * A change to an edition, written onto an immer draft of it. One

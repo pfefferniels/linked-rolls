@@ -1,7 +1,7 @@
-import { Concept } from "./Agent"
-import { procedures } from "./procedures"
-import { systemOf } from "./TrackerBar"
-import { trackerBars } from "./systems"
+import { Concept } from "./Agent.js"
+import { procedures } from "./procedures.js"
+import { systemOf } from "./TrackerBar.js"
+import { trackerBars } from "./systems/index.js"
 
 /**
  * The concepts the type vocabulary declares, whatever kind they are:

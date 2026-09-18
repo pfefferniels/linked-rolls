@@ -1,7 +1,7 @@
-import { Edition } from "./Edition";
-import { systemIdIn } from "./TrackerBar";
-import { certaintyOf, isAsserted } from "./Assumption";
-import context from "./spec/context.json";
+import { Edition } from "./Edition.js";
+import { systemIdIn } from "./TrackerBar.js";
+import { certaintyOf, isAsserted } from "./Assumption.js";
+import context from "./spec/context.json" with { type: 'json' };
 
 /**
  * The keys an export derives from the tree, which no node of the

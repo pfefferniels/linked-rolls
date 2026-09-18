@@ -1,11 +1,11 @@
-import { EditionView } from "./EditionView"
-import { idOf } from "./Assumption"
-import { AnyCommand, AnySymbol, Expression, PlacementRelation, isCommand, pairsAmong, placementsOf } from "./Symbol"
-import { keyOf } from "./TrackerBar"
-import { trackerBarOf } from "./systems"
-import { barOf } from "./RollCopy"
-import { FeatureOrPatch } from "./Feature"
-import { Version } from "./Version"
+import { EditionView } from "./EditionView.js"
+import { idOf } from "./Assumption.js"
+import { AnyCommand, AnySymbol, Expression, PlacementRelation, isCommand, pairsAmong, placementsOf } from "./Symbol.js"
+import { keyOf } from "./TrackerBar.js"
+import { trackerBarOf } from "./systems/index.js"
+import { barOf } from "./RollCopy.js"
+import { FeatureOrPatch } from "./Feature.js"
+import { Version } from "./Version.js"
 
 export type ConstraintProblem = {
     version: string

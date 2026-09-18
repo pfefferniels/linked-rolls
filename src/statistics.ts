@@ -1,4 +1,4 @@
-import { Quantity, quantity } from "./Quantity"
+import { Quantity, quantity } from "./Quantity.js"
 
 /**
  * The statistics a sample of measurements is described with.

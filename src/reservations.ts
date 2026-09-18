@@ -1,9 +1,9 @@
-import { bearsPhysicalEvidence, isMeasured, sourceLabels } from "./FeatureSource";
-import { calibrationOf, featuresOf, RollCopy } from "./RollCopy";
-import { trackerBarOf } from "./systems";
-import { Version } from "./Version";
-import { EditionView } from "./EditionView";
-import { witnessesOf } from "./witnesses";
+import { bearsPhysicalEvidence, isMeasured, sourceLabels } from "./FeatureSource.js";
+import { calibrationOf, featuresOf, RollCopy } from "./RollCopy.js";
+import { trackerBarOf } from "./systems/index.js";
+import { Version } from "./Version.js";
+import { EditionView } from "./EditionView.js";
+import { witnessesOf } from "./witnesses.js";
 
 export const reservationTypes = [
     'source-not-stated',

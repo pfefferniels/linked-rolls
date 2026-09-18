@@ -1,15 +1,15 @@
 import { CONSENSUS } from "welte-mignon-emulator/t100";
 import { Half, Parameters } from "welte-mignon-emulator";
-import { track } from "../../Quantity";
-import { ReproducingSystem } from "../../ReproducingSystem";
-import { welteLicensee } from "./bar";
+import { track } from "../../Quantity.js";
+import { ReproducingSystem } from "../../ReproducingSystem.js";
+import { welteLicensee } from "./bar.js";
 import {
     defaultWelteT100Options,
     instrumentNameOf,
     nuanceOf,
     performAs,
     type WelteT100Options
-} from "../welteT100/system";
+} from "../welteT100/system.js";
 
 export type WelteLicenseeOptions = WelteT100Options
 

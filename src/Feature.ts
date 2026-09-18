@@ -1,8 +1,8 @@
-import { ObjectAssumption } from "./Assumption";
-import { ConditionState } from "./ConditionState";
-import { Text } from "./Symbol";
-import { PartialBy, WithId, WithType } from "./utils";
-import { Measure, Millimeters, Track } from "./Quantity";
+import { ObjectAssumption } from "./Assumption.js";
+import { ConditionState } from "./ConditionState.js";
+import { Text } from "./Symbol.js";
+import { PartialBy, WithId, WithType } from "./utils.js";
+import { Measure, Millimeters, Track } from "./Quantity.js";
 
 /**
  * Describes the horizontal extent of a feature on the roll,

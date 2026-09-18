@@ -1,7 +1,7 @@
-import { ActorAssignment, DateAssignment, ObjectAssumption } from "./Assumption";
-import { Concept, Named } from "./Agent";
-import { ConditionState } from "./ConditionState";
-import { WithNote } from "./utils";
+import { ActorAssignment, DateAssignment, ObjectAssumption } from "./Assumption.js";
+import { Concept, Named } from "./Agent.js";
+import { ConditionState } from "./ConditionState.js";
+import { WithNote } from "./utils.js";
 
 /**
  * What a copy's features were read from. The kinds run from the paper

@@ -1,6 +1,6 @@
-import type { Concept } from "./Agent"
-import { Expression, ExpressionScope, Note } from "./Symbol"
-import { Millimeters, mm, SpeedMeasure, Track, track } from "./Quantity"
+import type { Concept } from "./Agent.js"
+import { Expression, ExpressionScope, Note } from "./Symbol.js"
+import { Millimeters, mm, SpeedMeasure, Track, track } from "./Quantity.js"
 
 /**
  * What a tracker bar position does: sound a note, or operate one of

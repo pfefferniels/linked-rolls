@@ -1,8 +1,8 @@
-import { idOf } from './Assumption'
-import { Edition } from './Edition'
-import { systemIdOf } from './TrackerBar'
-import { trackerBarOf } from './systems'
-import { principalDerivationOf, Version } from './Version'
+import { idOf } from './Assumption.js'
+import { Edition } from './Edition.js'
+import { systemIdOf } from './TrackerBar.js'
+import { trackerBarOf } from './systems/index.js'
+import { principalDerivationOf, Version } from './Version.js'
 
 /** The letter the versions of a system are labelled with. */
 const letters: ReadonlyMap<string, string> = new Map([

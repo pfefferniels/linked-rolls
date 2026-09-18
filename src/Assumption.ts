@@ -1,5 +1,5 @@
-import { WithNote, WithId } from "./utils"
-import { Person, WithActor } from "./Agent"
+import { WithNote, WithId } from "./utils.js"
+import { Person, WithActor } from "./Agent.js"
 
 export const certainties = [
     'true',

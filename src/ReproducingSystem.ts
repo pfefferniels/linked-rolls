@@ -1,7 +1,7 @@
-import { Hole } from "./Feature";
-import { Expression, Note } from "./Symbol";
-import { TrackerBar } from "./TrackerBar";
-import { Millimeters, Quantity, Seconds } from "./Quantity";
+import { Hole } from "./Feature.js";
+import { Expression, Note } from "./Symbol.js";
+import { TrackerBar } from "./TrackerBar.js";
+import { Millimeters, Quantity, Seconds } from "./Quantity.js";
 
 export type SpeedUnit = 'ft/min' | 'm/min'
 

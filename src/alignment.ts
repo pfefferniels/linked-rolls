@@ -1,8 +1,8 @@
-import { FeatureOrPatch } from "./Feature";
-import { featuresOf, RollCopy, Shift } from "./RollCopy";
-import { TrackerBar } from "./TrackerBar";
-import { welteT100 } from "./systems/welteT100/bar";
-import { add, Millimeters, mm, Quantity, scale, Unit } from "./Quantity";
+import { FeatureOrPatch } from "./Feature.js";
+import { featuresOf, RollCopy, Shift } from "./RollCopy.js";
+import { TrackerBar } from "./TrackerBar.js";
+import { welteT100 } from "./systems/welteT100/bar.js";
+import { add, Millimeters, mm, Quantity, scale, Unit } from "./Quantity.js";
 
 type Ends<U extends Unit> = { from: Quantity<U>, to?: Quantity<U> }
 

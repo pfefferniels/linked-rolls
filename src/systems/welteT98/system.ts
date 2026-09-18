@@ -33,8 +33,8 @@ import {
     Punch,
     WelteT98InstrumentName,
 } from "welte-mignon-emulator/t98";
-import { Expression, Note } from "../../Symbol";
-import { welteT98, WelteT98ExpressionType } from "./bar";
+import { Expression, Note } from "../../Symbol.js";
+import { welteT98, WelteT98ExpressionType } from "./bar.js";
 import {
     DynamicsCurve,
     NegotiatedEvent,
@@ -45,12 +45,12 @@ import {
     PerformedPedalEvent,
     ReproducingSystem,
     RollProperties
-} from "../../ReproducingSystem";
-import { inCentimeters, Millimeters, mm, Seconds, seconds, Track, track } from "../../Quantity";
-import { partitionPoint } from "../../sorted";
-import { defaultVelocityMap, velocityOf, type VelocityMap } from "../velocity";
+} from "../../ReproducingSystem.js";
+import { inCentimeters, Millimeters, mm, Seconds, seconds, Track, track } from "../../Quantity.js";
+import { partitionPoint } from "../../sorted.js";
+import { defaultVelocityMap, velocityOf, type VelocityMap } from "../velocity.js";
 
-export type { VelocityMap } from "../velocity";
+export type { VelocityMap } from "../velocity.js";
 export type { WelteT98Instrument, WelteT98InstrumentName } from "welte-mignon-emulator/t98";
 
 /**

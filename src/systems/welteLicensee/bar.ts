@@ -1,6 +1,6 @@
-import { describeTrackerBar, TrackerBar } from "../../TrackerBar"
-import { mm } from "../../Quantity"
-import { WelteT100ExpressionType } from "../welteT100/bar"
+import { describeTrackerBar, TrackerBar } from "../../TrackerBar.js"
+import { mm } from "../../Quantity.js"
+import { WelteT100ExpressionType } from "../welteT100/bar.js"
 
 /**
  * Welte-Mignon (Licensee), the American re-cut of the T-100 rolls on

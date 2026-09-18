@@ -1,16 +1,16 @@
 import { v4 } from "uuid";
-import { ConditionState } from "./ConditionState";
-import { AnySymbol } from "./Symbol";
-import { TrackerBar } from "./TrackerBar";
-import { welteT100 } from "./systems/welteT100/bar";
-import { trackerBarOf } from "./systems";
-import { TrackCalibration } from "./TrackCalibration";
-import { AnyFeature, FeatureOrPatch, GluedOn } from "./Feature";
-import { ActorAssignment, assignReference, DateAssignment, ObjectAssumption, ReferenceAssumption } from "./Assumption";
-import { WithId, WithType } from "./utils";
-import { Agent, Concept } from "./Agent";
-import { FeatureSource } from "./FeatureSource";
-import { Measure, Millimeters, Quantity, px, Track, track } from "./Quantity";
+import { ConditionState } from "./ConditionState.js";
+import { AnySymbol } from "./Symbol.js";
+import { TrackerBar } from "./TrackerBar.js";
+import { welteT100 } from "./systems/welteT100/bar.js";
+import { trackerBarOf } from "./systems/index.js";
+import { TrackCalibration } from "./TrackCalibration.js";
+import { AnyFeature, FeatureOrPatch, GluedOn } from "./Feature.js";
+import { ActorAssignment, assignReference, DateAssignment, ObjectAssumption, ReferenceAssumption } from "./Assumption.js";
+import { WithId, WithType } from "./utils.js";
+import { Agent, Concept } from "./Agent.js";
+import { FeatureSource } from "./FeatureSource.js";
+import { Measure, Millimeters, Quantity, px, Track, track } from "./Quantity.js";
 
 /**
  * This condition state is used to describe the roll's

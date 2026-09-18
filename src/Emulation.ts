@@ -1,8 +1,8 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
-import { idOf } from "./Assumption";
-import { EditionView } from "./EditionView";
-import { AnySymbol, isCommand, pairsAmong, placementsOf } from "./Symbol";
-import { Version } from "./Version";
+import { idOf } from "./Assumption.js";
+import { EditionView } from "./EditionView.js";
+import { AnySymbol, isCommand, pairsAmong, placementsOf } from "./Symbol.js";
+import { Version } from "./Version.js";
 import {
     AnyPerformedRollFeature,
     EmulatedCurve,
@@ -10,8 +10,8 @@ import {
     PerformedPedalEvent,
     ReproducingSystem,
     RollProperties
-} from "./ReproducingSystem";
-import { add, mean, Millimeters, mm, Seconds, seconds, subtract } from "./Quantity";
+} from "./ReproducingSystem.js";
+import { add, mean, Millimeters, mm, Seconds, seconds, subtract } from "./Quantity.js";
 
 export type EmulationScope = {
     /** Only notes whose onset lies within this span of the roll are played. */

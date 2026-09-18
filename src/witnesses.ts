@@ -1,7 +1,7 @@
-import { Belief, Certainty, certaintyOf, idOf, idsOf } from "./Assumption";
-import { EditionView } from "./EditionView";
-import { AnySymbol } from "./Symbol";
-import { insertedBy, Version } from "./Version";
+import { Belief, Certainty, certaintyOf, idOf, idsOf } from "./Assumption.js";
+import { EditionView } from "./EditionView.js";
+import { AnySymbol } from "./Symbol.js";
+import { insertedBy, Version } from "./Version.js";
 
 export type WitnessBy = 'carriers' | 'statement'
 

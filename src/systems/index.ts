@@ -1,8 +1,8 @@
-import { Concept } from "../Agent"
-import { systemIdOf, TrackerBar } from "../TrackerBar"
-import { welteT100 } from "./welteT100/bar"
-import { welteLicensee } from "./welteLicensee/bar"
-import { welteT98 } from "./welteT98/bar"
+import { Concept } from "../Agent.js"
+import { systemIdOf, TrackerBar } from "../TrackerBar.js"
+import { welteT100 } from "./welteT100/bar.js"
+import { welteLicensee } from "./welteLicensee/bar.js"
+import { welteT98 } from "./welteT98/bar.js"
 
 /** The tracker bars the library knows, the T-100 first as the usual one. */
 export const trackerBars: readonly TrackerBar[] = [welteT100, welteLicensee, welteT98]

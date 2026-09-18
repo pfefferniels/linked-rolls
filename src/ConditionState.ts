@@ -1,4 +1,4 @@
-import { WithType } from "./utils";
+import { WithType } from "./utils.js";
 
 /**
  * Physical condition of a roll or

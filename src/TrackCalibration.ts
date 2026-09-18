@@ -1,4 +1,4 @@
-import { Pixels, px, subtract, Track, track } from "./Quantity"
+import { Pixels, px, subtract, Track, track } from "./Quantity.js"
 
 /**
  * Relates a scan to the tracker bar it was read with.

@@ -1,10 +1,10 @@
-import { Edit, EditType } from "./Edit"
-import { HorizontalSpan } from "./Feature"
-import { AnySymbol } from "./Symbol"
-import { keyOf } from "./TrackerBar"
-import { distance, Millimeters, mm } from "./Quantity"
-import { partitionPoint } from "./sorted"
-import { groupBy } from "./utils"
+import { Edit, EditType } from "./Edit.js"
+import { HorizontalSpan } from "./Feature.js"
+import { AnySymbol } from "./Symbol.js"
+import { keyOf } from "./TrackerBar.js"
+import { distance, Millimeters, mm } from "./Quantity.js"
+import { partitionPoint } from "./sorted.js"
+import { groupBy } from "./utils.js"
 
 /** A value taken at each end of a feature: where it begins and where it stops. */
 export interface BothEnds<T> {

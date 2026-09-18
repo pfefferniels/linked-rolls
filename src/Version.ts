@@ -1,9 +1,9 @@
-import { Edit } from "./Edit";
-import { Concept } from "./Agent";
-import { ActorAssignment, Belief, certainties, certaintyOf, Certainty, DateAssignment, idOf, ObjectAssumption, ReferenceAssumption } from "./Assumption";
-import { CollationTolerance, defaultCollationTolerance } from "./Collation";
-import { AnySymbol } from "./Symbol";
-import { WithId, WithNote, WithType } from "./utils";
+import { Edit } from "./Edit.js";
+import { Concept } from "./Agent.js";
+import { ActorAssignment, Belief, certainties, certaintyOf, Certainty, DateAssignment, idOf, ObjectAssumption, ReferenceAssumption } from "./Assumption.js";
+import { CollationTolerance, defaultCollationTolerance } from "./Collation.js";
+import { AnySymbol } from "./Symbol.js";
+import { WithId, WithNote, WithType } from "./utils.js";
 
 /**
  * A motivation provides a reason or rationale for an editorial change.

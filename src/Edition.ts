@@ -1,9 +1,9 @@
-import { RollCopy } from "./RollCopy";
-import { Version } from "./Version";
-import { CollationTolerance } from "./Collation";
-import { DateAssignment, ObjectAssumption } from "./Assumption";
-import { Editor, Person, Place } from "./Agent";
-import { RollTempo } from "./ReproducingSystem";
+import { RollCopy } from "./RollCopy.js";
+import { Version } from "./Version.js";
+import { CollationTolerance } from "./Collation.js";
+import { DateAssignment, ObjectAssumption } from "./Assumption.js";
+import { Editor, Person, Place } from "./Agent.js";
+import { RollTempo } from "./ReproducingSystem.js";
 
 /**
  * This type describes the creation of an edition,

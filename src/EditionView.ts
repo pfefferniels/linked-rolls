@@ -1,12 +1,12 @@
-import { Edition } from "./Edition";
-import { HorizontalSpan, FeatureOrPatch, NestedFeature, withBorneFeatures } from "./Feature";
-import { AnySymbol, Expression, Note } from "./Symbol";
-import { deletedBy, insertedBy, principalDerivationOf, Version } from "./Version";
-import { NegotiatedEvent } from "./ReproducingSystem";
-import { systemIdOf, TrackerBar } from "./TrackerBar";
-import { featuresMadeBy, featuresOf, isPaperStretch, Modification, ProductionEvent, RollCopy } from "./RollCopy";
-import { idOf, idsOf } from "./Assumption";
-import { mean, Millimeters } from "./Quantity";
+import { Edition } from "./Edition.js";
+import { HorizontalSpan, FeatureOrPatch, NestedFeature, withBorneFeatures } from "./Feature.js";
+import { AnySymbol, Expression, Note } from "./Symbol.js";
+import { deletedBy, insertedBy, principalDerivationOf, Version } from "./Version.js";
+import { NegotiatedEvent } from "./ReproducingSystem.js";
+import { systemIdOf, TrackerBar } from "./TrackerBar.js";
+import { featuresMadeBy, featuresOf, isPaperStretch, Modification, ProductionEvent, RollCopy } from "./RollCopy.js";
+import { idOf, idsOf } from "./Assumption.js";
+import { mean, Millimeters } from "./Quantity.js";
 
 export type Path = (string | number)[];
 

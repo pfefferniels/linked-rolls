@@ -1,5 +1,5 @@
-import { idOf, ReferenceAssumption } from "./Assumption";
-import { WithId } from "./utils";
+import { idOf, ReferenceAssumption } from "./Assumption.js";
+import { WithId } from "./utils.js";
 
 /**
  * A symbol is an abstract musical or textual entity carried by one or more

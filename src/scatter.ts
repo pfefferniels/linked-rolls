@@ -1,15 +1,15 @@
 import { v4 } from "uuid"
-import { Belief } from "./Assumption"
-import { admits, BothEnds, CollationTolerance, Displacement, offsetEndOf, offsetStartOf } from "./Collation"
-import { EditionView } from "./EditionView"
-import { FeatureOrPatch } from "./Feature"
-import { mean, Millimeters, mm } from "./Quantity"
+import { Belief } from "./Assumption.js"
+import { admits, BothEnds, CollationTolerance, Displacement, offsetEndOf, offsetStartOf } from "./Collation.js"
+import { EditionView } from "./EditionView.js"
+import { FeatureOrPatch } from "./Feature.js"
+import { mean, Millimeters, mm } from "./Quantity.js"
 import {
     excessKurtosisOf, Histogram, histogramOf, normalQuantile, Spread, spreadOf, standardise, Tail, tailOf
-} from "./statistics"
-import { AnySymbol } from "./Symbol"
-import { groupBy } from "./utils"
-import { deletedBy, insertedBy, Version } from "./Version"
+} from "./statistics.js"
+import { AnySymbol } from "./Symbol.js"
+import { groupBy } from "./utils.js"
+import { deletedBy, insertedBy, Version } from "./Version.js"
 
 /**
  * How far the copies of a roll disagree about where a symbol lies, and

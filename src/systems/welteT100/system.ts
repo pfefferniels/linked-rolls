@@ -28,8 +28,8 @@ import {
     Punch,
     RollNumber,
 } from "welte-mignon-emulator/t100";
-import { Expression, Note } from "../../Symbol";
-import { welteT100, WelteT100ExpressionType } from "./bar";
+import { Expression, Note } from "../../Symbol.js";
+import { welteT100, WelteT100ExpressionType } from "./bar.js";
 import {
     DynamicsCurve,
     NegotiatedEvent,
@@ -40,12 +40,12 @@ import {
     PerformedPedalEvent,
     ReproducingSystem,
     RollProperties
-} from "../../ReproducingSystem";
-import { inCentimeters, Millimeters, mm, Seconds, seconds, Track, track } from "../../Quantity";
-import { partitionPoint } from "../../sorted";
-import { defaultVelocityMap, velocityOf, type VelocityMap } from "../velocity";
+} from "../../ReproducingSystem.js";
+import { inCentimeters, Millimeters, mm, Seconds, seconds, Track, track } from "../../Quantity.js";
+import { partitionPoint } from "../../sorted.js";
+import { defaultVelocityMap, velocityOf, type VelocityMap } from "../velocity.js";
 
-export type { VelocityMap } from "../velocity";
+export type { VelocityMap } from "../velocity.js";
 
 export type { Instrument } from "welte-mignon-emulator/t100";
 

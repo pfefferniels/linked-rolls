@@ -1,6 +1,6 @@
 import Ajv, { type ErrorObject, type ValidateFunction } from "ajv"
-import * as schema from "./schema.json"
-import { Edition } from "./Edition"
+import * as schema from "./schema.json" with { type: 'json' }
+import { Edition } from "./Edition.js"
 
 /**
  * Holds a document against the edition schema. `errors` says what the

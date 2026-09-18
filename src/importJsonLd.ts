@@ -1,7 +1,7 @@
-import { Edition } from "./Edition";
-import { derivedKeys } from "./asJsonLd";
-import { migrate } from "./migrate";
-import { isDateString } from "./utils";
+import { Edition } from "./Edition.js";
+import { derivedKeys } from "./asJsonLd.js";
+import { migrate } from "./migrate.js";
+import { isDateString } from "./utils.js";
 
 export const importDate = (str: string): Date => {
     const [y, m, d] = str.split('-').map(s => parseInt(s, 10))

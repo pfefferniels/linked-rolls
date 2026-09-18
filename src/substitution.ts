@@ -1,7 +1,7 @@
-import { CollationTolerance, defaultCollationTolerance, Locate } from "./Collation"
-import { AnySymbol, Expression } from "./Symbol"
-import { distance, Millimeters, mm, Track, track } from "./Quantity"
-import { TrackerBar } from "./TrackerBar"
+import { CollationTolerance, defaultCollationTolerance, Locate } from "./Collation.js"
+import { AnySymbol, Expression } from "./Symbol.js"
+import { distance, Millimeters, mm, Track, track } from "./Quantity.js"
+import { TrackerBar } from "./TrackerBar.js"
 
 /**
  * How a scale words a function: as a command that turns it on, one that

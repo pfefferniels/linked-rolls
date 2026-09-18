@@ -1,10 +1,10 @@
-import { conditions, isFeatureType, media, techniques } from "./Feature";
-import { rollConditions } from "./RollCopy";
-import { systemIdIn, systemOf, TrackerBar, translationBetween } from "./TrackerBar";
-import { trackerBars } from "./systems";
-import { welteT100 } from "./systems/welteT100/bar";
-import { Track } from "./Quantity";
-import { isDateString } from "./utils";
+import { conditions, isFeatureType, media, techniques } from "./Feature.js";
+import { rollConditions } from "./RollCopy.js";
+import { systemIdIn, systemOf, TrackerBar, translationBetween } from "./TrackerBar.js";
+import { trackerBars } from "./systems/index.js";
+import { welteT100 } from "./systems/welteT100/bar.js";
+import { Track } from "./Quantity.js";
+import { isDateString } from "./utils.js";
 
 /**
  * Brings the JSON of an edition written by an earlier release of the

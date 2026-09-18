@@ -1,4 +1,4 @@
-import { WithId } from "./utils";
+import { WithId } from "./utils.js";
 
 /**
  * Something with a name and, where one exists, an authority record.

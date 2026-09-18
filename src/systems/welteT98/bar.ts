@@ -1,5 +1,5 @@
-import { describeTrackerBar, TrackerBar } from "../../TrackerBar"
-import { metersPerMinute, mm } from "../../Quantity"
+import { describeTrackerBar, TrackerBar } from "../../TrackerBar.js"
+import { metersPerMinute, mm } from "../../Quantity.js"
 
 /**
  * The commands of the Welte-Mignon T-98, as its tracker bar reads them.

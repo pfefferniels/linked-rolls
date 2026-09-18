@@ -1,11 +1,11 @@
 import { v4 } from "uuid";
-import { AtonParser } from "./AtonParser";
-import { Hole } from "../Feature";
-import { RollCopy } from "../RollCopy";
-import { TrackCalibration } from "../TrackCalibration";
-import { systemOf, TrackerBar } from "../TrackerBar";
-import { welteT100 } from "../systems/welteT100/bar";
-import { inMillimeters, mean, Millimeters, mm, Pixels, pixelsPerInch, px, subtract, Track, track } from "../Quantity";
+import { AtonParser } from "./AtonParser.js";
+import { Hole } from "../Feature.js";
+import { RollCopy } from "../RollCopy.js";
+import { TrackCalibration } from "../TrackCalibration.js";
+import { systemOf, TrackerBar } from "../TrackerBar.js";
+import { welteT100 } from "../systems/welteT100/bar.js";
+import { inMillimeters, mean, Millimeters, mm, Pixels, pixelsPerInch, px, subtract, Track, track } from "../Quantity.js";
 
 /** A hole record as the Stanford analysis files spell it. */
 interface AtonHole {

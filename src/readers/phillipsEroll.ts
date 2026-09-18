@@ -1,12 +1,12 @@
 import { AnyEvent, read } from "midifile-ts";
 import { v4 } from "uuid";
-import { assignObject } from "../Assumption";
-import { Hole } from "../Feature";
-import { RollCopy } from "../RollCopy";
-import { systemOf, TrackerBar } from "../TrackerBar";
-import { welteT100 } from "../systems/welteT100/bar";
-import { welteLicensee } from "../systems/welteLicensee/bar";
-import { inMetersPerMinute, Millimeters, mm, Seconds, seconds, Track, track } from "../Quantity";
+import { assignObject } from "../Assumption.js";
+import { Hole } from "../Feature.js";
+import { RollCopy } from "../RollCopy.js";
+import { systemOf, TrackerBar } from "../TrackerBar.js";
+import { welteT100 } from "../systems/welteT100/bar.js";
+import { welteLicensee } from "../systems/welteLicensee/bar.js";
+import { inMetersPerMinute, Millimeters, mm, Seconds, seconds, Track, track } from "../Quantity.js";
 
 /**
  * Peter Phillips's "e-roll" file, the unprocessed output of his
