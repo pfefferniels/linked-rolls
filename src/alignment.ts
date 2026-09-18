@@ -102,13 +102,33 @@ const holesOf = (copy: RollCopy) => featuresOf(copy).filter(feature => feature.t
  * on the feature, a reading of the hole, a smaller extension — and
  * `shortenHoles` throws rather than answer it.
  */
-export const tooShortToShorten = (extension: Millimeters, copy: RollCopy): Readonly<FeatureOrPatch>[] =>
-    holesOf(copy).filter(hole => hole.horizontal.to - hole.horizontal.from <= extension)
+export const tooShortToShorten = (
+    extension: Millimeters,
+    copy: RollCopy,
+    leaving: ReadonlySet<string> = new Set()
+): Readonly<FeatureOrPatch>[] =>
+    holesOf(copy).filter(hole =>
+        !leaving.has(hole.id) && hole.horizontal.to - hole.horizontal.from <= extension)
 
-export const shortenHoles = (extension: Millimeters, copy: RollCopy) => {
+/**
+ * Takes the extension off, leaving the named holes as the reader gave
+ * them. Naming a hole is an editorial act and not a repair: it says
+ * this one is where the constant stops applying, and the edition is
+ * what has to say why. The copy records which were left, so that
+ * putting the extension back does not lengthen a hole nothing was
+ * taken from.
+ *
+ * Throws where a hole that was not named is no longer than the
+ * extension, `tooShortToShorten` saying beforehand which those are.
+ */
+export const shortenHoles = (
+    extension: Millimeters,
+    copy: RollCopy,
+    leaving: ReadonlySet<string> = new Set()
+) => {
     if (copy.ops.includes('shortened')) return
 
-    const tooShort = tooShortToShorten(extension, copy)
+    const tooShort = tooShortToShorten(extension, copy, leaving)
     if (tooShort.length > 0) {
         throw new Error(
             `The extension of ${extension} mm cannot be taken off ${tooShort.length} `
@@ -116,17 +136,25 @@ export const shortenHoles = (extension: Millimeters, copy: RollCopy) => {
             + `${tooShort.map(hole => hole.id).join(', ')}`)
     }
 
-    holesOf(copy).forEach(hole => { hole.horizontal.to = subtract(hole.horizontal.to, extension) })
+    const left = holesOf(copy).filter(hole => leaving.has(hole.id)).map(hole => hole.id)
+    holesOf(copy)
+        .filter(hole => !leaving.has(hole.id))
+        .forEach(hole => { hole.horizontal.to = subtract(hole.horizontal.to, extension) })
+
     copy.ops = [...copy.ops, 'shortened']
-    copy.measurements.readerExtension = extension
+    copy.measurements.readerExtension = { length: extension, ...(left.length > 0 && { leaving: left }) }
 }
 
-/** Puts the reader's extension back on the copy's holes, as far as one was taken off. */
+/** Puts the reader's extension back on the holes it was taken off, as far as one was taken off. */
 export const revertShortening = (copy: RollCopy) => {
-    const extension = copy.measurements.readerExtension
-    if (!copy.ops.includes('shortened') || extension === undefined) return
+    const taken = copy.measurements.readerExtension
+    if (!copy.ops.includes('shortened') || taken === undefined) return
 
-    holesOf(copy).forEach(hole => { hole.horizontal.to = add(hole.horizontal.to, extension) })
+    const left = new Set(taken.leaving ?? [])
+    holesOf(copy)
+        .filter(hole => !left.has(hole.id))
+        .forEach(hole => { hole.horizontal.to = add(hole.horizontal.to, taken.length) })
+
     copy.ops = copy.ops.filter(op => op !== 'shortened')
     delete copy.measurements.readerExtension
 }

@@ -198,8 +198,8 @@ export const unalignCopy = (copyId: string): EditionOp =>
  * copy's holes, and records how much was taken, so that its lengths
  * can be compared with a scanned copy's at all.
  */
-export const shortenCopy = (copyId: string, extension: Millimeters): EditionOp =>
-    onCopy(copyId, copy => shortenHoles(extension, copy))
+export const shortenCopy = (copyId: string, extension: Millimeters, leaving?: ReadonlySet<string>): EditionOp =>
+    onCopy(copyId, copy => shortenHoles(extension, copy, leaving))
 
 /** Puts the reader's extension back on the copy's holes. */
 export const unshortenCopy = (copyId: string): EditionOp =>

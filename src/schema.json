@@ -2829,8 +2829,24 @@
               "ontology": "reo:punchDiameter"
             },
             "readerExtension": {
-              "$ref": "#/definitions/Millimeters",
-              "description": "How much longer this copy's reading of a hole ran than the perforation that caused it, where that was taken off the ends again. A pneumatic reader reports how long a valve stayed open, which exceeds the perforation that opened it, so its holes are overlong by a constant while its onsets agree. Nothing for a copy read by other means, whose holes are the punched slots themselves. Not exported to RDF."
+              "description": "What a pneumatic reader added to this copy's holes, where it was taken off again. Such a reader reports how long a valve stayed open, which exceeds the perforation that opened it, so its holes are overlong by a constant while its onsets agree. Nothing for a copy read by other means, whose holes are the punched slots themselves. Not exported to RDF.",
+              "properties": {
+                "leaving": {
+                  "description": "The holes it was not taken off, by `@id`, being no longer than it is. The constant reaches its limit there rather than the copy being wrong, and why they were left is for the edition to state about the features themselves; this only records that they stand as the reader gave them, so that putting the extension back does not lengthen a hole nothing was taken from.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "length": {
+                  "$ref": "#/definitions/Millimeters",
+                  "description": "How much longer the reading of a hole ran than the perforation that caused it."
+                }
+              },
+              "required": [
+                "length"
+              ],
+              "type": "object"
             },
             "scale": {
               "description": "The factor this copy's features were scaled by to align them with the others. What it is put down to is stated apart: a paper-stretch condition, or the speed the copy was cut for. Not exported to RDF.",

@@ -303,16 +303,29 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
         scale: number
 
         /**
-         * How much longer this copy's reading of a hole ran than the
-         * perforation that caused it, where that was taken off the ends
-         * again. A pneumatic reader reports how long a valve stayed
-         * open, which exceeds the perforation that opened it, so its
-         * holes are overlong by a constant while its onsets agree.
+         * What a pneumatic reader added to this copy's holes, where it
+         * was taken off again. Such a reader reports how long a valve
+         * stayed open, which exceeds the perforation that opened it, so
+         * its holes are overlong by a constant while its onsets agree.
          * Nothing for a copy read by other means, whose holes are the
          * punched slots themselves.
          * Not exported to RDF.
          */
-        readerExtension: Millimeters
+        readerExtension: {
+            /** How much longer the reading of a hole ran than the perforation that caused it. */
+            length: Millimeters
+
+            /**
+             * The holes it was not taken off, by `@id`, being no longer
+             * than it is. The constant reaches its limit there rather
+             * than the copy being wrong, and why they were left is for
+             * the edition to state about the features themselves; this
+             * only records that they stand as the reader gave them, so
+             * that putting the extension back does not lengthen a hole
+             * nothing was taken from.
+             */
+            leaving?: string[]
+        }
 
         /**
          * The resolution this copy's scan was read at, along the roll.

@@ -46,7 +46,7 @@ describe('taking a pneumatic reader\'s extension off a copy', () => {
     })
 
     it('records what was taken, and that it was', () => {
-        expect(shortened().copies[0].measurements.readerExtension).toBe(1.6)
+        expect(shortened().copies[0].measurements.readerExtension).toEqual({ length: 1.6 })
         expect(shortened().copies[0].ops).toEqual(['shortened'])
     })
 
@@ -100,6 +100,27 @@ describe('a hole no longer than the extension', () => {
     it('names none where every hole is longer than the extension', () => {
         expect(tooShortToShorten(mm(1.1), withAShortHole().copies[0])).toEqual([])
     })
+
+    it('is passed over where it is named, and does not block the rest', () => {
+        const next = produce(withAShortHole(), shortenCopy('pneumatic', mm(1.6), new Set(['short'])))
+
+        expect(lengthOf(next, 'short')).toBeCloseTo(1.2, 6)
+        expect(lengthOf(next, 'ordinary')).toBeCloseTo(38.4, 6)
+        expect(next.copies[0].measurements.readerExtension).toEqual({ length: 1.6, leaving: ['short'] })
+    })
+
+    /**
+     * A hole nothing was taken off must not have anything put back, or
+     * reverting would leave it longer than the reader ever gave it.
+     */
+    it('is left alone again when the extension is put back', () => {
+        const next = produce(withAShortHole(), shortenCopy('pneumatic', mm(1.6), new Set(['short'])))
+        const back = produce(next, unshortenCopy('pneumatic'))
+
+        expect(lengthOf(back, 'short')).toBeCloseTo(1.2, 6)
+        expect(lengthOf(back, 'ordinary')).toBeCloseTo(40, 6)
+        expect(back.copies[0].ops).toEqual([])
+    })
 })
 
 describe('the functions the ops are built from', () => {
@@ -108,7 +129,7 @@ describe('the functions the ops are built from', () => {
         shortenHoles(mm(2), copy)
 
         expect(copy.ops).toEqual(['shortened'])
-        expect(copy.measurements.readerExtension).toBe(2)
+        expect(copy.measurements.readerExtension).toEqual({ length: 2 })
 
         revertShortening(copy)
         expect(copy.ops).toEqual([])
