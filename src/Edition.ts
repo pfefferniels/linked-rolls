@@ -33,9 +33,15 @@ export interface EditionCreation {
     publicationDate: Date
 
     /**
-     * The tolerance parameters used when collating (aligning)
-     * the different roll copies for this edition.
+     * The tolerance every version of the edition was collated at,
+     * before each derivation stated its own. How precisely two copies
+     * place a symbol depends on which two they are, so the tolerance
+     * belongs to the derivation, `Derivation.collationTolerance`, and
+     * migration writes this one onto every derivation that gives none.
+     * Nothing else reads it. A window's offset is the displacement
+     * between two particular copies and so can never be stated here.
      * Not exported to RDF.
+     * @deprecated
      */
     collationTolerance?: CollationTolerance
 }
