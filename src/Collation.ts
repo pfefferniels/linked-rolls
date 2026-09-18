@@ -180,6 +180,29 @@ export const collationsOf = (
 const drawnByCollation: EditType = 'replace-with-equivalent'
 
 /**
+ * The motivation a collation writes on what it makes, saying that
+ * nobody has read it yet.
+ *
+ * A collation produces its edits by a rule, and an edition that
+ * publishes them unmarked would present a machine's output as an
+ * editor's reading. Stating that they are unchecked is the honest
+ * middle: the readings are there to be seen and argued with, and a
+ * reader can tell which of them anybody has weighed.
+ *
+ * It does not make an edit the editor's. `isCollationsOwn` passes over
+ * this motivation exactly, so a collation rewrites what it marked
+ * before, and only what somebody has actually written stays.
+ */
+export const unchecked = 'unchecked'
+
+/** The version's statement of what the unchecked motivation means, to stand in its `motivations`. */
+export const uncheckedMotivation = {
+    type: 'motivation',
+    id: unchecked,
+    note: 'Made by collating the two texts and not yet read by an editor.'
+} as const
+
+/**
  * Whether the edit is one a collation writes by itself: a bare
  * insertion or a bare deletion saying nothing further, or an
  * equivalence between two systems' spellings for one command.
@@ -198,4 +221,6 @@ const drawnByCollation: EditType = 'replace-with-equivalent'
  */
 export const isCollationsOwn = (edit: Readonly<Edit>): boolean =>
     edit.editType === drawnByCollation
-    || (edit.editType === undefined && edit.motivation === undefined && edit['@annotation'] === undefined)
+    || (edit.editType === undefined
+        && (edit.motivation === undefined || edit.motivation === unchecked)
+        && edit['@annotation'] === undefined)

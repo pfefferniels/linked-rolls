@@ -4,7 +4,7 @@ import { Edition } from '../src/Edition'
 import { EditionView } from '../src/EditionView'
 import { Edit } from '../src/Edit'
 import { Note } from '../src/Symbol'
-import { admits, CollationTolerance, isCollatable, isCollationsOwn } from '../src/Collation'
+import { admits, CollationTolerance, isCollatable, isCollationsOwn, unchecked } from '../src/Collation'
 import { connectVersions } from '../src/editionOps'
 import { idsOf } from '../src/Assumption'
 import { mm } from '../src/Quantity'
@@ -62,6 +62,16 @@ describe('which edits a collation may rewrite', () => {
         expect(isCollationsOwn(bare('a'))).toBe(true)
         expect(isCollationsOwn({ type: 'edit', id: 'b', delete: ['n'] })).toBe(true)
         expect(isCollationsOwn({ ...bare('c'), editType: 'replace-with-equivalent' })).toBe(true)
+    })
+
+    /**
+     * A collation marks what it makes as unread, so that an edition can
+     * publish the readings without presenting a rule's output as an
+     * editor's. That mark must not make them the editor's, or the next
+     * collation would freeze against its own previous output.
+     */
+    it('claims what it marked unchecked itself, which is not somebody having read it', () => {
+        expect(isCollationsOwn({ ...bare('a'), motivation: unchecked })).toBe(true)
     })
 
     it('leaves alone an edit that says what the change is, why it was made, or what it rests on', () => {
@@ -131,5 +141,54 @@ describe('connecting two versions where an editor has already read the differenc
     it('leaves the text of the child as it was', () => {
         expect(new EditionView(connected()).snapshot('B').map(symbol => symbol.id).sort())
             .toEqual(['own', 'shared'])
+    })
+
+})
+
+/** Two roots with a reading each that the other lacks, so a collation has something to state. */
+const twoRootsApart = (): Edition => editionOf(
+    [
+        copy('first', [hole('hole-gone', 1000, 1010, 47)]),
+        copy('second', [hole('hole-new', 5000, 5010, 49)])
+    ],
+    [
+        version('A', [{ type: 'edit', id: 'edit-a', insert: [note('gone', 60, 'hole-gone')] }]),
+        version('B', [{ type: 'edit', id: 'edit-b', insert: [note('new', 62, 'hole-new')] }])
+    ]
+)
+
+describe('what a collation says about the edits it makes', () => {
+    const connected = () => {
+        const before = twoRootsApart()
+        return produce(before, connectVersions(new EditionView(before), 'B', 'A'))
+    }
+
+    it('marks them as unread, and says in the version what that means', () => {
+        const next = connected()
+
+        expect(editsIn(next, 'B').length).toBe(2)
+        expect(editsIn(next, 'B').every(edit => edit.motivation === unchecked)).toBe(true)
+        expect(next.versions[1].motivations.map(motivation => motivation.id)).toEqual([unchecked])
+        expect(next.versions[1].motivations[0].note).toMatch(/not yet read/)
+    })
+
+    /**
+     * The mark says a rule made the edit and nobody has weighed it. It
+     * must not read as somebody having weighed it, or the next
+     * collation would freeze against its own previous output.
+     */
+    it('rewrites what it marked before, rather than freezing against its own output', () => {
+        const once = connected()
+        const twice = produce(once, connectVersions(new EditionView(once), 'B', 'A'))
+
+        expect(editsIn(twice, 'B').map(edit => edit.id)).not.toEqual(editsIn(once, 'B').map(edit => edit.id))
+        expect(new EditionView(twice).snapshot('B').map(symbol => symbol.id)).toEqual(['new'])
+    })
+
+    it('declares the motivation once, however often it collates', () => {
+        const once = connected()
+        const twice = produce(once, connectVersions(new EditionView(once), 'B', 'A'))
+
+        expect(twice.versions[1].motivations.map(motivation => motivation.id)).toEqual([unchecked])
     })
 })

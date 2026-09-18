@@ -90,8 +90,31 @@ const holesOf = (copy: RollCopy) => featuresOf(copy).filter(feature => feature.t
  *
  * Only holes are touched. What a writing or a mark spans is no valve.
  */
+/**
+ * The holes the extension cannot be taken off, being no longer than it
+ * is: the reader reported them open for less time than it holds a valve
+ * on beyond the perforation, so the constant over-corrects them and
+ * would leave them ending before they begin.
+ *
+ * They are where the constant shows its limit rather than where the
+ * copy is wrong, the extension varying by about half a millimetre with
+ * the port. What to do with them is an editorial question — a condition
+ * on the feature, a reading of the hole, a smaller extension — and
+ * `shortenHoles` throws rather than answer it.
+ */
+export const tooShortToShorten = (extension: Millimeters, copy: RollCopy): Readonly<FeatureOrPatch>[] =>
+    holesOf(copy).filter(hole => hole.horizontal.to - hole.horizontal.from <= extension)
+
 export const shortenHoles = (extension: Millimeters, copy: RollCopy) => {
     if (copy.ops.includes('shortened')) return
+
+    const tooShort = tooShortToShorten(extension, copy)
+    if (tooShort.length > 0) {
+        throw new Error(
+            `The extension of ${extension} mm cannot be taken off ${tooShort.length} `
+            + `hole(s) of copy ${copy.id}, which are no longer than it: `
+            + `${tooShort.map(hole => hole.id).join(', ')}`)
+    }
 
     holesOf(copy).forEach(hole => { hole.horizontal.to = subtract(hole.horizontal.to, extension) })
     copy.ops = [...copy.ops, 'shortened']

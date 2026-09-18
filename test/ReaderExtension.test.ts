@@ -3,7 +3,7 @@ import { produce } from 'immer'
 import { Edition } from '../src/Edition'
 import { EditionView } from '../src/EditionView'
 import { AnyFeature } from '../src/Feature'
-import { revertShortening, shortenHoles } from '../src/alignment'
+import { revertShortening, shortenHoles, tooShortToShorten } from '../src/alignment'
 import { shortenCopy, unshortenCopy } from '../src/editionOps'
 import { mm } from '../src/Quantity'
 import { alteration, copy, editionOf, hole } from './editionFixture'
@@ -27,7 +27,7 @@ const read = (): Edition => editionOf(
     []
 )
 
-const holeIn = (edition: Edition, id: string) => new EditionView(edition).get<{ horizontal: { from: number, to: number } }>(id)!
+const holeIn: (edition: Edition, id: string) => { horizontal: { from: number, to: number } } = (edition, id) => new EditionView(edition).get<{ horizontal: { from: number, to: number } }>(id)!
 const lengthOf = (edition: Edition, id: string) => holeIn(edition, id).horizontal.to - holeIn(edition, id).horizontal.from
 
 describe('taking a pneumatic reader\'s extension off a copy', () => {
@@ -72,6 +72,33 @@ describe('taking a pneumatic reader\'s extension off a copy', () => {
     it('leaves a copy nothing was taken off alone', () => {
         const before = read()
         expect(produce(before, unshortenCopy('pneumatic'))).toBe(before)
+    })
+})
+
+describe('a hole no longer than the extension', () => {
+    const withAShortHole = (): Edition => editionOf(
+        [copy('pneumatic', [hole('short', 100, 101.2, 47), hole('ordinary', 200, 240, 49)])],
+        []
+    )
+
+    it('is named beforehand, rather than being made to end before it begins', () => {
+        const tooShort = tooShortToShorten(mm(1.6), withAShortHole().copies[0])
+        expect(tooShort.map(feature => feature.id)).toEqual(['short'])
+    })
+
+    it('stops the whole copy being shortened, the constant having reached its limit', () => {
+        expect(() => shortenHoles(mm(1.6), withAShortHole().copies[0])).toThrow(/short/)
+    })
+
+    it('leaves the copy untouched where it throws', () => {
+        const copy = withAShortHole().copies[0]
+        expect(() => shortenHoles(mm(1.6), copy)).toThrow()
+        expect(copy.ops).toEqual([])
+        expect(lengthOf({ copies: [copy] } as Edition, 'ordinary')).toBeCloseTo(40, 6)
+    })
+
+    it('names none where every hole is longer than the extension', () => {
+        expect(tooShortToShorten(mm(1.1), withAShortHole().copies[0])).toEqual([])
     })
 })
 

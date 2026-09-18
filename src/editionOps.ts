@@ -3,9 +3,14 @@ import { v4 } from "uuid"
 import { EditionView, getAt, Path } from "./EditionView.js"
 import { Edition } from "./Edition.js"
 import { AnyCommand, AnySymbol, Expression, PlacementRelation, isCommand, placementRelations } from "./Symbol.js"
-import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance, isCollationsOwn } from "./Collation.js"
+import {
+    Collation, CollationTolerance, collationsOf, defaultCollationTolerance, isCollationsOwn, unchecked,
+    uncheckedMotivation
+} from "./Collation.js"
 import { Edit, EditType } from "./Edit.js"
-import { collationToleranceOf, Derivation, editsOf, insertedBy, principalDerivationOf, Version } from "./Version.js"
+import {
+    collationToleranceOf, Derivation, editsOf, insertedBy, Motivation, principalDerivationOf, Version
+} from "./Version.js"
 import {
     asSymbols, barOf, featuresByAct, featuresOf, GeneralRollCondition, isPaperStretch, Modification,
     ModificationPurpose, RollCopy, ScaleReading, Shift, statesNothing
@@ -91,6 +96,20 @@ type Ids = ReadonlySet<string>
 const insertion = (symbol: AnySymbol): Edit => ({ type: 'edit', id: v4(), insert: [symbol] })
 
 const deletion = (symbolId: string): Edit => ({ type: 'edit', id: v4(), delete: [symbolId] })
+
+/** The edit as a collation leaves it: made by rule, and not yet read by anybody. */
+const asUnchecked = (edit: Edit): Edit => ({ ...edit, motivation: unchecked })
+
+/**
+ * The motivations with the unchecked one declared, where any edit
+ * names it and the version does not state it yet. An edit naming a
+ * motivation the version leaves undeclared points at nothing.
+ */
+const declaring = (motivations: Motivation[], edits: readonly Edit[]): Motivation[] =>
+    edits.some(edit => edit.motivation === unchecked)
+        && !motivations.some(motivation => motivation.id === unchecked)
+        ? [...motivations, uncheckedMotivation]
+        : motivations
 
 const isEmpty = (edit: Edit): boolean => !edit.insert?.length && !edit.delete?.length
 
@@ -918,6 +937,7 @@ export const connectVersions = (
             type: 'edit',
             id: v4(),
             editType: 'replace-with-equivalent',
+            motivation: unchecked,
             insert: [...by],
             delete: deleted
         }
@@ -926,15 +946,16 @@ export const connectVersions = (
     const edits = [
         ...established,
         ...substituted.map(equivalence),
-        ...own.filter(symbol => !collated.has(symbol.id) && !paired.has(symbol.id)).map(insertion),
+        ...own.filter(symbol => !collated.has(symbol.id) && !paired.has(symbol.id)).map(insertion).map(asUnchecked),
         ...inherited
             .filter(symbol => !matched.has(symbol.id) && !paired.has(symbol.id))
-            .map(symbol => deletion(symbol.id))
+            .map(symbol => asUnchecked(deletion(symbol.id)))
     ]
 
     return onVersion(childId, (child, draft) => {
         handOverCarriers(view, draft, collations)
         child.edits = edits
+        child.motivations = declaring(stateOf<Version>(child).motivations, edits)
         child.basedOn = [
             { ...assignReference(parentId), collationTolerance: tolerance },
             ...hypothesesBeside(stateOf<Version>(child), parentId)
