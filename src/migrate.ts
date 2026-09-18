@@ -64,6 +64,17 @@ const withoutVersionType = (node: Json): Json => {
     return rest
 }
 
+/**
+ * A version carried the label it was cited under, from before the sigla
+ * were read off the stemma. A copy keeps its siglum, which is given by
+ * hand and derives from nothing.
+ */
+const withoutVersionSiglum = (node: Json): Json => {
+    if (node['@type'] !== 'Version' || !Object.hasOwn(node, 'siglum')) return node
+    const { siglum: _labelled, ...rest } = node
+    return rest
+}
+
 const withLowerCaseTerms = (node: Json): Json =>
     Object.entries(lowerCasedTerms).reduce((result, [key, terms]) => {
         const lowered = terms[result[key]]
@@ -267,7 +278,7 @@ const withTimeSpanDates = (node: Json): Json => {
 }
 
 const migrateNode = (node: Json): Json =>
-    [withRenamedKeys, withTypology, withoutVersionType, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
+    [withRenamedKeys, withTypology, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
         withProductionNodes, withScale, withDerivationList, withReadingKind, withTimeSpanDates, withoutFeatureKind,
         withBorneFeaturesNamed, withFeaturesInActs]
         .reduce((result, step) => step(result), node)

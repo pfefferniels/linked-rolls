@@ -71,6 +71,15 @@ describe('migrating a 0.1 edition', () => {
         })
     })
 
+    it('takes the label off a version and leaves a copy the siglum it is cited by', () => {
+        const migrated = migrate(edition01())
+        expect(migrated.versions.length).toBeGreaterThan(0)
+        migrated.versions.forEach((version: any) => expect(version).not.toHaveProperty('siglum'))
+
+        const copies = migrate({ copies: [{ '@type': 'RollCopy', '@id': 'first', siglum: 'St1' }] }).copies
+        expect(copies[0].siglum).toEqual('St1')
+    })
+
     it('turns the keeper and the production metadata into nodes', () => {
         const migrated = migrate(edition01())
         migrated.copies.forEach((copy: any) => {

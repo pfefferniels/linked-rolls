@@ -75,6 +75,11 @@ at. It then reads as the version it derives from, and
 `reservationsAboutVersion` says so. A file that names a single
 derivation loads as a list of one.
 
+What a version is called is not stored with it. `siglaOf` reads the
+sigla off the stemma as it stands, so a label never outlives the
+arrangement it describes, and nothing should cite one without saying
+which state of the edition it belongs to.
+
 ## What brought a feature about
 
 A copy states no list of features. Each feature stands in the act that
@@ -140,8 +145,8 @@ they carry it, a statement with the belief it rests on;
 `versionsWitnessedBy` gathers the same from the side of a copy.
 `carriageProblems` reports a statement made beside features that carry
 symbols already, or one naming a version the edition lacks. A copy may
-carry a `siglum`, as a version does; one without is named by its
-keeper.
+carry a `siglum`, which is given by hand and not read off anything;
+one without is named by its keeper.
 
 ```ts
 import { reservationsAbout, stateSource } from 'linked-rolls'

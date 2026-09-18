@@ -27,7 +27,7 @@ const childFirst = () => {
 describe('indexing an edition', () => {
     it('reads a derivation stating a tolerance as a reference, not as the version it names', () => {
         const view = new EditionView(childFirst())
-        expect(view.predecessorOf('B')?.siglum).toEqual('A')
+        expect(view.predecessorOf('B')?.id).toEqual('A')
         expect(view.snapshot('B').map(symbol => symbol.id)).toEqual(['note'])
         expect(view.getPath('A')).toEqual(['versions', 1])
     })

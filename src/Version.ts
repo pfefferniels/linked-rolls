@@ -75,15 +75,6 @@ export interface VersionCreation {
  */
 export interface Version extends WithId, WithType<'Version'> {
     /**
-     * A label a document carries from before the sigla were computed.
-     * Nothing should write one here and nothing should show one: what a
-     * version is called comes from `siglaOf`.
-     * @deprecated
-     * @see reo:siglum
-     */
-    siglum?: string;
-
-    /**
      * The reproducing system this version is coded for. One roll was
      * often issued for several of them, and a version is a reading in
      * one system's words: its expression types are that system's
