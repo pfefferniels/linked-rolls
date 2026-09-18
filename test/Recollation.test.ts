@@ -184,6 +184,56 @@ describe('separating a side that several copies attest', () => {
     })
 })
 
+/**
+ * An ancestor, a version separating a side of it, and a descendant that
+ * had struck one of the ancestor's symbols from its own text.
+ */
+const withADescendant = (): Edition => editionOf(
+    [
+        copy('ground', [hole('ground-0', 0, 10, 47), hole('ground-1', 100, 110, 47)]),
+        copy('witness', [hole('witness-0', 0.2, 10.2, 47), hole('witness-1', 100.2, 110.2, 47)])
+    ],
+    [
+        version('A', [{
+            type: 'edit',
+            id: 'edit-a',
+            insert: [
+                note('shared-0', 60, 'ground-0', 'witness-0'),
+                note('shared-1', 60, 'ground-1', 'witness-1')
+            ]
+        }]),
+        version('B', [], 'A'),
+        version('C', [{ type: 'edit', id: 'edit-c', delete: ['shared-0'] }], 'B')
+    ]
+)
+
+describe('separating under a version whose descendants struck what it shares', () => {
+    /**
+     * A known defect, recorded as one rather than fixed, because the
+     * fix does not belong in either operation alone.
+     *
+     * Separating exchanges an inherited symbol for one standing in its
+     * place, and a descendant that had struck the old identifier is
+     * left striking nothing, so the reading it rejected returns to its
+     * text. Re-collating repairs that wherever it joins the two
+     * readings again, which is most of them, and leaves it standing for
+     * the readings the new window parts.
+     *
+     * Rewriting the deletions when separating is not the answer: they
+     * would then name symbols the re-collation discards, which is worse
+     * by two orders of magnitude on a real stemma. Settling them needs
+     * the outcome of the collation, which neither operation can see
+     * alone.
+     */
+    it.fails('leaves the descendant reading what it read before', () => {
+        const before = withADescendant()
+        const after = produce(before, separateReadings(viewOf(before), 'B', new Set(['witness'])))
+
+        expect(textOf(before, 'C')).toEqual(['shared-1'])
+        expect(textOf(after, 'C').length).toBe(1)
+    })
+})
+
 describe('collating a derivation again at a tolerance arrived at afterwards', () => {
     const recollated = (): Edition => {
         const separated = produce(collated(), separateReadings(viewOf(collated()), 'B', new Set(['witness'])))
