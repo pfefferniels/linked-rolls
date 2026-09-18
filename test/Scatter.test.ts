@@ -3,9 +3,9 @@ import { Edition } from '../src/Edition'
 import { EditionView } from '../src/EditionView'
 import { Millimeters, mm } from '../src/Quantity'
 import { normalQuantile } from '../src/statistics'
-import { admits, offsetEndOf, offsetStartOf } from '../src/Collation'
+import { admits, CollationTolerance, offsetEndOf, offsetStartOf } from '../src/Collation'
 import {
-    departureThreshold, inferredTolerance, readingsOf, Scatter, scatterOf, scatterOfCopy, sidesOf, toleranceAcross
+    departureThreshold, inferredTolerance, readingsOf, Scatter, scatterOf, changesBetween, scatterOfCopy, sidesOf, toleranceAcross
 } from '../src/scatter'
 import { copy, editionOf, expression, hole, note, version } from './editionFixture'
 
@@ -240,6 +240,49 @@ describe('the direction a window is stored in', () => {
 
         expect(admits(asChild, nearTheEdge)).toBe(true)
         expect(admits(flipped, nearTheEdge)).toBe(false)
+    })
+})
+
+describe('what a window would change if it were applied', () => {
+    const readings = () => {
+        const view = new EditionView(witnessed([0, 0.2, 4, -4]))
+        return readingsOf(view, view.snapshot('A'), new Set(['witness']))
+    }
+
+    const wide: CollationTolerance = { toleranceStart: mm(6), toleranceEnd: mm(6) }
+    const tight: CollationTolerance = { toleranceStart: mm(1), toleranceEnd: mm(1) }
+
+    it('names the readings a tighter window would take apart', () => {
+        const { separated, merged } = changesBetween(readings(), wide, tight)
+
+        expect(separated.map(reading => reading.symbol.id)).toEqual(['note-2', 'note-3'])
+        expect(merged).toEqual([])
+    })
+
+    /**
+     * The direction `admittedAsStated` cannot show, since a reading the
+     * calculated window joins is no departure and never reaches that
+     * list. It is also the direction that costs more, a merge leaving
+     * nothing behind for a reader to challenge.
+     */
+    it('names the readings a wider window would join, which no departure reports', () => {
+        const { separated, merged } = changesBetween(readings(), tight, wide)
+
+        expect(merged.map(reading => reading.symbol.id)).toEqual(['note-2', 'note-3'])
+        expect(separated).toEqual([])
+    })
+
+    it('finds nothing to change between one window and itself', () => {
+        expect(changesBetween(readings(), tight, tight)).toEqual({ separated: [], merged: [] })
+    })
+
+    /** An offset moves a window without widening it, so it can do both at once. */
+    it('sees a shifted window both join and take apart', () => {
+        const shifted: CollationTolerance = { ...tight, offsetStart: mm(4), offsetEnd: mm(4) }
+        const { separated, merged } = changesBetween(readings(), tight, shifted)
+
+        expect(merged.map(reading => reading.symbol.id)).toEqual(['note-2'])
+        expect(separated.map(reading => reading.symbol.id)).toEqual(['note-0', 'note-1'])
     })
 })
 

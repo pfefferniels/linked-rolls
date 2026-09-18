@@ -137,7 +137,18 @@ export interface Departure {
      */
     separatedBy: BothEnds<boolean>
 
-    /** Whether the tolerance the edition states at present still admits it. Absent where none was given to compare against. */
+    /**
+     * Whether the tolerance the edition states at present still admits
+     * it. Absent where none was given to compare against.
+     *
+     * This sees one direction only. A departure is by definition a
+     * reading the calculated window rejects, so this says which of
+     * those the stated window joined and which would therefore be taken
+     * apart. It cannot show the converse, a reading the stated window
+     * rejects and the calculated one would join, because such a reading
+     * is no departure and never reaches this list. `changesBetween`
+     * reports both, and the ones it adds are the silent ones.
+     */
     admittedAsStated?: boolean
 }
 
@@ -336,6 +347,18 @@ export type Side = 'child' | 'parent'
  * sample's own median. Only the collation is wrong, and it is wrong in
  * both directions at once, separating readings that belong together and
  * merging readings that do not. Nothing where there is no sample.
+ *
+ * Covering has a cost where the samples sit at different centres, and
+ * it falls on the sample that does not move. One window has one centre,
+ * so where one sample's window contains another's the covering window
+ * is simply the wider one, centred where that sample sits, and the
+ * narrower sample is then judged against an offset it does not have.
+ * On the Phillips edge of welte225.org the expression punches sit
+ * 1.2 mm from the notes and the notes' onsets agree exactly, so the
+ * covering window shifts every note onset by a displacement only the
+ * expressions show. `changesBetween` makes that visible as readings the
+ * window moves; it is the price of one tolerance per derivation, and it
+ * is the same skew the grouping stands in for.
  */
 export const toleranceAcross = (
     scatters: readonly Scatter[],
@@ -356,6 +379,42 @@ export const toleranceAcross = (
         toleranceEnd: end.tolerance
     }
 }
+
+/** What putting one window in force in place of another would do to a collation. */
+export interface Changes {
+    /** Readings the window in force joins and the proposed one would take apart. */
+    separated: Reading[]
+
+    /** Readings the window in force takes apart and the proposed one would join. */
+    merged: Reading[]
+}
+
+/**
+ * Which readings two windows disagree about, taken apart by the
+ * direction they disagree in.
+ *
+ * The two are worth seeing separately because they do not cost the
+ * same. A separation leaves a visible edit in the apparatus that a
+ * reader can challenge; a merge erases a reading and says nothing, and
+ * the edition has no way to show what it lost. So the merges are the
+ * list to read first, and an edge that only separates is the safer kind
+ * of change however many readings it touches.
+ *
+ * This is what to ask before applying a calculated window, rather than
+ * reading `admittedAsStated` off the departures, which sees separations
+ * only. An edge both windows agree about throughout needs no
+ * re-collation at all, and its tolerance may simply be stated.
+ */
+export const changesBetween = (
+    readings: readonly Reading[],
+    inForce: CollationTolerance,
+    proposed: CollationTolerance
+): Changes => ({
+    separated: readings.filter(({ displacement }) =>
+        admits(inForce, displacement) && !admits(proposed, displacement)),
+    merged: readings.filter(({ displacement }) =>
+        !admits(inForce, displacement) && admits(proposed, displacement))
+})
 
 /** How many of a side's symbols a copy bears. */
 export interface Attestation {
