@@ -1,5 +1,8 @@
 import Ajv, { type ErrorObject, type ValidateFunction } from "ajv"
-import * as schema from "./schema.json" with { type: 'json' }
+// A default import, not a namespace one: Node's ESM gives a JSON module
+// only a default export, so `import * as` hands ajv the namespace object
+// and it compiles a schema that constrains nothing.
+import schema from "./schema.json" with { type: 'json' }
 import { Edition } from "./Edition.js"
 
 /**

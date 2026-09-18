@@ -38,10 +38,11 @@
   ],
   "scripts": {
     "build": "npm run build:schema && rm -rf lib && tsc",
-    "prepublishOnly": "npm run build && vitest run",
+    "prepublishOnly": "npm run build && vitest run && npm run smoke",
     "test": "vitest",
     "build:schema": "npx ts-json-schema-generator --additional-properties --validation-keywords see --path 'src/**/*.ts' --type 'Edition' > schema_.json && node schema/postprocess.js && rm schema_.json && mv schema.json src/schema.json",
-    "build:docs": "node schema/docs/generate.ts src/schema.json docs/index.html"
+    "build:docs": "node schema/docs/generate.ts src/schema.json docs/index.html",
+    "smoke": "node scripts/smoke.mjs"
   },
   "devDependencies": {
     "@types/jsonld": "^1.5.15",
