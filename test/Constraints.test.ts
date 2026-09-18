@@ -187,9 +187,30 @@ describe('reporting constraints that cannot hold', () => {
 
     it('finds no placement or pairing to report in the edition as it is', () => {
         const { view } = setUp()
-        const stated = constraintProblems(view)
-            .filter(problem => problem.problem !== 'carrier-on-another-track')
+        const known = new Set(['carrier-on-another-track', 'strike-bites-nothing'])
+        const stated = constraintProblems(view).filter(problem => !known.has(problem.problem))
         expect(stated).toEqual([])
+    })
+
+    /**
+     * A second real fault in the 0.1 fixture: eleven of one version's
+     * nineteen strikes name symbols that stand nowhere in the edition,
+     * so they take nothing out of its text.
+     *
+     * The check also catches the subtler shape, where the symbol does
+     * exist but has passed out of the version's inherited text, as
+     * happens when a symbol two versions shared is parted in two. That
+     * one leaves nothing dangling and shows only as a handful of
+     * readings quietly returning.
+     */
+    it('reports a strike that takes nothing out of the text', () => {
+        const { view } = setUp()
+        const reported = constraintProblems(view)
+            .filter(problem => problem.problem === 'strike-bites-nothing')
+
+        expect(reported.length).toBe(11)
+        expect(new Set(reported.map(problem => problem.version)).size).toBe(1)
+        reported.forEach(({ symbol }) => expect(view.get(symbol)).toBeUndefined())
     })
 
     /**

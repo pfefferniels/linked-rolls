@@ -5,7 +5,7 @@ import { keyOf } from "./TrackerBar.js"
 import { trackerBarOf } from "./systems/index.js"
 import { barOf } from "./RollCopy.js"
 import { FeatureOrPatch } from "./Feature.js"
-import { Version } from "./Version.js"
+import { deletedBy, insertedBy, Version } from "./Version.js"
 
 export type ConstraintProblem = {
     version: string
@@ -23,6 +23,7 @@ export type ConstraintProblem = {
         | 'type-not-on-the-bar'
         | 'carrier-on-another-track'
         | 'copies-disagree-on-the-paper'
+        | 'strike-bites-nothing'
 }
 
 const missingReference: Record<PlacementRelation, ConstraintProblem['problem']> = {
@@ -144,13 +145,38 @@ const paperDisagreed = (view: EditionView, version: Version): ConstraintProblem[
         : []
 
 /**
+ * A version's strikes that take nothing out of its text: each deleted
+ * symbol has to be one the parent hands down, or one the version put
+ * there itself, or the strike says nothing.
+ *
+ * It is the check for what happens when a symbol two versions shared is
+ * parted in two. The strike still names a symbol that exists, so
+ * nothing dangles and nothing looks wrong, but the reading it meant to
+ * reject has passed to the symbol standing in its place and comes back
+ * into the text unstruck. Nothing else in the edition shows it: the
+ * counts move, and only by a handful.
+ */
+const strikesBitingNothing = (view: EditionView, version: Version): ConstraintProblem[] => {
+    const parent = view.predecessorOf(version.id)
+    const reachable = new Set([
+        ...(parent ? view.snapshot(parent.id).map(symbol => symbol.id) : []),
+        ...insertedBy(version).map(symbol => symbol.id)
+    ])
+
+    return deletedBy(version)
+        .filter(id => !reachable.has(id))
+        .map(id => ({ version: version.id, symbol: id, problem: 'strike-bites-nothing' as const }))
+}
+
+/**
  * Where the edition cannot hold as stated, version by version: a
  * placement or pairing reference absent from the version, a command
  * placed relative to itself or in several ways at once, one claimed by
  * several pairs, a pair whose members are both placed and so cannot
  * keep their distance and follow their references at once, an
- * expression the version's own bar cannot read, and a carrier sitting
- * on a track that does not say what its symbol says.
+ * expression the version's own bar cannot read, a carrier sitting on a
+ * track that does not say what its symbol says, and a strike that takes
+ * nothing out.
  */
 export const constraintProblems = (view: EditionView): ConstraintProblem[] =>
     view.edition.versions.flatMap(version => {
@@ -161,6 +187,7 @@ export const constraintProblems = (view: EditionView): ConstraintProblem[] =>
             ...problemsIn(version.id, commands),
             ...typesNotOnTheBar(version, snapshot),
             ...carriersOffTheirMeaning(view, version.id, commands),
-            ...paperDisagreed(view, version)
+            ...paperDisagreed(view, version),
+            ...strikesBitingNothing(view, version)
         ]
     })
