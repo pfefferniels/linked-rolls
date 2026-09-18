@@ -76,7 +76,13 @@ const compare = (): Mismatch[] => {
         checkClass(node, scopes, path)
         const typeScopes = typeValues(node).map(t => lookup(t, scopes)?.['@context']).filter(Boolean)
         for (const [key, raw] of Object.entries<Json>(node.properties ?? {})) {
-            if (key === '@annotation') { walk(raw, scopes, `${path}.${key}`, silenced); continue }
+            // A key the context drops takes its annotation with it, and
+            // the tags inside the annotation are the generic ones every
+            // assumption carries, true wherever a belief is exported.
+            if (key === '@annotation') {
+                if (!silenced) walk(raw, scopes, `${path}.${key}`, silenced)
+                continue
+            }
             if (key.startsWith('@')) continue
             const definition = lookup(key, [...scopes, ...typeScopes])
             checkProperty(key, raw, definition, path, silenced)

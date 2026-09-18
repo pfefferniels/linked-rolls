@@ -80,6 +80,78 @@ sigla off the stemma as it stands, so a label never outlives the
 arrangement it describes, and nothing should cite one without saying
 which state of the edition it belongs to.
 
+## The tolerance a derivation was collated at
+
+`collationTolerance` on a derivation is the window two readings of one
+symbol must fall in to be collated: how far apart they may lie at
+either end, and, since two copies differ by a systematic offset as well
+as by scatter, where that window is centred. A window naming no offset
+is centred on nothing, which is what every window written before the
+offset was held here means.
+
+The number decides what counts as a reading at all, so it is worth
+measuring rather than picking. `scatterOfCopy` measures how far one
+copy puts each symbol from where the copies collated with it put it,
+and `scatterOf` describes that sample: its median, its scatter as a
+median absolute deviation scaled to a standard deviation, a histogram
+with the normal curve to lay over it, and the readings the curve does
+not account for. The scatter is taken from the median because the
+displacements an editor is looking for are in the sample, and a
+standard deviation would grow towards them until they no longer stood
+out.
+
+The tolerance that follows is the scatter times a threshold fixed by
+the size of the sample, the point beyond which fewer than one reading
+is expected to fall by chance (`departureThreshold`). For the few
+hundred readings an edge of a stemma yields this lands a little above
+three. `toleranceAcross` covers several samples with one window, since
+a derivation states one tolerance while notes and expressions scatter
+differently, and `inferredTolerance` builds the belief the number rests
+on, to annotate `collationTolerance` with. It is held likely and not
+true: the tolerance follows from the sample only as far as the sample
+is normal, which is what the reported excess kurtosis and tail counts
+are there to show.
+
+Two limits are worth naming. Notes and expressions are estimated apart
+by default, which is a stopgap standing in for a skew across the width
+of the paper rather than a distinction in the model, so the grouping is
+a parameter of the estimator and appears nowhere in the format. And the
+method screens: it says which readings the curve does not account for,
+and an editor says which of those are editorial acts.
+
+A separation reports which end made it (`separatedBy`, and
+`admittedAtEnds` for a collation). The two ends answer different
+questions: the onset, with the kind, decides whether two copies read one
+command, and the end decides whether that command was lengthened or
+shortened. On welte225.org the end alone decides 24 collations of 2839
+and the onset alone 39, so neither test is idle, but a difference at the
+end is as often a punch measured badly as a punch genuinely prolonged,
+and the two are not worth confusing.
+
+## Collating a derivation a second time
+
+A collated symbol is one symbol carrying every copy that reads it, so a
+collation cannot simply be run again: there is no second symbol left to
+match. `separateReadings` is the inverse. It takes one copy's carriers
+back off the symbols it shares, gives them to new symbols of the
+version's own, and states the exchange, leaving the edition in the state
+a collation would have produced had nothing joined. `connectVersions` at
+a new tolerance then re-collates, joining again whatever the new window
+admits.
+
+Nothing an editor established is lost by that. `connectVersions`
+rewrites only what a collation wrote (`isCollationsOwn`): a bare
+insertion or deletion, or an equivalence between two systems' spellings.
+An edit naming what the change is, why it was made, or what it rests on
+stays, and the symbols it speaks for are left out of the collation. An
+equivalence counts as the collation's own, since it is derived from the
+two systems' vocabularies rather than read off the paper and freezing it
+would leave the transfers uncollatable, but one drawn a second time over
+the very same symbols is kept as it stands, identifier and motivation
+and all. Readings already separated by hand are carried by one copy
+alone, so `separateReadings` passes over them and they keep their
+identifiers.
+
 ## What brought a feature about
 
 A copy states no list of features. Each feature stands in the act that

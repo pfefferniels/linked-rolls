@@ -204,15 +204,23 @@
       "type": "string"
     },
     "CollationTolerance": {
-      "description": "Tolerance used in collation of roll copies: the acceptable deviation at either end when aligning features across copies.",
+      "description": "The window two readings of one feature must fall in to be collated: how far apart they may lie at either end, and where that window is centred.\n\nThe centre is worth stating. Two copies of one roll differ by a systematic offset as well as by scatter, and a window centred on nothing has to be widened by the whole of that offset before it admits what the offset alone displaces. Naming the offset lets the tolerance stand for the scatter only. A window that names none is centred on nothing, which is what every window written before the offset was held here means.",
       "properties": {
+        "offsetEnd": {
+          "$ref": "#/definitions/Millimeters",
+          "description": "The same at the end of a feature."
+        },
+        "offsetStart": {
+          "$ref": "#/definitions/Millimeters",
+          "description": "How much later the collated copy puts the start of a feature than the copy it is read against, where the two differ systematically. Nothing where they do not."
+        },
         "toleranceEnd": {
           "$ref": "#/definitions/Millimeters",
-          "description": "Tolerance at the end position of a feature."
+          "description": "How far they may lie apart at the end, measured from `offsetEnd`."
         },
         "toleranceStart": {
           "$ref": "#/definitions/Millimeters",
-          "description": "Tolerance at the start position of a feature."
+          "description": "How far the two readings may lie apart at the start of a feature, measured from `offsetStart`."
         }
       },
       "required": [
@@ -414,8 +422,8 @@
           "type": "object"
         },
         "collationTolerance": {
-          "$ref": "#/definitions/CollationTolerance",
-          "description": "The tolerance at which the derived version was collated against the one it is based on. A derivation written before the tolerance was held here states none. Not exported to RDF."
+          "$ref": "#/definitions/ObjectAssumption%3CCollationTolerance%3E",
+          "description": "The tolerance at which the derived version was collated against the one it is based on. A derivation written before the tolerance was held here states none. Not exported to RDF.\n\nIt is an object assumption, so that a tolerance calculated from the scatter of the readings can carry the inference it was drawn by. It is the one quantity in the edition that decides what counts as a reading at all, and a number arrived at by a method should say so."
         },
         "@id": {
           "description": "A unique identifier for this object.",
@@ -1896,6 +1904,51 @@
       "required": [
         "name",
         "sameAs"
+      ],
+      "type": "object"
+    },
+    "ObjectAssumption<CollationTolerance>": {
+      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
+      "properties": {
+        "@annotation": {
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement.",
+              "ontology": "crminf:J4i is subject of"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "offsetEnd": {
+          "$ref": "#/definitions/Millimeters",
+          "description": "The same at the end of a feature."
+        },
+        "offsetStart": {
+          "$ref": "#/definitions/Millimeters",
+          "description": "How much later the collated copy puts the start of a feature than the copy it is read against, where the two differ systematically. Nothing where they do not."
+        },
+        "toleranceEnd": {
+          "$ref": "#/definitions/Millimeters",
+          "description": "How far they may lie apart at the end, measured from `offsetEnd`."
+        },
+        "toleranceStart": {
+          "$ref": "#/definitions/Millimeters",
+          "description": "How far the two readings may lie apart at the start of a feature, measured from `offsetStart`."
+        }
+      },
+      "required": [
+        "toleranceEnd",
+        "toleranceStart"
       ],
       "type": "object"
     },

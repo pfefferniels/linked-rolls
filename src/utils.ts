@@ -19,6 +19,16 @@ export type WithId = {
 export const isDateString = (value: unknown): value is string =>
     typeof value === 'string' && /^\d{4}-\d{1,2}-\d{1,2}$/.test(value)
 
+/** The items by the key each of them gives, every group in the order its first item came in. */
+export const groupBy = <T,>(items: readonly T[], keyOf: (item: T) => string): Map<string, T[]> =>
+    items.reduce((groups, item) => {
+        const key = keyOf(item)
+        const group = groups.get(key)
+        if (group) group.push(item)
+        else groups.set(key, [item])
+        return groups
+    }, new Map<string, T[]>())
+
 export type WithNote = {
     /**
      * A free-text note providing additional context.

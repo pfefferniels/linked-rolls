@@ -3,7 +3,7 @@ import { v4 } from "uuid"
 import { EditionView, getAt, Path } from "./EditionView"
 import { Edition } from "./Edition"
 import { AnyCommand, AnySymbol, Expression, PlacementRelation, isCommand, placementRelations } from "./Symbol"
-import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance } from "./Collation"
+import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance, isCollationsOwn } from "./Collation"
 import { Edit, EditType } from "./Edit"
 import { collationToleranceOf, Derivation, editsOf, insertedBy, principalDerivationOf, Version } from "./Version"
 import {
@@ -11,7 +11,7 @@ import {
     ModificationPurpose, RollCopy, ScaleReading, Shift, statesNothing
 } from "./RollCopy"
 import { systemOf, TrackerBar } from "./TrackerBar"
-import { substitutionsBetween } from "./substitution"
+import { Substitution, substitutionsBetween } from "./substitution"
 import { trackerBarOf } from "./systems"
 import { FeatureSource } from "./FeatureSource"
 import { applyShift, applyScale, revertShift, revertScale } from "./alignment"
@@ -811,6 +811,27 @@ const dropDerivations = (version: Draft<Version>, matches: (derivation: Readonly
     else delete version.basedOn
 }
 
+/** The symbols a set of edits speaks for, whether by inserting or by deleting them. */
+const spokenForBy = (edits: readonly Readonly<Edit>[]): Set<string> =>
+    new Set(edits.flatMap(edit => [
+        ...(edit.insert ?? []).map(symbol => symbol.id),
+        ...(edit.delete ?? [])
+    ]))
+
+/** An exchange of symbols, as a key: what it puts in against what it takes out. */
+const exchangeKey = (inserted: readonly string[], deleted: readonly string[]): string =>
+    `${[...inserted].sort().join(',')}/${[...deleted].sort().join(',')}`
+
+/**
+ * The edits already stated, by the exchange each of them makes. An
+ * equivalence the collation draws a second time is the one already
+ * stated, and drawing it again is no reason to mint a new identifier or
+ * to drop the motivation somebody wrote on it.
+ */
+const byExchange = (edits: readonly Readonly<Edit>[]): Map<string, Readonly<Edit>> =>
+    new Map(edits.map(edit =>
+        [exchangeKey((edit.insert ?? []).map(symbol => symbol.id), edit.delete ?? []), edit]))
+
 /**
  * Bases the child on the parent. A symbol of the child that collates
  * with one the parent hands down adds its carriers to that symbol; the
@@ -818,15 +839,42 @@ const dropDerivations = (version: Draft<Version>, matches: (derivation: Readonly
  * and the child lacks becomes its deletions. The derivation states the
  * tolerance it was collated at and becomes the principal one; the
  * hypotheses the child stated beside its former one stay.
+ *
+ * The edits the child already stated are rewritten only as far as a
+ * collation wrote them (`isCollationsOwn`). An editor's reading of the
+ * difference between the two texts stays, and the symbols it speaks for
+ * are left out of the collation, so that connecting the two again
+ * neither doubles them nor silently drops what somebody established by
+ * hand. An equivalence is the collation's own, since it is drawn from
+ * the two systems' vocabularies rather than read off the paper, but one
+ * drawn again over the very same symbols is kept as it stands, with its
+ * identifier and whatever was written on it.
+ *
+ * The child's own text is what it shows less what the parent hands
+ * down, so that connecting two versions already connected collates the
+ * child's symbols and not the parent's with themselves.
  */
 export const connectVersions = (
     view: EditionView,
     childId: string,
     parentId: string,
-    tolerance: CollationTolerance = defaultCollationTolerance
+    tolerance: ObjectAssumption<CollationTolerance> = defaultCollationTolerance
 ): EditionOp => {
-    const inherited = view.snapshot(parentId)
-    const own = view.snapshot(childId)
+    const child = view.get<Version>(childId)
+    const stated = child ? editsOf(child) : []
+    const established = stated.filter(edit => !isCollationsOwn(edit))
+    const spokenFor = spokenForBy(established)
+    const unspoken = (symbol: Readonly<AnySymbol>) => !spokenFor.has(symbol.id)
+
+    // What the parent hands down and the child still shows passes
+    // through: it is neither the child's own symbol nor one it lacks.
+    // Without that, connecting a pair already connected would collate
+    // the inherited symbols with themselves and double their carriers.
+    const handedDown = view.snapshot(parentId).filter(unspoken)
+    const shown = new Set(view.snapshot(childId).map(symbol => symbol.id))
+    const inheritedIds = new Set(handedDown.map(symbol => symbol.id))
+    const inherited = handedDown.filter(symbol => !shown.has(symbol.id))
+    const own = view.snapshot(childId).filter(symbol => unspoken(symbol) && !inheritedIds.has(symbol.id))
     const locate = (symbol: AnySymbol) => view.placeOf(symbol)
     const collations = collationsOf(own, inherited, locate, tolerance)
     const collated = new Set(collations.map(({ symbol }) => symbol.id))
@@ -839,7 +887,7 @@ export const connectVersions = (
      * apart would make the apparatus a list of unexplained losses beside
      * a list of unexplained gains.
      */
-    const substituted = differ(view.get<Version>(childId), view.get<Version>(parentId))
+    const substituted = differ(child, view.get<Version>(parentId))
         ? substitutionsBetween(
             own.filter(symbol => !collated.has(symbol.id)),
             inherited.filter(symbol => !matched.has(symbol.id)),
@@ -850,14 +898,22 @@ export const connectVersions = (
     const paired = new Set(substituted.flatMap(({ replaced, by }) =>
         [...by, ...replaced].map(symbol => symbol.id)))
 
-    const edits = [
-        ...substituted.map(({ replaced, by }): Edit => ({
+    const alreadyStated = byExchange(stated)
+    const equivalence = ({ replaced, by }: Substitution): Edit => {
+        const inserted = by.map(symbol => symbol.id)
+        const deleted = replaced.map(symbol => symbol.id)
+        return alreadyStated.get(exchangeKey(inserted, deleted)) ?? {
             type: 'edit',
             id: v4(),
             editType: 'replace-with-equivalent',
             insert: [...by],
-            delete: replaced.map(symbol => symbol.id)
-        })),
+            delete: deleted
+        }
+    }
+
+    const edits = [
+        ...established,
+        ...substituted.map(equivalence),
         ...own.filter(symbol => !collated.has(symbol.id) && !paired.has(symbol.id)).map(insertion),
         ...inherited
             .filter(symbol => !matched.has(symbol.id) && !paired.has(symbol.id))
@@ -901,6 +957,87 @@ export const collateSymbols = (
     return onVersion(versionId, (version, draft) => {
         handOverCarriers(view, draft, collations)
         dropInsertions(version, collated)
+    })
+}
+
+/** The symbol as one copy reads it: what it says, on the given carriers, standing in no relation of its own. */
+const readingOf = (symbol: Readonly<AnySymbol>, carriers: ReferenceAssumption[]): AnySymbol => {
+    const identity = { id: v4(), carriers }
+    switch (symbol.type) {
+        case 'note':
+            return { type: 'note', pitch: symbol.pitch, ...identity }
+        case 'expression':
+            return { type: 'expression', expressionType: symbol.expressionType, scope: symbol.scope, ...identity }
+        case 'text':
+            return { type: 'text', text: symbol.text, ...identity }
+    }
+}
+
+/** A symbol two sides carry, with the carriers of each. */
+interface Shared {
+    symbol: Readonly<AnySymbol>
+    mine: ReferenceAssumption[]
+    theirs: ReferenceAssumption[]
+}
+
+/** The symbol where the copy and at least one other carry it, with the carriers of each side. */
+const sharedWith = (view: EditionView, symbol: Readonly<AnySymbol>, copyId: string): Shared[] => {
+    const onCopy = (carrier: ReferenceAssumption) => view.copyOf(idOf(carrier))?.id === copyId
+    const mine = symbol.carriers.filter(onCopy)
+    const theirs = symbol.carriers.filter(carrier => !onCopy(carrier))
+    return mine.length > 0 && theirs.length > 0 ? [{ symbol, mine, theirs }] : []
+}
+
+/**
+ * Takes the copy's reading of a symbol back out of the symbol it was
+ * collated into: the copy's carriers pass to a new symbol of the
+ * version's own, the other copies keep the symbol they had, and the
+ * version states the exchange.
+ *
+ * This is the inverse of the hand-over a collation makes, and it is
+ * what lets a derivation be collated a second time. A collated symbol
+ * is one symbol carrying every copy that reads it, so nothing else
+ * takes the two readings apart again, and without that a tolerance
+ * arrived at after the fact could never be applied.
+ *
+ * Symbols the copy alone carries are already the version's own and are
+ * passed over, so a reading somebody has separated by hand keeps its
+ * identifier and the edit that speaks for it. Named symbols narrow the
+ * act to those; naming none separates the copy's whole reading.
+ */
+export const separateReadings = (
+    view: EditionView,
+    versionId: string,
+    copyId: string,
+    symbolIds?: readonly string[]
+): EditionOp => {
+    const version = view.get<Version>(versionId)
+    if (!version) return noChange
+
+    const chosen = symbolIds && new Set(symbolIds)
+    const shared = view.snapshot(versionId)
+        .filter(symbol => chosen === undefined || chosen.has(symbol.id))
+        .flatMap(symbol => sharedWith(view, symbol, copyId))
+    if (shared.length === 0) return noChange
+
+    const inserted = new Set(insertedBy(version).map(symbol => symbol.id))
+    const stated = editsOf(version)
+    const separations = shared.map(({ symbol, mine }): Edit => ({
+        type: 'edit',
+        id: v4(),
+        insert: [readingOf(symbol, [...mine])],
+        // A symbol the version inserts itself stays where it is, minus
+        // the carriers that leave it. Only one it inherits is exchanged.
+        ...(inserted.has(symbol.id) ? {} : { delete: [symbol.id] })
+    }))
+
+    return onVersion(versionId, (version, draft) => {
+        shared.forEach(({ symbol, theirs }) => {
+            const path = view.getPath(symbol.id)
+            const target = path && getAt<Draft<AnySymbol>>(path, draft)
+            if (target) target.carriers = theirs
+        })
+        version.edits = [...stated, ...separations]
     })
 }
 

@@ -1,6 +1,6 @@
 import { Edit } from "./Edit";
 import { Concept } from "./Agent";
-import { ActorAssignment, Belief, certainties, certaintyOf, Certainty, DateAssignment, idOf, ReferenceAssumption } from "./Assumption";
+import { ActorAssignment, Belief, certainties, certaintyOf, Certainty, DateAssignment, idOf, ObjectAssumption, ReferenceAssumption } from "./Assumption";
 import { CollationTolerance, defaultCollationTolerance } from "./Collation";
 import { AnySymbol } from "./Symbol";
 import { WithId, WithNote, WithType } from "./utils";
@@ -24,8 +24,14 @@ export type Derivation = ReferenceAssumption & {
      * The tolerance at which the derived version was collated against
      * the one it is based on. A derivation written before the tolerance
      * was held here states none. Not exported to RDF.
+     *
+     * It is an object assumption, so that a tolerance calculated from
+     * the scatter of the readings can carry the inference it was drawn
+     * by. It is the one quantity in the edition that decides what
+     * counts as a reading at all, and a number arrived at by a method
+     * should say so.
      */
-    collationTolerance?: CollationTolerance
+    collationTolerance?: ObjectAssumption<CollationTolerance>
 }
 
 /** The tolerance the derivation was collated at, or the default where it states none. */

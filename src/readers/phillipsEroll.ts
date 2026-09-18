@@ -21,7 +21,22 @@ import { inMetersPerMinute, Millimeters, mm, Seconds, seconds, Track, track } fr
  * elapsed time, not paper, and the take-up spool accelerates the paper
  * as it fills, so `placeAt` has to put the time back onto the paper.
  * And a switch stays open longer than its perforation is long, so a
- * hole read here runs past the punched one.
+ * hole read here runs past the punched one: Phillips measures the
+ * pneumatic on-time as exceeding the apparent length of a perforation
+ * (p. 178), and names what it depends on as the length of the
+ * perforation, the height of the tracker bar hole and the paper speed
+ * (p. 180).
+ *
+ * That extension is not subtracted. Doing so would need the absolute
+ * hole height of the Welte bar, where he gives only the 0.5 mm by which
+ * it exceeds the Licensee's. So the end of a hole on this copy is a
+ * pneumatic on-time where the end of a scanned copy's hole is a punched
+ * slot, and the two are not the same quantity. It shows in a collation:
+ * across welte225.org his notes run about 1.8 mm longer than the other
+ * copies read them, while the onsets agree. Until it is corrected, a
+ * comparison of hole ends against this copy measures the reader as much
+ * as the roll, and `offsetEnd` on the derivation absorbs the systematic
+ * part of it.
  */
 
 /**
