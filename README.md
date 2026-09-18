@@ -147,12 +147,18 @@ and the two are not worth confusing.
 
 A collated symbol is one symbol carrying every copy that reads it, so a
 collation cannot simply be run again: there is no second symbol left to
-match. `separateReadings` is the inverse. It takes one copy's carriers
-back off the symbols it shares, gives them to new symbols of the
+match. `separateReadings` is the inverse. It takes the carriers of one
+side back off the symbols it shares, gives them to new symbols of the
 version's own, and states the exchange, leaving the edition in the state
 a collation would have produced had nothing joined. `connectVersions` at
 a new tolerance then re-collates, joining again whatever the new window
 admits.
+
+It takes a side and not a copy, the same side `sidesOf` names and a
+window is measured over. Naming one copy of a side that has several does
+not separate that side: the rest of it stays behind on the other side's
+symbol, and a collation then compares one copy against that mixture
+rather than the two texts against each other.
 
 Nothing an editor established is lost by that. `connectVersions`
 rewrites only what a collation wrote (`isCollationsOwn`): a bare

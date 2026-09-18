@@ -981,17 +981,30 @@ interface Shared {
 }
 
 /** The symbol where the copy and at least one other carry it, with the carriers of each side. */
-const sharedWith = (view: EditionView, symbol: Readonly<AnySymbol>, copyId: string): Shared[] => {
-    const onCopy = (carrier: ReferenceAssumption) => view.copyOf(idOf(carrier))?.id === copyId
-    const mine = symbol.carriers.filter(onCopy)
-    const theirs = symbol.carriers.filter(carrier => !onCopy(carrier))
+/**
+ * The symbol where the named copies and at least one other carry it,
+ * with the carriers of each side.
+ *
+ * A symbol the named copies alone carry has no other side to be
+ * separated from and is passed over. That covers the insertions, and it
+ * covers a symbol an ancestor holds on one branch's witness alone,
+ * where the two versions do not disagree and there is nothing to take
+ * apart.
+ */
+const sharedWith = (view: EditionView, symbol: Readonly<AnySymbol>, copies: ReadonlySet<string>): Shared[] => {
+    const onNamedCopy = (carrier: ReferenceAssumption) => {
+        const copy = view.copyOf(idOf(carrier))
+        return copy !== undefined && copies.has(copy.id)
+    }
+    const mine = symbol.carriers.filter(onNamedCopy)
+    const theirs = symbol.carriers.filter(carrier => !onNamedCopy(carrier))
     return mine.length > 0 && theirs.length > 0 ? [{ symbol, mine, theirs }] : []
 }
 
 /**
- * Takes the copy's reading of a symbol back out of the symbol it was
- * collated into: the copy's carriers pass to a new symbol of the
- * version's own, the other copies keep the symbol they had, and the
+ * Takes the named copies' reading of a symbol back out of the symbol it
+ * was collated into: their carriers pass to a new symbol of the
+ * version's own, the remaining copies keep the symbol they had, and the
  * version states the exchange.
  *
  * This is the inverse of the hand-over a collation makes, and it is
@@ -1000,15 +1013,22 @@ const sharedWith = (view: EditionView, symbol: Readonly<AnySymbol>, copyId: stri
  * takes the two readings apart again, and without that a tolerance
  * arrived at after the fact could never be applied.
  *
- * Symbols the copy alone carries are already the version's own and are
- * passed over, so a reading somebody has separated by hand keeps its
- * identifier and the edit that speaks for it. Named symbols narrow the
- * act to those; naming none separates the copy's whole reading.
+ * The copies named are one **side** of the derivation, the same side a
+ * window is measured over, and `sidesOf` is what says which they are.
+ * Naming one copy of a side that has several does not separate that
+ * side: what stays behind is the rest of it, mixed with the other
+ * side's copies, and a collation then compares one copy against that
+ * mixture rather than the two texts against each other.
+ *
+ * Symbols the named copies alone carry are already the version's own
+ * and are passed over, so a reading somebody has separated by hand
+ * keeps its identifier and the edit that speaks for it. Named symbols
+ * narrow the act to those; naming none separates the whole reading.
  */
 export const separateReadings = (
     view: EditionView,
     versionId: string,
-    copyId: string,
+    copies: ReadonlySet<string>,
     symbolIds?: readonly string[]
 ): EditionOp => {
     const version = view.get<Version>(versionId)
@@ -1017,7 +1037,7 @@ export const separateReadings = (
     const chosen = symbolIds && new Set(symbolIds)
     const shared = view.snapshot(versionId)
         .filter(symbol => chosen === undefined || chosen.has(symbol.id))
-        .flatMap(symbol => sharedWith(view, symbol, copyId))
+        .flatMap(symbol => sharedWith(view, symbol, copies))
     if (shared.length === 0) return noChange
 
     const inserted = new Set(insertedBy(version).map(symbol => symbol.id))

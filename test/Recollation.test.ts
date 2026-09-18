@@ -71,7 +71,7 @@ describe('collating a pair that is already collated', () => {
 describe("taking a copy's reading back out of a collated symbol", () => {
     const separated = (): Edition => {
         const before = collated()
-        return produce(before, separateReadings(viewOf(before), 'B', 'witness'))
+        return produce(before, separateReadings(viewOf(before), 'B', new Set(['witness'])))
     }
 
     it('leaves the other copies the symbol they had', () => {
@@ -107,23 +107,86 @@ describe("taking a copy's reading back out of a collated symbol", () => {
 
     it('passes over a symbol the copy alone carries, so a reading separated by hand keeps its identifier', () => {
         const before = separated()
-        const again = produce(before, separateReadings(viewOf(before), 'B', 'witness'))
+        const again = produce(before, separateReadings(viewOf(before), 'B', new Set(['witness'])))
 
         expect(again).toBe(before)
     })
 
     it('narrows the act to the symbols named', () => {
         const before = collated()
-        const one = produce(before, separateReadings(viewOf(before), 'B', 'witness', ['ground-note-2']))
+        const one = produce(before, separateReadings(viewOf(before), 'B', new Set(['witness']), ['ground-note-2']))
 
         expect(carriersOf(one, 'ground-note-2')).toEqual(['ground-2'])
         expect(carriersOf(one, 'ground-note-0')).toEqual(['ground-0', 'witness-0'])
     })
 })
 
+/**
+ * A side of several copies, as a real stemma has once a collation has
+ * handed a descendant's carriers up. `later` reads with `witness`
+ * against `ground`, so the two of them are one side and `ground` the
+ * other, and separating only one of them would leave the rest of its
+ * own side behind to be compared against.
+ */
+const threeCopies = (): Edition => editionOf(
+    [
+        copy('ground', [hole('ground-0', 0, 10, 47), hole('ground-1', 100, 110, 47)]),
+        copy('witness', [hole('witness-0', 0.2, 10.2, 47), hole('witness-1', 100.2, 110.2, 47)]),
+        copy('later', [hole('later-0', 0.3, 10.3, 47), hole('later-1', 100.3, 110.3, 47)])
+    ],
+    [
+        version('A', [{
+            type: 'edit',
+            id: 'edit-a',
+            insert: [
+                note('shared-0', 60, 'ground-0', 'witness-0', 'later-0'),
+                note('shared-1', 60, 'ground-1', 'witness-1', 'later-1')
+            ]
+        }]),
+        version('B', [], 'A')
+    ]
+)
+
+describe('separating a side that several copies attest', () => {
+    const wholeSide = (): Edition => {
+        const before = threeCopies()
+        return produce(before, separateReadings(viewOf(before), 'B', new Set(['witness', 'later'])))
+    }
+
+    const oneOfIt = (): Edition => {
+        const before = threeCopies()
+        return produce(before, separateReadings(viewOf(before), 'B', new Set(['witness'])))
+    }
+
+    it('leaves the other side alone with what it read', () => {
+        expect(carriersOf(wholeSide(), 'shared-0')).toEqual(['ground-0'])
+    })
+
+    it('gives the side one symbol carrying all of it, not one symbol each', () => {
+        const readings = viewOf(wholeSide()).snapshot('B')
+
+        expect(readings.length).toBe(2)
+        expect(idsOf(readings[0].carriers)).toEqual(['witness-0', 'later-0'])
+    })
+
+    /**
+     * Naming one copy of a side leaves the rest of that side on the
+     * other one's symbol, so what a collation would then compare is one
+     * copy against a mixture of both sides.
+     */
+    it('leaves the rest of the side behind when only one of its copies is named', () => {
+        expect(carriersOf(oneOfIt(), 'shared-0')).toEqual(['ground-0', 'later-0'])
+    })
+
+    it('passes over a symbol the named side alone carries, there being no other side to part from', () => {
+        const before = wholeSide()
+        expect(produce(before, separateReadings(viewOf(before), 'B', new Set(['witness', 'later'])))).toBe(before)
+    })
+})
+
 describe('collating a derivation again at a tolerance arrived at afterwards', () => {
     const recollated = (): Edition => {
-        const separated = produce(collated(), separateReadings(viewOf(collated()), 'B', 'witness'))
+        const separated = produce(collated(), separateReadings(viewOf(collated()), 'B', new Set(['witness'])))
         return produce(separated, connectVersions(viewOf(separated), 'B', 'A', tight))
     }
 
