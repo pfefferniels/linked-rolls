@@ -101,9 +101,14 @@ const variantLabel = (member: TypeExpression, index: number): string => {
     return type?.kind === 'literal' ? `${numbered} ${literal(type.value)}` : numbered
 }
 
+const badge = (name: string): string => ` <span class="${name}">${name}</span>`
+
+const deprecatedBadge = (deprecated: boolean): string => deprecated ? badge('deprecated') : ''
+
 const propertyName = (property: Property, parents: string[]): string =>
     `<code>${parents.map(parent => `<span class="parent">${escapeHtml(parent)}.</span>`).join('')}${escapeHtml(property.name)}</code>`
-    + (property.required ? ' <span class="required">required</span>' : '')
+    + (property.required ? badge('required') : '')
+    + deprecatedBadge(property.deprecated)
 
 const propertyRow = (property: Property, parents: string[], anchorOf: AnchorOf): string =>
     `<tr id="${escapeHtml(property.anchor)}">`
@@ -173,7 +178,8 @@ const usedIn = (usages: Usage[]): string =>
 
 const definitionSection = (definition: Definition, anchorOf: AnchorOf): string =>
     `<section id="${escapeHtml(definition.anchor)}">`
-    + `<h2><code>${breakable(definition.name)}</code> <span class="kind">${escapeHtml(kindLabel(definition.type))}</span></h2>`
+    + `<h2><code>${breakable(definition.name)}</code> <span class="kind">${escapeHtml(kindLabel(definition.type))}</span>`
+    + `${deprecatedBadge(definition.deprecated)}</h2>`
     + paragraph(definition.description)
     + ontologyLine(definition.ontology)
     + definitionBody(definition.type, anchorOf)

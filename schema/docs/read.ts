@@ -13,10 +13,10 @@ type ReadDefinition = Omit<Definition, 'usedIn'>
 type Kind = TypeExpression['kind']
 
 const rootKeywords = ['$ref', '$schema', 'definitions']
-const definitionAnnotations = ['description', 'ontology']
-// `deprecated` comes from an @deprecated tag on the property. The docs
-// carry the description, which says what to use instead.
-const propertyAnnotations = ['description', 'ontology', 'examples', 'deprecated']
+// `deprecated` comes from an @deprecated tag. The description beside it
+// says what stands in its place.
+const definitionAnnotations = ['description', 'ontology', 'deprecated']
+const propertyAnnotations = [...definitionAnnotations, 'examples']
 const primitives: Primitive[] = ['string', 'number', 'integer', 'boolean', 'null']
 const definitionsPrefix = '#/definitions/'
 
@@ -73,6 +73,9 @@ const asLiteral = (value: Json | undefined, pointer: string): Literal =>
 const asPrimitive = (value: Json | undefined, pointer: string): Primitive =>
     primitives.find(primitive => primitive === value) ?? fail(pointer, `expected one of ${primitives.join(', ')}`)
 
+const asBoolean = (value: Json | undefined, pointer: string): boolean =>
+    typeof value === 'boolean' ? value : fail(pointer, 'expected a boolean')
+
 const rejectUnexpectedKeywords = (node: Node, allowed: string[], pointer: string) => {
     const unexpected = Object.keys(node).find(key => !allowed.includes(key))
     if (unexpected !== undefined) fail(pointer, `unexpected keyword "${unexpected}"`)
@@ -91,6 +94,9 @@ const referencedName = (names: Names, ref: Json | undefined, pointer: string): s
 
 const descriptionOf = (node: Node, pointer: string): string | undefined =>
     node.description === undefined ? undefined : asString(node.description, pointerTo(pointer, 'description'))
+
+const deprecatedIn = (node: Node, pointer: string): boolean =>
+    node.deprecated !== undefined && asBoolean(node.deprecated, pointerTo(pointer, 'deprecated'))
 
 const examplesOf = (node: Node, pointer: string): Json[] =>
     node.examples === undefined ? [] : asArray(node.examples, pointerTo(pointer, 'examples'))
@@ -113,6 +119,7 @@ const readDefinition = (names: Names, name: string, value: Json): ReadDefinition
     return {
         name,
         anchor,
+        deprecated: deprecatedIn(node, pointer),
         description: descriptionOf(node, pointer),
         ontology: ontologyOf(node, pointer),
         type: readType(names, node, { pointer, anchor }, definitionAnnotations),
@@ -192,6 +199,7 @@ const readProperties = (names: Names, node: Node, place: Place): Property[] => {
             name,
             anchor,
             required: required.includes(name),
+            deprecated: deprecatedIn(property, pointer),
             description: descriptionOf(property, pointer),
             ontology: ontologyOf(property, pointer),
             examples: examplesOf(property, pointer),

@@ -196,7 +196,8 @@ td.name {
     color: #9ca3af;
 }
 
-.required {
+.required,
+.deprecated {
     display: inline-block;
     font-size: 0.7rem;
     color: #4b5563;
@@ -204,6 +205,13 @@ td.name {
     border-radius: 3px;
     padding: 0 0.3rem;
     white-space: nowrap;
+}
+
+.deprecated {
+    color: #374151;
+    background: #f3f4f6;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
 }
 
 tr.variant th {

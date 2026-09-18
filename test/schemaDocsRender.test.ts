@@ -6,6 +6,7 @@ const property = (anchor: string, type: TypeExpression, rest: Partial<Property> 
     name: anchor.split('.').at(-1)!,
     anchor,
     required: false,
+    deprecated: false,
     ontology: [],
     examples: [],
     type,
@@ -15,6 +16,7 @@ const property = (anchor: string, type: TypeExpression, rest: Partial<Property> 
 const definition = (name: string, type: TypeExpression, rest: Partial<Definition> = {}): Definition => ({
     name,
     anchor: name,
+    deprecated: false,
     ontology: [],
     usedIn: [],
     type,
@@ -60,6 +62,10 @@ const doc: SchemaDoc = {
                     ],
                 }),
                 property('Edition.@id', { kind: 'any' }),
+                property('Edition.label', string, {
+                    deprecated: true,
+                    description: 'The name the edition was cited by. Use `title`.',
+                }),
             ],
         }, { description: 'The root.', ontology: [expression] }),
         definition('RollCopy', {
@@ -112,7 +118,7 @@ const doc: SchemaDoc = {
             ],
         }),
         definition('Certainty', { kind: 'enumeration', values: ['true', 'likely'] }),
-        definition('Siglum', { kind: 'literal', value: 'A' }),
+        definition('Siglum', { kind: 'literal', value: 'A' }, { deprecated: true }),
         definition('Sigla', { kind: 'array', items: string }),
         definition('Rows', {
             kind: 'array',
@@ -181,6 +187,14 @@ describe('renderPage', () => {
     it('marks required properties only', () => {
         expect(row('Edition.title')).toContain('<span class="required">required</span>')
         expect(row('Edition.copies')).not.toContain('required')
+    })
+
+    it('marks a deprecated property and a deprecated definition, and says what to use instead', () => {
+        expect(row('Edition.label')).toContain('<span class="deprecated">deprecated</span>')
+        expect(row('Edition.label')).toContain('Use <code>title</code>.')
+        expect(row('Edition.title')).not.toContain('deprecated')
+        expect(section('Siglum')).toContain('<span class="deprecated">deprecated</span>')
+        expect(section('Certainty')).not.toContain('deprecated')
     })
 
     it('lists @-properties first and keeps the order otherwise', () => {

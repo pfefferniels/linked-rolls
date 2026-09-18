@@ -28,6 +28,8 @@ export type Property = {
     /** Unique on the page, e.g. RollCopy.measurements.scanResolution */
     anchor: string
     required: boolean
+    /** Written while the format still carried it; the description says what stands in its place. */
+    deprecated: boolean
     description?: string
     ontology: OntologyTerm[]
     examples: Json[]
@@ -45,6 +47,7 @@ export type Definition = {
     /** As in the schema, e.g. Quantity<"px/in"> */
     name: string
     anchor: string
+    deprecated: boolean
     description?: string
     ontology: OntologyTerm[]
     type: TypeExpression

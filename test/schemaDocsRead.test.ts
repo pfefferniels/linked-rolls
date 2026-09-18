@@ -134,6 +134,7 @@ describe('readSchemaDoc: annotations', () => {
             name: 'title',
             anchor: 'Root.title',
             required: false,
+            deprecated: false,
             description: 'The title.',
             ontology: [{ curie: 'dcterms:title', url: 'https://www.dublincore.org/specifications/dublin-core/dcmi-terms#title' }],
             examples: ['Träumerei'],
@@ -152,6 +153,20 @@ describe('readSchemaDoc: annotations', () => {
         expect(property.description).toBeUndefined()
         expect(property.ontology).toEqual([])
         expect(property.examples).toEqual([])
+        expect(property.deprecated).toBe(false)
+    })
+
+    it('reads what an @deprecated tag marks, on a property and on a definition', () => {
+        const [property] = propertiesOf(typeOf({ type: 'object', properties: { a: { type: 'string', deprecated: true } } }))
+        expect(property.deprecated).toBe(true)
+
+        const [definition] = read({ Siglum: { type: 'string', deprecated: true } }).definitions
+        expect(definition.deprecated).toBe(true)
+    })
+
+    it('rejects a deprecated flag that is not a boolean', () => {
+        expect(() => typeOf({ type: 'object', properties: { a: { type: 'string', deprecated: 'yes' } } }))
+            .toThrow('#/definitions/Root/properties/a/deprecated: expected a boolean')
     })
 })
 
