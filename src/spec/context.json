@@ -161,7 +161,6 @@
         "dimensions": "reo:dimensions",
         "width": "reo:width",
         "height": "reo:height",
-        "punchDiameter": "reo:punchDiameter",
         "holeSeparation": "reo:holeSeparation",
         "scanResolution": "reo:scanResolution",
         "value": "crm:P90_has_value",
@@ -181,6 +180,19 @@
         "speed": {
           "@id": "reo:paperSpeed",
           "@context": { "value": "crm:P90_has_value" }
+        },
+        "perforator": {
+          "@id": "crm:P16_used_specific_object",
+          "@context": {
+            "punchDiameter": "reo:punchDiameter",
+            "chainPitch": "reo:chainPitch",
+            "advance": "reo:advance",
+            "slot": "reo:slot",
+            "bridge": "reo:bridge",
+            "n": "reo:sampleSize",
+            "strength": "reo:strength",
+            "value": "crm:P90_has_value"
+          }
         }
       }
     },

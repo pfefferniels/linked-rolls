@@ -104,6 +104,9 @@ reot:general a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/
 reot:paper-stretch a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "paper stretch"@en ;
     rdfs:comment "The paper of a copy has stretched or shrunk; the factor states by how much."@en .
+reot:setting a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "setting"@en ;
+    rdfs:comment "How a machine was set when it did the work at hand, such as the punch, pitch and advance of the perforator that cut a copy."@en .
 reot:partially-torn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "partially torn"@en .
 reot:missing-perforation a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "missing perforation"@en .
 reot:illegible a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "illegible"@en .

@@ -1,6 +1,6 @@
 import { Edition } from "./Edition.js";
 import { derivedKeys } from "./asJsonLd.js";
-import { migrate } from "./migrate.js";
+import { migrate, plainCopyId } from "./migrate.js";
 import { isDateString } from "./utils.js";
 
 export const importDate = (str: string): Date => {
@@ -53,7 +53,7 @@ const withPlainCopyIds = (json: Json) => ({
     ...json,
     copies: (json.copies ?? []).map((copy: Json) => ({
         ...copy,
-        '@id': typeof copy['@id'] === 'string' ? copy['@id'].replace(/^copy\//, '') : copy['@id']
+        '@id': typeof copy['@id'] === 'string' ? plainCopyId(copy['@id']) : copy['@id']
     }))
 })
 

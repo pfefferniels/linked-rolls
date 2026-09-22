@@ -8,7 +8,8 @@ import { assignReference } from '../src/Assumption'
 import { Expression, Note } from '../src/Symbol'
 import { constraintProblems } from '../src/constraints'
 import { flat } from './flat'
-import { mean, Millimeters, mm } from '../src/Quantity'
+import { mean, mm } from '../src/Quantity'
+import { punchDiameterOf } from '../src/RollCopy'
 import { copy, editionOf, expression, hole, note, version } from './editionFixture'
 import { Version } from '../src/Version'
 import { systemOf } from '../src/TrackerBar'
@@ -62,8 +63,8 @@ const setUp = () => {
     }
 
     const punchDiameters = edition.copies
-        .map(copy => copy.measurements.punchDiameter?.value)
-        .filter((value): value is Millimeters => value !== undefined && value > 0)
+        .map(punchDiameterOf)
+        .filter(value => value !== undefined)
     /** What the performance falls back on where no copy agrees with a statement. */
     const gap = mean(punchDiameters)
 

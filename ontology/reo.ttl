@@ -349,22 +349,13 @@ reo:height
     rdfs:comment "This property states the extent of a copy along the roll, from its beginning to its end."@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
-reo:punchDiameter
-    a owl:ObjectProperty ;
-    rdfs:subPropertyOf crm:P40_observed_dimension ;
-    rdfs:domain crm:E16_Measurement ;
-    rdfs:range crm:E54_Dimension ;
-    rdfs:label "punch diameter"@en ;
-    rdfs:comment """This property associates the measurement of a copy with the mean diameter of its punched holes, stated with P90 has value and P91 has unit."""@en ;
-    rdfs:isDefinedBy <https://w3id.org/reo/> .
-
 reo:holeSeparation
     a owl:ObjectProperty ;
     rdfs:subPropertyOf crm:P40_observed_dimension ;
     rdfs:domain crm:E16_Measurement ;
     rdfs:range crm:E54_Dimension ;
     rdfs:label "hole separation"@en ;
-    rdfs:comment """This property associates the measurement of a copy with the distance between adjacent tracks as found on it, stated with P90 has value and P91 has unit."""@en ;
+    rdfs:comment """This property associates the measurement of a copy with the distance across the roll from the centre of one track to the next as found on it, the track pitch or Teilung, stated with P90 has value and P91 has unit. It is fixed by the tracker bar the roll was cut for, and is distinct from the chain pitch (chainPitch), which runs along the roll."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:scanResolution
@@ -373,4 +364,71 @@ reo:scanResolution
     rdfs:range crm:E54_Dimension ;
     rdfs:label "scan resolution"@en ;
     rdfs:comment """This property associates the measurement of a copy with the resolution along the roll at which the scan it was taken from was read, stated with P90 has value and P91 has unit. It is what the measurements given in pixels are to be read against. The resolution is a property of the scan and not a dimension observed on the roll, which is why it is no subproperty of P40 observed dimension. A scanner may read across the roll at another resolution."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+
+#################################################################
+# The setting of a perforator
+#
+# A copy's production used a perforator (P16 used specific object),
+# whose setting at the time is its condition state (P44 has
+# condition). CIDOC CRM gives a condition state no dimension of its
+# own, hence the properties of this ontology.
+#################################################################
+
+reo:punchDiameter
+    a owl:ObjectProperty ;
+    rdfs:domain crm:E3_Condition_State ;
+    rdfs:range crm:E54_Dimension ;
+    rdfs:label "punch diameter"@en ;
+    rdfs:comment """This property associates the setting of the perforator that cut a copy with the diameter of its round punch, stated with P90 has value and P91 has unit. Taken across the roll, it is free of the scale along the roll and of the shrinkage of the paper."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:chainPitch
+    a owl:ObjectProperty ;
+    rdfs:domain crm:E3_Condition_State ;
+    rdfs:range crm:E54_Dimension ;
+    rdfs:label "chain pitch"@en ;
+    rdfs:comment """This property associates the setting of the perforator that cut a copy with its chain pitch: the pitch in the engineering sense, the distance along the roll from one punch of a chain to the next, which is the slot one firing cut together with the bridge of paper left before the next. It is stated with P90 has value and P91 has unit, as the median over the chains of held notes, and may state the slot (slot) and the bridge (bridge) beside it. It runs along the roll and is distinct from the hole separation (holeSeparation), the distance across the roll from one track to the next."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:advance
+    a owl:ObjectProperty ;
+    rdfs:domain crm:E3_Condition_State ;
+    rdfs:range crm:E54_Dimension ;
+    rdfs:label "advance"@en ;
+    rdfs:comment """This property associates the setting of the perforator that cut a copy with its advance: the step by which the machine moved the paper on, read as the period the lengths of the slots keep, since a slot is the punch together with a whole number of steps. It is stated with P90 has value and P91 has unit, and may state how closely the lengths keep the period (strength). Phillips (2016, p. 114) gives the smallest distance between punches on a Welte-Mignon roll as 0.0185 inches, 54 steps per inch."""@en ;
+    dcterms:bibliographicCitation "Phillips, Peter: Piano Rolls and Contemporary Player Pianos. The Catalogues, Technologies, Archiving and Accessibility. PhD thesis, Sydney Conservatorium of Music, University of Sydney, 2016." ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:slot
+    a owl:DatatypeProperty ;
+    rdfs:domain crm:E54_Dimension ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "slot"@en ;
+    rdfs:comment "This property states, on a chain pitch, the length along the roll of one slot of a chain, in the unit of the dimension it is stated on."@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:bridge
+    a owl:DatatypeProperty ;
+    rdfs:domain crm:E54_Dimension ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "bridge"@en ;
+    rdfs:comment "This property states, on a chain pitch, the length along the roll of the paper left standing between two slots of a chain, in the unit of the dimension it is stated on."@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:sampleSize
+    a owl:DatatypeProperty ;
+    rdfs:domain crm:E54_Dimension ;
+    rdfs:range xsd:nonNegativeInteger ;
+    rdfs:label "sample size"@en ;
+    rdfs:comment "This property states how many measurements the value of a dimension was taken from, as their median or as the period they keep."@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:strength
+    a owl:DatatypeProperty ;
+    rdfs:domain crm:E54_Dimension ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "strength"@en ;
+    rdfs:comment "This property states, on an advance, how closely the lengths of the slots keep the period stated: the mean resultant length of the lengths folded onto it, from 0 where they scatter to 1 where every one falls on the period."@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .

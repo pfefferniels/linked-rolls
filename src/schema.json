@@ -1854,6 +1854,56 @@
       ],
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain."
     },
+    "ObjectAssumption<Advance>": {
+      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
+      "properties": {
+        "@annotation": {
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement.",
+              "ontology": "crminf:J4i is subject of"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "n": {
+          "description": "How many slot lengths were folded.",
+          "type": "number",
+          "ontology": "reo:sampleSize"
+        },
+        "strength": {
+          "description": "How closely the lengths keep the period, from 0 where they scatter to 1 where every one falls on the comb: the mean resultant length of the lengths folded onto it. A period found weakly is the result of a search all the same; the belief it is stated with says how far it is held to be the machine's step.",
+          "type": "number",
+          "ontology": "reo:strength"
+        },
+        "unit": {
+          "const": "mm",
+          "description": "The unit of measurement.",
+          "type": "string",
+          "ontology": "crm:P91 has unit"
+        },
+        "value": {
+          "$ref": "#/definitions/Quantity%3C%22mm%22%3E",
+          "description": "The measured value.",
+          "ontology": "crm:P90 has value"
+        }
+      },
+      "required": [
+        "unit",
+        "value"
+      ],
+      "type": "object"
+    },
     "ObjectAssumption<Agent>": {
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
@@ -1905,6 +1955,61 @@
       "required": [
         "name",
         "sameAs"
+      ],
+      "type": "object"
+    },
+    "ObjectAssumption<ChainPitch>": {
+      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
+      "properties": {
+        "@annotation": {
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement.",
+              "ontology": "crminf:J4i is subject of"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "bridge": {
+          "$ref": "#/definitions/Millimeters",
+          "description": "The paper left standing between two slots of a chain. Slot and bridge are medians of their own and need not add up to the pitch.",
+          "ontology": "reo:bridge"
+        },
+        "n": {
+          "description": "How many pitches the median was taken over.",
+          "type": "number",
+          "ontology": "reo:sampleSize"
+        },
+        "slot": {
+          "$ref": "#/definitions/Millimeters",
+          "description": "The length along the roll of one slot of a chain.",
+          "ontology": "reo:slot"
+        },
+        "unit": {
+          "const": "mm",
+          "description": "The unit of measurement.",
+          "type": "string",
+          "ontology": "crm:P91 has unit"
+        },
+        "value": {
+          "$ref": "#/definitions/Quantity%3C%22mm%22%3E",
+          "description": "The measured value.",
+          "ontology": "crm:P90 has value"
+        }
+      },
+      "required": [
+        "unit",
+        "value"
       ],
       "type": "object"
     },
@@ -2238,6 +2343,46 @@
       ],
       "type": "object"
     },
+    "ObjectAssumption<Measure<\"mm\">>": {
+      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
+      "properties": {
+        "@annotation": {
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement.",
+              "ontology": "crminf:J4i is subject of"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "unit": {
+          "const": "mm",
+          "description": "The unit of measurement.",
+          "type": "string",
+          "ontology": "crm:P91 has unit"
+        },
+        "value": {
+          "$ref": "#/definitions/Quantity%3C%22mm%22%3E",
+          "description": "The measured value.",
+          "ontology": "crm:P90 has value"
+        }
+      },
+      "required": [
+        "unit",
+        "value"
+      ],
+      "type": "object"
+    },
     "ObjectAssumption<PaperSpeed>": {
       "anyOf": [
         {
@@ -2514,6 +2659,65 @@
       ],
       "type": "object"
     },
+    "Perforator": {
+      "description": "The machine that punched the copy. It stands for this production alone. Whether it is the one another copy was punched on is left to a statement of identity made about it elsewhere, which its id allows.",
+      "properties": {
+        "condition": {
+          "$ref": "#/definitions/PerforatorSetting",
+          "ontology": "crm:P44 has condition"
+        },
+        "@id": {
+          "description": "A unique identifier for this object.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "@id"
+      ],
+      "type": "object",
+      "ontology": "crm:E22 Human-Made Object"
+    },
+    "PerforatorSetting": {
+      "description": "How the perforator was set when it punched the copy, as far as the perforations show it. No time is stated: how long a machine kept a setting is for a comparison across rolls to find out.",
+      "properties": {
+        "advance": {
+          "$ref": "#/definitions/ObjectAssumption%3CAdvance%3E",
+          "ontology": "reo:advance"
+        },
+        "chainPitch": {
+          "$ref": "#/definitions/ObjectAssumption%3CChainPitch%3E",
+          "ontology": "reo:chainPitch"
+        },
+        "conditionType": {
+          "const": "setting",
+          "description": "The kind of condition, from the list the roll or the kind of feature allows.",
+          "type": "string",
+          "ontology": "crm:P2 has type"
+        },
+        "description": {
+          "description": "A free-text description of the condition, providing details beyond the type classification.",
+          "type": "string",
+          "ontology": "crm:P3 has note"
+        },
+        "punchDiameter": {
+          "$ref": "#/definitions/ObjectAssumption%3CMeasure%3C%22mm%22%3E%3E",
+          "description": "The diameter of the round punch. Taken across the roll, it is the one value of the setting that neither the scale along the roll nor the shrinkage of the paper enters.",
+          "ontology": "reo:punchDiameter"
+        },
+        "@type": {
+          "const": "ConditionState",
+          "description": "The type discriminator for this object.",
+          "type": "string",
+          "ontology": "rdf:type"
+        }
+      },
+      "required": [
+        "conditionType",
+        "@type"
+      ],
+      "type": "object",
+      "ontology": "crm:E3 Condition State"
+    },
     "Person": {
       "$ref": "#/definitions/Agent",
       "description": "An agent that is a person."
@@ -2566,6 +2770,11 @@
           "$ref": "#/definitions/Concept",
           "description": "The paper the roll copy was cut on.",
           "ontology": "crm:P126 employed"
+        },
+        "perforator": {
+          "$ref": "#/definitions/Perforator",
+          "description": "The perforator the copy was punched on, with the setting its perforations show.",
+          "ontology": "crm:P16 used specific object"
         },
         "produced": {
           "description": "The features the copy came from its punching with: the note and expression perforations, and now and then a mark the perforator left. A reading of a scan finds every hole on the paper at once and states it here, and a feature an editor reads as the work of a later hand belongs in the act that made it, whichever kind of feature it is.",
@@ -2742,7 +2951,7 @@
           "ontology": "crm:P50 has current keeper"
         },
         "measurements": {
-          "description": "Physical measurements of this roll copy, including dimensions, punch diameter, hole separation, margins, shift corrections, and information about the measuring software.",
+          "description": "Physical measurements of this roll copy, including dimensions, hole separation, margins, shift corrections, and information about the measuring software. What the perforations tell about the machine that cut them is stated with the production.",
           "properties": {
             "dimensions": {
               "description": "The physical dimensions of the roll.",
@@ -2781,7 +2990,7 @@
                   "$ref": "#/definitions/Measure%3C%22mm%22%3E"
                 }
               ],
-              "description": "The distance between adjacent tracker bar holes, in the unit the scan was measured in.",
+              "description": "The distance across the roll from the centre of one track to the next, the track pitch or Teilung, in the unit the scan was measured in. It is fixed by the tracker bar the roll was cut for, and is another thing than the chain pitch, which runs along the roll.",
               "ontology": "reo:holeSeparation"
             },
             "margins": {
@@ -2822,11 +3031,6 @@
               ],
               "type": "object",
               "ontology": "crmdig:L23 used software or firmware"
-            },
-            "punchDiameter": {
-              "$ref": "#/definitions/Measure%3C%22mm%22%3E",
-              "description": "The average diameter of punched holes.",
-              "ontology": "reo:punchDiameter"
             },
             "readerExtension": {
               "description": "What a pneumatic reader added to this copy's holes, where it was taken off again. Such a reader reports how long a valve stayed open, which exceeds the perforation that opened it, so its holes are overlong by a constant while its onsets agree. Nothing for a copy read by other means, whose holes are the punched slots themselves. Not exported to RDF.",

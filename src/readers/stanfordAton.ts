@@ -231,7 +231,20 @@ export function readFromStanfordAton(
         id: v4(),
         ops: [],
         conditions: [],
-        production: { system: systemOf(system), produced: features },
+        production: {
+            system: systemOf(system),
+            ...(punchDiameter !== undefined && {
+                perforator: {
+                    id: `perforator_${v4()}`,
+                    condition: {
+                        type: 'ConditionState',
+                        conditionType: 'setting',
+                        punchDiameter: { value: punchDiameter, unit: 'mm' }
+                    }
+                }
+            }),
+            produced: features
+        },
         modifications: [],
         ...((scan ?? stanford) && { scan: scan ?? stanford?.scan }),
         measurements: {
@@ -240,9 +253,6 @@ export function readFromStanfordAton(
                 height: inMillimeters(readPx(json.ROLLINFO.IMAGE_LENGTH), dpi),
                 unit: 'mm'
             },
-            ...(punchDiameter !== undefined && {
-                punchDiameter: { value: punchDiameter, unit: 'mm' }
-            }),
             holeSeparation: {
                 value: separation,
                 unit: 'px'

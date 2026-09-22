@@ -12,6 +12,7 @@ import {
     RollProperties
 } from "./ReproducingSystem.js";
 import { add, mean, Millimeters, mm, Seconds, seconds, subtract } from "./Quantity.js";
+import { punchDiameterOf } from "./RollCopy.js";
 
 export type EmulationScope = {
     /** Only notes whose onset lies within this span of the roll are played. */
@@ -22,15 +23,15 @@ export type EmulationScope = {
 }
 
 /** The punch diameter the edition's copies report, where any of them does. */
-const punchDiameterOf = (view: EditionView): Millimeters | undefined => {
+const meanPunchDiameterOf = (view: EditionView): Millimeters | undefined => {
     const measured = view.edition.copies
-        .map(copy => copy.measurements.punchDiameter?.value)
-        .filter((value): value is Millimeters => value !== undefined && value > 0)
+        .map(punchDiameterOf)
+        .filter(value => value !== undefined)
     return measured.length > 0 ? mean(measured) : undefined
 }
 
 const propertiesOf = (view: EditionView, version: Readonly<Version>): RollProperties => ({
-    punchDiameter: punchDiameterOf(view),
+    punchDiameter: meanPunchDiameterOf(view),
     tempo: view.edition.tempoAdjustment,
     toOwnPaper: view.toOwnPaperOf(version)
 })
@@ -158,7 +159,7 @@ export class Emulation<Options extends object> {
      * diameter, or a millimetre, where no copy agrees with a statement.
      */
     applyConstraints(view: EditionView) {
-        const gap = punchDiameterOf(view) ?? mm(1)
+        const gap = meanPunchDiameterOf(view) ?? mm(1)
         const offsets: Offsets = (follower, reference) => offsetsBetween(view, follower, reference)
         displacementsOf(this.negotiatedEvents, offsets, gap).forEach((distance, event) => {
             event.horizontal.from = add(event.horizontal.from, distance)

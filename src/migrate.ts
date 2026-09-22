@@ -148,6 +148,41 @@ const withScale = (node: Json): Json => {
     return factor === undefined ? node : { ...node, measurements: { ...node.measurements, scale: factor } }
 }
 
+/** A copy's id without the `copy/` that documents of earlier releases put before it. */
+export const plainCopyId = (id: string): string => id.replace(/^copy\//, '')
+
+/**
+ * The punch diameter was a measurement of the copy before it was stated
+ * as the setting of the perforator that cut it. A diameter of -1 stood
+ * for one nobody had measured and is left out. The perforator is named
+ * after the copy, so that a file migrated twice names it the same way.
+ */
+const withPerforator = (node: Json): Json => {
+    const diameter = node.measurements?.punchDiameter
+    if (diameter === undefined) return node
+
+    const { punchDiameter: _moved, ...measurements } = node.measurements
+    if (!(diameter?.value > 0)) return { ...node, measurements }
+
+    const perforator = node.production?.perforator ?? { '@id': `perforator_${plainCopyId(node['@id'])}` }
+    return {
+        ...node,
+        measurements,
+        production: {
+            ...node.production,
+            perforator: {
+                ...perforator,
+                condition: {
+                    '@type': 'ConditionState',
+                    conditionType: 'setting',
+                    ...perforator.condition,
+                    punchDiameter: diameter
+                }
+            }
+        }
+    }
+}
+
 /** A derivation written as a single one, before a version could name several. */
 const isSingleDerivation = (basedOn: Json): boolean =>
     basedOn !== null && typeof basedOn === 'object' && !Array.isArray(basedOn)
@@ -279,7 +314,7 @@ const withTimeSpanDates = (node: Json): Json => {
 
 const migrateNode = (node: Json): Json =>
     [withRenamedKeys, withTypology, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
-        withProductionNodes, withScale, withDerivationList, withReadingKind, withTimeSpanDates, withoutFeatureKind,
+        withPerforator, withProductionNodes, withScale, withDerivationList, withReadingKind, withTimeSpanDates, withoutFeatureKind,
         withBorneFeaturesNamed, withFeaturesInActs]
         .reduce((result, step) => step(result), node)
 

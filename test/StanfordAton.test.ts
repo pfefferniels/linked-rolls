@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'fs'
 import * as path from 'path'
-import { asSymbols, calibrationOf, featuresOf, unreadTracks } from '../src/RollCopy'
+import { asSymbols, calibrationOf, featuresOf, punchDiameterOf, unreadTracks } from '../src/RollCopy'
 import { readFromStanfordAton } from '../src/readers/stanfordAton'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
@@ -139,7 +139,7 @@ describe('reading a Stanford analysis file', () => {
     })
 
     it('measures a plausible punch diameter', () => {
-        const diameter = copy.measurements.punchDiameter?.value
+        const diameter = punchDiameterOf(copy)
         expect(diameter).toBeGreaterThan(1)
         expect(diameter).toBeLessThan(3)
     })

@@ -6,11 +6,12 @@ import { welteT100 } from "./systems/welteT100/bar.js";
 import { trackerBarOf } from "./systems/index.js";
 import { TrackCalibration } from "./TrackCalibration.js";
 import { AnyFeature, FeatureOrPatch, GluedOn } from "./Feature.js";
-import { ActorAssignment, assignReference, DateAssignment, ObjectAssumption, ReferenceAssumption } from "./Assumption.js";
+import { ActorAssignment, assignReference, certaintyOf, DateAssignment, isAsserted, ObjectAssumption, ReferenceAssumption } from "./Assumption.js";
 import { WithId, WithType } from "./utils.js";
 import { Agent, Concept } from "./Agent.js";
 import { FeatureSource } from "./FeatureSource.js";
 import { Measure, Millimeters, Quantity, px, Track, track } from "./Quantity.js";
+import { Perforator } from "./Perforator.js";
 
 /**
  * This condition state is used to describe the roll's
@@ -132,6 +133,13 @@ export interface ProductionEvent {
     speed?: ObjectAssumption<PaperSpeed>
 
     /**
+     * The perforator the copy was punched on, with the setting its
+     * perforations show.
+     * @see crm:P16 used specific object
+     */
+    perforator?: Perforator
+
+    /**
      * The features the copy came from its punching with: the note and
      * expression perforations, and now and then a mark the perforator
      * left. A reading of a scan finds every hole on the paper at once
@@ -242,8 +250,10 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
 
     /**
      * Physical measurements of this roll copy, including
-     * dimensions, punch diameter, hole separation, margins,
-     * shift corrections, and information about the measuring software.
+     * dimensions, hole separation, margins, shift corrections,
+     * and information about the measuring software. What the
+     * perforations tell about the machine that cut them is stated
+     * with the production.
      * @see crm:P39i was measured by
      */
     measurements: Partial<{
@@ -270,14 +280,11 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
         }
 
         /**
-         * The average diameter of punched holes.
-         * @see reo:punchDiameter
-         */
-        punchDiameter: Measure<'mm'>
-
-        /**
-         * The distance between adjacent tracker bar holes, in the
-         * unit the scan was measured in.
+         * The distance across the roll from the centre of one track to
+         * the next, the track pitch or Teilung, in the unit the scan was
+         * measured in. It is fixed by the tracker bar the roll was cut
+         * for, and is another thing than the chain pitch, which runs
+         * along the roll.
          * @see reo:holeSeparation
          */
         holeSeparation: Measure<'px'> | Measure<'mm'>
@@ -471,6 +478,12 @@ export const isPaperStretch = (condition: RollConditionAssignment): boolean =>
  */
 export const barOf = (copy: Pick<RollCopy, 'production'>): TrackerBar =>
     trackerBarOf(copy.production?.system) ?? welteT100
+
+/** The diameter of the punch the copy was cut with, where the edition holds it true or likely. */
+export const punchDiameterOf = (copy: Pick<RollCopy, 'production'>): Millimeters | undefined => {
+    const diameter = copy.production?.perforator?.condition?.punchDiameter
+    return diameter && isAsserted(certaintyOf(diameter)) ? diameter.value : undefined
+}
 
 /**
  * Reads the features of a copy as the tracker bar would read them.
