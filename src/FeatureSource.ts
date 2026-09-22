@@ -38,7 +38,7 @@ const physical: readonly SourceKind[] = ['roll', 'scan']
  * roll reader measures when each perforation passes its bar. An
  * emulation and a recording give the reading somebody else made: the
  * roll has been turned into notes and commands already, and turning
- * those back into holes reconstructs them.
+ * those back into chains of holes reconstructs them.
  */
 export const isMeasured = (kind: SourceKind): boolean => measured.includes(kind)
 

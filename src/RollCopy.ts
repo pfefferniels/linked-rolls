@@ -142,10 +142,10 @@ export interface ProductionEvent {
     /**
      * The features the copy came from its punching with: the note and
      * expression perforations, and now and then a mark the perforator
-     * left. A reading of a scan finds every hole on the paper at once
-     * and states it here, and a feature an editor reads as the work of
-     * a later hand belongs in the act that made it, whichever kind of
-     * feature it is.
+     * left. A reading of a scan finds every chain of holes on the paper
+     * at once and states it here, and a feature an editor reads as the
+     * work of a later hand belongs in the act that made it, whichever
+     * kind of feature it is.
      * @see crm:P108 has produced
      */
     produced?: AnyFeature[]
@@ -310,25 +310,25 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
         scale: number
 
         /**
-         * What a pneumatic reader added to this copy's holes, where it
-         * was taken off again. Such a reader reports how long a valve
-         * stayed open, which exceeds the perforation that opened it, so
-         * its holes are overlong by a constant while its onsets agree.
-         * Nothing for a copy read by other means, whose holes are the
-         * punched slots themselves.
+         * What a pneumatic reader added to this copy's chains of holes,
+         * where it was taken off again. Such a reader reports how long a
+         * valve stayed open, which exceeds the perforation that opened it,
+         * so its chains are overlong by a constant while its onsets agree.
+         * Nothing for a copy read by other means, whose chains are the
+         * punched ones themselves.
          * Not exported to RDF.
          */
         readerExtension: {
-            /** How much longer the reading of a hole ran than the perforation that caused it. */
+            /** How much longer the reading of a chain ran than the perforation that caused it. */
             length: Millimeters
 
             /**
-             * The holes it was not taken off, by `@id`, being no longer
+             * The chains it was not taken off, by `@id`, being no longer
              * than it is. The constant reaches its limit there rather
              * than the copy being wrong, and why they were left is for
              * the edition to state about the features themselves; this
              * only records that they stand as the reader gave them, so
-             * that putting the extension back does not lengthen a hole
+             * that putting the extension back does not lengthen a chain
              * nothing was taken from.
              */
             leaving?: string[]
@@ -487,8 +487,8 @@ export const punchDiameterOf = (copy: Pick<RollCopy, 'production'>): Millimeters
 
 /**
  * Reads the features of a copy as the tracker bar would read them.
- * Holes on a position the bar does not read carry no symbol and are
- * dropped, which is what happens physically as well.
+ * Chains of holes on a position the bar does not read carry no symbol
+ * and are dropped, which is what happens physically as well.
  *
  * The bar is named rather than defaulted: a copy is read by its own
  * bar, and reading a green copy with the red one is a silent semitone.
@@ -505,10 +505,10 @@ export function asSymbols(
     features: readonly FeatureOrPatch[],
     bar: TrackerBar
 ): AnySymbol[] {
-    const holes = features.filter(feature => feature.type === 'Hole')
-    const end = bar.endsAt(holes)
+    const chains = features.filter(feature => feature.type === 'HoleChain')
+    const end = bar.endsAt(chains)
 
-    return holes
+    return chains
         .filter(feature => end === undefined || feature.horizontal.from <= end.at)
         // An opening across two positions uncovers both bar holes and so
         // reads as both commands; one on a single position gives the one.
@@ -522,7 +522,7 @@ export function asSymbols(
 
 /**
  * The tracks a copy carries holes on that the tracker bar does not read.
- * A non-empty result usually means the scan is calibrated wrongly. A hole
+ * A non-empty result usually means the scan is calibrated wrongly. A chain
  * lying across several positions is counted against each one the bar
  * cannot read, and not at all where it reads them all.
  */
@@ -532,7 +532,7 @@ export function unreadTracks(
 ): Map<Track, number> {
     const counts = new Map<Track, number>()
     features
-        .filter(feature => feature.type === 'Hole')
+        .filter(feature => feature.type === 'HoleChain')
         .flatMap(feature => bar.positionsIn(feature.vertical))
         .filter(position => !bar.meaningOf(position))
         .forEach(position => counts.set(position, (counts.get(position) || 0) + 1))

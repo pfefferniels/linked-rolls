@@ -199,6 +199,12 @@ describe('migrating a 0.1 edition', () => {
         expect(circle).toEqual({ '@type': 'Mark', '@id': 'circle', medium: 'pencil' })
     })
 
+    it('types the holes of the file as chains of holes', () => {
+        const types = migrate(edition01()).copies.flatMap(featuresIn).map((feature: any) => feature['@type'])
+        expect(types).toContain('HoleChain')
+        expect(types).not.toContain('Hole')
+    })
+
     it('lower-cases a term the copies in hand do not use', () => {
         const migrated = migrate({
             copies: [{ '@type': 'RollCopy', features: [{ '@type': 'GluedOn', '@id': 'tape', material: 'Tape' }] }]
@@ -232,7 +238,7 @@ describe('migrating a 0.1 edition', () => {
                 // the one act that named two writings and two patches
                 ['Alteration', ['Writing', 'Writing']],
                 ['Attachment', ['GluedOn', 'GluedOn']],
-                ['Alteration', new Array(8).fill('Hole')],
+                ['Alteration', new Array(8).fill('HoleChain')],
                 ['Alteration', ['Writing']],
                 ['Alteration', ['Writing']],
                 // the repair on the third copy, which named nothing to begin with
@@ -256,7 +262,7 @@ describe('migrating a 0.1 edition', () => {
             { '@type': 'Alteration', purpose: 'labeling', produced: [feature('Writing', 'label')] },
             { '@type': 'Attachment', purpose: 'labeling', added: [feature('GluedOn', 'patch')] }
         ])
-        expect(migrated.copies[0].production.produced).toEqual([feature('Hole', 'punched')])
+        expect(migrated.copies[0].production.produced).toEqual([feature('HoleChain', 'punched')])
     })
 
     it('keeps an addition that named nothing, as an act that produced nothing', () => {

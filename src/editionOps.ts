@@ -19,7 +19,7 @@ import { systemOf, TrackerBar } from "./TrackerBar.js"
 import { Substitution, substitutionsBetween } from "./substitution.js"
 import { trackerBarOf } from "./systems/index.js"
 import { FeatureSource } from "./FeatureSource.js"
-import { applyShift, applyScale, revertShift, revertScale, revertShortening, shortenHoles } from "./alignment.js"
+import { applyShift, applyScale, revertShift, revertScale, revertShortening, shortenChains } from "./alignment.js"
 import {
     AnyArgumentation, Assumption, Belief, Certainty, MeaningComprehension, ObjectAssumption, ReferenceAssumption,
     assignReference, idOf
@@ -195,13 +195,13 @@ export const unalignCopy = (copyId: string): EditionOp =>
 
 /**
  * Takes the extension a pneumatic reader adds off the ends of the
- * copy's holes, and records how much was taken, so that its lengths
+ * copy's chains of holes, and records how much was taken, so that their lengths
  * can be compared with a scanned copy's at all.
  */
 export const shortenCopy = (copyId: string, extension: Millimeters, leaving?: ReadonlySet<string>): EditionOp =>
-    onCopy(copyId, copy => shortenHoles(extension, copy, leaving))
+    onCopy(copyId, copy => shortenChains(extension, copy, leaving))
 
-/** Puts the reader's extension back on the copy's holes. */
+/** Puts the reader's extension back on the copy's chains of holes. */
 export const unshortenCopy = (copyId: string): EditionOp =>
     onCopy(copyId, copy => revertShortening(copy))
 
@@ -524,7 +524,7 @@ const rewriteFeatures = (copy: Draft<RollCopy>, rewrite: Rewrite) => {
  * punched, being glued on, so `punched` says nothing of one.
  */
 export interface FeatureAct {
-    /** The copy came from its punching with it, which is where a reading of a scan puts every hole. */
+    /** The copy came from its punching with it, which is where a reading of a scan puts every chain of holes. */
     punched?: boolean
 
     /** The act that brought this feature about brought the new one about as well. */

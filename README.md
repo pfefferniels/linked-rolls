@@ -153,19 +153,20 @@ and the onset alone 39, so neither test is idle, but a difference at the
 end is as often a punch measured badly as a punch genuinely prolonged,
 and the two are not worth confusing.
 
-## What a reader adds to a hole
+## What a reader adds to a chain of holes
 
 A copy read pneumatically rather than scanned reports how long a valve
 stayed open, and a valve is held on past the perforation that opened it,
-so its holes run longer than the punched slots while their onsets agree.
-Left in, that is not a difference between copies: a collation comparing
-such a copy's hole ends against a scanned copy's compares an on-time
-with a slot, and reads the one as a lengthening of the other.
+so the chains it reports run longer than the punched ones while their
+onsets agree. Left in, that is not a difference between copies: a
+collation comparing such a copy's chain ends against a scanned copy's
+compares an on-time with a slot, and reads the one as a lengthening of
+the other.
 
-`shortenHoles` takes the extension off and records it on the copy,
+`shortenChains` takes the extension off and records it on the copy,
 `revertShortening` puts it back, and `readFromPhillipsEroll` will take
-it off at import. Only holes are touched, what a writing spans being no
-valve. The figure is measured against the other copies rather than
+it off at import. Only chains of holes are touched, what a writing spans
+being no valve. The figure is measured against the other copies rather than
 derived from the bar, since Phillips gives only the difference between
 two bars and not the absolute.
 
@@ -223,7 +224,7 @@ hand, and says nothing about what kind of feature it is. A hole may be
 punched by hand long after the roll was cut, and a mark may come from
 the factory, rarely though that happens. A feature no later act is
 known to have made belongs to the punching, which is where a reading of
-a scan puts every hole it finds.
+a scan puts every chain of holes it finds.
 
 Three kinds of act rather than two, because the CRM tells them apart.
 E79 Part Addition asks that what is added be "a separate identifiable
@@ -358,9 +359,9 @@ repository.
 
 ### Alignment, order and pairing
 
-A command takes its place from the holes that carry it. Four fields
-on a command let an editor state where the measurement should give
-way. `alignedWith` names another command whose onset this one takes
+A command takes its place from the chains of holes that carry it. Four
+fields on a command let an editor state where the measurement should
+give way. `alignedWith` names another command whose onset this one takes
 in the performance, as a "crescendo off" is meant to fall on the note
 it belongs to. `before` and `after` name a command whose onset this
 one precedes or follows, without saying by how much: where the copies

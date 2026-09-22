@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { Edition } from '../src/Edition'
 import { featuresOf, Modification, RollCopy } from '../src/RollCopy'
-import { Hole } from '../src/Feature'
+import { HoleChain } from '../src/Feature'
 import { AnyArgumentation, Assumption, Belief, MeaningComprehension } from '../src/Assumption'
 import { mergeFeatures, removeCopy, removeFeatures } from '../src/editionOps'
 import { copy, editionOf, hole, note, version } from './editionFixture'
 
-const repair = (...produced: Hole[]): Modification => ({ type: 'Alteration', purpose: 'repair', produced })
+const repair = (...produced: HoleChain[]): Modification => ({ type: 'Alteration', purpose: 'repair', produced })
 
 const comprehension = (...comprehends: string[]): MeaningComprehension =>
     ({ type: 'meaningComprehension', comprehends })

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { Edition } from '../src/Edition'
 import { EditionView } from '../src/EditionView'
-import { AnyFeature, Hole, Mark, Transcription, Writing, conditions } from '../src/Feature'
+import { AnyFeature, HoleChain, Mark, Transcription, Writing, conditions } from '../src/Feature'
 import { ConditionState } from '../src/ConditionState'
 import { Note } from '../src/Symbol'
 import { ObjectAssumption, ReferenceAssumption, assignObject, assignReference, idsOf } from '../src/Assumption'
@@ -11,7 +11,7 @@ import { featuresOf } from '../src/RollCopy'
 import { alteration, copy, editionOf, hole, note, version } from './editionFixture'
 import { mm, track } from '../src/Quantity'
 
-const depicted = (feature: Hole, region: string): Hole => ({ ...feature, depiction: region })
+const depicted = (feature: HoleChain, region: string): HoleChain => ({ ...feature, depiction: region })
 
 /** The two halves the scan made of one perforation, with a gap between them. */
 const partOne = depicted(hole('part-one', 1000, 1004, 47), 'canvas#xywh=0,0,20,8')
@@ -21,7 +21,7 @@ const elsewhere = hole('other', 1020, 1030, 49)
 const damage = <T extends string>(conditionType: T): ObjectAssumption<ConditionState<T>> =>
     assignObject<ConditionState<T>>({ type: 'ConditionState', conditionType })
 
-const torn = damage(conditions.Hole[0])
+const torn = damage(conditions.HoleChain[0])
 
 /**
  * A copy whose scan split one perforation in two, each half read as a
@@ -52,7 +52,7 @@ describe('merging the features of a copy', () => {
         const [merged, ...rest] = featuresIn(merge(scan(), 'part-one', 'part-two'))
 
         expect(rest.map(feature => feature.id)).toEqual(['other'])
-        expect(merged.type).toBe('Hole')
+        expect(merged.type).toBe('HoleChain')
         expect(merged.horizontal).toEqual({ unit: 'mm', from: 1000, to: 1010 })
         expect(merged.vertical).toEqual({ unit: 'track', from: 47 })
         expect(['part-one', 'part-two']).not.toContain(merged.id)
@@ -181,7 +181,7 @@ describe('asking what stands in the way of a merge', () => {
     it('lets features pass that differ in nothing but their place, their depiction and one condition', () => {
         expect(mergeObstacle([partOne, partTwo])).toBeUndefined()
         expect(mergeObstacle([partOne, { ...partTwo, condition: torn }])).toBeUndefined()
-        expect(mergeObstacle([{ ...partOne, condition: torn }, { ...partTwo, condition: damage(conditions.Hole[0]) }]))
+        expect(mergeObstacle([{ ...partOne, condition: torn }, { ...partTwo, condition: damage(conditions.HoleChain[0]) }]))
             .toBeUndefined()
         expect(mergeObstacle([writing('a', 'Welte'), writing('b', 'Welte')])).toBeUndefined()
     })
@@ -194,7 +194,7 @@ describe('asking what stands in the way of a merge', () => {
         expect(mergeObstacle([partOne, { ...partTwo, vertical: { unit: 'track', from: track(47), to: track(48) } }]))
             .toBe('different-tracks')
         expect(mergeObstacle([writing('a', 'Welte'), writing('b', 'Welte-Mignon')])).toBe('unlike-features')
-        expect(mergeObstacle([{ ...partOne, condition: torn }, { ...partTwo, condition: damage(conditions.Hole[1]) }]))
+        expect(mergeObstacle([{ ...partOne, condition: torn }, { ...partTwo, condition: damage(conditions.HoleChain[1]) }]))
             .toBe('differing-conditions')
     })
 })

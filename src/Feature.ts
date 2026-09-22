@@ -56,7 +56,7 @@ export interface VerticalSpan {
     to?: Track
 }
 
-export const featureTypes = ['Hole', 'Writing', 'Mark', 'GluedOn'] as const;
+export const featureTypes = ['HoleChain', 'Writing', 'Mark', 'GluedOn'] as const;
 
 export type FeatureType = typeof featureTypes[number];
 
@@ -97,7 +97,7 @@ export interface RollFeature<T extends FeatureType, DamageT extends string> exte
 }
 
 export const conditions = {
-    Hole: ['partially-torn', 'missing-perforation'],
+    HoleChain: ['partially-torn', 'missing-perforation'],
     Writing: ['illegible'],
     Mark: ['faded'],
     GluedOn: ['detaching', 'ripped']
@@ -114,19 +114,21 @@ export type FeatureConditionType = typeof conditions[FeatureType][number];
 export type FeatureConditionAssignment = ObjectAssumption<ConditionState<FeatureConditionType>>;
 
 /**
- * A hole (perforation) in the roll paper. Holes are the primary
- * carriers of musical information on piano rolls, as they trigger
- * notes and expression controls when passing over the tracker bar.
- * A punched hole is a human-made feature: CRM counts "the information
- * encoding features on mechanical or digital carriers" among the
- * features purposely created by human activity.
- * @see reo:Hole
+ * A chain of holes punched along the roll, which the tracker bar reads
+ * as it passes. The perforator cuts a held note or function as a row of
+ * punches with bridges of paper left between them, so most perforations
+ * are chains; one without a bridge is a chain of a single hole. The
+ * holes are the chain's parts and are not stated one by one. A punched
+ * chain is a human-made feature: CRM counts "the information encoding
+ * features on mechanical or digital carriers" among the features
+ * purposely created by human activity.
+ * @see reo:HoleChain
  */
-export interface Hole extends RollFeature<'Hole', typeof conditions.Hole[number]> {}
+export interface HoleChain extends RollFeature<'HoleChain', typeof conditions.HoleChain[number]> {}
 
 /**
  * Something that lies on a face of the paper rather than through it. A
- * hole is not one: it goes through, and is on both faces at once.
+ * chain of holes is not one: it goes through, and is on both faces at once.
  */
 export interface OnAFace {
     /**
@@ -244,11 +246,11 @@ export interface GluedOn extends RollFeature<'GluedOn', typeof conditions.GluedO
 }
 
 /**
- * The features proper: a hole, a writing and a mark are all human-made
- * features, and each of them is borne by whatever it sits on. A patch
- * is an object glued onto the paper and stands apart from them.
+ * The features proper: a chain of holes, a writing and a mark are all
+ * human-made features, and each of them is borne by whatever it sits on.
+ * A patch is an object glued onto the paper and stands apart from them.
  */
-export type AnyFeature = Hole | Writing | Mark;
+export type AnyFeature = HoleChain | Writing | Mark;
 
 /**
  * Anything found at a place of its own on the roll: a feature or a

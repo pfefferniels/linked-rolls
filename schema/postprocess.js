@@ -168,7 +168,7 @@ declareDerived(transformed);
 // the two spans without a schema and turns the optional keys of the
 // base interface into required ones. The definition is built here
 // instead, from the four the union is made of.
-const featureNames = ['Hole', 'Writing', 'Mark', 'GluedOn'];
+const featureNames = ['HoleChain', 'Writing', 'Mark', 'GluedOn'];
 const spans = ['horizontal', 'vertical'];
 
 // A union member carries no description of its own in the docs; its

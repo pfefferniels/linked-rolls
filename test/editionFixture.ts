@@ -1,5 +1,5 @@
 import { Edition } from '../src/Edition'
-import { AnyFeature, GluedOn, Hole } from '../src/Feature'
+import { AnyFeature, GluedOn, HoleChain } from '../src/Feature'
 import { Modification, RollCopy } from '../src/RollCopy'
 import { Concept } from '../src/Agent'
 import { Expression, Note, Text } from '../src/Symbol'
@@ -9,8 +9,8 @@ import { mm, track } from '../src/Quantity'
 import { systemOf } from '../src/TrackerBar'
 import { welteT100 } from '../src/systems/welteT100/bar'
 
-export const hole = (id: string, from: number, to: number, position: number): Hole => ({
-    type: 'Hole',
+export const hole = (id: string, from: number, to: number, position: number): HoleChain => ({
+    type: 'HoleChain',
     id,
     horizontal: { unit: 'mm', from: mm(from), to: mm(to) },
     vertical: { unit: 'track', from: track(position) }

@@ -39,7 +39,7 @@ describe('reading a Spencer e-roll file', () => {
 
     it('pairs the events of a position into holes', () => {
         expect(featuresOf(copy)).toHaveLength(7)
-        expect(featuresOf(copy).every(feature => feature.type === 'Hole')).toBe(true)
+        expect(featuresOf(copy).every(feature => feature.type === 'HoleChain')).toBe(true)
     })
 
     it('places the holes at 400 rows to the inch', () => {

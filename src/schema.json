@@ -78,7 +78,7 @@
     "AnyFeature": {
       "anyOf": [
         {
-          "$ref": "#/definitions/Hole"
+          "$ref": "#/definitions/HoleChain"
         },
         {
           "$ref": "#/definitions/Writing"
@@ -87,7 +87,7 @@
           "$ref": "#/definitions/Mark"
         }
       ],
-      "description": "The features proper: a hole, a writing and a mark are all human-made features, and each of them is borne by whatever it sits on. A patch is an object glued onto the paper and stands apart from them."
+      "description": "The features proper: a chain of holes, a writing and a mark are all human-made features, and each of them is borne by whatever it sits on. A patch is an object glued onto the paper and stands apart from them."
     },
     "AnySymbol": {
       "anyOf": [
@@ -688,7 +688,7 @@
           "ontology": "reo:before"
         },
         "carriers": {
-          "description": "References to the physical features (e.g. holes) on the roll copies that carry this symbol. Since the association might be debatable, it can be annotated. There might be e.g. doubts about the meaning and correct transcription of a feature on a physical roll. This points to a feature by its `@id`.",
+          "description": "References to the physical features (e.g. chains of holes) on the roll copies that carry this symbol. Since the association might be debatable, it can be annotated. There might be e.g. doubts about the meaning and correct transcription of a feature on a physical roll. This points to a feature by its `@id`.",
           "items": {
             "$ref": "#/definitions/ReferenceAssumption"
           },
@@ -884,8 +884,8 @@
       "type": "object",
       "ontology": "reo:GluedOn"
     },
-    "Hole": {
-      "description": "A hole (perforation) in the roll paper. Holes are the primary carriers of musical information on piano rolls, as they trigger notes and expression controls when passing over the tracker bar. A punched hole is a human-made feature: CRM counts \"the information encoding features on mechanical or digital carriers\" among the features purposely created by human activity.",
+    "HoleChain": {
+      "description": "A chain of holes punched along the roll, which the tracker bar reads as it passes. The perforator cuts a held note or function as a row of punches with bridges of paper left between them, so most perforations are chains; one without a bridge is a chain of a single hole. The holes are the chain's parts and are not stated one by one. A punched chain is a human-made feature: CRM counts \"the information encoding features on mechanical or digital carriers\" among the features purposely created by human activity.",
       "properties": {
         "condition": {
           "$ref": "#/definitions/ObjectAssumption%3CConditionState%3C(%22partially-torn%22%7C%22missing-perforation%22)%3E%3E",
@@ -912,7 +912,7 @@
           "type": "string"
         },
         "@type": {
-          "const": "Hole",
+          "const": "HoleChain",
           "description": "The type discriminator for this object.",
           "type": "string",
           "ontology": "rdf:type"
@@ -925,7 +925,7 @@
         "vertical"
       ],
       "type": "object",
-      "ontology": "reo:Hole"
+      "ontology": "reo:HoleChain"
     },
     "HorizontalSpan": {
       "description": "Describes the horizontal extent of a feature on the roll, measured in millimeters from the beginning of the roll. The `from` value is the start position and `to` is the end position.",
@@ -1455,7 +1455,7 @@
               "type": "string"
             },
             "@type": {
-              "const": "Hole",
+              "const": "HoleChain",
               "description": "The type discriminator for this object.",
               "type": "string",
               "ontology": "rdf:type"
@@ -1703,7 +1703,7 @@
           "ontology": "reo:before"
         },
         "carriers": {
-          "description": "References to the physical features (e.g. holes) on the roll copies that carry this symbol. Since the association might be debatable, it can be annotated. There might be e.g. doubts about the meaning and correct transcription of a feature on a physical roll. This points to a feature by its `@id`.",
+          "description": "References to the physical features (e.g. chains of holes) on the roll copies that carry this symbol. Since the association might be debatable, it can be annotated. There might be e.g. doubts about the meaning and correct transcription of a feature on a physical roll. This points to a feature by its `@id`.",
           "items": {
             "$ref": "#/definitions/ReferenceAssumption"
           },
@@ -2808,7 +2808,7 @@
           "ontology": "crm:P16 used specific object"
         },
         "produced": {
-          "description": "The features the copy came from its punching with: the note and expression perforations, and now and then a mark the perforator left. A reading of a scan finds every hole on the paper at once and states it here, and a feature an editor reads as the work of a later hand belongs in the act that made it, whichever kind of feature it is.",
+          "description": "The features the copy came from its punching with: the note and expression perforations, and now and then a mark the perforator left. A reading of a scan finds every chain of holes on the paper at once and states it here, and a feature an editor reads as the work of a later hand belongs in the act that made it, whichever kind of feature it is.",
           "items": {
             "$ref": "#/definitions/AnyFeature"
           },
@@ -3064,10 +3064,10 @@
               "ontology": "crmdig:L23 used software or firmware"
             },
             "readerExtension": {
-              "description": "What a pneumatic reader added to this copy's holes, where it was taken off again. Such a reader reports how long a valve stayed open, which exceeds the perforation that opened it, so its holes are overlong by a constant while its onsets agree. Nothing for a copy read by other means, whose holes are the punched slots themselves. Not exported to RDF.",
+              "description": "What a pneumatic reader added to this copy's chains of holes, where it was taken off again. Such a reader reports how long a valve stayed open, which exceeds the perforation that opened it, so its chains are overlong by a constant while its onsets agree. Nothing for a copy read by other means, whose chains are the punched ones themselves. Not exported to RDF.",
               "properties": {
                 "leaving": {
-                  "description": "The holes it was not taken off, by `@id`, being no longer than it is. The constant reaches its limit there rather than the copy being wrong, and why they were left is for the edition to state about the features themselves; this only records that they stand as the reader gave them, so that putting the extension back does not lengthen a hole nothing was taken from.",
+                  "description": "The chains it was not taken off, by `@id`, being no longer than it is. The constant reaches its limit there rather than the copy being wrong, and why they were left is for the edition to state about the features themselves; this only records that they stand as the reader gave them, so that putting the extension back does not lengthen a chain nothing was taken from.",
                   "items": {
                     "type": "string"
                   },
@@ -3075,7 +3075,7 @@
                 },
                 "length": {
                   "$ref": "#/definitions/Millimeters",
-                  "description": "How much longer the reading of a hole ran than the perforation that caused it."
+                  "description": "How much longer the reading of a chain ran than the perforation that caused it."
                 }
               },
               "required": [
@@ -3258,7 +3258,7 @@
       "description": "A textual symbol, e.g. a label or annotation found on the roll.",
       "properties": {
         "carriers": {
-          "description": "References to the physical features (e.g. holes) on the roll copies that carry this symbol. Since the association might be debatable, it can be annotated. There might be e.g. doubts about the meaning and correct transcription of a feature on a physical roll. This points to a feature by its `@id`.",
+          "description": "References to the physical features (e.g. chains of holes) on the roll copies that carry this symbol. Since the association might be debatable, it can be annotated. There might be e.g. doubts about the meaning and correct transcription of a feature on a physical roll. This points to a feature by its `@id`.",
           "items": {
             "$ref": "#/definitions/ReferenceAssumption"
           },

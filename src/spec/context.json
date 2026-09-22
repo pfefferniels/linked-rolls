@@ -15,7 +15,7 @@
     "Edition": "lrmoo:F2_Expression",
     "Version": "lrmoo:F2_Expression",
     "RollCopy": "reo:RollCopy",
-    "Hole": "reo:Hole",
+    "HoleChain": "reo:HoleChain",
     "Mark": "reo:Mark",
     "Writing": "reo:Writing",
     "GluedOn": "reo:GluedOn",

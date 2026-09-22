@@ -3,7 +3,7 @@ import { produce } from 'immer'
 import { Edition } from '../src/Edition'
 import { EditionView } from '../src/EditionView'
 import { AnyFeature } from '../src/Feature'
-import { revertShortening, shortenHoles, tooShortToShorten } from '../src/alignment'
+import { revertShortening, shortenChains, tooShortToShorten } from '../src/alignment'
 import { shortenCopy, unshortenCopy } from '../src/editionOps'
 import { mm } from '../src/Quantity'
 import { alteration, copy, editionOf, hole } from './editionFixture'
@@ -87,12 +87,12 @@ describe('a hole no longer than the extension', () => {
     })
 
     it('stops the whole copy being shortened, the constant having reached its limit', () => {
-        expect(() => shortenHoles(mm(1.6), withAShortHole().copies[0])).toThrow(/short/)
+        expect(() => shortenChains(mm(1.6), withAShortHole().copies[0])).toThrow(/short/)
     })
 
     it('leaves the copy untouched where it throws', () => {
         const copy = withAShortHole().copies[0]
-        expect(() => shortenHoles(mm(1.6), copy)).toThrow()
+        expect(() => shortenChains(mm(1.6), copy)).toThrow()
         expect(copy.ops).toEqual([])
         expect(lengthOf({ copies: [copy] } as Edition, 'ordinary')).toBeCloseTo(40, 6)
     })
@@ -126,7 +126,7 @@ describe('a hole no longer than the extension', () => {
 describe('the functions the ops are built from', () => {
     it('shorten and revert a copy in place, as the alignment ones do', () => {
         const copy = read().copies[0]
-        shortenHoles(mm(2), copy)
+        shortenChains(mm(2), copy)
 
         expect(copy.ops).toEqual(['shortened'])
         expect(copy.measurements.readerExtension).toEqual({ length: 2 })

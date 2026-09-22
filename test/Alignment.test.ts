@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { alignFeatures } from '../src/alignment'
-import { AnyFeature, Hole } from '../src/Feature'
+import { AnyFeature, HoleChain } from '../src/Feature'
 import { mm, track } from '../src/Quantity'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteT98 } from '../src/systems/welteT98/bar'
@@ -20,17 +20,17 @@ const generator = (seed: number) => () => {
 const LOWEST_NOTE_TRACK = 11
 const LOWEST_PITCH = 24
 
-const hole = (tracked: number, from: number, to: number): Hole => ({
-    type: 'Hole',
+const hole = (tracked: number, from: number, to: number): HoleChain => ({
+    type: 'HoleChain',
     id: `${tracked}@${from}`,
     vertical: { unit: 'track', from: track(tracked) },
     horizontal: { unit: 'mm', from: mm(from), to: mm(to) }
 })
 
-const noteHole = ({ pitch, from, to }: Note): Hole => hole(pitch - LOWEST_PITCH + LOWEST_NOTE_TRACK, from, to)
+const noteHole = ({ pitch, from, to }: Note): HoleChain => hole(pitch - LOWEST_PITCH + LOWEST_NOTE_TRACK, from, to)
 
 /** The same note where the T-98 cuts it, two positions below the T-100's. */
-const t98Hole = ({ pitch, from, to }: Note): Hole => hole(pitch - 21 + 6, from, to)
+const t98Hole = ({ pitch, from, to }: Note): HoleChain => hole(pitch - 21 + 6, from, to)
 
 /**
  * A piece of `count` notes: an opening that is played twice, so that
@@ -66,7 +66,7 @@ const asCopy = (notes: readonly Note[]): Note[] =>
 const reference = piece(1)
 const copy = asCopy(reference)
 
-const roll = (notes: readonly Note[], cut: (note: Note) => Hole = noteHole): AnyFeature[] => notes.map(cut)
+const roll = (notes: readonly Note[], cut: (note: Note) => HoleChain = noteHole): AnyFeature[] => notes.map(cut)
 
 describe('aligning two copies of a roll', () => {
     it('recovers the shift and scale of an exact copy', () => {

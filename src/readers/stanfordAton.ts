@@ -1,6 +1,6 @@
 import { v4 } from "uuid";
 import { AtonParser } from "./AtonParser.js";
-import { Hole } from "../Feature.js";
+import { HoleChain } from "../Feature.js";
 import { RollCopy } from "../RollCopy.js";
 import { TrackCalibration } from "../TrackCalibration.js";
 import { systemOf, TrackerBar } from "../TrackerBar.js";
@@ -201,7 +201,7 @@ export function readFromStanfordAton(
 
 
     const features = chains
-        .flatMap(({ hole, attack, release }): Hole[] => {
+        .flatMap(({ hole, attack, release }): HoleChain[] => {
             const position = track(+hole.TRACKER_HOLE + shift)
             if (!system.meaningOf(position)) return []
 
@@ -209,7 +209,7 @@ export function readFromStanfordAton(
             const columnWidth = readPx(hole.WIDTH_COL)
 
             return [{
-                type: 'Hole',
+                type: 'HoleChain',
                 id: v4(),
                 ...(stanford && {
                     depiction: stanford.depictionOf(column, attack, columnWidth, subtract(release, attack))

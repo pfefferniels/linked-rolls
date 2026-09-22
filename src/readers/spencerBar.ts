@@ -1,5 +1,5 @@
 import { v4 } from "uuid";
-import { Hole } from "../Feature.js";
+import { HoleChain } from "../Feature.js";
 import { PaperSpeed, RollCopy } from "../RollCopy.js";
 import { systemOf, TrackerBar } from "../TrackerBar.js";
 import { welteLicensee } from "../systems/welteLicensee/bar.js";
@@ -107,7 +107,7 @@ const holesOf = (events: Iterable<BarEvent>): BarHole[] => {
 
 /**
  * Reads the copy on the bar it was cut for, whose numbering it keeps.
- * A hole on a position that bar does not read is left out, as the bar
+ * A chain on a position that bar does not read is left out, as the bar
  * would leave it.
  */
 export function readFromSpencerBar(
@@ -123,12 +123,12 @@ export function readFromSpencerBar(
 
 
     const features = holesOf(eventsIn(bytes, endOfText(bytes, TEXT_AT + 1)))
-        .flatMap((hole): Hole[] => {
+        .flatMap((hole): HoleChain[] => {
             const position = track(hole.position)
             if (!system.meaningOf(position)) return []
 
             return [{
-                type: 'Hole',
+                type: 'HoleChain',
                 id: v4(),
                 vertical: {
                     from: position,

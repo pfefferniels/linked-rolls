@@ -4,7 +4,7 @@ import { welteT98 } from '../src/systems/welteT98/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
 import { mm, track } from '../src/Quantity'
 import { asSymbols } from '../src/RollCopy'
-import { Hole } from '../src/Feature'
+import { HoleChain } from '../src/Feature'
 import { idsOf } from '../src/Assumption'
 
 const at = (fromMm: number, toMm: number, trackNumber: number) => ({
@@ -63,8 +63,8 @@ describe('where a roll says it ends', () => {
 })
 
 describe('reading a copy stops where its roll ends', () => {
-    const hole = (id: string, fromMm: number, toMm: number, trackNumber: number): Hole => ({
-        type: 'Hole', id,
+    const hole = (id: string, fromMm: number, toMm: number, trackNumber: number): HoleChain => ({
+        type: 'HoleChain', id,
         horizontal: { unit: 'mm', from: mm(fromMm), to: mm(toMm) },
         vertical: { unit: 'track', from: track(trackNumber) }
     })

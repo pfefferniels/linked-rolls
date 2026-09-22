@@ -74,6 +74,10 @@ kinds having become classes (`reo:Hole`, `reo:Writing`, `reo:Mark`,
 reads the old key and sorts its terms between the two. `reo:pattern`
 and its three types were withdrawn as well: whether the rows of a chain
 stagger is a mark of the perforator, and `reo:drive` states it there.
+Later that month `reo:Hole` became `reo:HoleChain`. The perforator cuts
+a held note as a row of holes with bridges of paper between them, most
+instances of the class were such chains, and a chain is several holes.
+`migrate` reads the old type.
 
 ## Publishing
 

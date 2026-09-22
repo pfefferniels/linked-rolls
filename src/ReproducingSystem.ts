@@ -1,4 +1,4 @@
-import { Hole } from "./Feature.js";
+import { HoleChain } from "./Feature.js";
 import { Expression, Note } from "./Symbol.js";
 import { TrackerBar } from "./TrackerBar.js";
 import { Millimeters, Quantity, Seconds } from "./Quantity.js";
@@ -38,7 +38,7 @@ export type RollTempo = RollTempoIn<'ft/min'> | RollTempoIn<'m/min'>
  */
 export type NegotiatedEvent =
     Omit<Note | Expression, 'carriers'>
-    & Pick<Hole, 'horizontal' | 'vertical'>
+    & Pick<HoleChain, 'horizontal' | 'vertical'>
 
 interface PerformedRollFeature<T> {
     type: T

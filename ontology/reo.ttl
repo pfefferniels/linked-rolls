@@ -35,7 +35,7 @@ reo:Command
     a owl:Class ;
     rdfs:subClassOf crm:E90_Symbolic_Object ;
     rdfs:label "Command"@en ;
-    rdfs:comment """This class comprises the symbols a reproducing piano reads from a roll: the notes it sounds and the functions it operates. A command is what a hole or a group of holes means once it is read against a tracker bar. The hole itself is an instance of reo:Hole, borne by a copy of the roll (P56 bears feature) and carrying the command (P128 carries). One command may be carried by holes on several copies of the same roll. A version of the roll, an instance of F2 Expression, is composed of its commands (P106 is composed of). The measured position of a command is that of the holes carrying it; the properties aligned with, before, after and paired with let an editor state where that measurement should give way. The name comes from the mechanism: a perforation is a thing in the paper of one copy, while an instance of this class is what the machine is told to do."""@en ;
+    rdfs:comment """This class comprises the symbols a reproducing piano reads from a roll: the notes it sounds and the functions it operates. A command is what a chain of holes means once it is read against a tracker bar. The chain itself is an instance of reo:HoleChain, borne by a copy of the roll (P56 bears feature) and carrying the command (P128 carries). One command may be carried by chains on several copies of the same roll. A version of the roll, an instance of F2 Expression, is composed of its commands (P106 is composed of). The measured position of a command is that of the chains carrying it; the properties aligned with, before, after and paired with let an editor state where that measurement should give way. The name comes from the mechanism: a perforation is a thing in the paper of one copy, while an instance of this class is what the machine is told to do."""@en ;
     skos:example "the first note of Grünfeld's Träumerei on the Welte-Mignon roll WM 225, recorded in Wien in 1905"@en ,
                  "the sustain pedal command that opens the same roll"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
@@ -44,7 +44,7 @@ reo:Note
     a owl:Class ;
     rdfs:subClassOf reo:Command ;
     rdfs:label "Note"@en ;
-    rdfs:comment """This class comprises the commands that sound a pitch. The pitch is stated as a MIDI note number (pitch). Its duration follows from the extent of the carrying hole along the roll and is not stated separately."""@en ;
+    rdfs:comment """This class comprises the commands that sound a pitch. The pitch is stated as a MIDI note number (pitch). Its duration follows from the extent of the carrying chain along the roll and is not stated separately."""@en ;
     skos:example "the note c′ (MIDI 60) with which Grünfeld's Träumerei begins on WM 225"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
@@ -65,12 +65,12 @@ reo:RollCopy
     skos:example "the copy of WM 225 held at Stanford, read from the scan of its paper"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
-reo:Hole
+reo:HoleChain
     a owl:Class ;
     rdfs:subClassOf crm:E25_Human-Made_Feature ;
-    rdfs:label "Hole"@en ;
-    rdfs:comment """This class comprises the perforations punched in the paper of a roll, which is what a reproducing piano reads. A hole is a human-made feature of the paper: the scope note of E25 Human-Made Feature states that it includes "the information encoding features on mechanical or digital carriers". What a hole means once it is read against a tracker bar is a command in the sense of reo:Command, which the hole carries (P128 carries). Whether its rows align with those of the neighbouring tracks tells how the perforator was driven, which is stated of the perforator by reo:drive."""@en ;
-    skos:example "the hole carrying the first note of Grünfeld's Träumerei on the Stanford copy of WM 225"@en ;
+    rdfs:label "Hole Chain"@en ;
+    rdfs:comment """This class comprises the chains of holes punched in the paper of a roll, which is what a reproducing piano reads. The perforator cuts a held note or function as a row of punches along the roll with bridges of paper left between them, so that most perforations are chains of several holes; a perforation without a bridge is a chain of one. The holes are parts of the chain (P46 is composed of) and are not stated one by one. How far apart they lie is stated of the perforator that cut them by reo:chainPitch. A chain is a human-made feature of the paper: the scope note of E25 Human-Made Feature states that it includes "the information encoding features on mechanical or digital carriers". What a chain means once it is read against a tracker bar is a command in the sense of reo:Command, which the chain carries (P128 carries). Whether its rows align with those of the neighbouring tracks tells how the perforator was driven, which is stated of the perforator by reo:drive."""@en ;
+    skos:example "the chain of holes carrying the first note of Grünfeld's Träumerei on the Stanford copy of WM 225"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:Writing
@@ -187,7 +187,7 @@ reo:side
     rdfs:domain [ a owl:Class ; owl:unionOf ( reo:Writing reo:Mark reo:GluedOn ) ] ;
     rdfs:range crm:E55_Type ;
     rdfs:label "side"@en ;
-    rdfs:comment """This property states which face of the paper a feature lies on: the types recto and verso at https://w3id.org/reo/type/. A hole takes no side, going through the paper and lying on both faces at once, which is why the domain names the three kinds that sit on one. Recto is the face that meets the tracker bar as the roll plays."""@en ;
+    rdfs:comment """This property states which face of the paper a feature lies on: the types recto and verso at https://w3id.org/reo/type/. A chain of holes takes no side, going through the paper and lying on both faces at once, which is why the domain names the three kinds that sit on one. Recto is the face that meets the tracker bar as the roll plays."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:rotation
@@ -283,7 +283,7 @@ reo:from
     rdfs:domain crm:E54_Dimension ;
     rdfs:range xsd:decimal ;
     rdfs:label "from"@en ;
-    rdfs:comment """This property states the lower bound of a dimension that is an interval, as the extent of a hole along the roll (in millimetres from its beginning) or across it (in tracks of the tracker bar), or the speed at the beginning of a roll. The unit is given by P91 has unit."""@en ;
+    rdfs:comment """This property states the lower bound of a dimension that is an interval, as the extent of a chain of holes along the roll (in millimetres from its beginning) or across it (in tracks of the tracker bar), or the speed at the beginning of a roll. The unit is given by P91 has unit."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:to
@@ -292,7 +292,7 @@ reo:to
     rdfs:domain crm:E54_Dimension ;
     rdfs:range xsd:decimal ;
     rdfs:label "to"@en ;
-    rdfs:comment """This property states the upper bound of a dimension that is an interval. A hole that occupies a single track has no upper bound across the roll."""@en ;
+    rdfs:comment """This property states the upper bound of a dimension that is an interval. A chain that occupies a single track has no upper bound across the roll."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:tempo

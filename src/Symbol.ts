@@ -4,14 +4,14 @@ import { WithId } from "./utils.js";
 /**
  * A symbol is an abstract musical or textual entity carried by one or more
  * physical features on the roll. Symbols are the result of interpreting
- * the physical features (holes, writings, etc.) on the roll copies.
+ * the physical features (chains of holes, writings, etc.) on the roll copies.
  * @see crm:E90 Symbolic Object
  */
 export interface Symbol<T extends string> extends WithId {
     type: T
 
     /**
-     * References to the physical features (e.g. holes) on the roll copies
+     * References to the physical features (e.g. chains of holes) on the roll copies
      * that carry this symbol. Since the association might be debatable,
      * it can be annotated. There might be e.g. doubts about the meaning
      * and correct transcription of a feature on a physical roll.
@@ -32,10 +32,10 @@ export const isCommand = (symbol: object | undefined): symbol is AnyCommand =>
     symbol !== undefined && 'type' in symbol && (symbol.type === 'note' || symbol.type === 'expression')
 
 /**
- * A command is what the tracker bar reads from a perforation, or from a
- * group of them: the note it sounds, or the function it operates. It is
- * typically carried by a single punched hole or a chain of them, but it
- * might also have different physical appearences.
+ * A command is what the tracker bar reads from a chain of holes: the
+ * note it sounds, or the function it operates. It is typically carried
+ * by such a chain, but it might also have different physical
+ * appearances.
  * @see reo:Command
  */
 export interface Command<T extends string> extends Symbol<T> {

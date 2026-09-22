@@ -65,17 +65,17 @@ export const revertScale = (copy: RollCopy) => {
     delete copy.measurements.scale
 }
 
-const holesOf = (copy: RollCopy) => featuresOf(copy).filter(feature => feature.type === 'Hole')
+const chainsOf = (copy: RollCopy) => featuresOf(copy).filter(feature => feature.type === 'HoleChain')
 
 /**
  * Takes the extension a pneumatic reader adds off the ends of the
- * copy's holes, and records how much was taken.
+ * copy's chains of holes, and records how much was taken.
  *
  * Such a reader reports how long a valve stayed open, and a valve is
- * held on past the perforation that opened it, so its holes run longer
- * than the punched slots while their onsets agree. Left in, the
+ * held on past the perforation that opened it, so its chains run longer
+ * than the punched ones while their onsets agree. Left in, the
  * difference is not a difference between copies at all: a collation
- * comparing this copy's hole ends against a scanned copy's compares a
+ * comparing this copy's chain ends against a scanned copy's compares a
  * pneumatic on-time with a punched slot, and reads the one as a
  * lengthening of the other.
  *
@@ -88,10 +88,10 @@ const holesOf = (copy: RollCopy) => featuresOf(copy).filter(feature => feature.t
  * way and without any gradient across the bar, which is measured but
  * too coarse to model from one roll.
  *
- * Only holes are touched. What a writing or a mark spans is no valve.
+ * Only chains of holes are touched. What a writing or a mark spans is no valve.
  */
 /**
- * The holes the extension cannot be taken off, being no longer than it
+ * The chains the extension cannot be taken off, being no longer than it
  * is: the reader reported them open for less time than it holds a valve
  * on beyond the perforation, so the constant over-corrects them and
  * would leave them ending before they begin.
@@ -99,29 +99,29 @@ const holesOf = (copy: RollCopy) => featuresOf(copy).filter(feature => feature.t
  * They are where the constant shows its limit rather than where the
  * copy is wrong, the extension varying by about half a millimetre with
  * the port. What to do with them is an editorial question — a condition
- * on the feature, a reading of the hole, a smaller extension — and
- * `shortenHoles` throws rather than answer it.
+ * on the feature, a reading of the chain, a smaller extension — and
+ * `shortenChains` throws rather than answer it.
  */
 export const tooShortToShorten = (
     extension: Millimeters,
     copy: RollCopy,
     leaving: ReadonlySet<string> = new Set()
 ): Readonly<FeatureOrPatch>[] =>
-    holesOf(copy).filter(hole =>
-        !leaving.has(hole.id) && hole.horizontal.to - hole.horizontal.from <= extension)
+    chainsOf(copy).filter(chain =>
+        !leaving.has(chain.id) && chain.horizontal.to - chain.horizontal.from <= extension)
 
 /**
- * Takes the extension off, leaving the named holes as the reader gave
- * them. Naming a hole is an editorial act and not a repair: it says
+ * Takes the extension off, leaving the named chains as the reader gave
+ * them. Naming a chain is an editorial act and not a repair: it says
  * this one is where the constant stops applying, and the edition is
  * what has to say why. The copy records which were left, so that
- * putting the extension back does not lengthen a hole nothing was
+ * putting the extension back does not lengthen a chain nothing was
  * taken from.
  *
- * Throws where a hole that was not named is no longer than the
+ * Throws where a chain that was not named is no longer than the
  * extension, `tooShortToShorten` saying beforehand which those are.
  */
-export const shortenHoles = (
+export const shortenChains = (
     extension: Millimeters,
     copy: RollCopy,
     leaving: ReadonlySet<string> = new Set()
@@ -132,28 +132,28 @@ export const shortenHoles = (
     if (tooShort.length > 0) {
         throw new Error(
             `The extension of ${extension} mm cannot be taken off ${tooShort.length} `
-            + `hole(s) of copy ${copy.id}, which are no longer than it: `
-            + `${tooShort.map(hole => hole.id).join(', ')}`)
+            + `chain(s) of holes of copy ${copy.id}, which are no longer than it: `
+            + `${tooShort.map(chain => chain.id).join(', ')}`)
     }
 
-    const left = holesOf(copy).filter(hole => leaving.has(hole.id)).map(hole => hole.id)
-    holesOf(copy)
-        .filter(hole => !leaving.has(hole.id))
-        .forEach(hole => { hole.horizontal.to = subtract(hole.horizontal.to, extension) })
+    const left = chainsOf(copy).filter(chain => leaving.has(chain.id)).map(chain => chain.id)
+    chainsOf(copy)
+        .filter(chain => !leaving.has(chain.id))
+        .forEach(chain => { chain.horizontal.to = subtract(chain.horizontal.to, extension) })
 
     copy.ops = [...copy.ops, 'shortened']
     copy.measurements.readerExtension = { length: extension, ...(left.length > 0 && { leaving: left }) }
 }
 
-/** Puts the reader's extension back on the holes it was taken off, as far as one was taken off. */
+/** Puts the reader's extension back on the chains it was taken off, as far as one was taken off. */
 export const revertShortening = (copy: RollCopy) => {
     const taken = copy.measurements.readerExtension
     if (!copy.ops.includes('shortened') || taken === undefined) return
 
     const left = new Set(taken.leaving ?? [])
-    holesOf(copy)
-        .filter(hole => !left.has(hole.id))
-        .forEach(hole => { hole.horizontal.to = add(hole.horizontal.to, taken.length) })
+    chainsOf(copy)
+        .filter(chain => !left.has(chain.id))
+        .forEach(chain => { chain.horizontal.to = add(chain.horizontal.to, taken.length) })
 
     copy.ops = copy.ops.filter(op => op !== 'shortened')
     delete copy.measurements.readerExtension
@@ -173,7 +173,7 @@ export interface AlignmentResult {
     residual: Millimeters
 }
 
-/** A note the bar reads: its pitch and where along the roll its hole begins. */
+/** A note the bar reads: its pitch and where along the roll its chain of holes begins. */
 interface Onset {
     readonly pitch: number
     readonly at: Millimeters
@@ -197,7 +197,7 @@ const byPlace = (x: Onset, y: Onset): number => x.at - y.at || x.pitch - y.pitch
 const noteOnsets = (features: readonly FeatureOrPatch[], bar: TrackerBar): Onset[] =>
     features
         .flatMap((feature): Onset[] => {
-            if (feature.type !== 'Hole') return []
+            if (feature.type !== 'HoleChain') return []
             return bar.meaningsOf(feature.vertical)
                 .filter(meaning => meaning.type === 'note')
                 .map(meaning => ({ pitch: meaning.pitch, at: feature.horizontal.from }))

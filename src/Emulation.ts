@@ -36,7 +36,7 @@ const propertiesOf = (view: EditionView, version: Readonly<Version>): RollProper
     toOwnPaper: view.toOwnPaperOf(version)
 })
 
-/** The onset a symbol has on each copy carrying it, by the copy's index, as the mean of its holes there. */
+/** The onset a symbol has on each copy carrying it, by the copy's index, as the mean of its chains there. */
 const onsetsByCopy = (view: EditionView, symbolId: string): Map<number, Millimeters> => {
     const symbol = view.get<AnySymbol>(symbolId)
     if (!symbol) return new Map()

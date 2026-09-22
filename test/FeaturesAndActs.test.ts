@@ -131,7 +131,7 @@ const theOne = (all: Triple[], klass: string): string => {
 describe('the kinds of feature', () => {
     it('each state a class of their own', async () => {
         const all = await triples()
-        expect(classOf(all, of('perforation'))).toEqual([`${reo}Hole`])
+        expect(classOf(all, of('perforation'))).toEqual([`${reo}HoleChain`])
         expect(classOf(all, of('date'))).toEqual([`${reo}Writing`])
         expect(classOf(all, of('circle'))).toEqual([`${reo}Mark`])
         expect(classOf(all, of('patch'))).toEqual([`${reo}GluedOn`])

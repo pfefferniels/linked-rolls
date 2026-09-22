@@ -93,7 +93,7 @@ describe('stating the condition of a feature', () => {
 
     it('refuses a condition of a kind the feature is in no such, naming its kind', () => {
         expect(() => state(withFeatures(), 'hole-note', damage('illegible')))
-            .toThrow("A Hole is in no 'illegible' condition")
+            .toThrow("A HoleChain is in no 'illegible' condition")
         expect(() => state(withFeatures(), 'label', damage('faded'))).toThrow('Writing')
         expect(() => state(withFeatures(), 'patch', damage('partially-torn'))).toThrow('GluedOn')
     })

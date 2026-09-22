@@ -58,6 +58,10 @@ const withTypology = (node: Json): Json => {
     return node
 }
 
+/** A chain of holes written while its class was named after a single hole. */
+const withHoleChainType = (node: Json): Json =>
+    node['@type'] === 'Hole' ? { ...node, '@type': 'HoleChain' } : node
+
 /** A version once stated whether it served as a master or stood on one copy. */
 const withoutVersionType = (node: Json): Json => {
     if (!Object.hasOwn(node, 'versionType')) return node
@@ -200,9 +204,9 @@ const withTypedPerforator = (node: Json): Json => {
 const asynchronous: DriveId = 'https://w3id.org/reo/type/drive/asynchronous'
 
 /**
- * Each hole once stated its punching pattern. A staggering hole the copy
- * was punched with shows that its perforator drove each punch on its
- * own; one a later act made shows nothing about the machine. Regular
+ * Each chain once stated its punching pattern. A staggering chain the
+ * copy was punched with shows that its perforator drove each punch on
+ * its own; one a later act made shows nothing about the machine. Regular
  * and accelerating bridges are not carried over: the chain pitch states
  * the one, and for the other no source was found. The features are in
  * their acts here, since a node is migrated before its children are.
@@ -217,7 +221,7 @@ const withDriveOfStaggering = (node: Json): Json => {
 }
 
 const withoutPattern = (node: Json): Json => {
-    if (node['@type'] !== 'Hole' || !Object.hasOwn(node, 'pattern')) return node
+    if (node['@type'] !== 'HoleChain' || !Object.hasOwn(node, 'pattern')) return node
     const { pattern: _moved, ...rest } = node
     return rest
 }
@@ -235,14 +239,17 @@ const featuresOf = (copy: Json): Json[] => [
     ...(Array.isArray(copy.production?.produced) ? copy.production.produced : [])
 ]
 
+/** A chain of holes under either name, since a node is migrated before its children are. */
+const isHoleChain = (feature: Json): boolean =>
+    feature?.['@type'] === 'HoleChain' || feature?.['@type'] === 'Hole'
+
 /**
  * A copy read on a roll reader was stated as a recording before a sound
  * recording could be one. A sound recording gives no holes, so a recording
  * with holes is a reading.
  */
 const withReadingKind = (node: Json): Json =>
-    node.readFrom?.kind === 'recording'
-        && featuresOf(node).some((feature: Json) => feature?.['@type'] === 'Hole')
+    node.readFrom?.kind === 'recording' && featuresOf(node).some(isHoleChain)
         ? { ...node, readFrom: { ...node.readFrom, kind: 'reading' } }
         : node
 
@@ -352,7 +359,7 @@ const withTimeSpanDates = (node: Json): Json => {
 }
 
 const migrateNode = (node: Json): Json =>
-    [withRenamedKeys, withTypology, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
+    [withRenamedKeys, withTypology, withHoleChainType, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
         withPerforator, withProductionNodes, withTypedPerforator, withScale, withDerivationList, withReadingKind, withTimeSpanDates,
         withoutFeatureKind, withBorneFeaturesNamed, withFeaturesInActs, withDriveOfStaggering, withoutPattern]
         .reduce((result, step) => step(result), node)

@@ -74,7 +74,7 @@ describe('reading one of Phillips’s e-roll files', () => {
 
     it('reads every perforation as a hole', () => {
         expect(featuresOf(copy)).toHaveLength(perforations.length)
-        expect(featuresOf(copy).every(feature => feature.type === 'Hole')).toBe(true)
+        expect(featuresOf(copy).every(feature => feature.type === 'HoleChain')).toBe(true)
     })
 
     it('puts a position where the bar has it, counting from one', () => {

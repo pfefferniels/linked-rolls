@@ -1,10 +1,10 @@
 import { AnyEvent, read } from "midifile-ts";
 import { v4 } from "uuid";
 import { assignObject } from "../Assumption.js";
-import { Hole } from "../Feature.js";
+import { HoleChain } from "../Feature.js";
 import { RollCopy } from "../RollCopy.js";
 import { systemOf, TrackerBar } from "../TrackerBar.js";
-import { shortenHoles } from "../alignment.js";
+import { shortenChains } from "../alignment.js";
 import { welteT100 } from "../systems/welteT100/bar.js";
 import { welteLicensee } from "../systems/welteLicensee/bar.js";
 import { inMetersPerMinute, Millimeters, mm, Seconds, seconds, Track, track } from "../Quantity.js";
@@ -22,17 +22,17 @@ import { inMetersPerMinute, Millimeters, mm, Seconds, seconds, Track, track } fr
  * elapsed time, not paper, and the take-up spool accelerates the paper
  * as it fills, so `placeAt` has to put the time back onto the paper.
  * And a switch stays open longer than its perforation is long, so a
- * hole read here runs past the punched one: Phillips measures the
+ * chain read here runs past the punched one: Phillips measures the
  * pneumatic on-time as exceeding the apparent length of a perforation
  * (p. 178), and names what it depends on as the length of the
  * perforation, the height of the tracker bar hole and the paper speed
  * (p. 180).
  *
  * Left in, that extension is not a difference between copies at all:
- * the end of a hole here is a pneumatic on-time where the end of a
- * scanned copy's hole is a punched slot, so a collation comparing the
+ * the end of a chain here is a pneumatic on-time where the end of a
+ * scanned copy's chain is a punched slot, so a collation comparing the
  * two reads the one as a lengthening of the other. `extension` takes it
- * off at the end of every hole, and the copy records what was taken.
+ * off at the end of every chain, and the copy records what was taken.
  *
  * How much to take off is measured rather than derived, since he gives
  * only the 0.5 mm by which the Welte bar's holes exceed the Licensee's
@@ -87,8 +87,8 @@ export interface PhillipsErollOptions {
 
     /**
      * How much longer a valve is held on than the perforation that
-     * opened it, taken off the end of every hole so that these lengths
-     * can be compared with a scanned copy's. Nothing leaves the holes
+     * opened it, taken off the end of every chain so that these lengths
+     * can be compared with a scanned copy's. Nothing leaves the chains
      * as the reader reported them, which is what every copy read before
      * this option existed states.
      *
@@ -233,12 +233,12 @@ export function readFromPhillipsEroll(
     const positionOf = (number: number): Track =>
         notePositions.get(number) ?? track(number - offset)
 
-    const features = notesIn(timed).flatMap((note): Hole[] => {
+    const features = notesIn(timed).flatMap((note): HoleChain[] => {
         const position = positionOf(note.pitch)
         if (!system.meaningOf(position)) return []
 
         return [{
-            type: 'Hole',
+            type: 'HoleChain',
             id: v4(),
             vertical: { from: position, unit: 'track' },
             horizontal: {
@@ -260,11 +260,11 @@ export function readFromPhillipsEroll(
         readFrom: {
             kind: 'reading',
             actor: assignObject({ name: 'Phillips, Peter', sameAs: [] }),
-            note: 'Read on Phillips’s pneumatic roll reader. The places are elapsed time put back onto the paper, and a hole runs as long as its switch stayed open, which is longer than the perforation.'
+            note: 'Read on Phillips’s pneumatic roll reader. The places are elapsed time put back onto the paper, and a chain of holes runs as long as its switch stayed open, which is longer than the perforation.'
         }
     }
 
-    if (extension !== undefined) shortenHoles(extension, copy)
+    if (extension !== undefined) shortenChains(extension, copy)
     return copy
 }
 
