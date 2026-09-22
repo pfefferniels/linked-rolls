@@ -29,17 +29,14 @@ reot:treble a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/t
     rdfs:comment "The upper half of the keyboard, as controlled by the treble expression commands."@en .
 
 
-# Punching pattern of a hole (reo:pattern)
+# Drive of a perforator (reo:drive). An edition names one by its IRI.
 
-reot:regular a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
-    rdfs:label "regular"@en ;
-    rdfs:comment "Holes with evenly spaced bridges."@en .
-reot:accelerating a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
-    rdfs:label "accelerating"@en ;
-    rdfs:comment "Holes whose bridges grow narrower along the chain."@en .
-reot:staggering a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
-    rdfs:label "staggering"@en ;
-    rdfs:comment "Holes whose rows do not align across the tracks. Phillips (2016, p. 112) reads this as the mark of an asynchronous perforator: such rolls 'have been cut on an asynchronous perforator as the perforations do not align with each row, showing that this perforator had separate drivers for each punch'."@en .
+<https://w3id.org/reo/type/drive/ram-head> a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "ram head"@en ;
+    rdfs:comment "All punches driven together by one bar across the machine, which leaves the rows of a chain in line across the tracks. Phillips (2016, pp. 112 f.) calls it 'the more usual arrangement', in which 'all punches are driven in a synchronous way by the same downward force'."@en .
+<https://w3id.org/reo/type/drive/asynchronous> a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "asynchronous"@en ;
+    rdfs:comment "Each punch driven by a driver of its own, which staggers the rows of a chain across the tracks. Phillips (2016, p. 112) reads staggered rows as its mark: such rolls 'have been cut on an asynchronous perforator as the perforations do not align with each row, showing that this perforator had separate drivers for each punch'."@en .
 
 
 # Reproducing systems. Each system's expression types form a scheme of

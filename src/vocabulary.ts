@@ -1,16 +1,18 @@
 import { Concept } from "./Agent.js"
+import { drives } from "./Perforator.js"
 import { procedures } from "./procedures.js"
 import { systemOf } from "./TrackerBar.js"
 import { trackerBars } from "./systems/index.js"
 
 /**
  * The concepts the type vocabulary declares, whatever kind they are:
- * the reproducing systems and the procedures. An edition names one of
- * them by its IRI alone.
+ * the reproducing systems, the procedures and the drives of a
+ * perforator. An edition names one of them by its IRI alone.
  */
 export const vocabulary: readonly Concept[] = [
     ...trackerBars.map(systemOf),
-    ...procedures
+    ...procedures,
+    ...drives
 ]
 
 /** The concept of that IRI, where the vocabulary declares one. */

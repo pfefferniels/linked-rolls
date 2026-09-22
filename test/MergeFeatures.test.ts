@@ -183,7 +183,6 @@ describe('asking what stands in the way of a merge', () => {
         expect(mergeObstacle([partOne, { ...partTwo, condition: torn }])).toBeUndefined()
         expect(mergeObstacle([{ ...partOne, condition: torn }, { ...partTwo, condition: damage(conditions.Hole[0]) }]))
             .toBeUndefined()
-        expect(mergeObstacle([{ ...partOne, pattern: undefined }, partTwo])).toBeUndefined()
         expect(mergeObstacle([writing('a', 'Welte'), writing('b', 'Welte')])).toBeUndefined()
     })
 
@@ -194,7 +193,6 @@ describe('asking what stands in the way of a merge', () => {
         expect(mergeObstacle([partOne, elsewhere])).toBe('different-tracks')
         expect(mergeObstacle([partOne, { ...partTwo, vertical: { unit: 'track', from: track(47), to: track(48) } }]))
             .toBe('different-tracks')
-        expect(mergeObstacle([partOne, { ...partTwo, pattern: 'accelerating' }])).toBe('unlike-features')
         expect(mergeObstacle([writing('a', 'Welte'), writing('b', 'Welte-Mignon')])).toBe('unlike-features')
         expect(mergeObstacle([{ ...partOne, condition: torn }, { ...partTwo, condition: damage(conditions.Hole[1]) }]))
             .toBe('differing-conditions')

@@ -436,6 +436,13 @@
       "type": "object",
       "ontology": "lrmoo:R76 is derivative of"
     },
+    "DriveId": {
+      "enum": [
+        "https://w3id.org/reo/type/drive/ram-head",
+        "https://w3id.org/reo/type/drive/asynchronous"
+      ],
+      "type": "string"
+    },
     "Edit": {
       "description": "A set of edits transforms a version of a roll into another version. Edits insert or delete symbols, or both (= replace). Edits may be motivated by a given set of reasons, e.g. to add an additional accent or to correct an error. If an edit is the interpretation of a metamark, such as a pencil mark, this should be made explicit using a meaning comprehension on the `@annotation` field.",
       "properties": {
@@ -894,16 +901,6 @@
           "$ref": "#/definitions/HorizontalSpan",
           "description": "Horizontal span of the feature on the roll.",
           "ontology": "crm:P43 has dimension"
-        },
-        "pattern": {
-          "description": "The punching pattern of the hole. Regular holes have evenly-spaced bridges, accelerating holes have decreasing bridge widths, and staggering holes do not align in rows across the tracks, the mark of an asynchronous perforator with a separate driver for each punch (Phillips 2016, p. 112).",
-          "enum": [
-            "regular",
-            "accelerating",
-            "staggering"
-          ],
-          "type": "string",
-          "ontology": "reo:pattern"
         },
         "vertical": {
           "$ref": "#/definitions/VerticalSpan",
@@ -1447,16 +1444,6 @@
               "$ref": "#/definitions/HorizontalSpan",
               "description": "Horizontal span of the feature on the roll. Left out by a feature a patch bears.",
               "ontology": "crm:P43 has dimension"
-            },
-            "pattern": {
-              "description": "The punching pattern of the hole. Regular holes have evenly-spaced bridges, accelerating holes have decreasing bridge widths, and staggering holes do not align in rows across the tracks, the mark of an asynchronous perforator with a separate driver for each punch (Phillips 2016, p. 112).",
-              "enum": [
-                "regular",
-                "accelerating",
-                "staggering"
-              ],
-              "type": "string",
-              "ontology": "reo:pattern"
             },
             "vertical": {
               "$ref": "#/definitions/VerticalSpan",
@@ -2294,6 +2281,38 @@
       ],
       "type": "object"
     },
+    "ObjectAssumption<Drive>": {
+      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
+      "properties": {
+        "@annotation": {
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement.",
+              "ontology": "crminf:J4i is subject of"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "@id": {
+          "$ref": "#/definitions/DriveId",
+          "description": "The IRI the type vocabulary gives the drive."
+        }
+      },
+      "required": [
+        "@id"
+      ],
+      "type": "object"
+    },
     "ObjectAssumption<Instrument>": {
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
@@ -2666,13 +2685,25 @@
           "$ref": "#/definitions/PerforatorSetting",
           "ontology": "crm:P44 has condition"
         },
+        "drive": {
+          "$ref": "#/definitions/ObjectAssumption%3CDrive%3E",
+          "description": "How its punches were driven, as the rows of its chains show it: in line across the tracks where one ram head drove them all, and staggered where each punch had a driver of its own. It is part of how the machine was built and so no part of its setting.",
+          "ontology": "reo:drive"
+        },
         "@id": {
           "description": "A unique identifier for this object.",
           "type": "string"
+        },
+        "@type": {
+          "const": "Perforator",
+          "description": "The type discriminator for this object.",
+          "type": "string",
+          "ontology": "rdf:type"
         }
       },
       "required": [
-        "@id"
+        "@id",
+        "@type"
       ],
       "type": "object",
       "ontology": "crm:E22 Human-Made Object"
@@ -2773,7 +2804,7 @@
         },
         "perforator": {
           "$ref": "#/definitions/Perforator",
-          "description": "The perforator the copy was punched on, with the setting its perforations show.",
+          "description": "The perforator the copy was punched on, with the drive and the setting its perforations show.",
           "ontology": "crm:P16 used specific object"
         },
         "produced": {

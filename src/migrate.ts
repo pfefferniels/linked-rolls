@@ -1,4 +1,5 @@
 import { conditions, isFeatureType, media, techniques } from "./Feature.js";
+import { DriveId } from "./Perforator.js";
 import { rollConditions } from "./RollCopy.js";
 import { systemIdIn, systemOf, TrackerBar, translationBetween } from "./TrackerBar.js";
 import { trackerBars } from "./systems/index.js";
@@ -152,10 +153,16 @@ const withScale = (node: Json): Json => {
 export const plainCopyId = (id: string): string => id.replace(/^copy\//, '')
 
 /**
+ * The perforator the copy states, or a new one named after the copy, so
+ * that a file migrated twice names it the same way.
+ */
+const perforatorOf = (copy: Json): Json =>
+    copy.production?.perforator ?? { '@type': 'Perforator', '@id': `perforator_${plainCopyId(copy['@id'])}` }
+
+/**
  * The punch diameter was a measurement of the copy before it was stated
  * as the setting of the perforator that cut it. A diameter of -1 stood
- * for one nobody had measured and is left out. The perforator is named
- * after the copy, so that a file migrated twice names it the same way.
+ * for one nobody had measured and is left out.
  */
 const withPerforator = (node: Json): Json => {
     const diameter = node.measurements?.punchDiameter
@@ -164,7 +171,7 @@ const withPerforator = (node: Json): Json => {
     const { punchDiameter: _moved, ...measurements } = node.measurements
     if (!(diameter?.value > 0)) return { ...node, measurements }
 
-    const perforator = node.production?.perforator ?? { '@id': `perforator_${plainCopyId(node['@id'])}` }
+    const perforator = perforatorOf(node)
     return {
         ...node,
         measurements,
@@ -181,6 +188,38 @@ const withPerforator = (node: Json): Json => {
             }
         }
     }
+}
+
+/** A perforator was first written without a type. */
+const withTypedPerforator = (node: Json): Json => {
+    const perforator = node.perforator
+    if (!perforator || typeof perforator !== 'object' || perforator['@type']) return node
+    return { ...node, perforator: { '@type': 'Perforator', ...perforator } }
+}
+
+const asynchronous: DriveId = 'https://w3id.org/reo/type/drive/asynchronous'
+
+/**
+ * Each hole once stated its punching pattern. A staggering hole the copy
+ * was punched with shows that its perforator drove each punch on its
+ * own; one a later act made shows nothing about the machine. Regular
+ * and accelerating bridges are not carried over: the chain pitch states
+ * the one, and for the other no source was found. The features are in
+ * their acts here, since a node is migrated before its children are.
+ */
+const withDriveOfStaggering = (node: Json): Json => {
+    const produced = node.production?.produced
+    if (!Array.isArray(produced) || !produced.some((feature: Json) => feature?.pattern === 'staggering')) return node
+
+    const perforator = perforatorOf(node)
+    if (perforator.drive) return node
+    return { ...node, production: { ...node.production, perforator: { ...perforator, drive: { '@id': asynchronous } } } }
+}
+
+const withoutPattern = (node: Json): Json => {
+    if (node['@type'] !== 'Hole' || !Object.hasOwn(node, 'pattern')) return node
+    const { pattern: _moved, ...rest } = node
+    return rest
 }
 
 /** A derivation written as a single one, before a version could name several. */
@@ -314,8 +353,8 @@ const withTimeSpanDates = (node: Json): Json => {
 
 const migrateNode = (node: Json): Json =>
     [withRenamedKeys, withTypology, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
-        withPerforator, withProductionNodes, withScale, withDerivationList, withReadingKind, withTimeSpanDates, withoutFeatureKind,
-        withBorneFeaturesNamed, withFeaturesInActs]
+        withPerforator, withProductionNodes, withTypedPerforator, withScale, withDerivationList, withReadingKind, withTimeSpanDates,
+        withoutFeatureKind, withBorneFeaturesNamed, withFeaturesInActs, withDriveOfStaggering, withoutPattern]
         .reduce((result, step) => step(result), node)
 
 /** The items each walked, or the very same list where the walk changed none. */

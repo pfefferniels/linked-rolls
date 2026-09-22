@@ -122,17 +122,7 @@ export type FeatureConditionAssignment = ObjectAssumption<ConditionState<Feature
  * features purposely created by human activity.
  * @see reo:Hole
  */
-export interface Hole extends RollFeature<'Hole', typeof conditions.Hole[number]> {
-    /**
-     * The punching pattern of the hole. Regular holes have evenly-spaced
-     * bridges, accelerating holes have decreasing bridge widths, and
-     * staggering holes do not align in rows across the tracks, the mark
-     * of an asynchronous perforator with a separate driver for each
-     * punch (Phillips 2016, p. 112).
-     * @see reo:pattern
-     */
-    pattern?: 'regular' | 'accelerating' | 'staggering';
-}
+export interface Hole extends RollFeature<'Hole', typeof conditions.Hole[number]> {}
 
 /**
  * Something that lies on a face of the paper rather than through it. A

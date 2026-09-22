@@ -22,6 +22,7 @@
     "Attachment": "crm:E79_Part_Addition",
     "Removal": "crm:E80_Part_Removal",
     "Alteration": "crm:E12_Production",
+    "Perforator": "crm:E22_Human-Made_Object",
     "ConditionState": "crm:E3_Condition_State",
     "note": "reo:Note",
     "expression": "reo:Expression",
@@ -196,6 +197,7 @@
         }
       }
     },
+    "drive": "reo:drive",
     "company": "crm:P14_carried_out_by",
     "paper": "crm:P126_employed",
     "conditions": "crm:P44_has_condition",
@@ -251,11 +253,6 @@
     "to": "reo:to",
     "unit": {
       "@id": "crm:P91_has_unit",
-      "@type": "@vocab",
-      "@context": { "@vocab": "https://w3id.org/reo/type/" }
-    },
-    "pattern": {
-      "@id": "reo:pattern",
       "@type": "@vocab",
       "@context": { "@vocab": "https://w3id.org/reo/type/" }
     },

@@ -69,7 +69,7 @@ reo:Hole
     a owl:Class ;
     rdfs:subClassOf crm:E25_Human-Made_Feature ;
     rdfs:label "Hole"@en ;
-    rdfs:comment """This class comprises the perforations punched in the paper of a roll, which is what a reproducing piano reads. A hole is a human-made feature of the paper: the scope note of E25 Human-Made Feature states that it includes "the information encoding features on mechanical or digital carriers". What a hole means once it is read against a tracker bar is a command in the sense of reo:Command, which the hole carries (P128 carries). The punching pattern is given by reo:pattern."""@en ;
+    rdfs:comment """This class comprises the perforations punched in the paper of a roll, which is what a reproducing piano reads. A hole is a human-made feature of the paper: the scope note of E25 Human-Made Feature states that it includes "the information encoding features on mechanical or digital carriers". What a hole means once it is read against a tracker bar is a command in the sense of reo:Command, which the hole carries (P128 carries). Whether its rows align with those of the neighbouring tracks tells how the perforator was driven, which is stated of the perforator by reo:drive."""@en ;
     skos:example "the hole carrying the first note of Grünfeld's Träumerei on the Stanford copy of WM 225"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
@@ -163,16 +163,6 @@ reo:scope
 #################################################################
 # Properties of features
 #################################################################
-
-reo:pattern
-    a owl:ObjectProperty ;
-    rdfs:subPropertyOf crm:P2_has_type ;
-    rdfs:domain reo:Hole ;
-    rdfs:range crm:E55_Type ;
-    rdfs:label "pattern"@en ;
-    rdfs:comment """This property states the punching pattern of a hole: how a long perforation is broken into a chain of holes by bridges of paper, and whether the rows of holes align across the tracks. The values are the types regular, accelerating and staggering at https://w3id.org/reo/type/, following the distinction drawn by Phillips (2016)."""@en ;
-    dcterms:bibliographicCitation "Phillips, Peter: Piano Rolls and Contemporary Player Pianos. The Catalogues, Technologies, Archiving and Accessibility. PhD thesis, Sydney Conservatorium of Music, University of Sydney, 2016." ;
-    rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:technique
     a owl:ObjectProperty ;
@@ -368,13 +358,23 @@ reo:scanResolution
 
 
 #################################################################
-# The setting of a perforator
+# The perforator and its setting
 #
 # A copy's production used a perforator (P16 used specific object),
 # whose setting at the time is its condition state (P44 has
 # condition). CIDOC CRM gives a condition state no dimension of its
 # own, hence the properties of this ontology.
 #################################################################
+
+reo:drive
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf crm:P2_has_type ;
+    rdfs:domain crm:E22_Human-Made_Object ;
+    rdfs:range crm:E55_Type ;
+    rdfs:label "drive"@en ;
+    rdfs:comment """This property states how the punches of the perforator that cut a copy were driven: all at once by one ram head, or each by a driver of its own. The first leaves the rows of a chain in line across the tracks and the second staggers them, which is how Phillips (2016, pp. 112 f.) tells the two apart. The values are the types under https://w3id.org/reo/type/drive/. The drive belongs to how the machine was built and is stated of the perforator itself, apart from its setting."""@en ;
+    dcterms:bibliographicCitation "Phillips, Peter: Piano Rolls and Contemporary Player Pianos. The Catalogues, Technologies, Archiving and Accessibility. PhD thesis, Sydney Conservatorium of Music, University of Sydney, 2016." ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:punchDiameter
     a owl:ObjectProperty ;

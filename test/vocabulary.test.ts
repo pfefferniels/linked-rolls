@@ -111,7 +111,6 @@ const placements: Record<string, (value: string) => Json> = {
     role: value => copyWith({ keeper: { name: 'keeper', role: value } }),
     conditionType: value => copyWith({ conditions: [{ '@type': 'ConditionState', conditionType: value }] }),
     unit: value => punched(node('Hole', { horizontal: { unit: value, from: 1, to: 2 } })),
-    pattern: value => punched(node('Hole', { pattern: value })),
     technique: value => altered(node('Writing', { technique: value })),
     medium: value => altered(node('Writing', { medium: value })),
     side: value => altered(node('Writing', { side: value })),

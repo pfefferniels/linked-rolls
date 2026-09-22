@@ -235,6 +235,7 @@ export function readFromStanfordAton(
             system: systemOf(system),
             ...(punchDiameter !== undefined && {
                 perforator: {
+                    type: 'Perforator',
                     id: `perforator_${v4()}`,
                     condition: {
                         type: 'ConditionState',

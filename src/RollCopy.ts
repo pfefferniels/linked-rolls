@@ -133,8 +133,8 @@ export interface ProductionEvent {
     speed?: ObjectAssumption<PaperSpeed>
 
     /**
-     * The perforator the copy was punched on, with the setting its
-     * perforations show.
+     * The perforator the copy was punched on, with the drive and the
+     * setting its perforations show.
      * @see crm:P16 used specific object
      */
     perforator?: Perforator

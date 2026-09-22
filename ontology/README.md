@@ -71,7 +71,9 @@ for the kinds of feature were withdrawn again in the same month, the
 kinds having become classes (`reo:Hole`, `reo:Writing`, `reo:Mark`,
 `reo:GluedOn`), and `reo:method` was split into `reo:technique` and
 `reo:medium`, having held two statements that vary apart. `migrate`
-reads the old key and sorts its terms between the two.
+reads the old key and sorts its terms between the two. `reo:pattern`
+and its three types were withdrawn as well: whether the rows of a chain
+stagger is a mark of the perforator, and `reo:drive` states it there.
 
 ## Publishing
 

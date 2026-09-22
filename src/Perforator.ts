@@ -1,7 +1,8 @@
+import { Concept } from "./Agent.js";
 import { ObjectAssumption } from "./Assumption.js";
 import { ConditionState } from "./ConditionState.js";
 import { Measure, Millimeters } from "./Quantity.js";
-import { WithId } from "./utils.js";
+import { WithId, WithType } from "./utils.js";
 
 /**
  * The pitch in the engineering sense: the distance along the roll from
@@ -85,12 +86,44 @@ export interface PerforatorSetting extends ConditionState<'setting'> {
 }
 
 /**
+ * How the punches of a perforator were driven, after Phillips (2016,
+ * pp. 112 f.): all at once by one ram head, or each by a driver of its
+ * own. `ontology/types.ttl` defines them, and a test holds this list
+ * against it.
+ * @see crm:E55 Type
+ */
+export const drives = [
+    { id: 'https://w3id.org/reo/type/drive/ram-head', name: 'ram head' },
+    { id: 'https://w3id.org/reo/type/drive/asynchronous', name: 'asynchronous' }
+] as const satisfies readonly Concept[]
+
+export type DriveId = typeof drives[number]['id']
+
+/**
+ * A drive, named by its IRI alone.
+ * @see crm:E55 Type
+ */
+export interface Drive {
+    /** The IRI the type vocabulary gives the drive. */
+    readonly id: DriveId
+}
+
+/**
  * The machine that punched the copy. It stands for this production
  * alone. Whether it is the one another copy was punched on is left to a
  * statement of identity made about it elsewhere, which its id allows.
  * @see crm:E22 Human-Made Object
  */
-export interface Perforator extends WithId {
+export interface Perforator extends WithType<'Perforator'>, WithId {
+    /**
+     * How its punches were driven, as the rows of its chains show it:
+     * in line across the tracks where one ram head drove them all, and
+     * staggered where each punch had a driver of its own. It is part of
+     * how the machine was built and so no part of its setting.
+     * @see reo:drive
+     */
+    drive?: ObjectAssumption<Drive>
+
     /**
      * @see crm:P44 has condition
      */
