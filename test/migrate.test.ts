@@ -205,6 +205,12 @@ describe('migrating a 0.1 edition', () => {
         expect(types).not.toContain('Hole')
     })
 
+    it('types what was glued on as patches', () => {
+        const types = migrate(edition01()).copies.flatMap(featuresIn).map((feature: any) => feature['@type'])
+        expect(types).toContain('Patch')
+        expect(types).not.toContain('GluedOn')
+    })
+
     it('lower-cases a term the copies in hand do not use', () => {
         const migrated = migrate({
             copies: [{ '@type': 'RollCopy', features: [{ '@type': 'GluedOn', '@id': 'tape', material: 'Tape' }] }]
@@ -237,7 +243,7 @@ describe('migrating a 0.1 edition', () => {
                 ['Alteration', ['Writing']],
                 // the one act that named two writings and two patches
                 ['Alteration', ['Writing', 'Writing']],
-                ['Attachment', ['GluedOn', 'GluedOn']],
+                ['Attachment', ['Patch', 'Patch']],
                 ['Alteration', new Array(8).fill('HoleChain')],
                 ['Alteration', ['Writing']],
                 ['Alteration', ['Writing']],
@@ -260,7 +266,7 @@ describe('migrating a 0.1 edition', () => {
 
         expect(migrated.copies[0].modifications).toEqual([
             { '@type': 'Alteration', purpose: 'labeling', produced: [feature('Writing', 'label')] },
-            { '@type': 'Attachment', purpose: 'labeling', added: [feature('GluedOn', 'patch')] }
+            { '@type': 'Attachment', purpose: 'labeling', added: [feature('Patch', 'patch')] }
         ])
         expect(migrated.copies[0].production.produced).toEqual([feature('HoleChain', 'punched')])
     })

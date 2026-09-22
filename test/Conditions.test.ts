@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { Edition } from '../src/Edition'
-import { AnyFeature, FeatureConditionType, GluedOn, Mark, Transcription, Writing } from '../src/Feature'
+import { AnyFeature, FeatureConditionType, Patch, Mark, Transcription, Writing } from '../src/Feature'
 import { ConditionState } from '../src/ConditionState'
 import { featuresOf, GeneralRollCondition, PaperStretch } from '../src/RollCopy'
 import { ObjectAssumption, assignObject } from '../src/Assumption'
@@ -32,7 +32,7 @@ const writing: Writing = {
 
 const mark: Mark = { type: 'Mark', id: 'pencil', ...at(80, 90) }
 
-const patch: GluedOn = { type: 'GluedOn', id: 'patch', ...at(100, 140), material: 'paper' }
+const patch: Patch = { type: 'Patch', id: 'patch', ...at(100, 140), material: 'paper' }
 
 /** A copy carrying one feature of each kind, the patch glued on, and a version reading its hole as a note. */
 const withFeatures = (features: AnyFeature[] = [hole('hole-note', 1000, 1010, 47), writing, mark]) =>
@@ -95,7 +95,7 @@ describe('stating the condition of a feature', () => {
         expect(() => state(withFeatures(), 'hole-note', damage('illegible')))
             .toThrow("A HoleChain is in no 'illegible' condition")
         expect(() => state(withFeatures(), 'label', damage('faded'))).toThrow('Writing')
-        expect(() => state(withFeatures(), 'patch', damage('partially-torn'))).toThrow('GluedOn')
+        expect(() => state(withFeatures(), 'patch', damage('partially-torn'))).toThrow('Patch')
     })
 
     it('leaves the edition as it is for a feature or a copy it does not have', () => {

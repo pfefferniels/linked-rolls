@@ -5,7 +5,7 @@ import { TrackerBar } from "./TrackerBar.js";
 import { welteT100 } from "./systems/welteT100/bar.js";
 import { trackerBarOf } from "./systems/index.js";
 import { TrackCalibration } from "./TrackCalibration.js";
-import { AnyFeature, FeatureOrPatch, GluedOn } from "./Feature.js";
+import { AnyFeature, FeatureOrPatch, Patch } from "./Feature.js";
 import { ActorAssignment, assignReference, certaintyOf, DateAssignment, isAsserted, ObjectAssumption, ReferenceAssumption } from "./Assumption.js";
 import { WithId, WithType } from "./utils.js";
 import { Agent, Concept } from "./Agent.js";
@@ -191,7 +191,7 @@ export type Modification = Partial<{
      * The patches glued onto the copy, each with whatever it bears.
      * @see crm:P111 added
      */
-    added: GluedOn[],
+    added: Patch[],
 
     /**
      * @see crm:P21 had general purpose

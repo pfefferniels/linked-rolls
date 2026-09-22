@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { Edition } from '../src/Edition'
-import { GluedOn, NestedFeature, Transcription, withBorneFeatures } from '../src/Feature'
+import { Patch, NestedFeature, Transcription, withBorneFeatures } from '../src/Feature'
 import { featuresOf, RollCopy } from '../src/RollCopy'
 import {
     AnyArgumentation, Assumption, Belief, MeaningComprehension, assignObject, assignReference
@@ -18,8 +18,8 @@ const writing = (id: string, text: string): NestedFeature => ({
     transcription: assignObject<Transcription>({ type: 'text', id: `${id}-text`, text })
 })
 
-const patch = (id: string, from: number, to: number, features?: NestedFeature[]): GluedOn => ({
-    type: 'GluedOn',
+const patch = (id: string, from: number, to: number, features?: NestedFeature[]): Patch => ({
+    type: 'Patch',
     id,
     horizontal: { unit: 'mm', from: mm(from), to: mm(to) },
     vertical: { unit: 'track', from: track(40), to: track(57) },

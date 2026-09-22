@@ -124,7 +124,7 @@ const derived = {
             ontology: 'crm:P46 is composed of'
         }
     },
-    GluedOn: {
+    Patch: {
         bears: {
             ...references,
             description: 'The features the patch bears. Derived on export.',
@@ -168,7 +168,7 @@ declareDerived(transformed);
 // the two spans without a schema and turns the optional keys of the
 // base interface into required ones. The definition is built here
 // instead, from the four the union is made of.
-const featureNames = ['HoleChain', 'Writing', 'Mark', 'GluedOn'];
+const featureNames = ['HoleChain', 'Writing', 'Mark', 'Patch'];
 const spans = ['horizontal', 'vertical'];
 
 // A union member carries no description of its own in the docs; its

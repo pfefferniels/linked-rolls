@@ -25,8 +25,8 @@ import {
     assignReference, idOf
 } from "./Assumption.js"
 import {
-    AnyFeature, FeatureConditionAssignment, FeatureConditionType, FeatureOrPatch, GluedOn, HorizontalSpan,
-    NestedFeature, conditions as conditionsAllowed, featuresBorneBy, isGluedOn, withBorneFeatures
+    AnyFeature, FeatureConditionAssignment, FeatureConditionType, FeatureOrPatch, HorizontalSpan,
+    NestedFeature, Patch, conditions as conditionsAllowed, featuresBorneBy, isPatch, withBorneFeatures
 } from "./Feature.js"
 import { distance, Millimeters, mm, subtract } from "./Quantity.js"
 import { WithId } from "./utils.js"
@@ -483,7 +483,7 @@ const goneWith = (features: readonly NestedFeature[], named: Ids): string[] =>
 
 /** The feature with the named ones gone from what it bears, or the very same one where it bears none of them. */
 const withoutBorne = <T extends NestedFeature>(feature: T, named: Ids): T => {
-    if (!isGluedOn(feature) || !feature.features) return feature
+    if (!isPatch(feature) || !feature.features) return feature
 
     const borne = withoutFeatures(feature.features, named)
     return borne === feature.features ? feature : { ...feature, features: borne }
@@ -545,7 +545,7 @@ const producedBeside = (copy: Draft<RollCopy>, featureId: string): Draft<AnyFeat
 }
 
 /** The patches of the attachment that glued the named one on. */
-const gluedBeside = (copy: Draft<RollCopy>, patchId: string): Draft<GluedOn>[] | undefined => {
+const gluedBeside = (copy: Draft<RollCopy>, patchId: string): Draft<Patch>[] | undefined => {
     const act = copy.modifications.find(act =>
         act.type === 'Attachment' && act.added.some(patch => patch.id === patchId))
     return act?.type === 'Attachment' ? act.added : undefined
@@ -559,7 +559,7 @@ const actFor = (copy: Draft<RollCopy>, patch: boolean, act: FeatureAct): Draft<F
     if (beside) return beside
 
     if (patch) {
-        const added: GluedOn[] = []
+        const added: Patch[] = []
         copy.modifications.push({ type: 'Attachment', added, ...(act.purpose && { purpose: act.purpose }) })
         return added
     }
@@ -583,7 +583,7 @@ const actFor = (copy: Draft<RollCopy>, patch: boolean, act: FeatureAct): Draft<F
  */
 export const addFeature = (copyId: string, feature: FeatureOrPatch, act: FeatureAct = {}): EditionOp =>
     onCopy(copyId, copy => {
-        actFor(copy, isGluedOn(feature), act).push(feature)
+        actFor(copy, isPatch(feature), act).push(feature)
     })
 
 /**
@@ -594,7 +594,7 @@ export const addFeature = (copyId: string, feature: FeatureOrPatch, act: Feature
 export const addBorneFeature = (copyId: string, patchId: string, feature: NestedFeature): EditionOp =>
     onCopy(copyId, copy => {
         const patch = featuresOf(copy).flatMap(withBorneFeatures).find(borne => borne.id === patchId)
-        if (!patch || !isGluedOn(patch)) return
+        if (!patch || !isPatch(patch)) return
         if (!patch.features) patch.features = []
         patch.features.push(feature)
     })
@@ -647,7 +647,7 @@ const sayTheSame = (a: unknown, b: unknown): boolean => {
  */
 const nature = (feature: FeatureOrPatch): object => {
     const { id, horizontal, depiction, condition, ...rest } = feature
-    return isGluedOn(feature) && feature.features
+    return isPatch(feature) && feature.features
         ? { ...rest, features: feature.features.map(borne => borne.id) }
         : rest
 }

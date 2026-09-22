@@ -1,5 +1,5 @@
 import { Edition } from '../src/Edition'
-import { AnyFeature, GluedOn, HoleChain } from '../src/Feature'
+import { AnyFeature, Patch, HoleChain } from '../src/Feature'
 import { Modification, RollCopy } from '../src/RollCopy'
 import { Concept } from '../src/Agent'
 import { Expression, Note, Text } from '../src/Symbol'
@@ -33,7 +33,7 @@ export const cutFor = (copy: RollCopy, system: Concept | undefined): RollCopy =>
     ({ ...copy, production: { ...copy.production, system } })
 
 /** An act gluing the patches onto a copy. */
-export const attachment = (...added: GluedOn[]): Modification =>
+export const attachment = (...added: Patch[]): Modification =>
     ({ type: 'Attachment', purpose: 'labeling', added })
 
 /** An act bringing features about on a copy: a writing, a mark, a hole punched by hand. */

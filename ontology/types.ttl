@@ -199,7 +199,7 @@ reot:crayon a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/t
     rdfs:comment "A coloured wax or grease pencil."@en .
 
 
-# Material of a glued-on patch (P45 consists of)
+# Material of a patch (P45 consists of)
 
 reot:paper a crm:E57_Material, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "paper"@en .
 reot:tape a crm:E57_Material, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "tape"@en .

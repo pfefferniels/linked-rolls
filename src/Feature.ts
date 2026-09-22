@@ -56,7 +56,7 @@ export interface VerticalSpan {
     to?: Track
 }
 
-export const featureTypes = ['HoleChain', 'Writing', 'Mark', 'GluedOn'] as const;
+export const featureTypes = ['HoleChain', 'Writing', 'Mark', 'Patch'] as const;
 
 export type FeatureType = typeof featureTypes[number];
 
@@ -65,7 +65,7 @@ export const isFeatureType = (value: unknown): value is FeatureType =>
 
 /**
  * A feature on the roll, e.g. a perforation, a writing, a mark or a
- * glued-on patch, defined by its horizontal and vertical position and
+ * patch, defined by its horizontal and vertical position and
  * extent. Each kind of feature is a class of its own, which its type
  * names.
  */
@@ -100,7 +100,7 @@ export const conditions = {
     HoleChain: ['partially-torn', 'missing-perforation'],
     Writing: ['illegible'],
     Mark: ['faded'],
-    GluedOn: ['detaching', 'ripped']
+    Patch: ['detaching', 'ripped']
 } as const satisfies Record<FeatureType, readonly string[]>;
 
 /** The kinds of condition a feature may be in, whichever kind of feature it is. */
@@ -216,15 +216,14 @@ export interface Writing extends Trace<'Writing'> {
 export interface Mark extends Trace<'Mark'> { }
 
 /**
- * A piece of material (paper or tape) glued onto the roll surface.
- * Glued-on features are typically used to cover perforations (for corrections)
- * or to reinforce damaged areas. They may themselves carry other features
- * such as writings or additional holes.
- * @see reo:GluedOn
+ * A piece of paper or tape glued onto the roll: a label naming it, a
+ * strip covering perforations, or a patch reinforcing a tear. A patch
+ * may itself carry other features, such as writings or holes.
+ * @see reo:Patch
  */
-export interface GluedOn extends RollFeature<'GluedOn', typeof conditions.GluedOn[number]>, OnAFace {
+export interface Patch extends RollFeature<'Patch', typeof conditions.Patch[number]>, OnAFace {
     /**
-     * The material of the glued-on feature.
+     * What the patch is made of.
      * @see crm:P45 consists of
      */
     material: 'paper' | 'tape';
@@ -238,8 +237,8 @@ export interface GluedOn extends RollFeature<'GluedOn', typeof conditions.GluedO
     rotation?: Measure<'deg'>;
 
     /**
-     * A glued-on feature itself may carry other features.
-     * Nested features do not need to be positioned explicitly.
+     * The features the patch itself carries. They need not be
+     * positioned explicitly.
      * @see crm:P46 is composed of
      */
     features?: NestedFeature[];
@@ -254,10 +253,10 @@ export type AnyFeature = HoleChain | Writing | Mark;
 
 /**
  * Anything found at a place of its own on the roll: a feature or a
- * glued-on patch. E24 Physical Human-Made Thing is the class both fall
- * under, E22 and E25 being its subclasses.
+ * patch. E24 Physical Human-Made Thing is the class both fall under,
+ * E22 and E25 being its subclasses.
  */
-export type FeatureOrPatch = AnyFeature | GluedOn;
+export type FeatureOrPatch = AnyFeature | Patch;
 
 /**
  * A feature without the place it would state of its own. The union is
@@ -275,12 +274,12 @@ export const isRollFeature = (obj: object): obj is FeatureOrPatch => {
     return 'type' in obj && isFeatureType(obj.type);
 }
 
-export const isGluedOn = <T extends NestedFeature>(feature: T): feature is T & GluedOn =>
-    feature.type === 'GluedOn';
+export const isPatch = <T extends NestedFeature>(feature: T): feature is T & Patch =>
+    feature.type === 'Patch';
 
 /** The features a feature bears: a patch those stated as parts of it, any other feature none. */
 export const featuresBorneBy = (feature: NestedFeature): NestedFeature[] =>
-    isGluedOn(feature) ? feature.features ?? [] : [];
+    isPatch(feature) ? feature.features ?? [] : [];
 
 /** The feature together with everything it bears, as deep as a patch on a patch goes. */
 export const withBorneFeatures = (feature: NestedFeature): NestedFeature[] =>

@@ -94,7 +94,7 @@ const madeOn = (copy: Json): Json[] => [
 ]
 
 const referencing = (nodes: Json[], patches: boolean): Json[] =>
-    nodes.filter(node => (node['@type'] === 'GluedOn') === patches && typeof node['@id'] === 'string')
+    nodes.filter(node => (node['@type'] === 'Patch') === patches && typeof node['@id'] === 'string')
         .map(node => ({ '@id': node['@id'] }))
 
 const featuresAmong = (nodes: Json[]): Json[] => referencing(nodes, false)
@@ -135,7 +135,7 @@ const withBearings = (value: Json): Json => {
             ...stating('composedOf', patchesAmong(made))
         }
     }
-    if (node['@type'] === 'GluedOn') return { ...node, ...stating('bears', featuresAmong(nodesIn(node.features))) }
+    if (node['@type'] === 'Patch') return { ...node, ...stating('bears', featuresAmong(nodesIn(node.features))) }
     return node
 }
 

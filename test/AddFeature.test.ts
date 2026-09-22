@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { Edition } from '../src/Edition'
 import { EditionView } from '../src/EditionView'
-import { GluedOn, Mark, NestedFeature, Transcription, Writing, withBorneFeatures } from '../src/Feature'
+import { Patch, Mark, NestedFeature, Transcription, Writing, withBorneFeatures } from '../src/Feature'
 import { featuresOf, isModification, Modification } from '../src/RollCopy'
 import { assignObject } from '../src/Assumption'
 import { addBorneFeature, addFeature } from '../src/editionOps'
@@ -31,7 +31,7 @@ const borne = (id: string): NestedFeature => ({
     transcription: assignObject<Transcription>({ type: 'text', id: `${id}-text`, text: 'Welte' })
 })
 
-const patch = (id: string): GluedOn => ({ type: 'GluedOn', id, ...at(100, 140), material: 'paper' })
+const patch = (id: string): Patch => ({ type: 'Patch', id, ...at(100, 140), material: 'paper' })
 
 /** A copy with a punched hole and a dating act that wrote one date on it. */
 const dated = (): Edition => editionOf(

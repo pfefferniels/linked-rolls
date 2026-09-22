@@ -77,7 +77,7 @@ reo:Writing
     a owl:Class ;
     rdfs:subClassOf crm:E25_Human-Made_Feature ;
     rdfs:label "Writing"@en ;
-    rdfs:comment """This class comprises the features of a roll that carry text: a printed title, a stamped catalogue number, a date written by hand. What the text says is given by P128 carries, how the writing was made by reo:technique and what it was made with by reo:medium. A writing is a feature of the paper it stands on, which may be the roll itself or a patch glued onto it; the label as a piece of paper is an instance of reo:GluedOn, and the print on it a writing the label bears."""@en ;
+    rdfs:comment """This class comprises the features of a roll that carry text: a printed title, a stamped catalogue number, a date written by hand. What the text says is given by P128 carries, how the writing was made by reo:technique and what it was made with by reo:medium. A writing is a feature of the paper it stands on, which may be the roll itself or a patch glued onto it; the label as a piece of paper is an instance of reo:Patch, and the print on it a writing the label bears."""@en ;
     skos:example "the pencilled '225. Fritz. 18. Jan 09.' on the Stanford copy of WM 225"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
@@ -89,11 +89,11 @@ reo:Mark
     skos:example "a pencil circle around a group of perforations, read as an instruction to punch"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
-reo:GluedOn
+reo:Patch
     a owl:Class ;
     rdfs:subClassOf crm:E22_Human-Made_Object ;
-    rdfs:label "Glued-On"@en ;
-    rdfs:comment """This class comprises the pieces of paper and tape glued onto a roll, which cover perforations or reinforce the paper. A patch is an object and not a feature: it was "a separate identifiable whole prior to" the act of gluing, as the scope note of E79 Part Addition requires of what is added, where a hole or a pencil line comes into being in the act that makes it. What it is made of is given by P45 consists of, and it may bear features of its own (P56 bears feature)."""@en ;
+    rdfs:label "Patch"@en ;
+    rdfs:comment """This class comprises the pieces of paper and tape glued onto a roll: a label naming the roll, a strip covering perforations, a piece reinforcing a tear. What a patch was glued on for is the purpose of the act that glued it on (P21 had general purpose) and no property of the patch, so that a label and a correction are instances of one class. A patch is an object and not a feature: it was "a separate identifiable whole prior to" the act of gluing, as the scope note of E79 Part Addition requires of what is added, where a hole or a pencil line comes into being in the act that makes it. What it is made of is given by P45 consists of, and it may bear features of its own (P56 bears feature)."""@en ;
     skos:example "the printed label glued to the leader of the Stanford copy of WM 225"@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
@@ -184,7 +184,7 @@ reo:medium
 reo:side
     a owl:ObjectProperty ;
     rdfs:subPropertyOf crm:P2_has_type ;
-    rdfs:domain [ a owl:Class ; owl:unionOf ( reo:Writing reo:Mark reo:GluedOn ) ] ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( reo:Writing reo:Mark reo:Patch ) ] ;
     rdfs:range crm:E55_Type ;
     rdfs:label "side"@en ;
     rdfs:comment """This property states which face of the paper a feature lies on: the types recto and verso at https://w3id.org/reo/type/. A chain of holes takes no side, going through the paper and lying on both faces at once, which is why the domain names the three kinds that sit on one. Recto is the face that meets the tracker bar as the roll plays."""@en ;
@@ -193,7 +193,7 @@ reo:side
 reo:rotation
     a owl:ObjectProperty ;
     rdfs:subPropertyOf crm:P43_has_dimension ;
-    rdfs:domain [ a owl:Class ; owl:unionOf ( reo:Writing reo:GluedOn ) ] ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( reo:Writing reo:Patch ) ] ;
     rdfs:range crm:E54_Dimension ;
     rdfs:label "rotation"@en ;
     rdfs:comment """This property states how far a writing or a patch stands askew on the paper, as a dimension in degrees (P90 has value, P91 has unit with the type deg). The angle is measured on the roll's own two axes, the one along the paper and the one across it, and not on any drawing of the roll: at zero a writing reads across the roll, from the bass side towards the treble, and a patch stands square to it, and the angle turns that reading direction towards the end of the roll, so that a right angle leaves a writing reading along the roll from its beginning towards its end. Seen with the beginning of the roll to the left and the bass side below, that is clockwise. Stating the angle on the roll's axes rather than on a face means that a writing on the verso takes the same frame as one on the recto. It is a subproperty of P43 has dimension rather than that property itself, so that an angle is told apart from the horizontal and vertical extents, which are dimensions of the same feature. A mark takes no rotation: the angle of a stroke is its shape, and what a mark's shape means is a reading of it rather than a property of it."""@en ;

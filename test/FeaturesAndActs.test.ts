@@ -4,7 +4,7 @@ import context from '../src/spec/context.json'
 import welteT100Context from '../src/spec/welte-t100.context.json'
 import welteLicenseeContext from '../src/spec/welte-licensee.context.json'
 import welteT98Context from '../src/spec/welte-t98.context.json'
-import { AnyFeature, GluedOn, Mark, NestedFeature, Transcription, Writing } from '../src/Feature'
+import { AnyFeature, Patch, Mark, NestedFeature, Transcription, Writing } from '../src/Feature'
 import { Modification } from '../src/RollCopy'
 import { assignObject } from '../src/Assumption'
 import { asJsonLd } from '../src/asJsonLd'
@@ -68,8 +68,8 @@ const writing: Writing = {
 
 const mark: Mark = { type: 'Mark', id: 'circle', ...at(80, 90, 47), medium: 'pencil' }
 
-const patch: GluedOn = {
-    type: 'GluedOn', id: 'patch', ...at(100, 140, 47), material: 'paper', side: 'recto', features: [stamp]
+const patch: Patch = {
+    type: 'Patch', id: 'patch', ...at(100, 140, 47), material: 'paper', side: 'recto', features: [stamp]
 }
 
 const punched: AnyFeature[] = [hole('perforation', 10, 12, 47)]
@@ -134,7 +134,7 @@ describe('the kinds of feature', () => {
         expect(classOf(all, of('perforation'))).toEqual([`${reo}HoleChain`])
         expect(classOf(all, of('date'))).toEqual([`${reo}Writing`])
         expect(classOf(all, of('circle'))).toEqual([`${reo}Mark`])
-        expect(classOf(all, of('patch'))).toEqual([`${reo}GluedOn`])
+        expect(classOf(all, of('patch'))).toEqual([`${reo}Patch`])
     })
 
     it('tell how a trace was made from what it was made with', async () => {

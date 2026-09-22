@@ -18,7 +18,7 @@
     "HoleChain": "reo:HoleChain",
     "Mark": "reo:Mark",
     "Writing": "reo:Writing",
-    "GluedOn": "reo:GluedOn",
+    "Patch": "reo:Patch",
     "Attachment": "crm:E79_Part_Addition",
     "Removal": "crm:E80_Part_Removal",
     "Alteration": "crm:E12_Production",

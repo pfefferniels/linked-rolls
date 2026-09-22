@@ -30,6 +30,15 @@ const renamedKeys: Record<string, string> = {
     classification: 'editType'
 }
 
+/**
+ * Classes of feature renamed since: a chain of holes was named after a
+ * single hole, and a patch after the act that glued it on.
+ */
+const renamedTypes: Record<string, string> = {
+    Hole: 'HoleChain',
+    GluedOn: 'Patch'
+}
+
 const referenceKeys = ['alignedWith', 'pairedWith', 'basedOn']
 
 /**
@@ -58,9 +67,12 @@ const withTypology = (node: Json): Json => {
     return node
 }
 
-/** A chain of holes written while its class was named after a single hole. */
-const withHoleChainType = (node: Json): Json =>
-    node['@type'] === 'Hole' ? { ...node, '@type': 'HoleChain' } : node
+const withRenamedType = (node: Json): Json =>
+    Object.hasOwn(renamedTypes, node['@type']) ? { ...node, '@type': renamedTypes[node['@type']] } : node
+
+/** Whether the feature is of the class under either name, since a node is migrated before its children are. */
+const isOfType = (type: string) => (feature: Json): boolean =>
+    feature?.['@type'] === type || renamedTypes[feature?.['@type']] === type
 
 /** A version once stated whether it served as a master or stood on one copy. */
 const withoutVersionType = (node: Json): Json => {
@@ -239,9 +251,7 @@ const featuresOf = (copy: Json): Json[] => [
     ...(Array.isArray(copy.production?.produced) ? copy.production.produced : [])
 ]
 
-/** A chain of holes under either name, since a node is migrated before its children are. */
-const isHoleChain = (feature: Json): boolean =>
-    feature?.['@type'] === 'HoleChain' || feature?.['@type'] === 'Hole'
+const isHoleChain = isOfType('HoleChain')
 
 /**
  * A copy read on a roll reader was stated as a recording before a sound
@@ -260,7 +270,7 @@ const withoutFeatureKind = (node: Json): Json => {
     return rest
 }
 
-const isPatch = (feature: Json): boolean => feature?.['@type'] === 'GluedOn'
+const isPatch = isOfType('Patch')
 
 /**
  * A feature a patch bears was sometimes written without an id, and what
@@ -359,7 +369,7 @@ const withTimeSpanDates = (node: Json): Json => {
 }
 
 const migrateNode = (node: Json): Json =>
-    [withRenamedKeys, withTypology, withHoleChainType, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
+    [withRenamedKeys, withTypology, withRenamedType, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
         withPerforator, withProductionNodes, withTypedPerforator, withScale, withDerivationList, withReadingKind, withTimeSpanDates,
         withoutFeatureKind, withBorneFeaturesNamed, withFeaturesInActs, withDriveOfStaggering, withoutPattern]
         .reduce((result, step) => step(result), node)

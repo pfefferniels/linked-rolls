@@ -77,7 +77,10 @@ stagger is a mark of the perforator, and `reo:drive` states it there.
 Later that month `reo:Hole` became `reo:HoleChain`. The perforator cuts
 a held note as a row of holes with bridges of paper between them, most
 instances of the class were such chains, and a chain is several holes.
-`migrate` reads the old type.
+`migrate` reads the old type. `reo:GluedOn` became `reo:Patch` on the
+same day. It was the one class named after how its instances came
+about, which the attachment that glued them on states already.
+`migrate` reads that old type as well.
 
 ## Publishing
 
