@@ -34,7 +34,6 @@ const surveyed = (): Perforator => ({
     id: 'perforator-first',
     drive: { id: ramHead },
     condition: {
-        type: 'ConditionState',
         conditionType: 'setting',
         punchDiameter: { value: mm(1.86), unit: 'mm' },
         chainPitch: {
@@ -71,7 +70,7 @@ describe('the perforator a copy was punched on', () => {
         expect(copy.production?.perforator).toEqual({
             type: 'Perforator',
             id: 'perforator_first',
-            condition: { type: 'ConditionState', conditionType: 'setting', punchDiameter: { value: 2.2, unit: 'mm' } }
+            condition: { conditionType: 'setting', punchDiameter: { value: 2.2, unit: 'mm' } }
         })
     })
 

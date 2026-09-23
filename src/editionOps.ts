@@ -141,7 +141,6 @@ export const createVersion = (copy: RollCopy): EditionOp =>
         const bar = barOf(copy)
         draft.copies.push(copy)
         draft.versions.push({
-            type: 'Version',
             id: v4(),
             system: systemOf(bar),
             edits: asSymbols(featuresOf(copy), bar).map(insertion),
@@ -1139,7 +1138,6 @@ export const deriveVersion = (versionId: string, editIds: readonly string[]): Ed
         const moved = editsOf(version).filter(edit => chosen.has(edit.id))
         if (version.edits) version.edits = without(version.edits, edit => chosen.has(edit.id))
         draft.versions.push({
-            type: 'Version',
             id: v4(),
             system: stateOf<Version>(version).system,
             basedOn: [assignReference(versionId)],

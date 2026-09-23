@@ -55,18 +55,18 @@ const featuresIn = (copy: any): any[] => {
 }
 
 describe('migrating a 0.1 edition', () => {
-    it('types versions as versions and gives conditions their typology key', () => {
+    it('leaves versions and conditions untyped and gives conditions their typology key', () => {
         const migrated = migrate(edition01())
         expect(migrated.versions.length).toBeGreaterThan(0)
         migrated.versions.forEach((version: any) => {
-            expect(version['@type']).toEqual('Version')
+            expect(version).not.toHaveProperty('@type')
             expect(version).not.toHaveProperty('versionType')
         })
 
         const conditions = migrated.copies.flatMap((copy: any) => copy.conditions)
         expect(conditions.length).toBeGreaterThan(0)
         conditions.forEach((condition: any) => {
-            expect(condition['@type']).toEqual('ConditionState')
+            expect(condition).not.toHaveProperty('@type')
             expect(condition.conditionType).toBeTruthy()
         })
     })
@@ -305,21 +305,20 @@ describe('migrating a 0.1 edition', () => {
             }]
         })
         expect(migrated.copies[0].measurements).toEqual({ shift: { horizontal: 1, vertical: 0 }, scale: 1.02 })
-        expect(migrated.copies[0].conditions[0]).toMatchObject({ '@type': 'ConditionState', conditionType: 'paper-stretch', factor: 1.02 })
+        expect(migrated.copies[0].conditions[0]).toEqual({ conditionType: 'paper-stretch', factor: 1.02 })
         expect(migrated.copies[1].measurements).toEqual({})
     })
 
     it('imports a 0.1 edition as the current model', () => {
         const imported = importJsonLd(edition01())
-        expect(imported.versions[0]).toMatchObject({ type: 'Version' })
+        expect(imported.versions[0]).not.toHaveProperty('type')
         expect(imported.versions[0].system.id).toEqual('https://w3id.org/reo/type/system/welte-t100')
         expect(imported.copies[0].keeper).toEqual({ name: 'Stanford', sameAs: [] })
     })
 
     it('drops the type a version stated as an edition or a unicum', () => {
         const migrated = migrate({ versions: [{ '@type': 'Version', '@id': 'A', versionType: 'unicum' }] })
-        expect(migrated.versions[0]).toMatchObject({ '@type': 'Version', '@id': 'A' })
-        expect(migrated.versions[0]).not.toHaveProperty('versionType')
+        expect(migrated.versions[0]).toEqual({ '@id': 'A' })
     })
 
     /**

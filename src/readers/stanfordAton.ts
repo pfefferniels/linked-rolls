@@ -238,7 +238,6 @@ export function readFromStanfordAton(
                     type: 'Perforator',
                     id: `perforator_${v4()}`,
                     condition: {
-                        type: 'ConditionState',
                         conditionType: 'setting',
                         punchDiameter: { value: punchDiameter, unit: 'mm' }
                     }

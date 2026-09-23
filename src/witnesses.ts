@@ -155,7 +155,7 @@ export const carriageProblems = (view: EditionView): CarriageProblem[] => {
         const version = idOf(statement)
         return [
             ...(carrying.has(copy.id) ? [{ copy: copy.id, version, problem: 'stated-beside-carriers' as const }] : []),
-            ...(view.get<Version>(version)?.type === 'Version' ? [] : [{ copy: copy.id, version, problem: 'version-missing' as const }])
+            ...(view.edition.versions.some(({ id }) => id === version) ? [] : [{ copy: copy.id, version, problem: 'version-missing' as const }])
         ]
     }))
 }

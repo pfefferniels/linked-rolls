@@ -10,12 +10,12 @@ import { attachment, copy, editionOf, hole, note, version } from './editionFixtu
 import { mm, track } from '../src/Quantity'
 
 const damage = <T extends FeatureConditionType>(conditionType: T): ObjectAssumption<ConditionState<T>> =>
-    assignObject<ConditionState<T>>({ type: 'ConditionState', conditionType })
+    assignObject<ConditionState<T>>({ conditionType })
 
 const general = (description: string): ObjectAssumption<GeneralRollCondition> =>
-    assignObject<GeneralRollCondition>({ type: 'ConditionState', conditionType: 'general', description })
+    assignObject<GeneralRollCondition>({ conditionType: 'general', description })
 
-const stretch = assignObject<PaperStretch>({ type: 'ConditionState', conditionType: 'paper-stretch', factor: 1.02 })
+const stretch = assignObject<PaperStretch>({ conditionType: 'paper-stretch', factor: 1.02 })
 
 const at = (from: number, to: number) => ({
     horizontal: { unit: 'mm' as const, from: mm(from), to: mm(to) },

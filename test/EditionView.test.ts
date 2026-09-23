@@ -154,7 +154,7 @@ describe('the paper a version ran on', () => {
     it('leaves out a scale put down to the copy having stretched', () => {
         const edition = twoIssues()
         edition.copies[1].conditions = [assignObject<PaperStretch>({
-            type: 'ConditionState', conditionType: 'paper-stretch', factor: 1.29072
+            conditionType: 'paper-stretch', factor: 1.29072
         })]
 
         const view = new EditionView(edition)

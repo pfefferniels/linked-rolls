@@ -98,7 +98,7 @@ describe('creating a version from a copy', () => {
 })
 
 describe('aligning a copy', () => {
-    const stretch = assignObject<PaperStretch>({ type: 'ConditionState', conditionType: 'paper-stretch', factor: 1.5 })
+    const stretch = assignObject<PaperStretch>({ conditionType: 'paper-stretch', factor: 1.5 })
     const shift = { horizontal: mm(2), vertical: track(1) }
     const holeOf = (edition: Edition) => featuresOf(edition.copies[1])[0]
 

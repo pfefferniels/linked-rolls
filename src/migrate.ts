@@ -196,7 +196,6 @@ const withPerforator = (node: Json): Json => {
             perforator: {
                 ...perforator,
                 condition: {
-                    '@type': 'ConditionState',
                     conditionType: 'setting',
                     ...perforator.condition,
                     punchDiameter: diameter
@@ -235,6 +234,13 @@ const withDriveOfStaggering = (node: Json): Json => {
 const withoutPattern = (node: Json): Json => {
     if (node['@type'] !== 'HoleChain' || !Object.hasOwn(node, 'pattern')) return node
     const { pattern: _moved, ...rest } = node
+    return rest
+}
+
+/** A version and a condition state once stated their class, which the key they stand under entails. */
+const withoutEntailedType = (node: Json): Json => {
+    if (node['@type'] !== 'Version' && node['@type'] !== 'ConditionState') return node
+    const { '@type': _entailed, ...rest } = node
     return rest
 }
 
@@ -379,7 +385,7 @@ const withTimeSpanDates = (node: Json): Json => {
 const migrateNode = (node: Json): Json =>
     [withRenamedKeys, withTypology, withRenamedType, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
         withPerforator, withProductionNodes, withTypedPerforator, withScale, withDerivationList, withReadingKind, withTimeSpanDates,
-        withoutFeatureKind, withBorneFeaturesNamed, withFeaturesInActs, withDriveOfStaggering, withoutPattern, withoutBearings]
+        withoutFeatureKind, withBorneFeaturesNamed, withFeaturesInActs, withDriveOfStaggering, withoutPattern, withoutBearings, withoutEntailedType]
         .reduce((result, step) => step(result), node)
 
 /** The items each walked, or the very same list where the walk changed none. */
@@ -559,13 +565,17 @@ const referenceOf = (statement: Json): QuotedReference => {
     }
 }
 
-/** The document with each quoted reference back on the node that makes it, a node being what has a type. */
+/** Whether the object states anything beside its id, which a reference to a node does not. */
+const isNode = (value: Json): boolean =>
+    typeof value['@id'] === 'string' && Object.keys(value).some(key => key !== '@id' && key !== '@annotation')
+
+/** The document with each quoted reference back on the node that makes it. */
 const withReferencesOn = (value: Json, bySubject: ReadonlyMap<string, QuotedReference[]>): Json => {
     if (Array.isArray(value)) return value.map(item => withReferencesOn(item, bySubject))
     if (!value || typeof value !== 'object') return value
 
     const walked = Object.fromEntries(Object.entries(value).map(([key, child]) => [key, withReferencesOn(child, bySubject)]))
-    const references = typeof value['@id'] === 'string' && value['@type'] !== undefined
+    const references = isNode(value)
         ? bySubject.get(value['@id']) ?? []
         : []
     return references.reduce((node: Json, { key, listed, reference }) =>

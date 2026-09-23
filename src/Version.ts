@@ -79,7 +79,7 @@ export interface VersionCreation {
  * it describes.
  * @see lrmoo:F2 Expression
  */
-export interface Version extends WithId, WithType<'Version'> {
+export interface Version extends WithId {
     /**
      * The reproducing system this version is coded for. One roll was
      * often issued for several of them, and a version is a reading in

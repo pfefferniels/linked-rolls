@@ -13,7 +13,6 @@ import { Version } from '../src/Version'
 import { copy, editionOf, hole, note } from './editionFixture'
 
 const version = (id: string, bar: TrackerBar, basedOn?: string): Version => ({
-    type: 'Version',
     id,
     system: systemOf(bar),
     edits: [],

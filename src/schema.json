@@ -1666,17 +1666,10 @@
               "description": "A free-text description of the condition, providing details beyond the type classification.",
               "type": "string",
               "ontology": "crm:P3 has note"
-            },
-            "@type": {
-              "const": "ConditionState",
-              "description": "The type discriminator for this object.",
-              "type": "string",
-              "ontology": "rdf:type"
             }
           },
           "required": [
-            "conditionType",
-            "@type"
+            "conditionType"
           ],
           "type": "object"
         },
@@ -1716,18 +1709,11 @@
               "description": "The stretch factor, e.g. 1.02 means the paper has stretched by 2% compared to its original dimensions.",
               "type": "number",
               "ontology": "rdf:value"
-            },
-            "@type": {
-              "const": "ConditionState",
-              "description": "The type discriminator for this object.",
-              "type": "string",
-              "ontology": "rdf:type"
             }
           },
           "required": [
             "conditionType",
-            "factor",
-            "@type"
+            "factor"
           ],
           "type": "object"
         }
@@ -1970,17 +1956,10 @@
           "description": "A free-text description of the condition, providing details beyond the type classification.",
           "type": "string",
           "ontology": "crm:P3 has note"
-        },
-        "@type": {
-          "const": "ConditionState",
-          "description": "The type discriminator for this object.",
-          "type": "string",
-          "ontology": "rdf:type"
         }
       },
       "required": [
-        "conditionType",
-        "@type"
+        "conditionType"
       ],
       "type": "object"
     },
@@ -2019,17 +1998,10 @@
           "description": "A free-text description of the condition, providing details beyond the type classification.",
           "type": "string",
           "ontology": "crm:P3 has note"
-        },
-        "@type": {
-          "const": "ConditionState",
-          "description": "The type discriminator for this object.",
-          "type": "string",
-          "ontology": "rdf:type"
         }
       },
       "required": [
-        "conditionType",
-        "@type"
+        "conditionType"
       ],
       "type": "object"
     },
@@ -2065,17 +2037,10 @@
           "description": "A free-text description of the condition, providing details beyond the type classification.",
           "type": "string",
           "ontology": "crm:P3 has note"
-        },
-        "@type": {
-          "const": "ConditionState",
-          "description": "The type discriminator for this object.",
-          "type": "string",
-          "ontology": "rdf:type"
         }
       },
       "required": [
-        "conditionType",
-        "@type"
+        "conditionType"
       ],
       "type": "object"
     },
@@ -2111,17 +2076,10 @@
           "description": "A free-text description of the condition, providing details beyond the type classification.",
           "type": "string",
           "ontology": "crm:P3 has note"
-        },
-        "@type": {
-          "const": "ConditionState",
-          "description": "The type discriminator for this object.",
-          "type": "string",
-          "ontology": "rdf:type"
         }
       },
       "required": [
-        "conditionType",
-        "@type"
+        "conditionType"
       ],
       "type": "object"
     },
@@ -2160,17 +2118,10 @@
           "description": "A free-text description of the condition, providing details beyond the type classification.",
           "type": "string",
           "ontology": "crm:P3 has note"
-        },
-        "@type": {
-          "const": "ConditionState",
-          "description": "The type discriminator for this object.",
-          "type": "string",
-          "ontology": "rdf:type"
         }
       },
       "required": [
-        "conditionType",
-        "@type"
+        "conditionType"
       ],
       "type": "object"
     },
@@ -2702,17 +2653,10 @@
           "$ref": "#/definitions/ObjectAssumption%3CMeasure%3C%22mm%22%3E%3E",
           "description": "The diameter of the round punch. Taken across the roll, it is the one value of the setting that neither the scale along the roll nor the shrinkage of the paper enters.",
           "ontology": "reo:punchDiameter"
-        },
-        "@type": {
-          "const": "ConditionState",
-          "description": "The type discriminator for this object.",
-          "type": "string",
-          "ontology": "rdf:type"
         }
       },
       "required": [
-        "conditionType",
-        "@type"
+        "conditionType"
       ],
       "type": "object",
       "ontology": "crm:E3 Condition State"
@@ -3297,19 +3241,12 @@
         "@id": {
           "description": "A unique identifier for this object.",
           "type": "string"
-        },
-        "@type": {
-          "const": "Version",
-          "description": "The type discriminator for this object.",
-          "type": "string",
-          "ontology": "rdf:type"
         }
       },
       "required": [
         "@id",
         "motivations",
-        "system",
-        "@type"
+        "system"
       ],
       "type": "object",
       "ontology": "lrmoo:F2 Expression"

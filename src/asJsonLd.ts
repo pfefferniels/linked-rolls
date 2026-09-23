@@ -62,22 +62,13 @@ const asJsonLdEntity = (obj: object) => {
  * reading as whichever came last. An embedded context merges with the
  * active one, so the shared prefixes survive.
  */
-const withSystemContexts = (node: any): any => {
-    if (Array.isArray(node)) return node.map(withSystemContexts)
-    if (node === null || typeof node !== 'object') return node
-
-    const walked = Object.fromEntries(
-        Object.entries(node).map(([key, value]) => [key, withSystemContexts(value)])
-    )
-
-    const system = node['@type'] === 'Version'
-        ? systemIdIn(node.system?.['@id'])
-        : undefined
-
-    return system
-        ? { '@context': `https://w3id.org/reo/${system}/context.jsonld`, ...walked }
-        : walked
+const withSystemContext = (version: any): any => {
+    const system = systemIdIn(version?.system?.['@id'])
+    return system ? { '@context': `https://w3id.org/reo/${system}/context.jsonld`, ...version } : version
 }
+
+const withSystemContexts = (edition: any): any =>
+    Array.isArray(edition.versions) ? { ...edition, versions: edition.versions.map(withSystemContext) } : edition
 
 type Json = any
 
@@ -196,7 +187,6 @@ export const asJsonLd = (edition: Edition) => {
                 '@base': edition.base
             }
         ],
-        '@type': "Edition",
         '@id': edition.base,
         ...rest,
         ...(quoted.length > 0 && { '@included': quoted })

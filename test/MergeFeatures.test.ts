@@ -19,7 +19,7 @@ const partTwo = depicted(hole('part-two', 1006, 1010, 47), 'canvas#xywh=0,12,20,
 const elsewhere = hole('other', 1020, 1030, 49)
 
 const damage = <T extends string>(conditionType: T): ObjectAssumption<ConditionState<T>> =>
-    assignObject<ConditionState<T>>({ type: 'ConditionState', conditionType })
+    assignObject<ConditionState<T>>({ conditionType })
 
 const torn = damage(conditions.HoleChain[0])
 

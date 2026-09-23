@@ -1,4 +1,3 @@
-import { WithType } from "./utils.js";
 
 /**
  * Physical condition of a roll or
@@ -6,7 +5,7 @@ import { WithType } from "./utils.js";
  * or unsuccessful perforation).
  * @see crm:E3 Condition State
  */
-export interface ConditionState<T extends string> extends WithType<'ConditionState'> {
+export interface ConditionState<T extends string> {
     /**
      * The kind of condition, from the list the roll or
      * the kind of feature allows.

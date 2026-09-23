@@ -25,7 +25,7 @@ const believed = (...reasons: AnyArgumentation[]): Assumption => ({
 const repaired = (modifications: Modification[], ...reasons: AnyArgumentation[]): RollCopy => ({
     ...copy('first', []),
     modifications,
-    conditions: [{ type: 'ConditionState', conditionType: 'general', ...believed(...reasons) }]
+    conditions: [{ conditionType: 'general', ...believed(...reasons) }]
 })
 
 const repairs = () => [
@@ -128,7 +128,6 @@ describe('removing what a modification or a comprehension names', () => {
         const held: RollCopy = {
             ...copy('second', [hole('own', 2000, 2010, 47)]),
             conditions: [{
-                type: 'ConditionState',
                 conditionType: 'general',
                 ...believed(comprehension('patch', 'own'))
             }]

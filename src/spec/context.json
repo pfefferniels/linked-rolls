@@ -12,8 +12,6 @@
     "lrmoo": "http://iflastandards.info/ns/lrm/lrmoo/",
     "reo": "https://w3id.org/reo/",
 
-    "Edition": "lrmoo:F2_Expression",
-    "Version": "lrmoo:F2_Expression",
     "RollCopy": "reo:RollCopy",
     "HoleChain": "reo:HoleChain",
     "Mark": "reo:Mark",
@@ -23,7 +21,6 @@
     "Removal": "crm:E80_Part_Removal",
     "Alteration": "crm:E12_Production",
     "Perforator": "crm:E22_Human-Made_Object",
-    "ConditionState": "crm:E3_Condition_State",
     "note": "reo:Note",
     "expression": "reo:Expression",
     "text": {

@@ -55,7 +55,7 @@ const labelled = (...reasons: AnyArgumentation[]): Edition => {
     }
     const second: RollCopy = {
         ...copy('second', [hole('own', 2000, 2010, 47)]),
-        conditions: [{ type: 'ConditionState', conditionType: 'general', ...believed(...reasons) }]
+        conditions: [{ conditionType: 'general', ...believed(...reasons) }]
     }
 
     return editionOf(

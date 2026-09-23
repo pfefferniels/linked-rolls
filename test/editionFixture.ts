@@ -58,7 +58,6 @@ export const expression = (id: string, expressionType: string, ...carriers: stri
 export const label = (id: string, text: string): Text => ({ type: 'text', id, text, carriers: [] })
 
 export const version = (id: string, edits: Version['edits'], basedOn?: string): Version => ({
-    type: 'Version',
     id,
     system: systemOf(welteT100),
     edits,
