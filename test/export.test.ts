@@ -17,7 +17,7 @@ const edition = () =>
 describe('Export', () => {
     it('serialises an edition', () => {
         const serialized = asJsonLd(edition())
-        expect(serialized['@type']).toEqual('Edition')
+        expect(serialized).not.toHaveProperty('@type')
         expect(serialized.copies).toHaveLength(3)
     })
 

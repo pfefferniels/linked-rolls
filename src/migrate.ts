@@ -476,6 +476,13 @@ const onOwnBar = (copy: Json, rollSystem: Json): Json => {
  * roll that named no system was a T-100 roll, and the text a copy's
  * production gave for it is kept as the system's name.
  */
+/** An export once stated the class of the edition, which R17i was created by entails. */
+const withoutEditionType = (edition: Json): Json => {
+    if (edition['@type'] !== 'Edition') return edition
+    const { '@type': _entailed, ...rest } = edition
+    return rest
+}
+
 const withSystems = (edition: Json): Json => {
     if (!edition.roll || !namesSystemOnTheRoll(edition)) return edition
 
@@ -600,7 +607,7 @@ const withQuotedStatementsInPlace = (edition: Json): Json => {
     return withReferencesOn({ ...rest, ...(others.length > 0 && { '@included': others }) }, bySubject)
 }
 
-const editionSteps = [withQuotedStatementsInPlace, withSystems, withEditors, withDerivationTolerance]
+const editionSteps = [withoutEditionType, withQuotedStatementsInPlace, withSystems, withEditors, withDerivationTolerance]
 
 export const migrate = (edition: Json): Json =>
     walk(editionSteps.reduce((result, step) => step(result), edition))
