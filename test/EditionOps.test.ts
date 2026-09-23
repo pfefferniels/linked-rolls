@@ -3,7 +3,7 @@ import { produce } from 'immer'
 import { Edition } from '../src/Edition'
 import { EditionView, Path } from '../src/EditionView'
 import { Edit } from '../src/Edit'
-import { AnySymbol, Expression, Note, placementsOf } from '../src/Symbol'
+import { AnySymbol, Expression, isCommand, Note, placementsOf } from '../src/Symbol'
 import { featuresOf, PaperSpeed, PaperStretch } from '../src/RollCopy'
 import { constraintProblems } from '../src/constraints'
 import { Assumption, assignObject, idOf, idsOf } from '../src/Assumption'
@@ -20,8 +20,13 @@ import { welteT98 } from '../src/systems/welteT98/bar'
 import { welteT100 } from '../src/systems/welteT100/bar'
 
 const viewOf = (edition: Edition) => new EditionView(edition)
-const noteIn = (edition: Edition) => viewOf(edition).get<Note>('note')!
-const forzandoOffIn = (edition: Edition) => viewOf(edition).get<Expression>('forzando-off')!
+const commandIn = (edition: Edition, id: string) => {
+    const symbol = viewOf(edition).symbol(id)
+    if (!isCommand(symbol)) throw new Error(`no command ${id}`)
+    return symbol
+}
+const noteIn = (edition: Edition) => commandIn(edition, 'note')
+const forzandoOffIn = (edition: Edition) => commandIn(edition, 'forzando-off')
 const editsOf = (edition: Edition, versionId: string) => edition.versions.find(v => v.id === versionId)!.edits
 const insertedIds = (edit: Edit) => edit.insert?.map(symbol => symbol.id) ?? []
 const exchangeOf = (edit: Edit) => [insertedIds(edit), edit.delete ?? []]
@@ -485,7 +490,7 @@ describe('placing and pairing commands', () => {
         const paired = produce(before, pairCommands(view, 'forzando-off', 'forzando-on'))
 
         expect(forzandoOffIn(paired).pairedWith).toEqual({ id: 'forzando-on' })
-        expect(viewOf(paired).get<Expression>('forzando-on')?.pairedWith).toBeUndefined()
+        expect(commandIn(paired, 'forzando-on').pairedWith).toBeUndefined()
 
         const next = produce(paired, unpairCommand(view, 'forzando-off'))
         expect('pairedWith' in forzandoOffIn(next)).toBe(false)
@@ -595,7 +600,7 @@ describe('attaching a version coded for another system', () => {
     })
 
     it('collates the notes away, the two scales agreeing on the pitch', () => {
-        const carried = viewOf(attached()).get<Note>('note')!
+        const carried = noteIn(attached())
         expect(idsOf(carried.carriers)).toEqual(['hole-note', 'hole-note-green'])
         expect(editsOf(attached(), 'B').flatMap(edit => insertedIds(edit))).not.toContain('note-green')
     })

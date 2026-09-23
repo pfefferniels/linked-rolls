@@ -44,7 +44,7 @@ const writtenBefore = (tolerance: CollationTolerance) => {
     }
 }
 
-const carriersOfNote = (edition: Edition) => idsOf(new EditionView(edition).get<Note>('note')!.carriers)
+const carriersOfNote = (edition: Edition) => idsOf(new EditionView(edition).symbol('note')!.carriers)
 
 /** Every feature of a migrated copy, whichever act states it, and whatever a patch bears. */
 const featuresIn = (copy: any): any[] => {

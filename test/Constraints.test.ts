@@ -42,7 +42,7 @@ const setUp = () => {
 
     const copyOf = (featureId: string) => view.getPath(featureId)?.[1]
     const onsetOn = (symbol: Note | Expression, copy: number | string | undefined) => {
-        const carrier = view.carriersOf(symbol).find(c => copyOf(c.id) === copy)
+        const carrier = view.placedCarriersOf(symbol).find(c => copyOf(c.id) === copy)
         if (!carrier) throw new Error(`${symbol.id} has no carrier on copy ${copy}`)
         return carrier.horizontal.from
     }
@@ -52,7 +52,7 @@ const setUp = () => {
      * onset there, keeping each hole's length.
      */
     const placeBeside = (symbol: Note | Expression, reference: Note | Expression, distances: readonly number[]) => {
-        view.carriersOf(symbol).forEach(({ id, horizontal }) => {
+        view.placedCarriersOf(symbol).forEach(({ id, horizontal }) => {
             const copy = copyOf(id)
             const distance = typeof copy === 'number' ? distances[copy] : undefined
             if (distance === undefined) throw new Error(`no distance for copy ${copy}`)
@@ -211,7 +211,7 @@ describe('reporting constraints that cannot hold', () => {
 
         expect(reported.length).toBe(11)
         expect(new Set(reported.map(problem => problem.version)).size).toBe(1)
-        reported.forEach(({ symbol }) => expect(view.get(symbol)).toBeUndefined())
+        reported.forEach(({ symbol }) => expect(view.symbol(symbol)).toBeUndefined())
     })
 
     /**
@@ -228,8 +228,8 @@ describe('reporting constraints that cannot hold', () => {
 
         expect(new Set(reported.map(problem => problem.symbol)).size).toBe(4)
         reported.forEach(({ symbol }) => {
-            const carried = view.get<Note | Expression>(symbol)!
-            const tracks = view.carriersOf(carried).map(carrier => carrier.vertical.from)
+            const carried = view.symbol(symbol)!
+            const tracks = view.placedCarriersOf(carried).map(carrier => carrier.vertical.from)
             expect(new Set(tracks).size).toBeGreaterThan(1)
         })
     })

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { Edition } from '../src/Edition'
 import { EditionView } from '../src/EditionView'
-import { AnyFeature } from '../src/Feature'
+import { AnyFeature, isPlaced } from '../src/Feature'
 import { revertShortening, shortenChains, tooShortToShorten } from '../src/alignment'
 import { shortenCopy, unshortenCopy } from '../src/editionOps'
 import { mm } from '../src/Quantity'
@@ -27,7 +27,11 @@ const read = (): Edition => editionOf(
     []
 )
 
-const holeIn: (edition: Edition, id: string) => { horizontal: { from: number, to: number } } = (edition, id) => new EditionView(edition).get<{ horizontal: { from: number, to: number } }>(id)!
+const holeIn = (edition: Edition, id: string) => {
+    const feature = new EditionView(edition).feature(id)
+    if (!feature || !isPlaced(feature)) throw new Error(`no placed feature ${id}`)
+    return feature
+}
 const lengthOf = (edition: Edition, id: string) => holeIn(edition, id).horizontal.to - holeIn(edition, id).horizontal.from
 
 describe('taking a pneumatic reader\'s extension off a copy', () => {
@@ -94,7 +98,7 @@ describe('a hole no longer than the extension', () => {
         const copy = withAShortHole().copies[0]
         expect(() => shortenChains(mm(1.6), copy)).toThrow()
         expect(copy.ops).toEqual([])
-        expect(lengthOf({ copies: [copy] } as Edition, 'ordinary')).toBeCloseTo(40, 6)
+        expect(lengthOf({ ...withAShortHole(), copies: [copy] }, 'ordinary')).toBeCloseTo(40, 6)
     })
 
     it('names none where every hole is longer than the extension', () => {

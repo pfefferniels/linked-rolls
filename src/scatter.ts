@@ -9,7 +9,7 @@ import {
 } from "./statistics.js"
 import { AnySymbol } from "./Symbol.js"
 import { groupBy } from "./utils.js"
-import { deletedBy, insertedBy, Version } from "./Version.js"
+import { deletedBy, insertedBy } from "./Version.js"
 
 /**
  * How far the copies of a roll disagree about where a symbol lies, and
@@ -72,7 +72,7 @@ export const readingsOf = (
     const tested = sitsOn(view, copies)
 
     return symbols.flatMap((symbol): Reading[] => {
-        const carriers = view.carriersOf(symbol)
+        const carriers = view.placedCarriersOf(symbol)
         const here = carriers.filter(tested)
         const there = carriers.filter(carrier => !tested(carrier))
         if (here.length === 0 || there.length === 0) return []
@@ -464,12 +464,12 @@ const copiesBearing = (view: EditionView, symbols: readonly Readonly<AnySymbol>[
  * stopped saying and an editor has to.
  */
 export const sidesOf = (view: EditionView, versionId: string): Sides | undefined => {
-    const version = view.get<Version>(versionId)
+    const version = view.version(versionId)
     if (!version) return undefined
 
     return {
         child: copiesBearing(view, insertedBy(version)),
-        parent: copiesBearing(view, view.getAll<AnySymbol>(deletedBy(version)))
+        parent: copiesBearing(view, view.symbols(deletedBy(version)))
     }
 }
 

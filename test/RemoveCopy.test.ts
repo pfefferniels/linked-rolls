@@ -7,7 +7,7 @@ import { idsOf } from '../src/Assumption'
 import { removeCopy, symbolsCarriedOnlyBy } from '../src/editionOps'
 import { edition } from './editionFixture'
 
-const noteIn = (edition: Edition) => new EditionView(edition).get<Note>('note')!
+const noteIn = (edition: Edition) => new EditionView(edition).symbol('note')!
 
 describe('removing a copy', () => {
     it('names the symbols only the copy carries', () => {

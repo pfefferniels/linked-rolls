@@ -134,7 +134,7 @@ describe('connecting two versions where an editor has already read the differenc
         const next = connected()
 
         expect(editsIn(next, 'B').map(edit => edit.id)).not.toContain('bare')
-        expect(idsOf(new EditionView(next).get<Note>('shared')!.carriers))
+        expect(idsOf(new EditionView(next).symbol('shared')!.carriers))
             .toEqual(['hole-shared', 'hole-shared-too'])
     })
 

@@ -1,5 +1,5 @@
 import { Edition } from "./Edition.js";
-import { HorizontalSpan, FeatureOrPatch, NestedFeature, withBorneFeatures } from "./Feature.js";
+import { FeatureOrPatch, HorizontalSpan, isPlaced, NestedFeature, withBorneFeatures } from "./Feature.js";
 import { AnySymbol, Expression, Note } from "./Symbol.js";
 import { deletedBy, insertedBy, principalDerivationOf, Version } from "./Version.js";
 import { NegotiatedEvent } from "./ReproducingSystem.js";
@@ -21,6 +21,9 @@ export const getAt = <T,>(path: Path, obj: unknown): T | undefined => {
 
 /** Keys under which an object names others by id, singly or in a list. */
 const referenceKeys = ['delete', 'comprehends', 'motivation', 'premises', 'used'] as const;
+
+const byIdIn = <T extends { readonly id: string }>(entities: readonly T[]): ReadonlyMap<string, T> =>
+    new Map(entities.map(entity => [entity.id, entity]));
 
 const isObject = (v: unknown): v is object => v !== null && typeof v === "object";
 
@@ -48,11 +51,6 @@ export class EditionView {
     readonly edition: Edition
 
     /**
-     * Map from id to object
-     */
-    private readonly byId: Map<string, any> = new Map()
-
-    /**
      * Map from id to its path within the edition
      */
     private readonly paths: Map<string, Trail> = new Map()
@@ -65,8 +63,21 @@ export class EditionView {
     /** Built when a copy is first asked for, the walk not recording it. */
     private copiesByFeature?: Map<string, RollCopy>
 
+    /**
+     * One index for each kind of entity, built from where the edition
+     * holds it. The index an entity is found in says what it is, so a
+     * lookup needs neither a type discriminator nor a cast.
+     */
+    private readonly versionsById: ReadonlyMap<string, Version>
+    private readonly copiesById: ReadonlyMap<string, RollCopy>
+    private readonly symbolsById: ReadonlyMap<string, AnySymbol>
+    private featuresById?: ReadonlyMap<string, NestedFeature>
+
     constructor(edition: Edition) {
         this.edition = edition;
+        this.versionsById = byIdIn(edition.versions);
+        this.copiesById = byIdIn(edition.copies);
+        this.symbolsById = byIdIn(edition.versions.flatMap(insertedBy));
         this.indexObjects();
     }
 
@@ -87,8 +98,7 @@ export class EditionView {
         const index = (record: Record<string, unknown>, keys: readonly string[], trail: Trail) => {
             if (typeof record.id !== "string") return;
             if (isReferenceOnly(keys)) link(record.id, { key: 'id', up: trail });
-            else if (!this.byId.has(record.id)) {
-                this.byId.set(record.id, record);
+            else if (!this.paths.has(record.id)) {
                 this.paths.set(record.id, trail);
             }
         };
@@ -121,12 +131,32 @@ export class EditionView {
         traverse(this.edition, null);
     }
 
-    get<T,>(anyId: string): T | undefined {
-        return this.byId.get(anyId) as T;
+    version(id: string): Readonly<Version> | undefined {
+        return this.versionsById.get(id);
     }
 
-    getAll<T,>(anyIds: readonly string[]): T[] {
-        return anyIds.map(id => this.get<T>(id)).filter((v): v is T => !!v);
+    copy(id: string): Readonly<RollCopy> | undefined {
+        return this.copiesById.get(id);
+    }
+
+    symbol(id: string): Readonly<AnySymbol> | undefined {
+        return this.symbolsById.get(id);
+    }
+
+    /** The symbols under the ids, leaving out an id that names none. */
+    symbols(ids: readonly string[]): Readonly<AnySymbol>[] {
+        return ids.flatMap(id => this.symbol(id) ?? []);
+    }
+
+    /** A feature or a patch on any copy, one a patch bears included. */
+    feature(id: string): Readonly<NestedFeature> | undefined {
+        this.featuresById ??= byIdIn(this.edition.copies.flatMap(copy => featuresOf(copy).flatMap(withBorneFeatures)));
+        return this.featuresById.get(id);
+    }
+
+    /** The features and patches under the ids, leaving out an id that names none. */
+    features(ids: readonly string[]): Readonly<NestedFeature>[] {
+        return ids.flatMap(id => this.feature(id) ?? []);
     }
 
     getPath(anyId: string): Path | undefined {
@@ -139,7 +169,7 @@ export class EditionView {
     }
 
     travelUp(versionId: string, callback: (version: Readonly<Version>) => void) {
-        const v = this.get<Version>(versionId)
+        const v = this.version(versionId)
         if (!v) return
 
         callback(v);
@@ -156,8 +186,13 @@ export class EditionView {
         return lineage
     }
 
-    carriersOf(symbol: AnySymbol): Readonly<FeatureOrPatch>[] {
-        return this.getAll<FeatureOrPatch>(idsOf(symbol.carriers));
+    carriersOf(symbol: AnySymbol): Readonly<NestedFeature>[] {
+        return this.features(idsOf(symbol.carriers));
+    }
+
+    /** The carriers that state a place of their own, which a feature on a patch does not. */
+    placedCarriersOf(symbol: AnySymbol): Readonly<FeatureOrPatch>[] {
+        return this.carriersOf(symbol).filter(isPlaced);
     }
 
     /** The copy a feature sits on, a patch and everything it bears included. */
@@ -237,9 +272,9 @@ export class EditionView {
 
     /** The version the given one's text is read against, by its principal derivation. */
     predecessorOf(versionId: string): Readonly<Version> | undefined {
-        const v = this.get<Version>(versionId)
+        const v = this.version(versionId)
         const principal = v && principalDerivationOf(v)
-        return principal && this.get<Version>(idOf(principal))
+        return principal && this.version(idOf(principal))
     }
 
     /**
@@ -256,7 +291,7 @@ export class EditionView {
      * position a semitone away on either bar.
      */
     placeOf(symbol: AnySymbol): Readonly<HorizontalSpan> | undefined {
-        const carriers = this.getAll<FeatureOrPatch>(idsOf(symbol.carriers))
+        const carriers = this.placedCarriersOf(symbol)
         if (carriers.length === 0) return
 
         return {
@@ -307,7 +342,7 @@ export class EditionView {
                 );
             }
 
-            const node = this.get<Version>(id);
+            const node = this.version(id);
             if (!node) {
                 memo.set(id, 0);
                 return 0;
@@ -321,7 +356,7 @@ export class EditionView {
 
             if (basedOn === undefined) {
                 gen = 0; // root
-            } else if (!this.get(basedOn)) {
+            } else if (!this.version(basedOn)) {
                 // Orphaned parent reference — treat boundary as root
                 gen = 0;
             } else {

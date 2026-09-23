@@ -43,7 +43,7 @@ const twoReadings = (): Edition => editionOf(
 const tight: CollationTolerance = { toleranceStart: mm(1), toleranceEnd: mm(1) }
 
 const viewOf = (edition: Edition) => new EditionView(edition)
-const carriersOf = (edition: Edition, symbolId: string) => idsOf(viewOf(edition).get<Note>(symbolId)!.carriers)
+const carriersOf = (edition: Edition, symbolId: string) => idsOf(viewOf(edition).symbol(symbolId)!.carriers)
 const textOf = (edition: Edition, versionId: string) => viewOf(edition).snapshot(versionId).map(s => s.id)
 const editsIn = (edition: Edition, versionId: string) => edition.versions.find(v => v.id === versionId)!.edits!
 

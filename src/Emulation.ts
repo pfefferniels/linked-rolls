@@ -1,7 +1,7 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { idOf } from "./Assumption.js";
 import { EditionView } from "./EditionView.js";
-import { AnySymbol, isCommand, pairsAmong, placementsOf } from "./Symbol.js";
+import { isCommand, pairsAmong, placementsOf } from "./Symbol.js";
 import { Version } from "./Version.js";
 import {
     AnyPerformedRollFeature,
@@ -38,10 +38,10 @@ const propertiesOf = (view: EditionView, version: Readonly<Version>): RollProper
 
 /** The onset a symbol has on each copy carrying it, by the copy's index, as the mean of its chains there. */
 const onsetsByCopy = (view: EditionView, symbolId: string): Map<number, Millimeters> => {
-    const symbol = view.get<AnySymbol>(symbolId)
+    const symbol = view.symbol(symbolId)
     if (!symbol) return new Map()
 
-    const onsets = view.carriersOf(symbol).flatMap((carrier): [number, Millimeters][] => {
+    const onsets = view.placedCarriersOf(symbol).flatMap((carrier): [number, Millimeters][] => {
         const copy = view.getPath(carrier.id)?.[1]
         return typeof copy === 'number' ? [[copy, carrier.horizontal.from]] : []
     })

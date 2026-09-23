@@ -45,7 +45,7 @@ const merge = (edition: Edition, ...featureIds: string[]) =>
 
 const featuresIn = (edition: Edition) => featuresOf(edition.copies[0])
 const carriersOf = (edition: Edition, symbolId: string) =>
-    idsOf(new EditionView(edition).get<Note>(symbolId)!.carriers)
+    idsOf(new EditionView(edition).symbol(symbolId)!.carriers)
 
 describe('merging the features of a copy', () => {
     it('replaces them with one spanning them all, the gap between them included', () => {
@@ -87,7 +87,7 @@ describe('merging the features of a copy', () => {
         const next = merge(before, 'part-one', 'part-two')
         const mergedId = featuresIn(next)[0].id
 
-        expect(new EditionView(next).get<Note>('one')!.carriers)
+        expect(new EditionView(next).symbol('one')!.carriers)
             .toEqual([{ ...believed, id: mergedId }])
     })
 

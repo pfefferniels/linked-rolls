@@ -126,7 +126,7 @@ const carriersOffTheirMeaning = (
     }
 
     return commands
-        .filter(symbol => view.carriersOf(symbol).some(carrier => misread(carrier, symbol)))
+        .filter(symbol => view.placedCarriersOf(symbol).some(carrier => misread(carrier, symbol)))
         .map(symbol => ({ version, symbol: symbol.id, problem: 'carrier-on-another-track' as const }))
 }
 

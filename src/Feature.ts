@@ -270,6 +270,10 @@ type Unplaced<T> = T extends FeatureOrPatch ? PartialBy<T, 'horizontal' | 'verti
  */
 export type NestedFeature = Unplaced<FeatureOrPatch>;
 
+/** Whether the feature states a place of its own, which one a patch bears does not. */
+export const isPlaced = (feature: NestedFeature): feature is FeatureOrPatch =>
+    feature.horizontal !== undefined && feature.vertical !== undefined;
+
 export const isRollFeature = (obj: object): obj is FeatureOrPatch => {
     return 'type' in obj && isFeatureType(obj.type);
 }

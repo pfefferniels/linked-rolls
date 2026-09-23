@@ -136,14 +136,14 @@ describe('the paper a version ran on', () => {
      */
     it('takes a green version back off the shared axis onto its own paper', () => {
         const view = new EditionView(twoIssues())
-        const green = view.get<Version>('B')!
+        const green = view.version('B')!
 
         expect(view.toOwnPaperOf(green)).toBeCloseTo(1 / 1.29072, 9)
     })
 
     it('says nothing for a version whose copies were never scaled', () => {
         const view = new EditionView(twoIssues())
-        expect(view.toOwnPaperOf(view.get<Version>('A')!)).toBeUndefined()
+        expect(view.toOwnPaperOf(view.version('A')!)).toBeUndefined()
     })
 
     /**
@@ -158,7 +158,7 @@ describe('the paper a version ran on', () => {
         })]
 
         const view = new EditionView(edition)
-        expect(view.toOwnPaperOf(view.get<Version>('B')!)).toBeUndefined()
+        expect(view.toOwnPaperOf(view.version('B')!)).toBeUndefined()
     })
 
     it('reports copies of one system that disagree instead of averaging them', () => {
@@ -174,7 +174,7 @@ describe('the paper a version ran on', () => {
         })
 
         const view = new EditionView(edition)
-        expect(view.toOwnPaperOf(view.get<Version>('B')!)).toBeUndefined()
+        expect(view.toOwnPaperOf(view.version('B')!)).toBeUndefined()
         expect(constraintProblems(view).map(problem => problem.problem))
             .toContain('copies-disagree-on-the-paper')
     })

@@ -890,7 +890,7 @@ export const connectVersions = (
     parentId: string,
     tolerance: ObjectAssumption<CollationTolerance> = defaultCollationTolerance
 ): EditionOp => {
-    const child = view.get<Version>(childId)
+    const child = view.version(childId)
     const stated = child ? editsOf(child) : []
     const established = stated.filter(edit => !isCollationsOwn(edit))
     const spokenFor = spokenForBy(established)
@@ -917,7 +917,7 @@ export const connectVersions = (
      * apart would make the apparatus a list of unexplained losses beside
      * a list of unexplained gains.
      */
-    const substituted = differ(child, view.get<Version>(parentId))
+    const substituted = differ(child, view.version(parentId))
         ? substitutionsBetween(
             own.filter(symbol => !collated.has(symbol.id)),
             inherited.filter(symbol => !matched.has(symbol.id)),
@@ -973,7 +973,7 @@ export const collateSymbols = (
     symbolIds: readonly string[],
     tolerance?: CollationTolerance
 ): EditionOp => {
-    const version = view.get<Version>(versionId)
+    const version = view.version(versionId)
     const principal = version && principalDerivationOf(version)
     if (!version || !principal) return noChange
 
@@ -1063,7 +1063,7 @@ export const separateReadings = (
     copies: ReadonlySet<string>,
     symbolIds?: readonly string[]
 ): EditionOp => {
-    const version = view.get<Version>(versionId)
+    const version = view.version(versionId)
     if (!version) return noChange
 
     const chosen = symbolIds && new Set(symbolIds)
@@ -1209,11 +1209,11 @@ const replacementType = (view: EditionView, inserted: AnySymbol, deleted: AnySym
  */
 const guessEditType = (view: EditionView, versionId: string, edit: Edit): EditType => {
     const inserts = edit.insert ?? []
-    const deletes = view.getAll<AnySymbol>(edit.delete ?? [])
+    const deletes = view.symbols(edit.delete ?? [])
     const inserted = expressionTypesOf(inserts)
     const deleted = expressionTypesOf(deletes)
 
-    const bar = trackerBarOf(view.get<Version>(versionId)?.system)
+    const bar = trackerBarOf(view.version(versionId)?.system)
     const parentBar = trackerBarOf(view.predecessorOf(versionId)?.system)
 
     /**

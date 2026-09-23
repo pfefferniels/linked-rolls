@@ -1,7 +1,7 @@
 import { Belief, Certainty, certaintyOf, idOf, idsOf } from "./Assumption.js";
 import { EditionView } from "./EditionView.js";
 import { AnySymbol } from "./Symbol.js";
-import { insertedBy, Version } from "./Version.js";
+import { insertedBy } from "./Version.js";
 
 export type WitnessBy = 'carriers' | 'statement'
 
@@ -124,7 +124,7 @@ const witnessesIn = (carriers: Carriers, view: EditionView, versionId: string): 
  * nothing and is witnessed by statement alone.
  */
 export const witnessesOf = (view: EditionView, versionId: string): Witness[] =>
-    view.get<Version>(versionId) ? witnessesIn(carriersIn(view), view, versionId) : []
+    view.version(versionId) ? witnessesIn(carriersIn(view), view, versionId) : []
 
 /**
  * The versions the copy bears witness to, each with how, in the order the
@@ -155,7 +155,7 @@ export const carriageProblems = (view: EditionView): CarriageProblem[] => {
         const version = idOf(statement)
         return [
             ...(carrying.has(copy.id) ? [{ copy: copy.id, version, problem: 'stated-beside-carriers' as const }] : []),
-            ...(view.edition.versions.some(({ id }) => id === version) ? [] : [{ copy: copy.id, version, problem: 'version-missing' as const }])
+            ...(view.version(version) ? [] : [{ copy: copy.id, version, problem: 'version-missing' as const }])
         ]
     }))
 }
