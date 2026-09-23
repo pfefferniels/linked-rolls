@@ -146,7 +146,7 @@ export interface ProductionEvent {
      * at once and states it here, and a feature an editor reads as the
      * work of a later hand belongs in the act that made it, whichever
      * kind of feature it is.
-     * @see crm:P108 has produced
+     * @see reo:produced
      */
     produced?: AnyFeature[]
 }
@@ -206,7 +206,7 @@ export type Modification = Partial<{
      * paper, a circle in pencil, a hole punched by hand. Any kind of
      * feature may come of a later act, as any kind may come of the
      * punching.
-     * @see crm:P108 has produced
+     * @see reo:produced
      */
     produced: AnyFeature[],
 

@@ -80,7 +80,11 @@ instances of the class were such chains, and a chain is several holes.
 `migrate` reads the old type. `reo:GluedOn` became `reo:Patch` on the
 same day. It was the one class named after how its instances came
 about, which the attachment that glued them on states already.
-`migrate` reads that old type as well.
+`migrate` reads that old type as well. Also in September 2026 the
+export stopped stating P56 bears feature and P46 is composed of on
+copies and patches. The ontology derives them by property chains over
+`reo:produced`, added for the purpose, and `migrate` drops the keys
+from older exports.
 
 ## Publishing
 

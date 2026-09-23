@@ -238,6 +238,14 @@ const withoutPattern = (node: Json): Json => {
     return rest
 }
 
+/** An export once stated what a copy or a patch bears, which a reasoner now derives from the acts. */
+const withoutBearings = (node: Json): Json => {
+    if (!Object.hasOwn(node, 'bears') && !Object.hasOwn(node, 'composedOf')) return node
+    if (node['@type'] !== 'RollCopy' && node['@type'] !== 'Patch') return node
+    const { bears: _bears, composedOf: _composedOf, ...rest } = node
+    return rest
+}
+
 /** A derivation written as a single one, before a version could name several. */
 const isSingleDerivation = (basedOn: Json): boolean =>
     basedOn !== null && typeof basedOn === 'object' && !Array.isArray(basedOn)
@@ -371,7 +379,7 @@ const withTimeSpanDates = (node: Json): Json => {
 const migrateNode = (node: Json): Json =>
     [withRenamedKeys, withTypology, withRenamedType, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
         withPerforator, withProductionNodes, withTypedPerforator, withScale, withDerivationList, withReadingKind, withTimeSpanDates,
-        withoutFeatureKind, withBorneFeaturesNamed, withFeaturesInActs, withDriveOfStaggering, withoutPattern]
+        withoutFeatureKind, withBorneFeaturesNamed, withFeaturesInActs, withDriveOfStaggering, withoutPattern, withoutBearings]
         .reduce((result, step) => step(result), node)
 
 /** The items each walked, or the very same list where the walk changed none. */

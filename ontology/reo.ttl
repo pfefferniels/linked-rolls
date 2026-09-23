@@ -236,6 +236,35 @@ reo:capture
 
 
 #################################################################
+# Properties of acts
+#################################################################
+
+reo:produced
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf crm:P108_has_produced ;
+    rdfs:domain crm:E12_Production ;
+    rdfs:range crm:E25_Human-Made_Feature ;
+    rdfs:label "produced"@en ;
+    rdfs:comment """This property associates an act that made features on a roll with a feature it made: the punching of a copy with a chain of holes, a later alteration with a writing or a mark. Its range is what sets it apart from P108 has produced, which also runs from the production of a copy to the copy itself, since R28 produced is a subproperty of it (LRMoo 1.0, p. 44). A feature produced by an act that modified a copy, or by the production of a copy, is borne by that copy; the axioms below state this, so the edition does not."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+
+#################################################################
+# Entailments
+#
+# What the edition leaves to a reasoner. Each chain is within
+# OWL 2 RL.
+#################################################################
+
+crm:P56_bears_feature
+    owl:propertyChainAxiom ( crm:P31i_was_modified_by reo:produced ) ,
+                           ( lrmoo:R28i_was_produced_by reo:produced ) .
+
+crm:P46_is_composed_of
+    owl:propertyChainAxiom ( crm:P31i_was_modified_by crm:P111_added ) .
+
+
+#################################################################
 # Shortcuts
 #
 # Each of these stands for a path through CRM and LRMoo that the

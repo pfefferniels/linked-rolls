@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'fs'
 import jsonld from 'jsonld'
+import { Parser, Quad, Term } from 'n3'
 import context from '../src/spec/context.json'
 import welteT100Context from '../src/spec/welte-t100.context.json'
 import welteLicenseeContext from '../src/spec/welte-licensee.context.json'
@@ -17,8 +19,8 @@ import { copy, editionOf, hole, note, version } from './editionFixture'
  * Human-Made Feature and the patch under E22 Human-Made Object, so the
  * type a feature states is what holds the four apart. Every feature
  * stands in the act that brought it about: the punching, an alteration,
- * or an attachment gluing a patch on. Nothing reads off such a tree that
- * the copy bears the features, so the export states it.
+ * or an attachment gluing a patch on. That the copy bears the features
+ * is left to a reasoner, which derives it with the axioms of reo.ttl.
  */
 
 type Json = any
@@ -42,6 +44,8 @@ const lrmoo = 'http://iflastandards.info/ns/lrm/lrmoo/'
 const reo = 'https://w3id.org/reo/'
 const reot = 'https://w3id.org/reo/type/'
 const rdf = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'
+const rdfs = 'http://www.w3.org/2000/01/rdf-schema#'
+const owl = 'http://www.w3.org/2002/07/owl#'
 
 const at = (from: number, to: number, position: number) => ({
     horizontal: { unit: 'mm' as const, from: mm(from), to: mm(to) },
@@ -128,6 +132,61 @@ const theOne = (all: Triple[], klass: string): string => {
     return found[0]
 }
 
+/** LRMoo 1.0, p. 44: R28 produced is a subproperty of P108 has produced. */
+const lrmooAxioms = `
+    <${lrmoo}R28_produced> <${rdfs}subPropertyOf> <${crm}P108_has_produced> .
+    <${lrmoo}R28i_was_produced_by> <${owl}inverseOf> <${lrmoo}R28_produced> .
+`
+
+interface Chain { first: string, second: string, implied: string }
+
+interface Axioms {
+    readonly supers: ReadonlyMap<string, string[]>
+    readonly inverses: ReadonlyMap<string, string[]>
+    readonly chains: readonly Chain[]
+}
+
+const axioms = (): Axioms => {
+    const quads = new Parser().parse(readFileSync('ontology/reo.ttl', 'utf-8') + lrmooAxioms)
+    const objectsOf = (subject: Term, predicate: string): Term[] =>
+        quads.filter(quad => quad.subject.equals(subject) && quad.predicate.value === predicate).map(quad => quad.object)
+    const listOf = (head: Term): string[] => head.value === `${rdf}nil`
+        ? []
+        : [objectsOf(head, `${rdf}first`)[0].value, ...listOf(objectsOf(head, `${rdf}rest`)[0])]
+    const pairs = (predicate: string): [string, string][] =>
+        quads.filter(quad => quad.predicate.value === predicate).map(quad => [quad.subject.value, quad.object.value])
+    const grouped = (entries: [string, string][]) =>
+        new Map([...Map.groupBy(entries, ([from]) => from)].map(([from, all]) => [from, all.map(([, to]) => to)]))
+
+    const inverseOf = pairs(`${owl}inverseOf`)
+    return {
+        supers: grouped(pairs(`${rdfs}subPropertyOf`)),
+        inverses: grouped([...inverseOf, ...inverseOf.map(([a, b]): [string, string] => [b, a])]),
+        chains: quads.filter((quad: Quad) => quad.predicate.value === `${owl}propertyChainAxiom`).map(quad => {
+            const [first, second] = listOf(quad.object)
+            return { first, second, implied: quad.subject.value }
+        })
+    }
+}
+
+const keyOf = ({ subject, property, object }: Triple) => `${subject} ${property} ${object}`
+
+/** What one application of the rules for subproperties, inverses and chains adds to the triples. */
+const oneStep = (all: Triple[], { supers, inverses, chains }: Axioms): Triple[] => [
+    ...all.flatMap(t => (supers.get(t.property) ?? []).map(property => ({ ...t, property }))),
+    ...all.flatMap(t => (inverses.get(t.property) ?? []).map(property => ({ subject: t.object, property, object: t.subject }))),
+    ...chains.flatMap(({ first, second, implied }) => all
+        .filter(t => t.property === first)
+        .flatMap(t => statedOf(all, t.object, second).map(object => ({ subject: t.subject, property: implied, object }))))
+]
+
+/** The triples together with everything the rules derive from them, as OWL 2 RL applies prp-spo1, prp-inv and prp-spo2. */
+const entailedBy = (all: Triple[], rules: Axioms = axioms()): Triple[] => {
+    const known = new Set(all.map(keyOf))
+    const added = [...new Map(oneStep(all, rules).filter(t => !known.has(keyOf(t))).map(t => [keyOf(t), t])).values()]
+    return added.length === 0 ? all : entailedBy([...all, ...added], rules)
+}
+
 describe('the kinds of feature', () => {
     it('each state a class of their own', async () => {
         const all = await triples()
@@ -172,7 +231,7 @@ describe('the acts that made the features', () => {
 
     it('states what each act brought about or took away', async () => {
         const all = await triples()
-        expect(statedOf(all, theOne(all, `${crm}E12_Production`), `${crm}P108_has_produced`).sort())
+        expect(statedOf(all, theOne(all, `${crm}E12_Production`), `${reo}produced`).sort())
             .toEqual([of('circle'), of('date')])
         expect(statedOf(all, theOne(all, `${crm}E79_Part_Addition`), `${crm}P111_added`)).toEqual([of('patch')])
         expect(statedOf(all, theOne(all, `${crm}E80_Part_Removal`), `${crm}P113_removed`)).toEqual([of('gone')])
@@ -189,26 +248,34 @@ describe('the acts that made the features', () => {
         const all = await triples()
         const production = statedOf(all, of('first'), `${lrmoo}R28i_was_produced_by`)
         expect(production).toHaveLength(1)
-        expect(statedOf(all, production[0], `${crm}P108_has_produced`)).toEqual([of('perforation')])
+        expect(statedOf(all, production[0], `${reo}produced`)).toEqual([of('perforation')])
     })
 })
 
-describe('what the export derives from the acts', () => {
-    it('states the copy as bearing every feature its acts brought about', async () => {
+describe('what a reasoner derives from the acts', () => {
+    it('states no bearing itself', async () => {
         const all = await triples()
+        expect(all.filter(({ property }) => property === `${crm}P56_bears_feature`)).toEqual([])
+        expect(statedOf(all, of('first'), `${crm}P46_is_composed_of`)).toEqual([])
+    })
+
+    it('lets the copy bear every feature its acts brought about', async () => {
+        const all = entailedBy(await triples())
         expect(statedOf(all, of('first'), `${crm}P56_bears_feature`).sort())
             .toEqual([of('circle'), of('date'), of('perforation')])
     })
 
-    it('states a patch as a part of the copy, P56 taking only features', async () => {
-        const all = await triples()
+    it('lets a patch be a part of the copy, and the copy not bear itself', async () => {
+        const all = entailedBy(await triples())
         expect(statedOf(all, of('first'), `${crm}P46_is_composed_of`)).toEqual([of('patch')])
+        const [production] = statedOf(all, of('first'), `${lrmoo}R28i_was_produced_by`)
+        expect(statedOf(all, production, `${crm}P108_has_produced`)).toContain(of('first'))
         expect(statedOf(all, of('first'), `${crm}P56_bears_feature`)).not.toContain(of('patch'))
+        expect(statedOf(all, of('first'), `${crm}P56_bears_feature`)).not.toContain(of('first'))
     })
 
-    it('states a patch as bearing the features glued onto it', async () => {
+    it('states the features glued onto a patch as its parts', async () => {
         const all = await triples()
-        expect(statedOf(all, of('patch'), `${crm}P56_bears_feature`)).toEqual([of('stamp')])
         expect(statedOf(all, of('patch'), `${crm}P46_is_composed_of`)).toEqual([of('stamp')])
     })
 
@@ -221,5 +288,21 @@ describe('what the export derives from the acts', () => {
         const read = importJsonLd(exported())
         expect(read.copies[0]).toEqual(withFeatures().copies[0])
         expect(asJsonLd(read).copies[0]).toEqual(exported().copies[0])
+    })
+
+    it('reads an export that still states what the copy and a patch bear', () => {
+        const older = exported()
+        const [first] = older.copies
+        const [, attachment] = first.modifications
+        const [patch] = attachment.added
+        older.copies = [{
+            ...first,
+            bears: [{ '@id': 'perforation' }],
+            composedOf: [{ '@id': 'patch' }],
+            modifications: first.modifications.map((act: Json) => act === attachment
+                ? { ...act, added: [{ ...patch, bears: [{ '@id': 'stamp' }] }] }
+                : act)
+        }]
+        expect(importJsonLd(older).copies[0]).toEqual(withFeatures().copies[0])
     })
 })

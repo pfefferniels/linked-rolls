@@ -102,35 +102,14 @@ function renameSeeToOntology(obj) {
 
 renameSeeToOntology(transformed);
 
-// An export states what the shape of the document only implies: which
-// features a copy bears, which patches it is composed of, and what an
-// act changed. The keys are derived from the tree on the way out and
-// read off it again on the way in, so no type carries them and the
-// generator cannot see them. They are declared here so that the format
-// documentation names them and a validator knows them.
+// An export states what each act changed, which the class of the act
+// decides. The keys are derived on the way out and read off again on
+// the way in, so no type carries them and the generator cannot see
+// them. They are declared here so that the format documentation names
+// them and a validator knows them.
 const reference = { type: 'object', properties: { '@id': { type: 'string' } }, required: ['@id'] };
-const references = { type: 'array', items: reference };
 
 const derived = {
-    RollCopy: {
-        bears: {
-            ...references,
-            description: 'The features the copy bears, whichever of its acts brought them about. Derived on export.',
-            ontology: 'crm:P56 bears feature'
-        },
-        composedOf: {
-            ...references,
-            description: 'The patches glued onto the copy. A patch is an object rather than a feature, so it is stated as a part. Derived on export.',
-            ontology: 'crm:P46 is composed of'
-        }
-    },
-    Patch: {
-        bears: {
-            ...references,
-            description: 'The features the patch bears. Derived on export.',
-            ontology: 'crm:P56 bears feature'
-        }
-    },
     Attachment: {
         augmented: {
             ...reference,

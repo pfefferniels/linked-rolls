@@ -1221,7 +1221,7 @@
                 "$ref": "#/definitions/AnyFeature"
               },
               "type": "array",
-              "ontology": "crm:P108 has produced"
+              "ontology": "reo:produced"
             },
             "purpose": {
               "$ref": "#/definitions/ModificationPurpose",
@@ -1566,22 +1566,6 @@
               "description": "The type discriminator for this object.",
               "type": "string",
               "ontology": "rdf:type"
-            },
-            "bears": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "@id": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "@id"
-                ]
-              },
-              "description": "The features the patch bears. Derived on export.",
-              "ontology": "crm:P56 bears feature"
             }
           },
           "required": [
@@ -2650,22 +2634,6 @@
           "description": "The type discriminator for this object.",
           "type": "string",
           "ontology": "rdf:type"
-        },
-        "bears": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "@id": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "@id"
-            ]
-          },
-          "description": "The features the patch bears. Derived on export.",
-          "ontology": "crm:P56 bears feature"
         }
       },
       "required": [
@@ -2813,7 +2781,7 @@
             "$ref": "#/definitions/AnyFeature"
           },
           "type": "array",
-          "ontology": "crm:P108 has produced"
+          "ontology": "reo:produced"
         },
         "speed": {
           "$ref": "#/definitions/ObjectAssumption%3CPaperSpeed%3E",
@@ -3152,38 +3120,6 @@
           "description": "The type discriminator for this object.",
           "type": "string",
           "ontology": "rdf:type"
-        },
-        "bears": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "@id": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "@id"
-            ]
-          },
-          "description": "The features the copy bears, whichever of its acts brought them about. Derived on export.",
-          "ontology": "crm:P56 bears feature"
-        },
-        "composedOf": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "@id": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "@id"
-            ]
-          },
-          "description": "The patches glued onto the copy. A patch is an object rather than a feature, so it is stated as a part. Derived on export.",
-          "ontology": "crm:P46 is composed of"
         }
       },
       "required": [

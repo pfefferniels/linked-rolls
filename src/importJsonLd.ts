@@ -21,12 +21,7 @@ const fromJsonLdValue = (value: Json): Json => {
     return value
 }
 
-/**
- * A node without what the export derived from it. A copy bears the
- * features its acts brought about, and the graph has to be told so.
- * In the edition the act that made a feature is the one place it
- * stands.
- */
+/** A node without what the export derived from it: what an act changed follows from where the act stands. */
 const asStated = (json: Record<string, Json>): Record<string, Json> =>
     Object.keys(json).some(key => derivedKeys.has(key))
         ? Object.fromEntries(Object.entries(json).filter(([key]) => !derivedKeys.has(key)))

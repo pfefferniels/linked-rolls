@@ -230,15 +230,21 @@ Three kinds of act rather than two, because the CRM tells them apart.
 E79 Part Addition asks that what is added be "a separate identifiable
 whole prior to" the act, which a glued-on label is and a pencil line is
 not: drawing, writing and punching bring a feature into being and are
-productions (E12), which state what they made with P108 has produced.
+productions (E12), which state what they made with `reo:produced`, a
+subproperty of P108 has produced.
 
-The export states what that shape only implies. A copy bears every
+The format states nothing a reasoner can derive. That a copy bears every
 feature its acts brought about (P56 bears feature) and is composed of
 the patches glued onto it (P46 is composed of, a patch being an object
-rather than a feature); an attachment augments the copy and a removal
-diminishes it. The four keys are derived on the way out and read off
-again on the way in, so they are no part of the edition, and they are
-the one place where the JSON tree and the graph differ in shape.
+rather than a feature) follows from property chains in `reo.ttl`, all
+within OWL 2 RL. The chain for the punching runs over `reo:produced`
+rather than P108, because R28 produced is itself a subproperty of P108
+(LRMoo 1.0, p. 44), and a chain over P108 would have the copy bear
+itself. That an attachment augments the copy and a removal diminishes
+it depends on the class of the act, which no chain can test. These two
+keys are derived on the way out and read off again on the way in, so
+they are no part of the edition, and they are the one place where the
+JSON tree and the graph differ in shape.
 
 ## Where a copy's features come from
 

@@ -7,7 +7,7 @@ import context from "./spec/context.json" with { type: 'json' };
  * The keys an export derives from the tree, which no node of the
  * edition states itself. An import reads them off again.
  */
-export const derivedKeys: ReadonlySet<string> = new Set(['bears', 'composedOf', 'augmented', 'diminished']);
+export const derivedKeys: ReadonlySet<string> = new Set(['augmented', 'diminished']);
 
 export const exportDate = (date: Date) => {
     const year = date.getFullYear();
@@ -84,26 +84,6 @@ type Json = any
 const isRecord = (value: unknown): value is Record<string, Json> =>
     value !== null && typeof value === 'object' && !Array.isArray(value)
 
-const nodesIn = (value: Json): Json[] =>
-    Array.isArray(value) ? value.filter(isRecord) : []
-
-/** What the acts of a copy brought onto it: the features they produced and the patches they glued on. */
-const madeOn = (copy: Json): Json[] => [
-    ...nodesIn(copy.production?.produced),
-    ...nodesIn(copy.modifications).flatMap(act => [...nodesIn(act.produced), ...nodesIn(act.added)])
-]
-
-const referencing = (nodes: Json[], patches: boolean): Json[] =>
-    nodes.filter(node => (node['@type'] === 'Patch') === patches && typeof node['@id'] === 'string')
-        .map(node => ({ '@id': node['@id'] }))
-
-const featuresAmong = (nodes: Json[]): Json[] => referencing(nodes, false)
-
-const patchesAmong = (nodes: Json[]): Json[] => referencing(nodes, true)
-
-/** The key, where there is anything to state under it. */
-const stating = (key: string, references: Json[]): Json => references.length > 0 ? { [key]: references } : {}
-
 /** The act with what it changed named: an attachment augments the copy, a removal diminishes it. */
 const changing = (copyId: Json) => (act: Json): Json => {
     if (typeof copyId !== 'string' || !isRecord(act)) return act
@@ -113,30 +93,20 @@ const changing = (copyId: Json) => (act: Json): Json => {
 }
 
 /**
- * The document with every bearing stated that its tree only implies. A
- * copy bears the features its acts brought about and is composed of the
- * patches they glued on, a patch bears the features glued onto it in
- * turn. Each feature stands in the act that made it and nothing reads a
- * bearing off that, so the export states it; a patch is no feature, and
- * P56 bears feature takes only features, so a patch is stated as a part.
+ * The document with what each act changed stated. Which of P110
+ * augmented and P112 diminished applies depends on the class of the
+ * act, which no property chain in OWL 2 RL can test, so the export
+ * states it. What a copy or a patch bears is left to a reasoner (see
+ * the entailments in reo.ttl).
  */
-const withBearings = (value: Json): Json => {
-    if (Array.isArray(value)) return value.map(withBearings)
+const withChanges = (value: Json): Json => {
+    if (Array.isArray(value)) return value.map(withChanges)
     if (!isRecord(value)) return value
 
-    const node = Object.fromEntries(Object.entries(value).map(([key, child]) => [key, withBearings(child)]))
-
-    if (node['@type'] === 'RollCopy') {
-        const made = madeOn(node)
-        return {
-            ...node,
-            ...(Array.isArray(node.modifications) && { modifications: node.modifications.map(changing(node['@id'])) }),
-            ...stating('bears', featuresAmong(made)),
-            ...stating('composedOf', patchesAmong(made))
-        }
-    }
-    if (node['@type'] === 'Patch') return { ...node, ...stating('bears', featuresAmong(nodesIn(node.features))) }
-    return node
+    const node = Object.fromEntries(Object.entries(value).map(([key, child]) => [key, withChanges(child)]))
+    return node['@type'] === 'RollCopy' && Array.isArray(node.modifications)
+        ? { ...node, modifications: node.modifications.map(changing(node['@id'])) }
+        : node
 }
 
 /** Terms the context sets to null, which say nothing when the edition is read as RDF. */
@@ -215,7 +185,7 @@ const withDoubtedReferencesQuoted = (value: Json): Quoting => {
 }
 
 export const asJsonLd = (edition: Edition) => {
-    const { node, quoted } = withDoubtedReferencesQuoted(withSystemContexts(withBearings(asJsonLdEntity(edition))))
+    const { node, quoted } = withDoubtedReferencesQuoted(withSystemContexts(withChanges(asJsonLdEntity(edition))))
     // The context is the export's own; one carried in from an import must not override it.
     const { base, '@context': carried, ...rest } = node
 

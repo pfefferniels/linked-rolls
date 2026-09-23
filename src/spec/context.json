@@ -286,7 +286,7 @@
     },
 
     "actor": "crm:P14_carried_out_by",
-    "produced": "crm:P108_has_produced",
+    "produced": "reo:produced",
     "added": "crm:P111_added",
     "removed": {
       "@id": "crm:P113_removed",
@@ -298,14 +298,6 @@
       "@context": { "@vocab": "https://w3id.org/reo/type/" }
     },
 
-    "bears": {
-      "@id": "crm:P56_bears_feature",
-      "@type": "@id"
-    },
-    "composedOf": {
-      "@id": "crm:P46_is_composed_of",
-      "@type": "@id"
-    },
     "augmented": {
       "@id": "crm:P110_augmented",
       "@type": "@id"
