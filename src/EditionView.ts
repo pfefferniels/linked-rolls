@@ -1,11 +1,7 @@
 import { Edition } from "./Edition.js";
 import { FeatureOrPatch, HorizontalSpan, isPlaced, NestedFeature, withBorneFeatures } from "./Feature.js";
-import { AnySymbol, Expression, Note } from "./Symbol.js";
+import { AnySymbol } from "./Symbol.js";
 import { deletedBy, insertedBy, principalDerivationOf, Version } from "./Version.js";
-import { NegotiatedEvent } from "./ReproducingSystem.js";
-import { TrackerBar } from "./TrackerBar.js";
-import { copiesOwning, speedScalesIn, toOwnPaperOf } from "./ownPaper.js";
-import { negotiatedEventOf } from "./negotiation.js";
 import { featuresMadeBy, featuresOf, Modification, ProductionEvent, RollCopy } from "./RollCopy.js";
 import { idOf, idsOf } from "./Assumption.js";
 import { mean, Millimeters } from "./Quantity.js";
@@ -239,21 +235,6 @@ export class EditionView {
         return copy.modifications.find(act => states(featuresMadeBy(act)))
     }
 
-    /** @deprecated Use `toOwnPaperOf(view, version)`, which this delegates to. */
-    toOwnPaperOf(version: Readonly<Version>): number | undefined {
-        return toOwnPaperOf(this, version)
-    }
-
-    /** @deprecated Use `speedScalesIn(view, version)`, which this delegates to. */
-    speedScalesIn(version: Readonly<Version>): number[] {
-        return speedScalesIn(this, version)
-    }
-
-    /** @deprecated Use `copiesOwning(view, version)`, which this delegates to. */
-    copiesOwning(version: Readonly<Version>): Readonly<RollCopy>[] {
-        return copiesOwning(this, version)
-    }
-
     /** The version the given one's text is read against, by its principal derivation. */
     predecessorOf(versionId: string): Readonly<Version> | undefined {
         const v = this.version(versionId)
@@ -359,10 +340,5 @@ export class EditionView {
         }));
 
         return withGen;
-    }
-
-    /** @deprecated Use `negotiatedEventOf(view, symbol, bar)`, which this delegates to. */
-    simplifySymbol(symbol: Note | Expression, bar: TrackerBar): NegotiatedEvent | null {
-        return negotiatedEventOf(this, symbol, bar)
     }
 }

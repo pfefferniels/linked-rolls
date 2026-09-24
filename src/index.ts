@@ -1,4 +1,10 @@
-export * from './utils.js'
+/**
+ * The public interface of the library. Everything else under lib/ is its
+ * implementation and may change in any release: the in-place helpers the
+ * operations are built from, the date conversions of the serialisation,
+ * and the general utilities.
+ */
+export type { WithId, WithNote, WithType } from './utils.js'
 export * from './Quantity.js'
 export * from './Agent.js'
 export * from './Assumption.js'
@@ -22,7 +28,7 @@ export * from './procedures.js'
 export * from './vocabulary.js'
 export * from './reservations.js'
 export * from './witnesses.js'
-export * from './alignment.js'
+export { alignFeatures, tooShortToShorten, type AlignmentResult } from './alignment.js'
 export * from './statistics.js'
 export * from './Edition.js'
 export * from './EditionView.js'
@@ -37,9 +43,9 @@ export * from './substitution.js'
 export * from './context.js'
 export * from './sigla.js'
 export * from './notes.js'
-export * from './asJsonLd.js'
-export * from './importJsonLd.js'
-export * from './migrate.js'
+export { asJsonLd } from './asJsonLd.js'
+export { importJsonLd } from './importJsonLd.js'
+export { formatVersion, migrate } from './migrate.js'
 export { readFromStanfordAton, type StanfordAtonOptions } from './readers/stanfordAton.js'
 export { readFromPhillipsEroll, CONTROL_OFFSET, phillipsSystems, type PhillipsErollOptions } from './readers/phillipsEroll.js'
 export { readFromSpencerBar, readSpencerAnn, paperSpeedOfSpencerAnn, SPENCER_ROWS_PER_INCH, type SpencerBarOptions } from './readers/spencerBar.js'

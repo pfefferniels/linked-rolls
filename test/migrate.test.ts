@@ -413,3 +413,28 @@ describe('the revision of the format a document states', () => {
         expect(() => migrate({ formatVersion: formatVersion + 1 })).toThrow(/revision/)
     })
 })
+
+/**
+ * A copy's alignment went by its `ops` list, so where the list and the
+ * measurements disagreed the measurements are made to say what it said,
+ * and a copy aligns and unaligns afterwards exactly as it did before.
+ */
+describe('a copy whose ops and measurements disagreed', () => {
+    const copyWith = (ops: string[], measurements: object) =>
+        migrate({ copies: [{ '@type': 'RollCopy', ops, measurements, conditions: [] }] }).copies[0]
+
+    it('keeps a measurement only where the list names what it records', () => {
+        expect(copyWith([], { shift: { horizontal: 2, vertical: 0 }, scale: 1.1, readerExtension: { length: 1.6 } }).measurements)
+            .toEqual({})
+    })
+
+    it('records an act the list names without its amount as one that moved nothing', () => {
+        expect(copyWith(['shifted', 'stretched', 'shortened'], {}).measurements)
+            .toEqual({ shift: { horizontal: 0, vertical: 0 }, scale: 1, readerExtension: { length: 0 } })
+    })
+
+    it('leaves measurements that agree with the list as they were', () => {
+        const shift = { horizontal: 2, vertical: 0 }
+        expect(copyWith(['shifted'], { shift, dimensions: { width: 1 } }).measurements).toEqual({ shift, dimensions: { width: 1 } })
+    })
+})

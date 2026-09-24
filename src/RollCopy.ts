@@ -241,16 +241,6 @@ export type Modification = Partial<{
  */
 export interface RollCopy extends WithType<'RollCopy'>, WithId {
     /**
-     * What had been done to this copy's features to line them up with the
-     * others. It said again what `measurements` states, the shift, the scale
-     * and the reader's extension, and could disagree with it, so nothing
-     * reads or writes it now and the migration takes it off. Not exported
-     * to RDF.
-     * @deprecated
-     */
-    ops?: Array<'shifted' | 'stretched' | 'shortened'>
-
-    /**
      * Physical measurements of this roll copy, including
      * dimensions, hole separation, margins, shift corrections,
      * and information about the measuring software. What the

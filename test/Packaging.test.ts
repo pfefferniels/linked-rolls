@@ -70,3 +70,20 @@ describe('what the published package asks Node to resolve', () => {
         expect(unattributed.map(({ file, spec }) => `${file}: ${spec}`)).toEqual([])
     })
 })
+
+/**
+ * The index is the interface; the modules behind it are implementation
+ * and are not reachable from outside the package.
+ */
+describe('what the package offers', () => {
+    it('exposes no path into lib/ beyond the entry points', async () => {
+        const manifest = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8'))
+        expect(Object.keys(manifest.exports)).toEqual(['.', './validate', './welte-t100', './welte-t98', './welte-licensee', './package.json'])
+    })
+
+    it('leaves the helpers the implementation shares out of the index', async () => {
+        const index = await import('../src/index')
+        ;['isDateString', 'groupBy', 'applyShift', 'shortenChains', 'exportDate', 'importDate', 'derivedKeys', 'plainCopyId']
+            .forEach(name => expect(index).not.toHaveProperty(name))
+    })
+})

@@ -3023,19 +3023,6 @@
           "type": "array",
           "ontology": "crm:P31i was modified by"
         },
-        "ops": {
-          "deprecated": true,
-          "description": "What had been done to this copy's features to line them up with the others. It said again what `measurements` states, the shift, the scale and the reader's extension, and could disagree with it, so nothing reads or writes it now and the migration takes it off. Not exported to RDF.",
-          "items": {
-            "enum": [
-              "shifted",
-              "stretched",
-              "shortened"
-            ],
-            "type": "string"
-          },
-          "type": "array"
-        },
         "production": {
           "$ref": "#/definitions/ProductionEvent",
           "description": "The production event that created this roll copy.",

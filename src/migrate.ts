@@ -179,14 +179,34 @@ const withScale = (node: Json): Json => {
 }
 
 /**
+ * What each entry of a copy's former `ops` list stands for among its
+ * measurements, and the value that does nothing where the list claimed
+ * an act whose amount was never recorded.
+ */
+const opsInMeasurements = [
+    ['shifted', 'shift', { horizontal: 0, vertical: 0 }],
+    ['stretched', 'scale', 1],
+    ['shortened', 'readerExtension', { length: 0 }]
+] as const
+
+/**
  * A copy listed what had been done to line its features up, which said
- * again what its measurements state. `withScale` has read the list by
+ * again what its measurements state; the measurements now say it alone.
+ * Where the two disagreed, the list is what the alignment went by, so
+ * the measurements are made to say what it said: a measurement it does
+ * not list is dropped, and an act it lists without a recorded amount is
+ * recorded as one that moved nothing. `withScale` has read the list by
  * the time this runs.
  */
 const withoutOps = (node: Json): Json => {
     if (!Array.isArray(node.ops)) return node
-    const { ops: _stated, ...rest } = node
-    return rest
+    const { ops, ...rest } = node
+    const measurements = { ...rest.measurements }
+    opsInMeasurements.forEach(([op, key, nothing]) => {
+        if (!ops.includes(op)) delete measurements[key]
+        else if (measurements[key] === undefined) measurements[key] = nothing
+    })
+    return { ...rest, measurements }
 }
 
 /** A copy's id without the `copy/` that documents of earlier releases put before it. */

@@ -33,7 +33,8 @@ await check('the subpath exports resolve', async () => {
     await Promise.all([
         import('../lib/systems/welteT100/system.js'),
         import('../lib/systems/welteT98/system.js'),
-        import('../lib/systems/welteLicensee/system.js')
+        import('../lib/systems/welteLicensee/system.js'),
+        import('../lib/validate.js')
     ])
 })
 
