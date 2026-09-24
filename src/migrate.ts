@@ -607,5 +607,10 @@ export const migrate = (edition: Json): Json => {
     if (typeof stated === 'number' && stated > formatVersion) {
         throw new Error(`The document is written in revision ${stated} of the format, which this release, reading up to ${formatVersion}, does not know`)
     }
-    return walk(editionSteps.reduce((result, step) => step(result), edition))
+    const current = walk(editionSteps.reduce((result, step) => step(result), edition))
+    // What comes out is in the current revision and says so, so that it
+    // passes through untouched when it is migrated again.
+    return current !== null && typeof current === 'object' && !Array.isArray(current)
+        ? { ...current, formatVersion }
+        : current
 }

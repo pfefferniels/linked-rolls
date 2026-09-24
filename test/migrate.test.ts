@@ -409,6 +409,12 @@ describe('the revision of the format a document states', () => {
         expect(importJsonLd(JSON.parse(JSON.stringify(asJsonLd(twoCopiesApart()))))).not.toHaveProperty('formatVersion')
     })
 
+    it('states the current revision on what it brings up to date', () => {
+        const migrated = migrate({ copies: [], versions: [] })
+        expect(migrated.formatVersion).toBe(formatVersion)
+        expect(migrate(migrated)).toBe(migrated)
+    })
+
     it('refuses a revision it does not know yet', () => {
         expect(() => migrate({ formatVersion: formatVersion + 1 })).toThrow(/revision/)
     })
