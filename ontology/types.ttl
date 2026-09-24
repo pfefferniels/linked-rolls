@@ -158,9 +158,6 @@ reot:proofreading a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org
 
 # Kind of an edit (P2 has type on reo:Edit)
 
-reot:short-dynamic-differentation a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
-    rdfs:label "short dynamic differentiation"@en ;
-    rdfs:comment "An additional accent that can only be encoded with forzando on and off, because the space between the notes to be differentiated is too short for anything else."@en .
 reot:additional-accent a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "additional accent"@en .
 reot:add-redundancy a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "add redundancy"@en .
 reot:remove-redundancy a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "remove redundancy"@en .

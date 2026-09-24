@@ -512,7 +512,6 @@
     "EditType": {
       "description": "The type of editorial change applied to a symbol or set of symbols. Classifies the nature of the edit, e.g. whether it corrects an error, adds an accent, shifts a note, or shortens/prolongs a perforation.",
       "enum": [
-        "short-dynamic-differentation",
         "additional-accent",
         "add-redundancy",
         "remove-redundancy",

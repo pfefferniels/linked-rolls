@@ -3,12 +3,6 @@ import { AnySymbol } from "./Symbol.js";
 import { WithId } from "../shared/utils.js";
 
 export const editTypes = [
-    /**
-     * An additional accent that can only be encoded with
-     * sforzando on/off due to the short space left between
-     * the notes to be differentiated.
-     */
-    'short-dynamic-differentation',
     'additional-accent',
     'add-redundancy',
     'remove-redundancy',
