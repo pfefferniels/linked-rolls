@@ -2,6 +2,7 @@ import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { idOf } from "./Assumption.js";
 import { EditionView } from "./EditionView.js";
 import { isCommand, pairsAmong, placementsOf } from "./Symbol.js";
+import type { TrackerBar } from "./TrackerBar.js";
 import { Version } from "./Version.js";
 import {
     AnyPerformedRollFeature,
@@ -38,14 +39,14 @@ const propertiesOf = (view: EditionView, version: Readonly<Version>): RollProper
     toOwnPaper: toOwnPaperOf(view, version)
 })
 
-/** The onset a symbol has on each copy carrying it, by the copy's index, as the mean of its chains there. */
-const onsetsByCopy = (view: EditionView, symbolId: string): Map<number, Millimeters> => {
+/** The onset a symbol has on each copy carrying it, by the copy's id, as the mean of its chains there. */
+const onsetsByCopy = (view: EditionView, symbolId: string): Map<string, Millimeters> => {
     const symbol = view.symbol(symbolId)
     if (!symbol) return new Map()
 
-    const onsets = view.placedCarriersOf(symbol).flatMap((carrier): [number, Millimeters][] => {
-        const copy = view.getPath(carrier.id)?.[1]
-        return typeof copy === 'number' ? [[copy, carrier.horizontal.from]] : []
+    const onsets = view.placedCarriersOf(symbol).flatMap((carrier): [string, Millimeters][] => {
+        const copy = view.copyOf(carrier.id)
+        return copy ? [[copy.id, carrier.horizontal.from]] : []
     })
     const copies = new Set(onsets.map(([copy]) => copy))
     return new Map(
@@ -131,10 +132,177 @@ const earliestOf = (times: readonly Seconds[]): Seconds =>
     times.length === 0 ? seconds(0) : times.reduce((soonest, at) => at < soonest ? at : soonest)
 
 /**
- * A version of the edition, performed: the symbols are negotiated into
- * placed events, the reproducing system plays them, and the result goes
- * out as MIDI in which every note and pedal step is labelled with the
- * symbol it performs.
+ * The events moved to where their statements put them, the events given
+ * left as they were. The view supplies the copies, whose measurements
+ * decide how far before or after its reference a command goes, and a
+ * punch diameter, or a millimetre, where no copy agrees with a statement.
+ */
+export const withPlacementsApplied = (view: EditionView, events: readonly NegotiatedEvent[]): NegotiatedEvent[] => {
+    const gap = meanPunchDiameterOf(view) ?? mm(1)
+    const offsets: Offsets = (follower, reference) => offsetsBetween(view, follower, reference)
+    const displacements = displacementsOf(events, offsets, gap)
+    return events.map(event => {
+        const distance = displacements.get(event)
+        return distance === undefined ? event : {
+            ...event,
+            horizontal: { ...event.horizontal, from: add(event.horizontal.from, distance), to: add(event.horizontal.to, distance) }
+        }
+    })
+}
+
+/**
+ * The commands of a version as the bar performs them, in order of place,
+ * within the scope and with the placements applied. A note plays only
+ * where its onset falls in the range; expressions play throughout.
+ */
+export const negotiatedEventsOf = (
+    view: EditionView,
+    version: Readonly<Version>,
+    bar: TrackerBar,
+    { range }: Pick<EmulationScope, 'range'> = {}
+): NegotiatedEvent[] => {
+    const inScope = (event: NegotiatedEvent): boolean =>
+        !range || event.type !== 'note' || (event.horizontal.from > range[0] && event.horizontal.from < range[1])
+
+    return withPlacementsApplied(view, view.snapshot(version.id)
+        .filter(isCommand)
+        .map(symbol => negotiatedEventOf(view, symbol, bar))
+        .filter(event => event !== null)
+        .filter(inScope))
+}
+
+/** A version performed: what was negotiated, and what the system made of it. */
+export interface Emulated {
+    /** The id of the version performed. */
+    readonly source: string
+    readonly negotiated: readonly NegotiatedEvent[]
+    /** The performed events in order of time, from the origin the scope sets. */
+    readonly events: readonly AnyPerformedRollFeature[]
+    readonly curves: readonly EmulatedCurve[]
+}
+
+/**
+ * Performs a version on a reproducing system: the symbols are negotiated
+ * into placed events and the system plays them. Nothing given is changed.
+ */
+export const emulate = <Options extends object>(
+    system: ReproducingSystem<Options>,
+    version: Readonly<Version>,
+    view: EditionView,
+    options: Options = system.defaultOptions,
+    { range, skipToFirstNote = false }: EmulationScope = {}
+): Emulated => {
+    const negotiated = negotiatedEventsOf(view, version, system.trackerBar, { range })
+    if (negotiated.length === 0) return { source: version.id, negotiated, events: [], curves: [] }
+
+    const performance = system.perform(negotiated, options, propertiesOf(view, version))
+    const onsets = performance.events.filter(event => event.type === 'noteOn').map(event => event.at)
+    const origin = skipToFirstNote ? earliestOf(onsets) : seconds(0)
+
+    return {
+        source: version.id,
+        negotiated,
+        curves: performance.curves,
+        events: performance.events
+            .map(event => ({ ...event, at: subtract(event.at, origin) }))
+            .filter(event => event.at >= 0)
+            .sort((a, b) => a.at - b.at)
+    }
+}
+
+/**
+ * The performed events as a MIDI file, in which every note and pedal step
+ * is labelled with the symbol it performs. The file names the system, the
+ * version and the options it was played with.
+ */
+export const midiOf = (
+    events: readonly AnyPerformedRollFeature[],
+    systemName: string,
+    options: object,
+    source?: string
+): MidiFile => {
+    const TICKS_PER_SECOND = 1000
+    const midi: AnyEvent[] = []
+
+    const text = (text: string, deltaTime = 0): AnyEvent => ({ type: 'meta', subtype: 'text', text, deltaTime })
+    const controller = (controllerType: number, value: number, deltaTime = 0): AnyEvent =>
+        ({ type: 'channel', subtype: 'controller', controllerType, value, deltaTime, channel: 0 })
+    const controllerOf = (event: PerformedPedalEvent) =>
+        event.type === 'damper' ? MIDIControlEvents.SUSTAIN : MIDIControlEvents.SOFT_PEDAL
+
+    midi.push(text(`linked-rolls (${systemName})`))
+    if (source) {
+        midi.push(text(source))
+    }
+    for (const [key, value] of Object.entries(options)) {
+        midi.push(text(`${key}=${typeof value === 'object' ? JSON.stringify(value) : value}`))
+    }
+
+    midi.push({
+        type: 'meta',
+        subtype: 'setTempo',
+        microsecondsPerBeat: 1000000,
+        deltaTime: 0
+    })
+
+    // both pedals start at rest
+    midi.push(controller(MIDIControlEvents.SUSTAIN, 0), controller(MIDIControlEvents.SOFT_PEDAL, 0))
+
+    // a pedal step is labelled with its command only where that
+    // command changes, so the file is not swamped with labels
+    const lastCause: Partial<Record<PerformedPedalEvent['type'], string>> = {}
+
+    let currentTick = 0
+    for (const event of events.toSorted((a, b) => a.at - b.at)) {
+        const tick = Math.round(event.at * TICKS_PER_SECOND)
+        const deltaTime = tick - currentTick
+        currentTick = tick
+
+        if (event.type === 'noteOn') {
+            midi.push(text(event.performs.id, deltaTime))
+            midi.push({
+                type: 'channel',
+                subtype: 'noteOn',
+                noteNumber: event.pitch,
+                velocity: +event.velocity.toFixed(0),
+                deltaTime: 0,
+                channel: 0
+            })
+        }
+        else if (event.type === 'noteOff') {
+            midi.push({
+                type: 'channel',
+                subtype: 'noteOff',
+                noteNumber: event.pitch,
+                velocity: 127,
+                deltaTime,
+                channel: 0
+            })
+        }
+        else {
+            const labelled = lastCause[event.type] === event.performs.id
+            lastCause[event.type] = event.performs.id
+            if (!labelled) {
+                midi.push(text(event.performs.id, deltaTime))
+            }
+            midi.push(controller(controllerOf(event), event.value, labelled ? deltaTime : 0))
+        }
+    }
+
+    return {
+        header: {
+            ticksPerBeat: TICKS_PER_SECOND,
+            formatType: 0,
+            trackCount: 1
+        },
+        tracks: [midi]
+    }
+}
+
+/**
+ * A version of the edition, performed and kept: `emulate` and `midiOf`
+ * with the result held on the object between the two calls. Prefer the
+ * functions where nothing needs holding.
  */
 export class Emulation<Options extends object> {
     readonly system: ReproducingSystem<Options>
@@ -154,57 +322,17 @@ export class Emulation<Options extends object> {
         this.options = options
     }
 
-    /**
-     * Moves the negotiated events to where their statements put them.
-     * The view supplies the copies, whose measurements decide how far
-     * before or after its reference a command goes, and a punch
-     * diameter, or a millimetre, where no copy agrees with a statement.
-     */
+    /** Moves the negotiated events to where their statements put them; see `withPlacementsApplied`. */
     applyConstraints(view: EditionView) {
-        const gap = meanPunchDiameterOf(view) ?? mm(1)
-        const offsets: Offsets = (follower, reference) => offsetsBetween(view, follower, reference)
-        displacementsOf(this.negotiatedEvents, offsets, gap).forEach((distance, event) => {
-            event.horizontal.from = add(event.horizontal.from, distance)
-            event.horizontal.to = add(event.horizontal.to, distance)
-        })
+        this.negotiatedEvents = withPlacementsApplied(view, this.negotiatedEvents)
     }
 
-    emulateVersion(
-        version: Version,
-        view: EditionView,
-        { range, skipToFirstNote = false }: EmulationScope = {}
-    ) {
-        this.source = version.id
-
-        /** A note plays only where its onset falls in the range; expressions play throughout. */
-        const inScope = (event: NegotiatedEvent): boolean =>
-            !range || event.type !== 'note' || (event.horizontal.from > range[0] && event.horizontal.from < range[1])
-
-        this.negotiatedEvents =
-            view.snapshot(version.id)
-                .filter(isCommand)
-                .map(symbol => negotiatedEventOf(view, symbol, this.system.trackerBar))
-                .filter(event => event !== null)
-                .filter(inScope)
-
-        if (this.negotiatedEvents.length === 0) {
-            this.midiEvents = []
-            this.curves = []
-            return this.midiEvents
-        }
-
-        this.applyConstraints(view);
-
-        const performance = this.system.perform(this.negotiatedEvents, this.options, propertiesOf(view, version))
-        this.curves = performance.curves
-
-        const onsets = performance.events.filter(event => event.type === 'noteOn').map(event => event.at)
-        const origin = skipToFirstNote ? earliestOf(onsets) : seconds(0)
-
-        this.midiEvents = performance.events
-            .map(event => ({ ...event, at: subtract(event.at, origin) }))
-            .filter(event => event.at >= 0)
-            .sort((a, b) => a.at - b.at)
+    emulateVersion(version: Version, view: EditionView, scope: EmulationScope = {}) {
+        const emulated = emulate(this.system, version, view, this.options, scope)
+        this.source = emulated.source
+        this.negotiatedEvents = [...emulated.negotiated]
+        this.curves = emulated.curves
+        this.midiEvents = [...emulated.events]
         return this.midiEvents
     }
 
@@ -213,82 +341,6 @@ export class Emulation<Options extends object> {
     }
 
     asMIDI(): MidiFile {
-        const TICKS_PER_SECOND = 1000
-        const events: AnyEvent[] = []
-        this.midiEvents.sort((a, b) => a.at - b.at)
-
-        const text = (text: string, deltaTime = 0): AnyEvent => ({ type: 'meta', subtype: 'text', text, deltaTime })
-        const controller = (controllerType: number, value: number, deltaTime = 0): AnyEvent =>
-            ({ type: 'channel', subtype: 'controller', controllerType, value, deltaTime, channel: 0 })
-        const controllerOf = (event: PerformedPedalEvent) =>
-            event.type === 'damper' ? MIDIControlEvents.SUSTAIN : MIDIControlEvents.SOFT_PEDAL
-
-        events.push(text(`linked-rolls (${this.system.name})`))
-        if (this.source) {
-            events.push(text(this.source))
-        }
-        for (const [key, value] of Object.entries(this.options)) {
-            events.push(text(`${key}=${typeof value === 'object' ? JSON.stringify(value) : value}`))
-        }
-
-        events.push({
-            type: 'meta',
-            subtype: 'setTempo',
-            microsecondsPerBeat: 1000000,
-            deltaTime: 0
-        })
-
-        // both pedals start at rest
-        events.push(controller(MIDIControlEvents.SUSTAIN, 0), controller(MIDIControlEvents.SOFT_PEDAL, 0))
-
-        // a pedal step is labelled with its command only where that
-        // command changes, so the file is not swamped with labels
-        const lastCause: Partial<Record<PerformedPedalEvent['type'], string>> = {}
-
-        let currentTick = 0
-        for (const event of this.midiEvents) {
-            const tick = Math.round(event.at * TICKS_PER_SECOND)
-            const deltaTime = tick - currentTick
-            currentTick = tick
-
-            if (event.type === 'noteOn') {
-                events.push(text(event.performs.id, deltaTime))
-                events.push({
-                    type: 'channel',
-                    subtype: 'noteOn',
-                    noteNumber: event.pitch,
-                    velocity: +event.velocity.toFixed(0),
-                    deltaTime: 0,
-                    channel: 0
-                })
-            }
-            else if (event.type === 'noteOff') {
-                events.push({
-                    type: 'channel',
-                    subtype: 'noteOff',
-                    noteNumber: event.pitch,
-                    velocity: 127,
-                    deltaTime,
-                    channel: 0
-                })
-            }
-            else {
-                const labelled = lastCause[event.type] === event.performs.id
-                lastCause[event.type] = event.performs.id
-                if (!labelled) {
-                    events.push(text(event.performs.id, deltaTime))
-                }
-                events.push(controller(controllerOf(event), event.value, labelled ? deltaTime : 0))
-            }
-        }
-
-        return {
-            header: {
-                ticksPerBeat: TICKS_PER_SECOND,
-                formatType: 0,
-                trackCount: 1
-            },
-            tracks: [events]
-        }
+        return midiOf(this.midiEvents, this.system.name, this.options, this.source)
     }
 }

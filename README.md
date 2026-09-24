@@ -324,13 +324,15 @@ not determine is how bellows travel maps onto MIDI velocity;
 Mezzoforte pin and the closed rail, and its defaults are midi2exp's.
 
 ```ts
-import { Emulation } from 'linked-rolls'
+import { emulate, midiOf } from 'linked-rolls'
 import { welteT100System } from 'linked-rolls/welte-t100'
 
-const emulation = new Emulation(welteT100System)
-emulation.emulateVersion(version, view)
-const midi = emulation.asMIDI()
+const { events, curves, source } = emulate(welteT100System, version, view)
+const midi = midiOf(events, welteT100System.name, welteT100System.defaultOptions, source)
 ```
+
+`Emulation` does the same and keeps the result on the object between
+`emulateVersion` and `asMIDI`.
 
 The second is the green Welte, `linked-rolls/welte-t98`. Everything
 downstream of the relay is the same mechanism — Hagmann has the nuancing

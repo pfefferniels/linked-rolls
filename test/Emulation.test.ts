@@ -3,7 +3,8 @@ import { readFileSync } from 'fs'
 import * as path from 'path'
 import { importJsonLd } from '../src/importJsonLd'
 import { EditionView } from '../src/EditionView'
-import { Emulation } from '../src/Emulation'
+import { emulate, Emulation, midiOf, withPlacementsApplied } from '../src/Emulation'
+import { edition as placed } from './editionFixture'
 import { flat } from './flat'
 import { mm } from '../src/Quantity'
 
@@ -69,5 +70,36 @@ describe('emulating a version through a reproducing system', () => {
         emulation.negotiatedEvents
             .filter(event => event.type === 'note')
             .forEach(note => expect(labels.has(note.id)).toBe(true))
+    })
+})
+
+/** The functions the class is built on hold nothing and change nothing they are given. */
+describe('emulating without keeping anything', () => {
+    it('gives what the class keeps', () => {
+        const emulation = new Emulation(flat)
+        emulation.emulateVersion(version, view)
+        const emulated = emulate(flat, version, view)
+
+        expect(emulated.events).toEqual(emulation.midiEvents)
+        expect(emulated.negotiated).toEqual(emulation.negotiatedEvents)
+        expect(midiOf(emulated.events, flat.name, flat.defaultOptions, emulated.source)).toEqual(emulation.asMIDI())
+    })
+
+    it('leaves the events it writes out in the order they were given', () => {
+        const { events } = emulate(flat, version, view)
+        const reversed = [...events].reverse()
+        midiOf(reversed, flat.name, {})
+        expect(reversed).toEqual([...events].reverse())
+    })
+
+    it('places the events without moving those it was given', () => {
+        const e = placed()
+        const seen = new EditionView(e)
+        const { negotiated } = emulate(flat, e.versions[0], seen)
+        const unplaced = negotiated.map(event => ({ ...event, horizontal: { ...event.horizontal, from: mm(event.horizontal.from + 7) } }))
+        const before = structuredClone(unplaced)
+
+        withPlacementsApplied(seen, unplaced)
+        expect(unplaced).toEqual(before)
     })
 })
