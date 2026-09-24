@@ -47,6 +47,13 @@ modification had added, has each feature put into the act that brought
 it about, and a feature a patch bears that was left unnamed is named
 after the patch. Exports are always in the current format.
 
+An export states the revision of the format it is written in as
+`formatVersion`, which RDF does not read. A document stating the
+current revision is read as it stands, and one stating a later
+revision than the library knows is refused rather than misread. A
+document stating none was written before the revisions were numbered,
+and is brought up to date by recognising its shapes as before.
+
 ## How a date is stated
 
 A date is the time-span of the event rather than a value on it.
