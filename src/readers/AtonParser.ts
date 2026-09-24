@@ -107,13 +107,13 @@ export class AtonParser {
         } else if ((typeof state.curkey === 'undefined') && line.match(/^[^@]|^$/)) {
             // Ignore unassociated text.
             return;
-        } else if (matches = line.match(/^@@[^@ ]/)) {
+        } else if ((matches = line.match(/^@@[^@ ]/))) {
             // Control message.
             // End current property.
             this.cleanParameter(state);
             state.curkey = undefined;
             state.ocurkey = undefined;
-            if (matches = line.match(/^@@(BEGIN|START)\s*:\s*(.*)\s*$/i)) {
+            if ((matches = line.match(/^@@(BEGIN|START)\s*:\s*(.*)\s*$/i))) {
                 state.label = matches[2];
                 //console.log(state.label)
                 if (typeof state.curobj[state.label] === 'undefined') {
@@ -141,7 +141,7 @@ export class AtonParser {
                     state.node[state.node.length - 1].startline = state.linenum;
                     state.curobj = state.curobj[state.label][state.curobj[state.label].length - 1];
                 }
-            } else if (matches = line.match(/^@@(END|STOP)\s*:?\s*(.*)\s*$/i)) {
+            } else if ((matches = line.match(/^@@(END|STOP)\s*:?\s*(.*)\s*$/i))) {
                 // End an object, so go back to the parent.
                 if (typeof state.curkey !== 'undefined') {
                     // clean whitespace of last read property:
@@ -155,8 +155,6 @@ export class AtonParser {
                 if (typeof state.node[state.node.length - 1].startline === 'undefined') {
                     throw new Error('No start for ' + state.action + ' tag on line '
                         + state.node[state.node.length - 1].startline + ': ' + line);
-                    state.output = {};
-                    // return v.output;
                 }
                 if (typeof state.labelend !== 'undefined') {
                     // ensure that the v.label begin/end tags match
@@ -177,11 +175,11 @@ export class AtonParser {
                     return (obj[x.label] instanceof Array) ?
                         obj[x.label][x.index] : obj[x.label];
                 }, state.output);
-            } else if (matches = line.match(/^@@TYPE\s*:\s*([^:]+)\s*:\s*(.*)\s*$/i)) {
+            } else if ((matches = line.match(/^@@TYPE\s*:\s*([^:]+)\s*:\s*(.*)\s*$/i))) {
                 // Automatic property value conversion.
                 state.typer[matches[1]] = matches[2];
             }
-        } else if (matches = line.match(/^@([^\s:@][^:]*)\s*:\s*(.*)\s*$/)) {
+        } else if ((matches = line.match(/^@([^\s:@][^:]*)\s*:\s*(.*)\s*$/))) {
             // New property
             state.newkey = matches[1];
             state.onewkey = state.newkey;

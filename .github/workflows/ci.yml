@@ -33,6 +33,9 @@ jobs:
           npx tsc --noEmit -p .
           npx tsc -p schema/docs
 
+      - name: Lint
+        run: npm run lint
+
       - name: Tests
         run: npx vitest run
 

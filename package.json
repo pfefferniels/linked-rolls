@@ -40,6 +40,7 @@
     "build": "npm run build:schema && rm -rf lib && tsc",
     "prepublishOnly": "npm run build && vitest run && npm run smoke",
     "test": "vitest",
+    "lint": "oxlint -c .oxlintrc.json src test scripts schema",
     "build:schema": "npx ts-json-schema-generator --additional-properties --validation-keywords see --path 'src/**/*.ts' --type 'Edition' > schema_.json && node schema/postprocess.js && rm schema_.json && mv schema.json src/schema.json",
     "build:docs": "node schema/docs/generate.ts src/schema.json docs/index.html",
     "smoke": "node scripts/smoke.mjs"
@@ -50,6 +51,7 @@
     "@types/node": "^24.13.3",
     "jsonld": "^9.0.0",
     "n3": "^2.7.12",
+    "oxlint": "^1.85.0",
     "ts-json-schema-generator": "^2.9.0",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",

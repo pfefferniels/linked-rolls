@@ -58,7 +58,7 @@ describe('what the published package asks Node to resolve', () => {
 
     it('points every one of them at a file that exists', () => {
         const missing = relativeSpecifiers()
-            .filter(specifier => !/\.json$/.test(specifier.spec))
+            .filter(specifier => !specifier.spec.endsWith('.json'))
             .filter(specifier => !isFile(targetOf(specifier)))
         expect(missing.map(({ file, spec }) => `${file}: ${spec}`)).toEqual([])
     })

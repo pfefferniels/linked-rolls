@@ -174,6 +174,6 @@ export const histogramOf = <U extends string>(
         counts: values.reduce((tally, value) => {
             tally[Math.min(bins - 1, Math.floor((value - first) / binWidth))] += 1
             return tally
-        }, new Array<number>(bins).fill(0))
+        }, Array.from({ length: bins }, () => 0))
     }
 }

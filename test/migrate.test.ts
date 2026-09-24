@@ -10,7 +10,6 @@ import { Edition } from '../src/Edition'
 import { EditionView } from '../src/EditionView'
 import { collateSymbols } from '../src/editionOps'
 import { idsOf } from '../src/Assumption'
-import { Note } from '../src/Symbol'
 import { mm } from '../src/Quantity'
 import { copy, editionOf, hole, note, version } from './editionFixture'
 
@@ -244,7 +243,7 @@ describe('migrating a 0.1 edition', () => {
                 // the one act that named two writings and two patches
                 ['Alteration', ['Writing', 'Writing']],
                 ['Attachment', ['Patch', 'Patch']],
-                ['Alteration', new Array(8).fill('HoleChain')],
+                ['Alteration', Array.from({ length: 8 }, () => 'HoleChain')],
                 ['Alteration', ['Writing']],
                 ['Alteration', ['Writing']],
                 // the repair on the third copy, which named nothing to begin with
