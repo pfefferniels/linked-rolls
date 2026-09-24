@@ -1,7 +1,7 @@
 import { CONSENSUS } from "welte-mignon-emulator/t100";
 import { Half, Parameters } from "welte-mignon-emulator";
-import { track } from "../../Quantity.js";
-import { ReproducingSystem } from "../../ReproducingSystem.js";
+import { track } from "../../model/Quantity.js";
+import { ReproducingSystem } from "../ReproducingSystem.js";
 import { welteLicensee } from "./bar.js";
 import {
     defaultWelteT100Options,

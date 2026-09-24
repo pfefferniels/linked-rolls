@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { paperSpeedOfSpencerAnn, readFromSpencerBar, readSpencerAnn, SPENCER_ROWS_PER_INCH } from '../src/readers/spencerBar'
-import { asSymbols, featuresOf, unreadTracks } from '../src/RollCopy'
-import { Expression, Note } from '../src/Symbol'
+import { asSymbols, featuresOf, unreadTracks } from '../src/model/RollCopy'
+import { Expression, Note } from '../src/model/Symbol'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
 

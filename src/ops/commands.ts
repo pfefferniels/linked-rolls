@@ -1,8 +1,8 @@
 /** Statements that place a command relative to another, or pair two. */
 import { Draft } from "immer"
-import { EditionView, getAt } from "../EditionView.js"
-import { AnyCommand, AnySymbol, PlacementRelation, isCommand, placementRelations } from "../Symbol.js"
-import { assignReference } from "../Assumption.js"
+import { EditionView, getAt } from "../view/EditionView.js"
+import { AnyCommand, AnySymbol, PlacementRelation, isCommand, placementRelations } from "../model/Symbol.js"
+import { assignReference } from "../model/Assumption.js"
 import { EditionOp, reading } from "./draft.js"
 
 /**

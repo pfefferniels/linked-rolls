@@ -1,13 +1,13 @@
 /** Merging and splitting the edits of a version. */
 import { v4 } from "uuid"
-import { EditionView } from "../EditionView.js"
-import { AnySymbol, Expression } from "../Symbol.js"
-import { Edit, EditType } from "../Edit.js"
-import { editsOf } from "../Version.js"
-import { TrackerBar } from "../TrackerBar.js"
+import { EditionView } from "../view/EditionView.js"
+import { AnySymbol, Expression } from "../model/Symbol.js"
+import { Edit, EditType } from "../model/Edit.js"
+import { editsOf } from "../model/Version.js"
+import { TrackerBar } from "../systems/TrackerBar.js"
 import { trackerBarOf } from "../systems/index.js"
-import { HorizontalSpan } from "../Feature.js"
-import { distance, Millimeters, mm, subtract } from "../Quantity.js"
+import { HorizontalSpan } from "../model/Feature.js"
+import { distance, Millimeters, mm, subtract } from "../model/Quantity.js"
 import { EditionOp, noChange, onVersion, insertion, deletion, reading } from "./draft.js"
 
 const sameSequence = (a: readonly string[], b: readonly string[]) =>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { paperAt, paperSeconds, ROWS_PER_MM, WELTE_T98_SPOOL } from 'welte-mignon-emulator'
 import { PUNCH_T98_MM } from 'welte-mignon-emulator/t98'
-import { DynamicsCurve, NegotiatedEvent, PedalCurve, Performance, PerformedPedalEvent } from '../src/ReproducingSystem'
+import { DynamicsCurve, NegotiatedEvent, PedalCurve, Performance, PerformedPedalEvent } from '../src/systems/ReproducingSystem'
 import { welteT98 } from '../src/systems/welteT98/bar'
 import {
     defaultWelteT98Options,
@@ -18,7 +18,7 @@ import {
 } from '../src/systems/welteT98/system'
 import { defaultWelteT100Options, welteT100System } from '../src/systems/welteT100/system'
 import { welteT100 } from '../src/systems/welteT100/bar'
-import { mm, track } from '../src/Quantity'
+import { mm, track } from '../src/model/Quantity'
 
 /**
  * A green roll written by hand. No edition of a T-98 roll is to hand, so the

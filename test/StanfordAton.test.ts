@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'fs'
 import * as path from 'path'
-import { asSymbols, calibrationOf, featuresOf, punchDiameterOf, unreadTracks } from '../src/RollCopy'
+import { asSymbols, calibrationOf, featuresOf, punchDiameterOf, unreadTracks } from '../src/model/RollCopy'
 import { readFromStanfordAton } from '../src/readers/stanfordAton'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
 import { welteT98 } from '../src/systems/welteT98/bar'
-import { columnOf } from '../src/TrackCalibration'
-import { Expression } from '../src/Symbol'
-import { inPixels, track } from '../src/Quantity'
+import { columnOf } from '../src/model/TrackCalibration'
+import { Expression } from '../src/model/Symbol'
+import { inPixels, track } from '../src/model/Quantity'
 
 /**
  * mf320jq4997, a red Welte roll scanned at Stanford, reduced to its

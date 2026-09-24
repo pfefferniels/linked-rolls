@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { Editor } from '../src/Agent'
-import { asJsonLd } from '../src/asJsonLd'
-import { importJsonLd } from '../src/importJsonLd'
+import { Editor } from '../src/model/Agent'
+import { asJsonLd } from '../src/io/asJsonLd'
+import { importJsonLd } from '../src/io/importJsonLd'
 import { edition } from './editionFixture'
 
 const editors: Editor[] = [

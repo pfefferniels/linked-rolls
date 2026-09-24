@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteT98 } from '../src/systems/welteT98/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
-import { mm, track } from '../src/Quantity'
-import { asSymbols } from '../src/RollCopy'
-import { HoleChain } from '../src/Feature'
-import { idsOf } from '../src/Assumption'
+import { mm, track } from '../src/model/Quantity'
+import { asSymbols } from '../src/model/RollCopy'
+import { HoleChain } from '../src/model/Feature'
+import { idsOf } from '../src/model/Assumption'
 
 const at = (fromMm: number, toMm: number, trackNumber: number) => ({
     horizontal: { from: mm(fromMm), to: mm(toMm) },

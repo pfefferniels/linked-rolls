@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { DynamicsCurve, NegotiatedEvent, RollProperties } from '../src/ReproducingSystem'
+import { DynamicsCurve, NegotiatedEvent, RollProperties } from '../src/systems/ReproducingSystem'
 import { defaultWelteT100Options, welteT100System } from '../src/systems/welteT100/system'
 import { defaultWelteT98Options, welteT98System } from '../src/systems/welteT98/system'
-import { mm, track } from '../src/Quantity'
+import { mm, track } from '../src/model/Quantity'
 
 let nextId = 0
 const expression = (type: string, scope: 'bass' | 'treble', fromMm: number, lengthMm: number, trackNumber: number): NegotiatedEvent => ({

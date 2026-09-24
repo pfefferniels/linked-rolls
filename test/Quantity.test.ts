@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clamp, inMillimeters, inPixels, max, min, mm, px, quantity, Quantity } from '../src/Quantity'
+import { clamp, inMillimeters, inPixels, max, min, mm, px, quantity, Quantity } from '../src/model/Quantity'
 
 describe('going between a scan and the paper', () => {
     it('reads as many pixels as the resolution states to the inch', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { importJsonLd } from '../src/importJsonLd';
+import { importJsonLd } from '../src/io/importJsonLd';
 import * as path from 'path'
 import { readFileSync } from 'fs';
 

@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { importJsonLd } from '../src/importJsonLd';
+import { importJsonLd } from '../src/io/importJsonLd';
 import * as path from 'path'
 import { readFileSync } from 'fs';
-import { asJsonLd } from '../src/asJsonLd';
-import { assignDate, assignObject, BeliefAdoption, Certainty, dateOf, earliestOf, latestOf, notBefore } from '../src/Assumption';
+import { asJsonLd } from '../src/io/asJsonLd';
+import { assignDate, assignObject, BeliefAdoption, Certainty, dateOf, earliestOf, latestOf, notBefore } from '../src/model/Assumption';
 import { edition as smallEdition } from './editionFixture';
-import { PaperSpeed } from '../src/RollCopy';
-import { systemOf } from '../src/TrackerBar';
+import { PaperSpeed } from '../src/model/RollCopy';
+import { systemOf } from '../src/systems/TrackerBar';
 import { welteLicensee } from '../src/systems/welteLicensee/bar';
 import { welteT98 } from '../src/systems/welteT98/bar';
-import { feetPerMinute } from '../src/Quantity';
+import { feetPerMinute } from '../src/model/Quantity';
 
 const edition = () =>
     importJsonLd(JSON.parse(readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')))

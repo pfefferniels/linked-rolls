@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { alignFeatures } from '../src/alignment'
-import { AnyFeature, HoleChain } from '../src/Feature'
-import { mm, track } from '../src/Quantity'
+import { alignFeatures } from '../src/collation/alignment'
+import { AnyFeature, HoleChain } from '../src/model/Feature'
+import { mm, track } from '../src/model/Quantity'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteT98 } from '../src/systems/welteT98/bar'
 

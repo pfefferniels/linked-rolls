@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'fs'
 import * as path from 'path'
-import { importJsonLd } from '../src/importJsonLd'
-import { EditionView } from '../src/EditionView'
-import { emulate, Emulation, midiOf, withPlacementsApplied } from '../src/Emulation'
+import { importJsonLd } from '../src/io/importJsonLd'
+import { EditionView } from '../src/view/EditionView'
+import { emulate, Emulation, midiOf, withPlacementsApplied } from '../src/emulation/Emulation'
 import { edition as placed } from './editionFixture'
 import { flat } from './flat'
-import { mm } from '../src/Quantity'
+import { mm } from '../src/model/Quantity'
 
 const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')
 const edition = importJsonLd(JSON.parse(file))

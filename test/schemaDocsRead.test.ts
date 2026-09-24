@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import schema from '../src/schema.json'
-import type { Definition, Json, Property, SchemaDoc, TypeExpression } from '../schema/docs/model.ts'
-import { ontologyTerms } from '../schema/docs/ontology.ts'
-import { propertiesIn, readSchemaDoc } from '../schema/docs/read.ts'
+import type { Definition, Json, Property, SchemaDoc, TypeExpression } from '../schema/docs/model'
+import { ontologyTerms } from '../schema/docs/ontology'
+import { propertiesIn, readSchemaDoc } from '../schema/docs/read'
 
 const refTo = (name: string) => `#/definitions/${encodeURIComponent(name)}`
 

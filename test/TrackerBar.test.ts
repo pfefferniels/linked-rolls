@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
 import { welteT98 } from '../src/systems/welteT98/bar'
-import { describeTrackerBar, translationBetween } from '../src/TrackerBar'
-import { columnOf, columnsOf, trackAt, TrackCalibration } from '../src/TrackCalibration'
-import { mm, px, track } from '../src/Quantity'
+import { describeTrackerBar, translationBetween } from '../src/systems/TrackerBar'
+import { columnOf, columnsOf, trackAt, TrackCalibration } from '../src/model/TrackCalibration'
+import { mm, px, track } from '../src/model/Quantity'
 
 describe('WelteT100 tracker bar', () => {
     it('reads 100 positions and nothing outside them', () => {

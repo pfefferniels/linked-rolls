@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { trackerBarOf, trackerBars } from '../src/systems'
-import { systemOf } from '../src/TrackerBar'
+import { systemOf } from '../src/systems/TrackerBar'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
-import { feetPerMinute, inMetersPerMinute, metersPerMinute } from '../src/Quantity'
+import { feetPerMinute, inMetersPerMinute, metersPerMinute } from '../src/model/Quantity'
 
 describe('the systems the library knows', () => {
     it('lists the T-100 first', () => {

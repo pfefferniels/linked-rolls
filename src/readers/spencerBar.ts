@@ -1,9 +1,9 @@
 import { v4 } from "uuid";
-import { HoleChain } from "../Feature.js";
-import { PaperSpeed, RollCopy } from "../RollCopy.js";
-import { systemOf, TrackerBar } from "../TrackerBar.js";
+import { HoleChain } from "../model/Feature.js";
+import { PaperSpeed, RollCopy } from "../model/RollCopy.js";
+import { systemOf, TrackerBar } from "../systems/TrackerBar.js";
 import { welteLicensee } from "../systems/welteLicensee/bar.js";
-import { feetPerMinute, inMillimeters, px, track } from "../Quantity.js";
+import { feetPerMinute, inMillimeters, px, track } from "../model/Quantity.js";
 
 /**
  * Spencer Chase's e-roll file (`.bar`, "eRoll Tracker Bar Image") holds

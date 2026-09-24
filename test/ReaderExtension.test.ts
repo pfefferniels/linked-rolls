@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
-import { Edition } from '../src/Edition'
-import { EditionView } from '../src/EditionView'
-import { AnyFeature, isPlaced } from '../src/Feature'
-import { revertShortening, shortenChains, tooShortToShorten } from '../src/alignment'
-import { shortenCopy, unshortenCopy } from '../src/editionOps'
-import { mm } from '../src/Quantity'
+import { Edition } from '../src/model/Edition'
+import { EditionView } from '../src/view/EditionView'
+import { AnyFeature, isPlaced } from '../src/model/Feature'
+import { revertShortening, shortenChains, tooShortToShorten } from '../src/collation/alignment'
+import { shortenCopy, unshortenCopy } from '../src/ops'
+import { mm } from '../src/model/Quantity'
 import { alteration, copy, editionOf, hole } from './editionFixture'
 
 /**

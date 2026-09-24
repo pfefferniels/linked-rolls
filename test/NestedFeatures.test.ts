@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
-import { Edition } from '../src/Edition'
-import { Patch, NestedFeature, Transcription, withBorneFeatures } from '../src/Feature'
-import { featuresOf, RollCopy } from '../src/RollCopy'
+import { Edition } from '../src/model/Edition'
+import { Patch, NestedFeature, Transcription, withBorneFeatures } from '../src/model/Feature'
+import { featuresOf, RollCopy } from '../src/model/RollCopy'
 import {
     AnyArgumentation, Assumption, Belief, MeaningComprehension, assignObject, assignReference
-} from '../src/Assumption'
-import { mergeFeatures, mergeObstacle, removeCopy, removeFeatures, symbolsCarriedOnlyBy } from '../src/editionOps'
+} from '../src/model/Assumption'
+import { mergeFeatures, mergeObstacle, removeCopy, removeFeatures, symbolsCarriedOnlyBy } from '../src/ops'
 import { attachment, copy, editionOf, hole, label, note, version } from './editionFixture'
-import { mm, track } from '../src/Quantity'
+import { mm, track } from '../src/model/Quantity'
 
 /** A writing as a patch bears it, standing where the patch stands and stating no place of its own. */
 const writing = (id: string, text: string): NestedFeature => ({

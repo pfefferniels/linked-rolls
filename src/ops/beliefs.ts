@@ -1,8 +1,8 @@
 /** The beliefs annotating the statements of the edition. */
 import { Draft } from "immer"
 import { v4 } from "uuid"
-import { getAt, Path } from "../EditionView.js"
-import { AnyArgumentation, Assumption, Belief, Certainty } from "../Assumption.js"
+import { getAt, Path } from "../view/EditionView.js"
+import { AnyArgumentation, Assumption, Belief, Certainty } from "../model/Assumption.js"
 import { EditionOp } from "./draft.js"
 
 const onAssumptionAt = (path: Path, op: (assumption: Draft<Assumption>) => void): EditionOp =>

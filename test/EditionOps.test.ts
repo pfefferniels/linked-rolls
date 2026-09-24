@@ -1,21 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
-import { Edition } from '../src/Edition'
-import { EditionView, Path } from '../src/EditionView'
-import { Edit } from '../src/Edit'
-import { AnySymbol, isCommand, placementsOf } from '../src/Symbol'
-import { featuresOf, PaperSpeed, PaperStretch } from '../src/RollCopy'
-import { constraintProblems } from '../src/constraints'
-import { Assumption, assignObject, idOf, idsOf } from '../src/Assumption'
-import { CollationTolerance, defaultCollationTolerance } from '../src/Collation'
+import { Edition } from '../src/model/Edition'
+import { EditionView, Path } from '../src/view/EditionView'
+import { Edit } from '../src/model/Edit'
+import { AnySymbol, isCommand, placementsOf } from '../src/model/Symbol'
+import { featuresOf, PaperSpeed, PaperStretch } from '../src/model/RollCopy'
+import { constraintProblems } from '../src/analysis/constraints'
+import { Assumption, assignObject, idOf, idsOf } from '../src/model/Assumption'
+import { CollationTolerance, defaultCollationTolerance } from '../src/collation/Collation'
 import {
     addReason, alignCopy, clearBelief, collateSymbols, connectVersions, createBelief, createVersion, deriveVersion,
     detachVersion, mergeEdits, nameCopy, pairCommands, placeCommand, removeFeatures, removeReason, removeSymbols,
     removeVersion, setCertainty, splitEdit, unalignCopy, unpairCommand, unplaceCommand
-} from '../src/editionOps'
+} from '../src/ops'
 import { copy, cutFor, edition, editionOf, expression, hole, note, version } from './editionFixture'
-import { feetPerMinute, mm, track } from '../src/Quantity'
-import { systemOf } from '../src/TrackerBar'
+import { feetPerMinute, mm, track } from '../src/model/Quantity'
+import { systemOf } from '../src/systems/TrackerBar'
 import { welteT98 } from '../src/systems/welteT98/bar'
 import { welteT100 } from '../src/systems/welteT100/bar'
 

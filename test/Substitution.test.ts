@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { AnySymbol, Expression } from '../src/Symbol'
-import { HorizontalSpan } from '../src/Feature'
-import { mm } from '../src/Quantity'
-import { operationOf, substitutionsBetween } from '../src/substitution'
+import { AnySymbol, Expression } from '../src/model/Symbol'
+import { HorizontalSpan } from '../src/model/Feature'
+import { mm } from '../src/model/Quantity'
+import { operationOf, substitutionsBetween } from '../src/collation/substitution'
 
 const at = (from: number, to: number): HorizontalSpan => ({ unit: 'mm', from: mm(from), to: mm(to) })
 

@@ -1,9 +1,9 @@
 /** Operations on the stemma: deriving, detaching and removing versions, and the derivations they state. */
 import { Draft } from "immer"
 import { v4 } from "uuid"
-import { EditionView } from "../EditionView.js"
-import { Derivation, derivesFrom, editsOf, principalDerivationOf, Version } from "../Version.js"
-import { Belief, ReferenceAssumption, assignReference, idOf } from "../Assumption.js"
+import { EditionView } from "../view/EditionView.js"
+import { Derivation, derivesFrom, editsOf, principalDerivationOf, Version } from "../model/Version.js"
+import { Belief, ReferenceAssumption, assignReference, idOf } from "../model/Assumption.js"
 import { EditionOp, onVersion, stateOf, insertion, dropInsertions, referenceHeld, withoutReferences, reading } from "./draft.js"
 import { without } from "./immutable.js"
 import { dropStatements } from "./copies.js"

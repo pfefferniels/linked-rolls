@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Definition, OntologyTerm, Property, SchemaDoc, TypeExpression } from '../schema/docs/model.ts'
-import { renderPage } from '../schema/docs/render.ts'
+import type { Definition, OntologyTerm, Property, SchemaDoc, TypeExpression } from '../schema/docs/model'
+import { renderPage } from '../schema/docs/render'
 
 const property = (anchor: string, type: TypeExpression, rest: Partial<Property> = {}): Property => ({
     name: anchor.split('.').at(-1)!,

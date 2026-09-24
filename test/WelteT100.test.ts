@@ -3,12 +3,12 @@ import { readFileSync } from 'fs'
 import * as path from 'path'
 import { MIDIControlEvents } from 'midifile-ts'
 import { paperAt, paperSeconds, WELTE_SPOOL } from 'welte-mignon-emulator'
-import { importJsonLd } from '../src/importJsonLd'
-import { EditionView } from '../src/EditionView'
-import { Emulation } from '../src/Emulation'
-import { DynamicsCurve, PedalCurve, PerformedPedalEvent } from '../src/ReproducingSystem'
+import { importJsonLd } from '../src/io/importJsonLd'
+import { EditionView } from '../src/view/EditionView'
+import { Emulation } from '../src/emulation/Emulation'
+import { DynamicsCurve, PedalCurve, PerformedPedalEvent } from '../src/systems/ReproducingSystem'
 import { instrumentNameOf, instrumentNames, instruments, nuanceOf, pedalPresetOf, pedalPresets, secondsAt, welteT100System } from '../src/systems/welteT100/system'
-import { mm } from '../src/Quantity'
+import { mm } from '../src/model/Quantity'
 
 const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')
 const edition = importJsonLd(JSON.parse(file))

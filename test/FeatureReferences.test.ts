@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
-import { Edition } from '../src/Edition'
-import { featuresOf, Modification, RollCopy } from '../src/RollCopy'
-import { HoleChain } from '../src/Feature'
-import { AnyArgumentation, Assumption, Belief, MeaningComprehension } from '../src/Assumption'
-import { mergeFeatures, removeCopy, removeFeatures } from '../src/editionOps'
+import { Edition } from '../src/model/Edition'
+import { featuresOf, Modification, RollCopy } from '../src/model/RollCopy'
+import { HoleChain } from '../src/model/Feature'
+import { AnyArgumentation, Assumption, Belief, MeaningComprehension } from '../src/model/Assumption'
+import { mergeFeatures, removeCopy, removeFeatures } from '../src/ops'
 import { copy, editionOf, hole, note, version } from './editionFixture'
 
 const repair = (...produced: HoleChain[]): Modification => ({ type: 'Alteration', purpose: 'repair', produced })

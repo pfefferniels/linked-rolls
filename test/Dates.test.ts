@@ -4,8 +4,8 @@ import context from '../src/spec/context.json'
 import welteT100Context from '../src/spec/welte-t100.context.json'
 import welteLicenseeContext from '../src/spec/welte-licensee.context.json'
 import welteT98Context from '../src/spec/welte-t98.context.json'
-import { assignDate, notAfter, notBefore } from '../src/Assumption'
-import { asJsonLd } from '../src/asJsonLd'
+import { assignDate, notAfter, notBefore } from '../src/model/Assumption'
+import { asJsonLd } from '../src/io/asJsonLd'
 import { edition as smallEdition } from './editionFixture'
 
 /**
@@ -110,7 +110,7 @@ describe('reading dates back in', () => {
      * what the schema holds as a date is read as one.
      */
     it('leaves a transcription that reads like a date as text', async () => {
-        const { importJsonLd } = await import('../src/importJsonLd')
+        const { importJsonLd } = await import('../src/io/importJsonLd')
         const edition = smallEdition()
         edition.versions[0].edits!.push({
             type: 'edit',

@@ -26,7 +26,7 @@ import {
     Punch,
     WelteT98InstrumentName,
 } from "welte-mignon-emulator/t98";
-import { Expression } from "../../Symbol.js";
+import { Expression } from "../../model/Symbol.js";
 import { welteT98, WelteT98ExpressionType } from "./bar.js";
 import {
     DynamicsCurve,
@@ -35,8 +35,8 @@ import {
     Performance,
     ReproducingSystem,
     RollProperties
-} from "../../ReproducingSystem.js";
-import { Millimeters, mm, Seconds, seconds, track } from "../../Quantity.js";
+} from "../ReproducingSystem.js";
+import { Millimeters, mm, Seconds, seconds, track } from "../../model/Quantity.js";
 import { defaultVelocityMap } from "../velocity.js";
 import { performWelte, Ports, sameParameters, type WelteOptions } from "../welte.js";
 

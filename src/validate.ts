@@ -3,7 +3,7 @@ import Ajv, { type ErrorObject, type ValidateFunction } from "ajv"
 // only a default export, so `import * as` hands ajv the namespace object
 // and it compiles a schema that constrains nothing.
 import schema from "./schema.json" with { type: 'json' }
-import { Edition } from "./Edition.js"
+import { Edition } from "./model/Edition.js"
 
 /**
  * Holds a document against the edition schema. `errors` says what the

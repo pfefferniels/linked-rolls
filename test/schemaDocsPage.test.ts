@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import schema from '../src/schema.json'
-import type { Json } from '../schema/docs/model.ts'
-import { propertiesIn, readSchemaDoc } from '../schema/docs/read.ts'
-import { renderPage } from '../schema/docs/render.ts'
+import type { Json } from '../schema/docs/model'
+import { propertiesIn, readSchemaDoc } from '../schema/docs/read'
+import { renderPage } from '../schema/docs/render'
 
 const stylesheet = readFileSync(new URL('../schema/docs/page.css', import.meta.url), 'utf8')
 const doc = readSchemaDoc(schema as Json)

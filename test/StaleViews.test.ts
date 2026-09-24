@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { edition } from './editionFixture'
-import { EditionView } from '../src/EditionView'
-import { AnyCommand } from '../src/Symbol'
-import { Edition } from '../src/Edition'
-import { placeCommand, removeSymbols } from '../src/editionOps'
+import { EditionView } from '../src/view/EditionView'
+import { AnyCommand } from '../src/model/Symbol'
+import { Edition } from '../src/model/Edition'
+import { placeCommand, removeSymbols } from '../src/ops'
 import { reading } from '../src/ops/draft'
 
 const commandIn = (e: Edition, id: string) =>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'fs'
 import { Parser } from 'n3'
-import { procedures, procedureOf } from '../src/procedures'
+import { procedures, procedureOf } from '../src/model/procedures'
 
 /**
  * The procedures a consumer is offered have to be the ones the ontology

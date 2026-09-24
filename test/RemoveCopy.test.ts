@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
-import { Edition } from '../src/Edition'
-import { EditionView } from '../src/EditionView'
-import { idsOf } from '../src/Assumption'
-import { removeCopy, symbolsCarriedOnlyBy } from '../src/editionOps'
+import { Edition } from '../src/model/Edition'
+import { EditionView } from '../src/view/EditionView'
+import { idsOf } from '../src/model/Assumption'
+import { removeCopy, symbolsCarriedOnlyBy } from '../src/ops'
 import { edition } from './editionFixture'
 
 const noteIn = (edition: Edition) => new EditionView(edition).symbol('note')!

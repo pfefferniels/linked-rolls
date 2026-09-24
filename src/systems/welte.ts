@@ -17,7 +17,7 @@ import {
     PortGeometry,
     Spool,
 } from "welte-mignon-emulator";
-import { Expression, Note } from "../Symbol.js";
+import { Expression, Note } from "../model/Symbol.js";
 import {
     DynamicsCurve,
     NegotiatedEvent,
@@ -27,9 +27,9 @@ import {
     PerformedNoteOnEvent,
     PerformedPedalEvent,
     RollProperties
-} from "../ReproducingSystem.js";
-import { inCentimeters, Millimeters, mm, Seconds, seconds, Track } from "../Quantity.js";
-import { partitionPoint } from "../sorted.js";
+} from "./ReproducingSystem.js";
+import { inCentimeters, Millimeters, mm, Seconds, seconds, Track } from "../model/Quantity.js";
+import { partitionPoint } from "../shared/sorted.js";
 import { velocityOf, type VelocityMap } from "./velocity.js";
 
 /**

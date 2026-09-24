@@ -1,5 +1,5 @@
-import { describeTrackerBar, TrackerBar } from "../../TrackerBar.js"
-import { mm } from "../../Quantity.js"
+import { describeTrackerBar, TrackerBar } from "../TrackerBar.js"
+import { mm } from "../../model/Quantity.js"
 import { WelteT100ExpressionType, welteT100Accents, welteT100Operations } from "../welteT100/bar.js"
 
 /**

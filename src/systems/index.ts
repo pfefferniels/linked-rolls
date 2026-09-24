@@ -1,5 +1,5 @@
-import { Concept } from "../Agent.js"
-import { systemIdOf, TrackerBar } from "../TrackerBar.js"
+import { Concept } from "../model/Agent.js"
+import { systemIdOf, TrackerBar } from "./TrackerBar.js"
 import { welteT100 } from "./welteT100/bar.js"
 import { welteLicensee } from "./welteLicensee/bar.js"
 import { welteT98 } from "./welteT98/bar.js"

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { partsOfNote, referencesInNote, resolveNote } from '../src/notes'
+import { partsOfNote, referencesInNote, resolveNote } from '../src/model/notes'
 
 const names: Record<string, string> = { 'version-1': 'R1', 'copy-2': 'St1' }
 const nameOf = (id: string) => names[id]

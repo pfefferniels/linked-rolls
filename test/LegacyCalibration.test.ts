@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { calibrationOf, RollCopy } from '../src/RollCopy'
-import { columnsOf } from '../src/TrackCalibration'
+import { calibrationOf, RollCopy } from '../src/model/RollCopy'
+import { columnsOf } from '../src/model/TrackCalibration'
 import { welteT100 } from '../src/systems/welteT100/bar'
-import { px, track } from '../src/Quantity'
+import { px, track } from '../src/model/Quantity'
 
 /**
  * Copies imported before the calibration was recorded have to keep

@@ -1,7 +1,7 @@
-import { NegotiatedEvent, ReproducingSystem } from '../src/ReproducingSystem'
+import { NegotiatedEvent, ReproducingSystem } from '../src/systems/ReproducingSystem'
 import { welteT100 } from '../src/systems/welteT100/bar'
-import { Note } from '../src/Symbol'
-import { seconds } from '../src/Quantity'
+import { Note } from '../src/model/Symbol'
+import { seconds } from '../src/model/Quantity'
 
 /**
  * A system with no mechanism at all: every note sounds at the one velocity

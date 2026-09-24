@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import * as path from 'path'
 import { readFileSync } from 'fs'
-import { conceptOf, nameOf, vocabulary } from '../src/vocabulary'
-import { procedures } from '../src/procedures'
+import { conceptOf, nameOf, vocabulary } from '../src/model/vocabulary'
+import { procedures } from '../src/model/procedures'
 import { welteT100 } from '../src/systems/welteT100/bar'
-import { systemOf } from '../src/TrackerBar'
-import { importJsonLd } from '../src/importJsonLd'
-import { asJsonLd } from '../src/asJsonLd'
+import { systemOf } from '../src/systems/TrackerBar'
+import { importJsonLd } from '../src/io/importJsonLd'
+import { asJsonLd } from '../src/io/asJsonLd'
 import { validate } from '../src/validate'
 
 /**

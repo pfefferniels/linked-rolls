@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { Edition } from '../src/Edition'
-import { EditionView } from '../src/EditionView'
-import { Millimeters, mm } from '../src/Quantity'
-import { normalQuantile } from '../src/statistics'
-import { admits, CollationTolerance, offsetEndOf, offsetStartOf } from '../src/Collation'
+import { Edition } from '../src/model/Edition'
+import { EditionView } from '../src/view/EditionView'
+import { Millimeters, mm } from '../src/model/Quantity'
+import { normalQuantile } from '../src/collation/statistics'
+import { admits, CollationTolerance, offsetEndOf, offsetStartOf } from '../src/collation/Collation'
 import {
     departureThreshold, inferredTolerance, readingsOf, Scatter, scatterOf, changesBetween, scatterOfCopy, sidesOf, toleranceAcross
-} from '../src/scatter'
+} from '../src/collation/scatter'
 import { copy, editionOf, expression, hole, note, version } from './editionFixture'
 
 const normalSample = (n: number, centre: number, sigma: number): number[] =>

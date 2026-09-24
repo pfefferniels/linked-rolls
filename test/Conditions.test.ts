@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
-import { Edition } from '../src/Edition'
-import { AnyFeature, FeatureConditionType, Patch, Mark, Transcription, Writing } from '../src/Feature'
-import { ConditionState } from '../src/ConditionState'
-import { featuresOf, GeneralRollCondition, PaperStretch } from '../src/RollCopy'
-import { ObjectAssumption, assignObject } from '../src/Assumption'
-import { addGeneralCondition, stateFeatureCondition } from '../src/editionOps'
+import { Edition } from '../src/model/Edition'
+import { AnyFeature, FeatureConditionType, Patch, Mark, Transcription, Writing } from '../src/model/Feature'
+import { ConditionState } from '../src/model/ConditionState'
+import { featuresOf, GeneralRollCondition, PaperStretch } from '../src/model/RollCopy'
+import { ObjectAssumption, assignObject } from '../src/model/Assumption'
+import { addGeneralCondition, stateFeatureCondition } from '../src/ops'
 import { attachment, copy, editionOf, hole, note, version } from './editionFixture'
-import { mm, track } from '../src/Quantity'
+import { mm, track } from '../src/model/Quantity'
 
 const damage = <T extends FeatureConditionType>(conditionType: T): ObjectAssumption<ConditionState<T>> =>
     assignObject<ConditionState<T>>({ conditionType })

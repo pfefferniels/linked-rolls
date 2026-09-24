@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { write } from 'midifile-ts'
 import { CONTROL_OFFSET, readFromPhillipsEroll } from '../src/readers/phillipsEroll'
-import { asSymbols, featuresOf, unreadTracks } from '../src/RollCopy'
-import { Expression, Note } from '../src/Symbol'
-import { TrackerBar } from '../src/TrackerBar'
+import { asSymbols, featuresOf, unreadTracks } from '../src/model/RollCopy'
+import { Expression, Note } from '../src/model/Symbol'
+import { TrackerBar } from '../src/systems/TrackerBar'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
-import { mm, seconds, track } from '../src/Quantity'
+import { mm, seconds, track } from '../src/model/Quantity'
 
 /** A perforation of the roll: the bar position it lies on, and its ticks. */
 type Perforation = [position: number, from: number, to: number]

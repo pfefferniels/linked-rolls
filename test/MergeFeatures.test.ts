@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
-import { Edition } from '../src/Edition'
-import { EditionView } from '../src/EditionView'
-import { AnyFeature, HoleChain, Mark, Transcription, Writing, conditions } from '../src/Feature'
-import { ConditionState } from '../src/ConditionState'
-import { ObjectAssumption, ReferenceAssumption, assignObject, assignReference, idsOf } from '../src/Assumption'
-import { mergeFeatures, mergeObstacle, mergeObstacleIn } from '../src/editionOps'
-import { featuresOf } from '../src/RollCopy'
+import { Edition } from '../src/model/Edition'
+import { EditionView } from '../src/view/EditionView'
+import { AnyFeature, HoleChain, Mark, Transcription, Writing, conditions } from '../src/model/Feature'
+import { ConditionState } from '../src/model/ConditionState'
+import { ObjectAssumption, ReferenceAssumption, assignObject, assignReference, idsOf } from '../src/model/Assumption'
+import { mergeFeatures, mergeObstacle, mergeObstacleIn } from '../src/ops'
+import { featuresOf } from '../src/model/RollCopy'
 import { alteration, copy, editionOf, hole, note, version } from './editionFixture'
-import { mm, track } from '../src/Quantity'
+import { mm, track } from '../src/model/Quantity'
 
 const depicted = (feature: HoleChain, region: string): HoleChain => ({ ...feature, depiction: region })
 

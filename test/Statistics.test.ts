@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
     excessKurtosisOf, histogramOf, medianOf, normalBelow, normalBeyond, normalQuantile, spreadOf, standardise, tailOf
-} from '../src/statistics'
-import { Millimeters, mm } from '../src/Quantity'
+} from '../src/collation/statistics'
+import { Millimeters, mm } from '../src/model/Quantity'
 
 /**
  * A normal sample without a generator: the quantiles at equally spaced

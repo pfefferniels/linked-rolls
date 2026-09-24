@@ -19,10 +19,10 @@ import {
     Punch,
     RollNumber,
 } from "welte-mignon-emulator/t100";
-import { Expression } from "../../Symbol.js";
+import { Expression } from "../../model/Symbol.js";
 import { welteT100, WelteT100ExpressionType } from "./bar.js";
-import { NegotiatedEvent, Performance, ReproducingSystem, RollProperties } from "../../ReproducingSystem.js";
-import { mm, track } from "../../Quantity.js";
+import { NegotiatedEvent, Performance, ReproducingSystem, RollProperties } from "../ReproducingSystem.js";
+import { mm, track } from "../../model/Quantity.js";
 import { defaultVelocityMap } from "../velocity.js";
 import { performWelte, sameParameters, type WelteOptions } from "../welte.js";
 

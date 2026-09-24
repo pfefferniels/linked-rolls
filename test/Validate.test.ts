@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import * as path from 'path'
 import { readFileSync } from 'fs'
-import { importJsonLd } from '../src/importJsonLd'
-import { asJsonLd } from '../src/asJsonLd'
+import { importJsonLd } from '../src/io/importJsonLd'
+import { asJsonLd } from '../src/io/asJsonLd'
 import { validate } from '../src/validate'
 
 const edition = () =>

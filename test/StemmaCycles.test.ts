@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { edition } from './editionFixture'
-import { EditionView } from '../src/EditionView'
-import { assignReference } from '../src/Assumption'
-import { derivesFrom } from '../src/Version'
-import { connectVersions, stateDerivation } from '../src/editionOps'
+import { EditionView } from '../src/view/EditionView'
+import { assignReference } from '../src/model/Assumption'
+import { derivesFrom } from '../src/model/Version'
+import { connectVersions, stateDerivation } from '../src/ops'
 
 /**
  * In the fixture B derives from A. A stemma that loops has no root to

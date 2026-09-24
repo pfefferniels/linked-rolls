@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DynamicsCurve, NegotiatedEvent, Performance } from '../src/ReproducingSystem'
+import { DynamicsCurve, NegotiatedEvent, Performance } from '../src/systems/ReproducingSystem'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
 import {
     defaultWelteLicenseeOptions,
@@ -7,7 +7,7 @@ import {
     welteLicenseeSystem
 } from '../src/systems/welteLicensee/system'
 import { defaultWelteT100Options, welteT100System } from '../src/systems/welteT100/system'
-import { mm, track } from '../src/Quantity'
+import { mm, track } from '../src/model/Quantity'
 
 let nextId = 0
 const at = (fromMm: number, toMm: number, trackNumber: number) => ({
