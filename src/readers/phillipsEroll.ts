@@ -252,7 +252,6 @@ export function readFromPhillipsEroll(
     const copy: RollCopy = {
         type: 'RollCopy',
         id: v4(),
-        ops: [],
         conditions: [],
         measurements: {},
         production: { system: systemOf(system), produced: features },

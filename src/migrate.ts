@@ -165,6 +165,17 @@ const withScale = (node: Json): Json => {
     return factor === undefined ? node : { ...node, measurements: { ...node.measurements, scale: factor } }
 }
 
+/**
+ * A copy listed what had been done to line its features up, which said
+ * again what its measurements state. `withScale` has read the list by
+ * the time this runs.
+ */
+const withoutOps = (node: Json): Json => {
+    if (!Array.isArray(node.ops)) return node
+    const { ops: _stated, ...rest } = node
+    return rest
+}
+
 /** A copy's id without the `copy/` that documents of earlier releases put before it. */
 export const plainCopyId = (id: string): string => id.replace(/^copy\//, '')
 
@@ -384,7 +395,7 @@ const withTimeSpanDates = (node: Json): Json => {
 
 const migrateNode = (node: Json): Json =>
     [withRenamedKeys, withTypology, withRenamedType, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
-        withPerforator, withProductionNodes, withTypedPerforator, withScale, withDerivationList, withReadingKind, withTimeSpanDates,
+        withPerforator, withProductionNodes, withTypedPerforator, withScale, withoutOps, withDerivationList, withReadingKind, withTimeSpanDates,
         withoutFeatureKind, withBorneFeaturesNamed, withFeaturesInActs, withDriveOfStaggering, withoutPattern, withoutBearings, withoutEntailedType]
         .reduce((result, step) => step(result), node)
 

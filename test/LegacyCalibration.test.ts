@@ -12,7 +12,6 @@ import { px, track } from '../src/Quantity'
 const legacyCopy = {
     type: 'RollCopy',
     id: 'legacy',
-    ops: [],
     conditions: [],
     keeper: { name: '', sameAs: [] },
     modifications: [],

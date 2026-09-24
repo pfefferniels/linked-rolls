@@ -145,7 +145,6 @@ export function readFromSpencerBar(
     return {
         type: 'RollCopy',
         id: v4(),
-        ops: [],
         conditions: [],
         measurements: {},
         production: { system: systemOf(system), produced: features },

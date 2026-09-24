@@ -22,46 +22,42 @@ const back = (shift: Shift): Shift =>
     ({ horizontal: scale(shift.horizontal, -1), vertical: scale(shift.vertical, -1) })
 
 export const applyShift = (shift: Shift, copy: RollCopy) => {
-    if (copy.ops.includes('shifted')) return
+    if (copy.measurements.shift) return
 
     featuresOf(copy).forEach(feature => {
         move(feature.horizontal, shift.horizontal)
         move(feature.vertical, shift.vertical)
     })
-    copy.ops = [...copy.ops, 'shifted']
     copy.measurements.shift = shift
 }
 
 /** Scales the copy's features away from the beginning of the roll, and records the factor. */
 export const applyScale = (factor: number, copy: RollCopy) => {
-    if (copy.ops.includes('stretched')) return
+    if (copy.measurements.scale !== undefined) return
 
     featuresOf(copy).forEach(feature => stretch(feature.horizontal, factor))
-    copy.ops = [...copy.ops, 'stretched']
     copy.measurements.scale = factor
 }
 
 /** Takes the shift off the copy's features again, as far as one was applied. */
 export const revertShift = (copy: RollCopy) => {
     const shift = copy.measurements.shift
-    if (!copy.ops.includes('shifted') || !shift) return
+    if (!shift) return
 
     const reversed = back(shift)
     featuresOf(copy).forEach(feature => {
         move(feature.horizontal, reversed.horizontal)
         move(feature.vertical, reversed.vertical)
     })
-    copy.ops = copy.ops.filter(op => op !== 'shifted')
     delete copy.measurements.shift
 }
 
 /** Takes the scale off the copy's features again, as far as one was applied. */
 export const revertScale = (copy: RollCopy) => {
     const factor = copy.measurements.scale
-    if (!copy.ops.includes('stretched') || factor === undefined) return
+    if (factor === undefined) return
 
     featuresOf(copy).forEach(feature => stretch(feature.horizontal, 1 / factor))
-    copy.ops = copy.ops.filter(op => op !== 'stretched')
     delete copy.measurements.scale
 }
 
@@ -126,7 +122,7 @@ export const shortenChains = (
     copy: RollCopy,
     leaving: ReadonlySet<string> = new Set()
 ) => {
-    if (copy.ops.includes('shortened')) return
+    if (copy.measurements.readerExtension) return
 
     const tooShort = tooShortToShorten(extension, copy, leaving)
     if (tooShort.length > 0) {
@@ -141,21 +137,19 @@ export const shortenChains = (
         .filter(chain => !leaving.has(chain.id))
         .forEach(chain => { chain.horizontal.to = subtract(chain.horizontal.to, extension) })
 
-    copy.ops = [...copy.ops, 'shortened']
     copy.measurements.readerExtension = { length: extension, ...(left.length > 0 && { leaving: left }) }
 }
 
 /** Puts the reader's extension back on the chains it was taken off, as far as one was taken off. */
 export const revertShortening = (copy: RollCopy) => {
     const taken = copy.measurements.readerExtension
-    if (!copy.ops.includes('shortened') || taken === undefined) return
+    if (taken === undefined) return
 
     const left = new Set(taken.leaving ?? [])
     chainsOf(copy)
         .filter(chain => !left.has(chain.id))
         .forEach(chain => { chain.horizontal.to = add(chain.horizontal.to, taken.length) })
 
-    copy.ops = copy.ops.filter(op => op !== 'shortened')
     delete copy.measurements.readerExtension
 }
 

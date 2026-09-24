@@ -20,7 +20,6 @@ export const hole = (id: string, from: number, to: number, position: number): Ho
 export const copy = (id: string, produced: AnyFeature[]): RollCopy => ({
     type: 'RollCopy',
     id,
-    ops: [],
     measurements: {},
     conditions: [],
     modifications: [],

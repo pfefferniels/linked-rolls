@@ -241,11 +241,14 @@ export type Modification = Partial<{
  */
 export interface RollCopy extends WithType<'RollCopy'>, WithId {
     /**
-     * A list of operations that have been applied to this copy's features
-     * (e.g. 'shifted', 'stretched') to normalize measurements
-     * for comparison with other copies. Not exported to RDF.
+     * What had been done to this copy's features to line them up with the
+     * others. It said again what `measurements` states, the shift, the scale
+     * and the reader's extension, and could disagree with it, so nothing
+     * reads or writes it now and the migration takes it off. Not exported
+     * to RDF.
+     * @deprecated
      */
-    ops: Array<'shifted' | 'stretched' | 'shortened'>
+    ops?: Array<'shifted' | 'stretched' | 'shortened'>
 
     /**
      * Physical measurements of this roll copy, including

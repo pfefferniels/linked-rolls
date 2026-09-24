@@ -115,7 +115,6 @@ describe('aligning a copy', () => {
 
         expect(holeOf(next).horizontal).toEqual({ unit: 'mm', from: 1504.5, to: 1519.5 })
         expect(holeOf(next).vertical.from).toBe(48)
-        expect(aligned.ops).toEqual(['shifted', 'stretched'])
         expect(aligned.measurements.shift).toEqual(shift)
         expect(aligned.measurements.scale).toBe(1.5)
         expect(aligned.conditions).toEqual([])
@@ -140,7 +139,6 @@ describe('aligning a copy', () => {
         expect(holeOf(next).horizontal.from).toBeCloseTo(1001)
         expect(holeOf(next).horizontal.to).toBeCloseTo(1011)
         expect(holeOf(next).vertical.from).toBe(47)
-        expect(next.copies[1].ops).toEqual([])
         expect(next.copies[1].measurements.shift).toBeUndefined()
         expect(next.copies[1].measurements.scale).toBeUndefined()
         expect(next.copies[1].conditions).toEqual([])
@@ -151,7 +149,7 @@ describe('aligning a copy', () => {
         const next = produce(aligned, unalignCopy('second'))
 
         expect(next.copies[1].production?.speed).toEqual(speed)
-        expect(next.copies[1].ops).toEqual([])
+        expect(next.copies[1].measurements.scale).toBeUndefined()
     })
 
     it('leaves a copy that was never aligned as it is', () => {

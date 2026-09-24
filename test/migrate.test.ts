@@ -307,6 +307,7 @@ describe('migrating a 0.1 edition', () => {
         expect(migrated.copies[0].measurements).toEqual({ shift: { horizontal: 1, vertical: 0 }, scale: 1.02 })
         expect(migrated.copies[0].conditions[0]).toEqual({ conditionType: 'paper-stretch', factor: 1.02 })
         expect(migrated.copies[1].measurements).toEqual({})
+        migrated.copies.forEach((copy: any) => expect(copy).not.toHaveProperty('ops'))
     })
 
     it('imports a 0.1 edition as the current model', () => {

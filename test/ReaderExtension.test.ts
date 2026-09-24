@@ -51,7 +51,6 @@ describe('taking a pneumatic reader\'s extension off a copy', () => {
 
     it('records what was taken, and that it was', () => {
         expect(shortened().copies[0].measurements.readerExtension).toEqual({ length: 1.6 })
-        expect(shortened().copies[0].ops).toEqual(['shortened'])
     })
 
     it('leaves a writing alone, what it spans being no valve', () => {
@@ -69,7 +68,6 @@ describe('taking a pneumatic reader\'s extension off a copy', () => {
 
         expect(lengthOf(back, 'short')).toBeCloseTo(4.6, 6)
         expect(lengthOf(back, 'long')).toBeCloseTo(140.6, 6)
-        expect(back.copies[0].ops).toEqual([])
         expect(back.copies[0].measurements.readerExtension).toBeUndefined()
     })
 
@@ -97,7 +95,7 @@ describe('a hole no longer than the extension', () => {
     it('leaves the copy untouched where it throws', () => {
         const copy = withAShortHole().copies[0]
         expect(() => shortenChains(mm(1.6), copy)).toThrow()
-        expect(copy.ops).toEqual([])
+        expect(copy.measurements.readerExtension).toBeUndefined()
         expect(lengthOf({ ...withAShortHole(), copies: [copy] }, 'ordinary')).toBeCloseTo(40, 6)
     })
 
@@ -123,7 +121,7 @@ describe('a hole no longer than the extension', () => {
 
         expect(lengthOf(back, 'short')).toBeCloseTo(1.2, 6)
         expect(lengthOf(back, 'ordinary')).toBeCloseTo(40, 6)
-        expect(back.copies[0].ops).toEqual([])
+        expect(back.copies[0].measurements.readerExtension).toBeUndefined()
     })
 })
 
@@ -132,10 +130,9 @@ describe('the functions the ops are built from', () => {
         const copy = read().copies[0]
         shortenChains(mm(2), copy)
 
-        expect(copy.ops).toEqual(['shortened'])
         expect(copy.measurements.readerExtension).toEqual({ length: 2 })
 
         revertShortening(copy)
-        expect(copy.ops).toEqual([])
+        expect(copy.measurements.readerExtension).toBeUndefined()
     })
 })

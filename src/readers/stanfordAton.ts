@@ -229,7 +229,6 @@ export function readFromStanfordAton(
     return {
         type: 'RollCopy',
         id: v4(),
-        ops: [],
         conditions: [],
         production: {
             system: systemOf(system),
