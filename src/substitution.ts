@@ -1,75 +1,24 @@
 import { CollationTolerance, defaultCollationTolerance, Locate } from "./Collation.js"
 import { AnySymbol, Expression } from "./Symbol.js"
 import { distance, Millimeters, mm, Track, track } from "./Quantity.js"
-import { TrackerBar } from "./TrackerBar.js"
+import { Operation, Spelling, TrackerBar } from "./TrackerBar.js"
+import { trackerBars } from "./systems/index.js"
+
+export type { Operation, Spelling } from "./TrackerBar.js"
 
 /**
- * How a scale words a function: as a command that turns it on, one that
- * cancels it, or one that holds it for as long as it lasts.
+ * What an expression type operates, as the bar that reads it says, or
+ * nothing for a word no bar here knows or one without a counterpart in
+ * another scale. The bars share their words where they share a scale,
+ * as the Licensee does the T-100's, so the first that reads it answers.
  */
-export type Spelling = 'on' | 'off' | 'held'
-
-/**
- * What a word of a scale operates, rather than the word itself, so that
- * two scales can be compared at all.
- */
-export interface Operation {
-    /** The function operated, named the same wherever a scale has it. */
-    operates: string
-
-    spelling: Spelling
-
-    /**
-     * Whether the half of the keyboard the valve serves is part of the
-     * function operated. The dynamics are per half; the pedals are not,
-     * and the two Welte scales put them on opposite edges of the paper,
-     * so a rule that compared sides would leave every pedal unpaired.
-     */
-    sided: boolean
+export const operationOf = (expressionType: string): Operation | undefined => {
+    for (const bar of trackerBars) {
+        const operation = bar.operationOf(expressionType)
+        if (operation) return operation
+    }
+    return undefined
 }
-
-/**
- * What each Welte expression type operates.
- *
- * This cannot be read off the names. The T-100 latches a function on
- * with one perforation and cancels it with a second, while the T-98
- * holds it for as long as one perforation lasts (Hagmann pp. 89 f. and
- * 100–103; Phillips p. 121), and Welte renamed two of the functions
- * between the scales: the red `SlowCrescendo` is the green `Crescendo`,
- * and the red's single `Forzando` valve answers to two green ones that
- * name the end they pull towards. So the correspondence is stated here
- * rather than derived, and only two types that operate one function can
- * stand for each other.
- *
- * The T-100's `MotorOn`/`MotorOff`, `Rewind` and `ElectricCutOff` are
- * left out on purpose: the green scale has no word for any of them, its
- * motor switch being an automatic mercury contact (Skala-Rolle 98 §12)
- * and its rewind riding on the bass sforzando-piano line. A red command
- * of those kinds has no counterpart and stays a plain deletion.
- */
-const operations: Readonly<Record<string, Operation>> = {
-    MezzoforteOn: { operates: 'mezzoforte', spelling: 'on', sided: true },
-    MezzoforteOff: { operates: 'mezzoforte', spelling: 'off', sided: true },
-    SlowCrescendoOn: { operates: 'crescendo', spelling: 'on', sided: true },
-    SlowCrescendoOff: { operates: 'crescendo', spelling: 'off', sided: true },
-    ForzandoOn: { operates: 'sforzando', spelling: 'on', sided: true },
-    ForzandoOff: { operates: 'sforzando', spelling: 'off', sided: true },
-    SustainPedalOn: { operates: 'sustainPedal', spelling: 'on', sided: false },
-    SustainPedalOff: { operates: 'sustainPedal', spelling: 'off', sided: false },
-    SoftPedalOn: { operates: 'softPedal', spelling: 'on', sided: false },
-    SoftPedalOff: { operates: 'softPedal', spelling: 'off', sided: false },
-
-    Mezzoforte: { operates: 'mezzoforte', spelling: 'held', sided: true },
-    Crescendo: { operates: 'crescendo', spelling: 'held', sided: true },
-    SforzandoForte: { operates: 'sforzando', spelling: 'held', sided: true },
-    SforzandoPiano: { operates: 'sforzando', spelling: 'held', sided: true },
-    SustainPedal: { operates: 'sustainPedal', spelling: 'held', sided: false },
-    SoftPedal: { operates: 'softPedal', spelling: 'held', sided: false }
-}
-
-/** What an expression type operates, or nothing for a word no scale here knows. */
-export const operationOf = (expressionType: string): Operation | undefined =>
-    operations[expressionType]
 
 /**
  * A latched function of the older version and the held command of the

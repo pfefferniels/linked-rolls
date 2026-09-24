@@ -18,6 +18,31 @@ export interface TrackArea {
     readonly to: Track
 }
 
+/**
+ * How a scale words a function: as a command that turns it on, one that
+ * cancels it, or one that holds it for as long as it lasts.
+ */
+export type Spelling = 'on' | 'off' | 'held'
+
+/**
+ * What a word of a scale operates, rather than the word itself, so that
+ * two scales can be compared at all.
+ */
+export interface Operation {
+    /** The function operated, named the same wherever a scale has it. */
+    operates: string
+
+    spelling: Spelling
+
+    /**
+     * Whether the half of the keyboard the valve serves is part of the
+     * function operated. The dynamics are per half; the pedals are not,
+     * and the two Welte scales put them on opposite edges of the paper,
+     * so a rule that compared sides would leave every pedal unpaired.
+     */
+    sided: boolean
+}
+
 export type NoteMeaning = Pick<Note, 'type' | 'pitch'>
 export type ExpressionMeaning = Pick<Expression, 'type' | 'expressionType' | 'scope'>
 export type TrackMeaning = NoteMeaning | ExpressionMeaning
@@ -53,6 +78,13 @@ export interface TrackerBar {
 
     /** The expression types the bar reads, each a term of the system. */
     readonly expressionTypes: readonly string[]
+
+    /**
+     * How the system spells a single added accent, each spelling a
+     * sequence of its expression types: a latched system turns a valve on
+     * and off again, a held one holds one perforation for the accent.
+     */
+    readonly accents: readonly (readonly string[])[]
 
     /**
      * The position carrying the rewind perforation, which runs at
@@ -107,6 +139,12 @@ export interface TrackerBar {
     /** `undefined` for a position the bar does not read; snapped as `meaningOf` is. */
     roleOf(position: Track): TrackRole | undefined
 
+    /**
+     * What the expression type operates, or `undefined` for one the bar
+     * does not read or whose function has no counterpart in another scale.
+     */
+    operationOf(expressionType: string): Operation | undefined
+
     /** The positions a feature lies across, snapped to the grid. */
     positionsIn(span: OnBar): readonly Track[]
 }
@@ -136,11 +174,6 @@ export const systemIdOf = (system: Concept | undefined): string | undefined =>
     systemIdIn(system?.id)
 
 /**
- * A tracker bar as written down, with its positions as plain numbers
- * in the bar's own 1-based numbering; `describeTrackerBar` gives them
- * their type.
- */
-/**
  * Where a roll's own content ends, as far as its perforations say.
  *
  * This is a question about the paper, not about the mechanism: it asks where
@@ -169,6 +202,11 @@ export type OnBar = {
     readonly to?: Track
 }
 
+/**
+ * A tracker bar as written down, with its positions as plain numbers
+ * in the bar's own 1-based numbering; `describeTrackerBar` gives them
+ * their type.
+ */
 export interface TrackerBarSpec {
     id: string
     name: string
@@ -194,6 +232,14 @@ export interface TrackerBarSpec {
      * its own needs no threshold, since anything there is the rewind.
      */
     rewindHold?: Millimeters
+    /**
+     * What each expression type operates, keyed by type. A type left out
+     * operates a function no other scale has a word for, and a transfer
+     * leaves it a plain deletion.
+     */
+    operations?: Readonly<Record<string, Operation>>
+    /** How the system spells a single added accent; see `TrackerBar.accents`. */
+    accents?: readonly (readonly string[])[]
 }
 
 const areasOf = ({ notes, trackCount }: TrackerBarSpec): TrackArea[] => [
@@ -266,6 +312,14 @@ export const describeTrackerBar = (spec: TrackerBarSpec): TrackerBar => {
         throw new Error(`${spec.name} declares no rewind track`)
     }
 
+    const expressionTypes = [...new Set(spec.expressions.values())]
+    const operations = spec.operations ?? {}
+    const accents = spec.accents ?? []
+    const unread = [...Object.keys(operations), ...accents.flat()].filter(type => !expressionTypes.includes(type))
+    if (unread.length > 0) {
+        throw new Error(`${spec.name} names expression types its bar does not read: ${[...new Set(unread)].join(', ')}`)
+    }
+
     // A rewind on a line of its own is unambiguous; one sharing a line is only
     // the rewind when it is far longer than that line's usual command.
     const shared = spec.rewindTrack !== undefined
@@ -285,13 +339,15 @@ export const describeTrackerBar = (spec: TrackerBarSpec): TrackerBar => {
         trackCount: spec.trackCount,
         endsAt,
         areas,
-        expressionTypes: [...new Set(spec.expressions.values())],
+        expressionTypes,
+        accents,
         rewindTrack: track(rewind),
         ...(spec.paperSpeed && { paperSpeed: spec.paperSpeed }),
         meaningOf,
         meaningsOf,
         positionOf: meaning => positions.get(keyOf(meaning)),
         roleOf,
+        operationOf: expressionType => Object.hasOwn(operations, expressionType) ? operations[expressionType] : undefined,
         positionsIn: positionsBetween
     }
 }

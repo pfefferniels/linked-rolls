@@ -1,6 +1,6 @@
 import { describeTrackerBar, TrackerBar } from "../../TrackerBar.js"
 import { mm } from "../../Quantity.js"
-import { WelteT100ExpressionType } from "../welteT100/bar.js"
+import { WelteT100ExpressionType, welteT100Accents, welteT100Operations } from "../welteT100/bar.js"
 
 /**
  * Welte-Mignon (Licensee), the American re-cut of the T-100 rolls on
@@ -17,6 +17,8 @@ export const welteLicensee: TrackerBar = describeTrackerBar({
     width: mm(285.75),
     trackCount: 98,
     notes: { from: 9, to: 88, lowestPitch: 24 },
+    operations: welteT100Operations,
+    accents: welteT100Accents,
     expressions: new Map<number, WelteT100ExpressionType>([
         [1, 'MezzoforteOff'],
         [2, 'MezzoforteOn'],

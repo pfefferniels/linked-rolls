@@ -2,6 +2,7 @@ import { Edition } from "./Edition.js";
 import { derivedKeys } from "./asJsonLd.js";
 import { migrate, plainCopyId } from "./migrate.js";
 import { isDateString } from "./utils.js";
+import schema from "./schema.json" with { type: 'json' };
 
 export const importDate = (str: string): Date => {
     const [y, m, d] = str.split('-').map(s => parseInt(s, 10))
@@ -13,10 +14,33 @@ export const importDate = (str: string): Date => {
 
 type Json = any
 
-/** A value as the edition holds it: a date read, an entity converted, anything else as it stands. */
-const fromJsonLdValue = (value: Json): Json => {
-    if (typeof value === 'string') return isDateString(value) ? importDate(value) : value
-    if (Array.isArray(value)) return value.map(fromJsonLdValue)
+/** The names of the properties the schema holds dates under, wherever they stand in it. */
+const dateKeysIn = (node: Json, keys = new Set<string>()): Set<string> => {
+    if (Array.isArray(node)) node.forEach(item => dateKeysIn(item, keys))
+    else if (node !== null && typeof node === 'object') {
+        Object.entries(node).forEach(([key, value]) => {
+            if (key === 'properties' && value !== null && typeof value === 'object') {
+                Object.entries(value as Record<string, Json>)
+                    .filter(([, property]) => property?.format === 'date')
+                    .forEach(([name]) => keys.add(name))
+            }
+            dateKeysIn(value, keys)
+        })
+    }
+    return keys
+}
+
+/**
+ * The keys a date is read under. Only these: a string elsewhere that
+ * happens to read like a date, such as the transcription of a dated
+ * label, is text and stays text.
+ */
+const dateKeys: ReadonlySet<string> = dateKeysIn(schema)
+
+/** A value as the edition holds it under the key: a date read, an entity converted, anything else as it stands. */
+const fromJsonLdValue = (key: string, value: Json): Json => {
+    if (typeof value === 'string') return dateKeys.has(key) && isDateString(value) ? importDate(value) : value
+    if (Array.isArray(value)) return value.map(item => fromJsonLdValue(key, item))
     if (value !== null && typeof value === 'object') return fromJsonLdEntity(value)
     return value
 }
@@ -36,7 +60,7 @@ const asStated = (json: Record<string, Json>): Record<string, Json> =>
  */
 const fromJsonLdEntity = (json: Record<string, Json>): Record<string, Json> => {
     const { '@type': type, '@id': id, '@context': context, ...rest } = asStated(json)
-    const entity = Object.fromEntries(Object.entries(rest).map(([key, value]) => [key, fromJsonLdValue(value)]))
+    const entity = Object.fromEntries(Object.entries(rest).map(([key, value]) => [key, fromJsonLdValue(key, value)]))
     if (type !== undefined && !('@value' in json)) entity.type = type
     if (id !== undefined) entity.id = id
     return entity

@@ -1,4 +1,4 @@
-import { describeTrackerBar, TrackerBar } from "../../TrackerBar.js"
+import { describeTrackerBar, Operation, TrackerBar } from "../../TrackerBar.js"
 import { metersPerMinute, mm } from "../../Quantity.js"
 
 /**
@@ -20,6 +20,20 @@ export const welteT98ExpressionTypes = [
 ] as const
 
 export type WelteT98ExpressionType = typeof welteT98ExpressionTypes[number]
+
+/**
+ * What each T-98 command operates. Every one of them holds its function
+ * for as long as its perforation lasts; see `welteT100Operations` for
+ * how the functions answer to the T-100's.
+ */
+const welteT98Operations: Readonly<Record<WelteT98ExpressionType, Operation>> = {
+    Mezzoforte: { operates: 'mezzoforte', spelling: 'held', sided: true },
+    Crescendo: { operates: 'crescendo', spelling: 'held', sided: true },
+    SforzandoForte: { operates: 'sforzando', spelling: 'held', sided: true },
+    SforzandoPiano: { operates: 'sforzando', spelling: 'held', sided: true },
+    SustainPedal: { operates: 'sustainPedal', spelling: 'held', sided: false },
+    SoftPedal: { operates: 'softPedal', spelling: 'held', sided: false }
+}
 
 /**
  * Welte-Mignon T-98 ("green Welte"), cf. Hagmann, Anhang 11 (p. 179)
@@ -60,6 +74,9 @@ export const welteT98: TrackerBar = describeTrackerBar({
     notes: { from: 6, to: 93, lowestPitch: 21 },
     paperSpeed: { value: metersPerMinute(2.2), unit: 'm/min' },
     rewindTrack: 1,
+    operations: welteT98Operations,
+    /** A single added accent on the T-98 is one held perforation. */
+    accents: [['Crescendo'], ['SforzandoForte']],
 
     /**
      * The T-98 gives the rewind no line of its own — Welte's Forzando P line
