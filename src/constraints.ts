@@ -1,4 +1,5 @@
 import { EditionView } from "./EditionView.js"
+import { speedScalesIn } from "./ownPaper.js"
 import { idOf } from "./Assumption.js"
 import { AnyCommand, AnySymbol, Expression, PlacementRelation, isCommand, pairsAmong, placementsOf } from "./Symbol.js"
 import { keyOf } from "./TrackerBar.js"
@@ -140,7 +141,7 @@ const carriersOffTheirMeaning = (
  * the disagreement and the fact that the playback rests on a guess.
  */
 const paperDisagreed = (view: EditionView, version: Version): ConstraintProblem[] =>
-    view.speedScalesIn(version).length > 1
+    speedScalesIn(view, version).length > 1
         ? [{ version: version.id, symbol: version.id, problem: 'copies-disagree-on-the-paper' as const }]
         : []
 

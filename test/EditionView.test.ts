@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { EditionView } from '../src/EditionView'
-import { copy, cutFor, editionOf, expression, hole, note, version } from './editionFixture'
+import { toOwnPaperOf } from '../src/ownPaper'
+import { negotiatedEventOf } from '../src/negotiation'
+import { copy, cutFor, edition, editionOf, expression, hole, note, version } from './editionFixture'
 import { mm } from '../src/Quantity'
 import { Expression, Note } from '../src/Symbol'
 import { welteT100 } from '../src/systems/welteT100/bar'
@@ -71,8 +73,8 @@ describe('where a symbol lies and which track it sits on', () => {
         expect(welteT100.positionOf(sounded)).toBe(47)
         expect(welteT98.positionOf(sounded)).toBe(45)
 
-        expect(seen.simplifySymbol(sounded, welteT100)?.vertical.from).toBe(47)
-        expect(seen.simplifySymbol(sounded, welteT98)?.vertical.from).toBe(45)
+        expect(negotiatedEventOf(seen, sounded, welteT100)?.vertical.from).toBe(47)
+        expect(negotiatedEventOf(seen, sounded, welteT98)?.vertical.from).toBe(45)
     })
 
     it('performs nothing of a symbol the performing bar has no word for', () => {
@@ -87,8 +89,8 @@ describe('where a symbol lies and which track it sits on', () => {
         const seen = new EditionView(edition)
         const forzando = seen.snapshot('A')[0] as Expression
 
-        expect(seen.simplifySymbol(forzando, welteT100)?.vertical.from).toBe(95)
-        expect(seen.simplifySymbol(forzando, welteT98)).toBeNull()
+        expect(negotiatedEventOf(seen, forzando, welteT100)?.vertical.from).toBe(95)
+        expect(negotiatedEventOf(seen, forzando, welteT98)).toBeNull()
     })
 })
 
@@ -104,7 +106,6 @@ const twoIssues = () => {
             { ...copy('red', [hole('hole-red', 1000, 1010, 47)]) },
             {
                 ...cutFor(copy('green', [hole('hole-green', 1000, 1010, 45)]), systemOf(welteT98)),
-                ops: ['stretched'] as Array<'shifted' | 'stretched'>,
                 measurements: { scale: 1.29072 }
             }
         ],
@@ -138,12 +139,12 @@ describe('the paper a version ran on', () => {
         const view = new EditionView(twoIssues())
         const green = view.version('B')!
 
-        expect(view.toOwnPaperOf(green)).toBeCloseTo(1 / 1.29072, 9)
+        expect(toOwnPaperOf(view, green)).toBeCloseTo(1 / 1.29072, 9)
     })
 
     it('says nothing for a version whose copies were never scaled', () => {
         const view = new EditionView(twoIssues())
-        expect(view.toOwnPaperOf(view.version('A')!)).toBeUndefined()
+        expect(toOwnPaperOf(view, view.version('A')!)).toBeUndefined()
     })
 
     /**
@@ -158,14 +159,13 @@ describe('the paper a version ran on', () => {
         })]
 
         const view = new EditionView(edition)
-        expect(view.toOwnPaperOf(view.version('B')!)).toBeUndefined()
+        expect(toOwnPaperOf(view, view.version('B')!)).toBeUndefined()
     })
 
     it('reports copies of one system that disagree instead of averaging them', () => {
         const edition = twoIssues()
         edition.copies.push({
             ...cutFor(copy('green-other', [hole('hole-green-other', 1000, 1010, 45)]), systemOf(welteT98)),
-            ops: ['stretched'],
             measurements: { scale: 1.35 }
         })
         edition.versions[1].edits.push({
@@ -174,8 +174,24 @@ describe('the paper a version ran on', () => {
         })
 
         const view = new EditionView(edition)
-        expect(view.toOwnPaperOf(view.version('B')!)).toBeUndefined()
+        expect(toOwnPaperOf(view, view.version('B')!)).toBeUndefined()
         expect(constraintProblems(view).map(problem => problem.problem))
             .toContain('copies-disagree-on-the-paper')
+    })
+})
+
+describe('the index of a view', () => {
+    it('records each reference once, however often it is built', () => {
+        const seen = new EditionView(edition())
+        const before = seen.linksTo('forzando-on')
+        seen.indexObjects()
+        expect(seen.linksTo('forzando-on')).toEqual(before)
+    })
+
+    it('returns what stands at a path, a zero included', () => {
+        const seen = new EditionView(editionOf([copy('first', [hole('at-start', 0, 5, 47)])], []))
+        const path = [...seen.getPath('at-start')!, 'horizontal', 'from']
+        expect(seen.atPath<number>(path)).toBe(0)
+        expect(seen.atPath(['copies', 0, 'measurements', 'nothing'])).toBeNull()
     })
 })

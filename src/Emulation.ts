@@ -13,6 +13,8 @@ import {
 } from "./ReproducingSystem.js";
 import { add, mean, Millimeters, mm, Seconds, seconds, subtract } from "./Quantity.js";
 import { punchDiameterOf } from "./RollCopy.js";
+import { toOwnPaperOf } from "./ownPaper.js";
+import { negotiatedEventOf } from "./negotiation.js";
 
 export type EmulationScope = {
     /** Only notes whose onset lies within this span of the roll are played. */
@@ -33,7 +35,7 @@ const meanPunchDiameterOf = (view: EditionView): Millimeters | undefined => {
 const propertiesOf = (view: EditionView, version: Readonly<Version>): RollProperties => ({
     punchDiameter: meanPunchDiameterOf(view),
     tempo: view.edition.tempoAdjustment,
-    toOwnPaper: view.toOwnPaperOf(version)
+    toOwnPaper: toOwnPaperOf(view, version)
 })
 
 /** The onset a symbol has on each copy carrying it, by the copy's index, as the mean of its chains there. */
@@ -181,7 +183,7 @@ export class Emulation<Options extends object> {
         this.negotiatedEvents =
             view.snapshot(version.id)
                 .filter(isCommand)
-                .map(symbol => view.simplifySymbol(symbol, this.system.trackerBar))
+                .map(symbol => negotiatedEventOf(view, symbol, this.system.trackerBar))
                 .filter(event => event !== null)
                 .filter(inScope)
 

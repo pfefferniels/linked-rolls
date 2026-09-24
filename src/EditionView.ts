@@ -3,8 +3,10 @@ import { FeatureOrPatch, HorizontalSpan, isPlaced, NestedFeature, withBorneFeatu
 import { AnySymbol, Expression, Note } from "./Symbol.js";
 import { deletedBy, insertedBy, principalDerivationOf, Version } from "./Version.js";
 import { NegotiatedEvent } from "./ReproducingSystem.js";
-import { systemIdOf, TrackerBar } from "./TrackerBar.js";
-import { featuresMadeBy, featuresOf, isPaperStretch, Modification, ProductionEvent, RollCopy } from "./RollCopy.js";
+import { TrackerBar } from "./TrackerBar.js";
+import { copiesOwning, speedScalesIn, toOwnPaperOf } from "./ownPaper.js";
+import { negotiatedEventOf } from "./negotiation.js";
+import { featuresMadeBy, featuresOf, Modification, ProductionEvent, RollCopy } from "./RollCopy.js";
 import { idOf, idsOf } from "./Assumption.js";
 import { mean, Millimeters } from "./Quantity.js";
 
@@ -81,12 +83,19 @@ export class EditionView {
         this.indexObjects();
     }
 
+    /** What stands at the path, or null where nothing does. A zero or an empty string stands there as well. */
     atPath<T>(path: Path): T | null {
-        const node = getAt<T>(path, this.edition);
-        return node || null;
+        return getAt<T>(path, this.edition) ?? null;
     }
 
+    /**
+     * Walks the edition and records where each id stands and where it is
+     * referenced. The constructor does this; a second call starts afresh
+     * rather than recording every reference twice.
+     */
     indexObjects() {
+        this.paths.clear();
+        this.links.clear();
         const visited = new WeakSet<object>();
 
         const link = (id: string, trail: Trail) => {
@@ -230,49 +239,19 @@ export class EditionView {
         return copy.modifications.find(act => states(featuresMadeBy(act)))
     }
 
-    /**
-     * How a place on the edition's shared axis relates to the paper of
-     * this version: place × factor = millimetres of its own paper.
-     *
-     * Copies cut for different systems are scaled onto one axis so that
-     * they can be collated at all, which leaves a version of another
-     * system carrying places in the axis copy's millimetres. A
-     * performance needs the paper the roll actually ran on, and the
-     * factor is the inverse of the scale `alignCopy` recorded.
-     *
-     * It is read only from the copies of the version's own system, since
-     * under the shared axis a green version's notes are carried by red
-     * copies too and those say nothing about green paper. A copy whose
-     * scale is put down to its own paper having stretched is left out as
-     * well: that is a fact about the one exemplar, not about the speed
-     * the system's rolls were cut at. Where what remains disagrees,
-     * `constraintProblems` reports it rather than averaging it away.
-     */
+    /** @deprecated Use `toOwnPaperOf(view, version)`, which this delegates to. */
     toOwnPaperOf(version: Readonly<Version>): number | undefined {
-        const scales = this.speedScalesIn(version)
-        return scales.length === 1 ? 1 / scales[0] : undefined
+        return toOwnPaperOf(this, version)
     }
 
-    /** The scales of the version's own copies that are not their own paper stretch. */
+    /** @deprecated Use `speedScalesIn(view, version)`, which this delegates to. */
     speedScalesIn(version: Readonly<Version>): number[] {
-        return [...new Set(this.copiesOwning(version)
-            .filter(copy => !copy.conditions.some(isPaperStretch))
-            .map(copy => copy.measurements.scale)
-            .filter((scale): scale is number => scale !== undefined && scale > 0))]
+        return speedScalesIn(this, version)
     }
 
-    /** The copies of the version's own system that carry any of its symbols. */
+    /** @deprecated Use `copiesOwning(view, version)`, which this delegates to. */
     copiesOwning(version: Readonly<Version>): Readonly<RollCopy>[] {
-        const system = systemIdOf(version.system)
-        const carrying = new Set(this.snapshot(version.id)
-            .flatMap(symbol => idsOf(symbol.carriers))
-            .flatMap(id => {
-                const copy = this.copyOf(id)
-                return copy ? [copy.id] : []
-            }))
-
-        return this.edition.copies.filter(copy =>
-            carrying.has(copy.id) && systemIdOf(copy.production?.system) === system)
+        return copiesOwning(this, version)
     }
 
     /** The version the given one's text is read against, by its principal derivation. */
@@ -382,24 +361,8 @@ export class EditionView {
         return withGen;
     }
 
-    /**
-     * The symbol as a performance needs it: where it lies, and the
-     * position the performing bar reads it on.
-     *
-     * Nothing where that bar reads nothing of it, which is the case a
-     * transfer between systems leaves behind: a red `ForzandoOn` a
-     * green version still inherits cannot be performed on a green
-     * machine, and an edit has yet to say what took its place.
-     */
+    /** @deprecated Use `negotiatedEventOf(view, symbol, bar)`, which this delegates to. */
     simplifySymbol(symbol: Note | Expression, bar: TrackerBar): NegotiatedEvent | null {
-        const horizontal = this.placeOf(symbol)
-        const position = bar.positionOf(symbol)
-        if (!horizontal || position === undefined) return null
-
-        return {
-            ...symbol,
-            horizontal,
-            vertical: { unit: 'track', from: position }
-        }
+        return negotiatedEventOf(this, symbol, bar)
     }
 }
