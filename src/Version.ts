@@ -158,3 +158,25 @@ export const principalDerivationOf = (version: Readonly<Version>): Readonly<Deri
             (principal, derivation) =>
                 principal === undefined || rankOf(derivation) < rankOf(principal) ? derivation : principal,
             undefined)
+
+/**
+ * Whether the version derives from the other, directly or through the
+ * versions between them, by any derivation it states, a hypothesis
+ * among them: a hypothesis held more certain becomes the principal one.
+ * A version derives from itself in no statement, and a stemma that
+ * loops is walked once round.
+ */
+export const derivesFrom = (versions: readonly Readonly<Version>[], versionId: string, ancestorId: string): boolean => {
+    const byId = new Map(versions.map(version => [version.id, version]))
+    const seen = new Set<string>()
+    const pending = [versionId]
+    while (pending.length > 0) {
+        const id = pending.pop()!
+        if (seen.has(id)) continue
+        seen.add(id)
+        const parents = (byId.get(id)?.basedOn ?? []).map(idOf)
+        if (parents.includes(ancestorId)) return true
+        pending.push(...parents)
+    }
+    return false
+}

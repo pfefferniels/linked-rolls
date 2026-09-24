@@ -9,7 +9,7 @@ import {
 } from "./Collation.js"
 import { Edit, EditType } from "./Edit.js"
 import {
-    collationToleranceOf, Derivation, editsOf, insertedBy, Motivation, principalDerivationOf, Version
+    collationToleranceOf, Derivation, derivesFrom, editsOf, insertedBy, Motivation, principalDerivationOf, Version
 } from "./Version.js"
 import {
     asSymbols, barOf, featuresByAct, featuresOf, GeneralRollCondition, isPaperStretch, Modification,
@@ -883,6 +883,10 @@ const byExchange = (edits: readonly Readonly<Edit>[]): Map<string, Readonly<Edit
  * The child's own text is what it shows less what the parent hands
  * down, so that connecting two versions already connected collates the
  * child's symbols and not the parent's with themselves.
+ *
+ * A version is based on itself or on one of its own descendants in no
+ * statement, since the stemma would loop; asked for that, nothing
+ * changes.
  */
 export const connectVersions = (
     view: EditionView,
@@ -890,6 +894,8 @@ export const connectVersions = (
     parentId: string,
     tolerance: ObjectAssumption<CollationTolerance> = defaultCollationTolerance
 ): EditionOp => {
+    if (childId === parentId || derivesFrom(view.edition.versions, parentId, childId)) return noChange
+
     const child = view.version(childId)
     const stated = child ? editsOf(child) : []
     const established = stated.filter(edit => !isCollationsOwn(edit))
@@ -1151,12 +1157,14 @@ export const deriveVersion = (versionId: string, editIds: readonly string[]): Ed
  * it derives from already: a hypothesis, such as a contamination, under
  * the belief given. The text stays read against the principal derivation
  * unless the belief holds this one more certain. A version derives from
- * itself, or twice from one parent, in no statement.
+ * itself, twice from one parent, or from one of its own descendants in
+ * no statement.
  */
 export const stateDerivation = (versionId: string, parentId: string, belief?: Belief): EditionOp =>
-    onVersion(versionId, version => {
+    onVersion(versionId, (version, draft) => {
         const derivations = stateOf<Version>(version).basedOn ?? []
         if (parentId === versionId || derivations.some(derivation => idOf(derivation) === parentId)) return
+        if (derivesFrom(stateOf<Version[]>(draft.versions), parentId, versionId)) return
         version.basedOn = [...derivations, referenceHeld(parentId, belief)]
     })
 

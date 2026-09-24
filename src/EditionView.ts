@@ -168,14 +168,19 @@ export class EditionView {
         return (this.links.get(anyId) ?? []).map(pathOf);
     }
 
+    /**
+     * Calls back on the version and its ancestors along the principal
+     * line. A stemma that loops back on itself is walked once round, so
+     * that an edition in that state can still be read and repaired.
+     */
     travelUp(versionId: string, callback: (version: Readonly<Version>) => void) {
-        const v = this.version(versionId)
-        if (!v) return
-
-        callback(v);
-        const principal = principalDerivationOf(v)
-        if (principal) {
-            this.travelUp(idOf(principal), callback);
+        const visited = new Set<string>()
+        let v = this.version(versionId)
+        while (v && !visited.has(v.id)) {
+            visited.add(v.id)
+            callback(v)
+            const principal = principalDerivationOf(v)
+            v = principal && this.version(idOf(principal))
         }
     }
 
