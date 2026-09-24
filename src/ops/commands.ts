@@ -3,7 +3,7 @@ import { Draft } from "immer"
 import { EditionView, getAt } from "../EditionView.js"
 import { AnyCommand, AnySymbol, PlacementRelation, isCommand, placementRelations } from "../Symbol.js"
 import { assignReference } from "../Assumption.js"
-import { EditionOp } from "./draft.js"
+import { EditionOp, reading } from "./draft.js"
 
 /**
  * Runs the change on the command the view locates by id, in whichever
@@ -11,11 +11,11 @@ import { EditionOp } from "./draft.js"
  * that carries the command.
  */
 const onCommand = (view: EditionView, id: string, op: (command: Draft<AnyCommand>) => void): EditionOp =>
-    draft => {
-        const path = view.getPath(id)
+    reading(view, fresh => draft => {
+        const path = fresh.getPath(id)
         const symbol = path && getAt<Draft<AnySymbol>>(path, draft)
         if (isCommand(symbol)) op(symbol)
-    }
+    })
 
 const clearPlacement = (command: Draft<AnyCommand>) =>
     placementRelations.forEach(relation => { delete command[relation] })

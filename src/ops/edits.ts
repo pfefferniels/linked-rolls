@@ -8,7 +8,7 @@ import { TrackerBar } from "../TrackerBar.js"
 import { trackerBarOf } from "../systems/index.js"
 import { HorizontalSpan } from "../Feature.js"
 import { distance, Millimeters, mm, subtract } from "../Quantity.js"
-import { EditionOp, noChange, onVersion, insertion, deletion } from "./draft.js"
+import { EditionOp, noChange, onVersion, insertion, deletion, reading } from "./draft.js"
 
 const sameSequence = (a: readonly string[], b: readonly string[]) =>
     a.length === b.length && a.every((value, i) => value === b[i])
@@ -70,7 +70,7 @@ const guessEditType = (view: EditionView, versionId: string, edit: Edit): EditTy
  * Replaces the edits with a single one carrying all their insertions
  * and deletions, classified by a guess at what the exchange does.
  */
-export const mergeEdits = (view: EditionView, versionId: string, toMerge: readonly Edit[]): EditionOp => {
+export const mergeEdits = (given: EditionView, versionId: string, toMerge: readonly Edit[]): EditionOp => reading(given, view => {
     if (toMerge.length === 0) return noChange
 
     const merged: Edit = {
@@ -85,7 +85,7 @@ export const mergeEdits = (view: EditionView, versionId: string, toMerge: readon
     return onVersion(versionId, version => {
         version.edits = [...editsOf(version).filter(edit => !mergedIds.has(edit.id)), merged]
     })
-}
+})
 
 /** Replaces the edit with one edit per inserted and one per deleted symbol. */
 export const splitEdit = (versionId: string, toSplit: Edit): EditionOp => {

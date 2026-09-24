@@ -4,7 +4,7 @@ import { v4 } from "uuid"
 import { EditionView } from "../EditionView.js"
 import { Derivation, derivesFrom, editsOf, principalDerivationOf, Version } from "../Version.js"
 import { Belief, ReferenceAssumption, assignReference, idOf } from "../Assumption.js"
-import { EditionOp, onVersion, stateOf, insertion, dropInsertions, referenceHeld, withoutReferences } from "./draft.js"
+import { EditionOp, onVersion, stateOf, insertion, dropInsertions, referenceHeld, withoutReferences, reading } from "./draft.js"
 import { without } from "./immutable.js"
 import { dropStatements } from "./copies.js"
 
@@ -34,7 +34,7 @@ const dropDerivations = (version: Draft<Version>, matches: (derivation: Readonly
  * own insertions, and its derivations go, the hypotheses among them,
  * with the motivations that belonged to them.
  */
-export const detachVersion = (view: EditionView, versionId: string): EditionOp => {
+export const detachVersion = (given: EditionView, versionId: string): EditionOp => reading(given, view => {
     const edits = view.snapshot(versionId).map(insertion)
 
     return onVersion(versionId, version => {
@@ -42,14 +42,14 @@ export const detachVersion = (view: EditionView, versionId: string): EditionOp =
         delete version.basedOn
         version.motivations = []
     })
-}
+})
 
 /**
  * Takes the version out. Whatever read its text against it comes to
  * stand on its own, a hypothesis that something derives from it goes,
  * and so does a copy's statement that it carries the version.
  */
-export const removeVersion = (view: EditionView, versionId: string): EditionOp => {
+export const removeVersion = (given: EditionView, versionId: string): EditionOp => reading(given, view => {
     const detachments = view.edition.versions
         .filter(version => readsAgainst(version, versionId))
         .map(version => detachVersion(view, version.id))
@@ -61,7 +61,7 @@ export const removeVersion = (view: EditionView, versionId: string): EditionOp =
         draft.copies.forEach(copy => dropStatements(copy, namesIt))
         draft.versions = without(draft.versions, version => version.id === versionId)
     }
-}
+})
 
 /** Takes the symbols out of the version's own insertions, and the edits that had nothing else. */
 export const removeSymbols = (versionId: string, symbolIds: readonly string[]): EditionOp =>

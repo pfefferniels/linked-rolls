@@ -10,7 +10,7 @@ import { collationToleranceOf, derivesFrom, editsOf, insertedBy, principalDeriva
 import { Substitution, substitutionsBetween } from "../substitution.js"
 import { trackerBarOf } from "../systems/index.js"
 import { ObjectAssumption, ReferenceAssumption, assignReference, idOf } from "../Assumption.js"
-import { EditionOp, noChange, onVersion, stateOf, insertion, deletion, asUnchecked, declaring, insertedIn, dropInsertions } from "./draft.js"
+import { EditionOp, noChange, onVersion, stateOf, insertion, deletion, asUnchecked, declaring, insertedIn, dropInsertions, reading } from "./draft.js"
 import { hypothesesBeside } from "./versions.js"
 
 /** The carriers of each collated symbol pass to its counterpart. */
@@ -76,11 +76,11 @@ const byExchange = (edits: readonly Readonly<Edit>[]): Map<string, Readonly<Edit
  * changes.
  */
 export const connectVersions = (
-    view: EditionView,
+    given: EditionView,
     childId: string,
     parentId: string,
     tolerance: ObjectAssumption<CollationTolerance> = defaultCollationTolerance
-): EditionOp => {
+): EditionOp => reading(given, view => {
     if (childId === parentId || derivesFrom(view.edition.versions, parentId, childId)) return noChange
 
     const child = view.version(childId)
@@ -153,7 +153,7 @@ export const connectVersions = (
             ...hypothesesBeside(stateOf<Version>(child), parentId)
         ]
     })
-}
+})
 
 /**
  * Folds the version's own symbols into those it inherits and collates
@@ -161,11 +161,11 @@ export const connectVersions = (
  * tolerance of the derivation, where the caller names none.
  */
 export const collateSymbols = (
-    view: EditionView,
+    given: EditionView,
     versionId: string,
     symbolIds: readonly string[],
     tolerance?: CollationTolerance
-): EditionOp => {
+): EditionOp => reading(given, view => {
     const version = view.version(versionId)
     const principal = version && principalDerivationOf(version)
     if (!version || !principal) return noChange
@@ -183,7 +183,7 @@ export const collateSymbols = (
         handOverCarriers(view, draft, collations)
         dropInsertions(version, collated)
     })
-}
+})
 
 /** The symbol as one copy reads it: what it says, on the given carriers, standing in no relation of its own. */
 const readingOf = (symbol: Readonly<AnySymbol>, carriers: ReferenceAssumption[]): AnySymbol => {
@@ -250,11 +250,11 @@ const sharedWith = (view: EditionView, symbol: Readonly<AnySymbol>, copies: Read
  * narrow the act to those; naming none separates the whole reading.
  */
 export const separateReadings = (
-    view: EditionView,
+    given: EditionView,
     versionId: string,
     copies: ReadonlySet<string>,
     symbolIds?: readonly string[]
-): EditionOp => {
+): EditionOp => reading(given, view => {
     const version = view.version(versionId)
     if (!version) return noChange
 
@@ -283,4 +283,4 @@ export const separateReadings = (
         })
         version.edits = [...stated, ...separations]
     })
-}
+})

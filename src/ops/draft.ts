@@ -1,3 +1,4 @@
+import { EditionView } from "../EditionView.js"
 /** What the operations are built from: the type of an operation, how one finds what it writes to on the draft, and the edits it writes. */
 import { current, Draft, isDraft } from "immer"
 import { v4 } from "uuid"
@@ -17,6 +18,8 @@ import { without, pruned } from "./immutable.js"
  * operation is one undo step, so an operation that has to read the
  * edition first takes an `EditionView` of the state it will be
  * applied to and does all its writing in the one function it returns.
+ * Where operations run one after another on one draft, the ones after
+ * the first read a view of the draft as it then stands (`reading`).
  */
 export type EditionOp = (draft: Draft<Edition>) => void
 
@@ -39,6 +42,19 @@ export const onFeature = (copyId: string, featureId: string, op: (feature: Draft
         const feature = featuresOf(copy).find(f => f.id === featureId)
         if (feature) op(feature)
     })
+
+/**
+ * The operation built from a view of the state it is applied to. The
+ * view given is used where the draft still stands as the view saw it,
+ * and a fresh one is taken of the draft where an operation run before
+ * on the same draft has changed it: a path or an index read off the
+ * view would otherwise name what stood there before.
+ */
+export const reading = (view: EditionView, build: (view: EditionView) => EditionOp): EditionOp =>
+    draft => {
+        const state = stateOf<Edition>(draft)
+        build(state === view.edition ? view : new EditionView(state))(draft)
+    }
 
 /**
  * The state a draft stands at, as plain data. Reading a draft proxies
