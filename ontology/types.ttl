@@ -164,7 +164,8 @@ reot:short-dynamic-differentation a crm:E55_Type, skos:Concept ; skos:inScheme <
 reot:additional-accent a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "additional accent"@en .
 reot:add-redundancy a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "add redundancy"@en .
 reot:remove-redundancy a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "remove redundancy"@en .
-reot:replace-with-equivalent a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "replace with equivalent"@en .
+reot:recoding a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "recoding"@en ;
+    skos:definition "An edit that carries the text into the coding of another reproducing system."@en .
 reot:shift a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "shift"@en .
 reot:correct-error a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "correct error"@en .
 reot:shorten a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "shorten"@en .

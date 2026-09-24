@@ -57,10 +57,20 @@ describe('collating two symbols the copies put apart', () => {
 describe('which edits a collation may rewrite', () => {
     const bare = (id: string): Edit => ({ type: 'edit', id, insert: [note('n', 60)] })
 
-    it('claims a bare insertion, a bare deletion and an equivalence between two spellings', () => {
+    it('claims a bare insertion, a bare deletion and a recoding exchanging two spellings', () => {
         expect(isCollationsOwn(bare('a'))).toBe(true)
         expect(isCollationsOwn({ type: 'edit', id: 'b', delete: ['n'] })).toBe(true)
-        expect(isCollationsOwn({ ...bare('c'), editType: 'replace-with-equivalent' })).toBe(true)
+        expect(isCollationsOwn({ ...bare('c'), delete: ['m'], editType: 'recoding' })).toBe(true)
+    })
+
+    /**
+     * A collation types no one-sided edit, so a recoding that only
+     * inserts or only deletes is an editor's reading of the transfer and
+     * must survive collating the two versions again.
+     */
+    it('leaves a recoding that only inserts or only deletes to the editor', () => {
+        expect(isCollationsOwn({ ...bare('d'), editType: 'recoding' })).toBe(false)
+        expect(isCollationsOwn({ type: 'edit', id: 'e', delete: ['n'], editType: 'recoding' })).toBe(false)
     })
 
     /**

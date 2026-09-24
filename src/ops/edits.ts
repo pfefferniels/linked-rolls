@@ -47,18 +47,23 @@ const guessEditType = (view: EditionView, versionId: string, edit: Edit): EditTy
     const parentBar = trackerBarOf(view.predecessorOf(versionId)?.system)
 
     /**
-     * Where the version is coded for another system than its parent, an
-     * exchange of expression matter is the transfer being carried out:
-     * a red ForzandoOn and ForzandoOff pair giving way to one held green
-     * SforzandoForte says the same thing in the other system's words,
-     * which is what 'replace-with-equivalent' is for. Calling it a
-     * corrected error would say the editor made a mistake.
+     * Where the version is coded for another system than its parent,
+     * expression matter changed is the transfer being carried out: a red
+     * ForzandoOn and ForzandoOff pair giving way to one held green
+     * SforzandoForte says the same thing in the other system's words, and
+     * a red command the green bar cannot read struck, or a green hold put
+     * in where the red had no word for it, belongs to the same act. That
+     * is a recoding. Calling it a corrected error would say the editor
+     * made a mistake. Only an insertion spelling the bar's own accent
+     * reads more narrowly, as the accent it spells.
      */
-    if (bar && parentBar && bar.id !== parentBar.id && inserted.length > 0 && deleted.length > 0) {
-        return 'replace-with-equivalent'
-    }
+    const transferred = bar && parentBar && bar.id !== parentBar.id
+    if (transferred && inserted.length > 0 && deleted.length > 0) return 'recoding'
 
     if (deleted.length === 0 && accentsOn(bar).some(accent => sameSequence(inserted, accent))) return 'additional-accent'
+
+    const onlyExpressions = [...inserts, ...deletes].every(symbol => symbol.type === 'expression')
+    if (transferred && onlyExpressions && inserted.length + deleted.length > 0) return 'recoding'
     if (inserted.length > 1 && sameSequence(inserted, deleted)) return 'shift'
     if (inserted.length === 0 && deleted.length === 1) return 'remove-redundancy'
     if (inserts.length === 1 && deletes.length === 1) return replacementType(view, inserts[0], deletes[0]) ?? 'correct-error'

@@ -305,7 +305,7 @@ const twoIssues = (): Edition => editionOf(
 )
 
 const equivalenceIn = (edition: Edition): Edit =>
-    editsIn(edition, 'B').find(edit => edit.editType === 'replace-with-equivalent')!
+    editsIn(edition, 'B').find(edit => edit.editType === 'recoding')!
 
 describe('an equivalence an editor has written on', () => {
     /** The transfer collated once, with a motivation added to the equivalence afterwards, as an editor would. */
@@ -313,7 +313,7 @@ describe('an equivalence an editor has written on', () => {
         const before = twoIssues()
         const attached = produce(before, connectVersions(viewOf(before), 'B', 'A'))
         return produce(attached, draft => {
-            const edit = draft.versions[1].edits!.find(e => e.editType === 'replace-with-equivalent')!
+            const edit = draft.versions[1].edits!.find(e => e.editType === 'recoding')!
             edit.motivation = 'the green scale holds what the red latches'
         })
     }
@@ -324,6 +324,28 @@ describe('an equivalence an editor has written on', () => {
 
         expect(equivalenceIn(again).id).toBe(equivalenceIn(before).id)
         expect(equivalenceIn(again).motivation).toBe('the green scale holds what the red latches')
+    })
+
+    /**
+     * A red command the green scale has no word for is struck by the
+     * collation as a bare deletion. Typed a recoding by the editor, it is
+     * the editor's reading of the transfer and survives a second collation.
+     */
+    it('keeps a one-sided recoding the editor typed', () => {
+        const before = twoIssues()
+        before.copies[0].production!.produced!.push(hole('hole-motor', 950, 952, 10))
+        before.versions[0].edits![0].insert!.push(expression('motor-on', 'MotorOn', 'hole-motor'))
+        const attached = produce(before, connectVersions(viewOf(before), 'B', 'A'))
+        const typed = produce(attached, draft => {
+            const edit = draft.versions[1].edits!.find(e => e.delete?.includes('motor-on'))!
+            edit.editType = 'recoding'
+            delete edit.motivation
+        })
+        const struck = (edition: Edition) => editsIn(edition, 'B').filter(e => e.delete?.includes('motor-on'))
+
+        const again = produce(typed, connectVersions(viewOf(typed), 'B', 'A'))
+        expect(struck(again)).toEqual(struck(typed))
+        expect(struck(again)[0].editType).toBe('recoding')
     })
 
     it('does not freeze the symbols it speaks for, so the transfer can be collated again at all', () => {

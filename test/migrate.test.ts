@@ -427,3 +427,10 @@ describe('a copy whose ops and measurements disagreed', () => {
         expect(copyWith(['shifted'], { shift, dimensions: { width: 1 } }).measurements).toEqual({ shift, dimensions: { width: 1 } })
     })
 })
+
+describe('an edit typed as a replacement with an equivalent', () => {
+    it('is read as a recoding, of which it is the exchanging kind', () => {
+        const migrated = migrate({ versions: [{ '@type': 'Version', edits: [{ '@type': 'edit', editType: 'replace-with-equivalent' }] }] })
+        expect(migrated.versions[0].edits[0].editType).toBe('recoding')
+    })
+})

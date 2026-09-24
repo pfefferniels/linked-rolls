@@ -12,7 +12,13 @@ export const editTypes = [
     'additional-accent',
     'add-redundancy',
     'remove-redundancy',
-    'replace-with-equivalent',
+    /**
+     * Carries the text into another reproducing system's coding: a
+     * latched pair of one system giving way to the other's held command,
+     * a command the other system cannot read struck, or one of its own
+     * put in where the first had no word for it.
+     */
+    'recoding',
     'shift',
     'correct-error',
     'shorten',

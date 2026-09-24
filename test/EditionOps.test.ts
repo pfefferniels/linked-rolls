@@ -393,7 +393,7 @@ describe('merging edits', () => {
      * the other system's words; calling it a corrected error, as the
      * rules for one system do, would say the editor made a mistake.
      */
-    it('calls an exchange across two systems a replacement with an equivalent', () => {
+    it('calls an exchange across two systems a recoding', () => {
         const green = expression('sforzando', 'SforzandoForte', 'hole-on-2')
         const edits = [inserting('e1', green), deleting('e2', 'forzando-on', 'forzando-off')]
 
@@ -401,7 +401,17 @@ describe('merging edits', () => {
         before.versions.find(version => version.id === 'C')!.system = systemOf(welteT98)
         const merged = editsOf(produce(before, mergeEdits(viewOf(before), 'C', edits)), 'C').at(-1)!
 
-        expect(merged.editType).toBe('replace-with-equivalent')
+        expect(merged.editType).toBe('recoding')
+    })
+
+    /** A red command the green bar cannot read, struck in the transfer, is part of the recoding too. */
+    it('calls a command struck across two systems a recoding', () => {
+        const edits = [deleting('e1', 'forzando-on')]
+        const before = withC(edits)
+        before.versions.find(version => version.id === 'C')!.system = systemOf(welteT98)
+        const merged = editsOf(produce(before, mergeEdits(viewOf(before), 'C', edits)), 'C').at(-1)!
+
+        expect(merged.editType).toBe('recoding')
     })
 
     it('keeps the rules of one system where the version does not change it', () => {
@@ -594,7 +604,7 @@ describe('attaching a version coded for another system', () => {
             .find(edit => (edit.insert ?? []).some(symbol => symbol.id === 'cresc-green'))!
 
         expect(replacement.delete).toEqual(['cresc-on', 'cresc-off'])
-        expect(replacement.editType).toBe('replace-with-equivalent')
+        expect(replacement.editType).toBe('recoding')
     })
 
     it('collates the notes away, the two scales agreeing on the pitch', () => {

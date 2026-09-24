@@ -128,7 +128,7 @@ export const connectVersions = (
         return alreadyStated.get(exchangeKey(inserted, deleted)) ?? {
             type: 'edit',
             id: v4(),
-            editType: 'replace-with-equivalent',
+            editType: 'recoding',
             motivation: unchecked,
             insert: [...by],
             delete: deleted

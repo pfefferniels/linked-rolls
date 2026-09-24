@@ -80,6 +80,16 @@ const withTypology = (node: Json): Json => {
     return node
 }
 
+/** Edit types renamed since: an exchange of two systems' spellings is one kind of recoding. */
+const renamedEditTypes: Record<string, string> = {
+    'replace-with-equivalent': 'recoding'
+}
+
+const withRenamedEditType = (node: Json): Json =>
+    typeof node.editType === 'string' && Object.hasOwn(renamedEditTypes, node.editType)
+        ? { ...node, editType: renamedEditTypes[node.editType] }
+        : node
+
 const withRenamedType = (node: Json): Json =>
     Object.hasOwn(renamedTypes, node['@type']) ? { ...node, '@type': renamedTypes[node['@type']] } : node
 
@@ -427,7 +437,7 @@ const withTimeSpanDates = (node: Json): Json => {
 }
 
 const migrateNode = (node: Json): Json =>
-    [withRenamedKeys, withTypology, withRenamedType, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
+    [withRenamedKeys, withRenamedEditType, withTypology, withRenamedType, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
         withPerforator, withProductionNodes, withTypedPerforator, withScale, withoutOps, withDerivationList, withReadingKind, withTimeSpanDates,
         withoutFeatureKind, withBorneFeaturesNamed, withFeaturesInActs, withDriveOfStaggering, withoutPattern, withoutBearings, withoutEntailedType]
         .reduce((result, step) => step(result), node)

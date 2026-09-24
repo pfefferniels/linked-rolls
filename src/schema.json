@@ -516,7 +516,7 @@
         "additional-accent",
         "add-redundancy",
         "remove-redundancy",
-        "replace-with-equivalent",
+        "recoding",
         "shift",
         "correct-error",
         "shorten",

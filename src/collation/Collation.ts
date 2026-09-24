@@ -177,7 +177,7 @@ export const collationsOf = (
 }
 
 /** The edit type a collation draws by itself, from the two systems' vocabularies rather than off the paper. */
-const drawnByCollation: EditType = 'replace-with-equivalent'
+const drawnByCollation: EditType = 'recoding'
 
 /**
  * The motivation a collation writes on what it makes, saying that
@@ -204,23 +204,27 @@ export const uncheckedMotivation = {
 
 /**
  * Whether the edit is one a collation writes by itself: a bare
- * insertion or a bare deletion saying nothing further, or an
- * equivalence between two systems' spellings for one command.
+ * insertion or a bare deletion saying nothing further, or a recoding
+ * that exchanges two systems' spellings for one command.
  *
  * Collating again rewrites these and keeps the rest. An edit that says
  * what the change is, or why it was made, or what it rests on, is an
  * editor's reading of the difference between two texts, and collating
  * the two again is no reason to discard it.
  *
- * An equivalence counts as the collation's own even where an editor
+ * Such an exchange counts as the collation's own even where an editor
  * added a motivation to it, because it is derived rather than read:
  * freezing it would leave the transfers, where nearly every edit is
  * one, unable to be collated again at all. What an editor wrote on it
- * is not lost by that, since `connectVersions` keeps an equivalence it
+ * is not lost by that, since `connectVersions` keeps an exchange it
  * draws a second time over the very same symbols.
+ *
+ * A recoding that only inserts or only deletes is the editor's: a
+ * collation types no one-sided edit, so one typed so is a reading of
+ * the transfer that collating again must not undo.
  */
 export const isCollationsOwn = (edit: Readonly<Edit>): boolean =>
-    edit.editType === drawnByCollation
+    (edit.editType === drawnByCollation && !!edit.insert?.length && !!edit.delete?.length)
     || (edit.editType === undefined
         && (edit.motivation === undefined || edit.motivation === unchecked)
         && edit['@annotation'] === undefined)
