@@ -21,10 +21,10 @@ type Json = any
 
 const retiredVersionTypes = new Set(['edition', 'unicum'])
 /**
- * The vocabulary the steps below were written against, as it stood when
- * the format was first given a revision number. It is copied here rather
- * than imported from the model, so that changing today's vocabulary
- * cannot change how an old document is read. The tracker bars are still
+ * The vocabulary the steps below were written against, as it stood in
+ * release 0.58.0. It is copied here rather than imported from the model,
+ * so that changing today's vocabulary cannot change how an old document
+ * is read. The tracker bars are still
  * asked, being the layout of instruments rather than a choice of the
  * format.
  */
@@ -589,28 +589,14 @@ const withDerivationTolerance = (edition: Json): Json => {
     }
 }
 
-const editionSteps = [withoutEditionType, withSystems, withEditors, withDerivationTolerance]
-
-/**
- * The revision of the format this release writes, stated in every export
- * as `formatVersion`. A document stating it is in the current shape and
- * passes through untouched; one stating none was written before the
- * revisions were numbered and is brought up by recognising its shapes.
- * A step added later is to run on the documents of the revisions before
- * it, and to raise this number.
- */
-export const formatVersion = 1
-
-export const migrate = (edition: Json): Json => {
-    const stated = edition?.formatVersion
-    if (stated === formatVersion) return edition
-    if (typeof stated === 'number' && stated > formatVersion) {
-        throw new Error(`The document is written in revision ${stated} of the format, which this release, reading up to ${formatVersion}, does not know`)
-    }
-    const current = walk(editionSteps.reduce((result, step) => step(result), edition))
-    // What comes out is in the current revision and says so, so that it
-    // passes through untouched when it is migrated again.
-    return current !== null && typeof current === 'object' && !Array.isArray(current)
-        ? { ...current, formatVersion }
-        : current
+/** Release 0.58.0 stated a revision of the format, which the format does not state. */
+const withoutFormatVersion = (edition: Json): Json => {
+    if (!Object.hasOwn(edition, 'formatVersion')) return edition
+    const { formatVersion: _stated, ...rest } = edition
+    return rest
 }
+
+const editionSteps = [withoutFormatVersion, withoutEditionType, withSystems, withEditors, withDerivationTolerance]
+
+export const migrate = (edition: Json): Json =>
+    walk(editionSteps.reduce((result, step) => step(result), edition))

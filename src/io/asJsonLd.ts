@@ -2,7 +2,6 @@ import { Edition } from "../model/Edition.js";
 import { systemIdIn } from "../systems/TrackerBar.js";
 import { certaintyOf, isAsserted } from "../model/Assumption.js";
 import context from "../spec/context.json" with { type: 'json' };
-import { formatVersion } from "./migrate.js";
 
 /**
  * The keys an export derives from the tree, which no node of the
@@ -189,7 +188,6 @@ export const asJsonLd = (edition: Edition) => {
             }
         ],
         '@id': edition.base,
-        formatVersion,
         ...rest,
         ...(quoted.length > 0 && { '@included': quoted })
     }

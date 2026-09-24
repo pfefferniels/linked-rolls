@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { readFileSync } from 'fs'
 import * as path from 'path'
-import { formatVersion, migrate } from '../src/io/migrate'
+import { migrate } from '../src/io/migrate'
 import { importJsonLd } from '../src/io/importJsonLd'
 import { asJsonLd } from '../src/io/asJsonLd'
 import { CollationTolerance } from '../src/collation/Collation'
@@ -35,7 +35,7 @@ const twoCopiesApart = (): Edition => editionOf(
 const writtenBefore = (tolerance: CollationTolerance) => {
     const edition = twoCopiesApart()
     edition.creation.collationTolerance = tolerance
-    const { formatVersion: _unnumbered, ...written } = JSON.parse(JSON.stringify(asJsonLd(edition)))
+    const written = JSON.parse(JSON.stringify(asJsonLd(edition)))
     return {
         ...written,
         versions: written.versions.map(({ basedOn, ...version }: any) =>
@@ -390,33 +390,16 @@ describe('migrating a document that is not an edition', () => {
     })
 })
 
-/**
- * An export states the revision of the format it is written in, so that
- * a document in the current shape is read as it stands and one of a
- * later revision is refused rather than misread.
- */
-describe('the revision of the format a document states', () => {
-    it('is stated in every export', () => {
-        expect(asJsonLd(twoCopiesApart()).formatVersion).toBe(formatVersion)
+/** The format states no revision of itself; a document 0.58.0 wrote with one is read without it. */
+describe('a revision of the format', () => {
+    it('is stated in no export', () => {
+        expect(asJsonLd(twoCopiesApart())).not.toHaveProperty('formatVersion')
     })
 
-    it('passes a document in the current revision through untouched', () => {
-        const current = JSON.parse(JSON.stringify(asJsonLd(twoCopiesApart())))
-        expect(migrate(current)).toBe(current)
-    })
-
-    it('does not carry the revision into the edition', () => {
-        expect(importJsonLd(JSON.parse(JSON.stringify(asJsonLd(twoCopiesApart()))))).not.toHaveProperty('formatVersion')
-    })
-
-    it('states the current revision on what it brings up to date', () => {
-        const migrated = migrate({ copies: [], versions: [] })
-        expect(migrated.formatVersion).toBe(formatVersion)
-        expect(migrate(migrated)).toBe(migrated)
-    })
-
-    it('refuses a revision it does not know yet', () => {
-        expect(() => migrate({ formatVersion: formatVersion + 1 })).toThrow(/revision/)
+    it('is dropped where a document of 0.58.0 states one', () => {
+        const written = { ...JSON.parse(JSON.stringify(asJsonLd(twoCopiesApart()))), formatVersion: 1 }
+        expect(migrate(written)).not.toHaveProperty('formatVersion')
+        expect(importJsonLd(written)).not.toHaveProperty('formatVersion')
     })
 })
 

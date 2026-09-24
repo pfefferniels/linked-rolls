@@ -139,7 +139,7 @@ const withQuotedStatementsInPlace = (edition: Json): Json => {
 }
 
 export const importJsonLd = (json: Json): Edition => {
-    const { '@context': context, formatVersion: _revision, ...document } = withPlainCopyIds(migrate(withQuotedStatementsInPlace(json)))
+    const { '@context': context, ...document } = withPlainCopyIds(migrate(withQuotedStatementsInPlace(json)))
     const edition = fromJsonLdEntity(document) as Edition;
     edition.base = Array.isArray(context)
         ? context.find((c: Json) => c['@base'])?.['@base'] || ''
