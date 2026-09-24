@@ -12,3 +12,10 @@ export const trackerBarOf = (system: Concept | undefined): TrackerBar | undefine
     const id = systemIdOf(system)
     return trackerBars.find(bar => bar.id === id)
 }
+
+/**
+ * The bar a copy is read by where it names no system of its own: every
+ * copy was read by the T-100's before the systems were told apart, and
+ * `reservationsAbout` reports a copy that still relies on this.
+ */
+export const defaultTrackerBar: TrackerBar = welteT100

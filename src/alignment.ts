@@ -1,7 +1,7 @@
 import { FeatureOrPatch } from "./Feature.js";
 import { featuresOf, RollCopy, Shift } from "./RollCopy.js";
 import { TrackerBar } from "./TrackerBar.js";
-import { welteT100 } from "./systems/welteT100/bar.js";
+import { defaultTrackerBar } from "./systems/index.js";
 import { add, Millimeters, mm, Quantity, scale, subtract, Unit } from "./Quantity.js";
 
 type Ends<U extends Unit> = { from: Quantity<U>, to?: Quantity<U> }
@@ -341,7 +341,7 @@ const resultOf = ({ line, matches }: Fit): AlignmentResult | undefined => {
 export function alignFeatures(
     rollA: readonly FeatureOrPatch[],
     rollB: readonly FeatureOrPatch[],
-    barA: TrackerBar = welteT100,
+    barA: TrackerBar = defaultTrackerBar,
     barB: TrackerBar = barA
 ): AlignmentResult | undefined {
     const a = noteOnsets(rollA, barA)

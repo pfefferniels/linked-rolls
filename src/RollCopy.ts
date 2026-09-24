@@ -2,8 +2,7 @@ import { v4 } from "uuid";
 import { ConditionState } from "./ConditionState.js";
 import { AnySymbol } from "./Symbol.js";
 import { TrackerBar } from "./TrackerBar.js";
-import { welteT100 } from "./systems/welteT100/bar.js";
-import { trackerBarOf } from "./systems/index.js";
+import { defaultTrackerBar, trackerBarOf } from "./systems/index.js";
 import { TrackCalibration } from "./TrackCalibration.js";
 import { AnyFeature, FeatureOrPatch, Patch } from "./Feature.js";
 import { ActorAssignment, assignReference, certaintyOf, DateAssignment, isAsserted, ObjectAssumption, ReferenceAssumption } from "./Assumption.js";
@@ -473,11 +472,10 @@ export const isPaperStretch = (condition: RollConditionAssignment): boolean =>
 
 /**
  * The bar a copy is read by, which is the one it was cut for. A copy
- * that names no system falls back to the T-100, as every copy was read
- * before the systems were told apart; `reservationsAbout` says so.
+ * that names no system falls back to `defaultTrackerBar`.
  */
 export const barOf = (copy: Pick<RollCopy, 'production'>): TrackerBar =>
-    trackerBarOf(copy.production?.system) ?? welteT100
+    trackerBarOf(copy.production?.system) ?? defaultTrackerBar
 
 /** The diameter of the punch the copy was cut with, where the edition holds it true or likely. */
 export const punchDiameterOf = (copy: Pick<RollCopy, 'production'>): Millimeters | undefined => {

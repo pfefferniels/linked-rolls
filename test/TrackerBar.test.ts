@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
 import { welteT98 } from '../src/systems/welteT98/bar'
-import { translationBetween } from '../src/TrackerBar'
+import { describeTrackerBar, translationBetween } from '../src/TrackerBar'
 import { columnOf, columnsOf, trackAt, TrackCalibration } from '../src/TrackCalibration'
-import { px, track } from '../src/Quantity'
+import { mm, px, track } from '../src/Quantity'
 
 describe('WelteT100 tracker bar', () => {
     it('reads 100 positions and nothing outside them', () => {
@@ -287,5 +287,43 @@ describe('a feature lying across the bar', () => {
     it('leaves out the positions the bar does not read, and keeps the rest', () => {
         const across = welteT98.meaningsOf({ from: track(97), to: track(100) })
         expect(across).toEqual([welteT98.meaningOf(track(97)), welteT98.meaningOf(track(98))])
+    })
+})
+
+/**
+ * What a command operates and how an accent is spelled belong to the
+ * system, so each bar states them rather than the core naming any
+ * system's words.
+ */
+describe('what a bar says its commands operate', () => {
+    it('answers for the words its own bar reads, and for no other', () => {
+        expect(welteT100.operationOf('SlowCrescendoOn')).toEqual({ operates: 'crescendo', spelling: 'on', sided: true })
+        expect(welteT98.operationOf('Crescendo')).toEqual({ operates: 'crescendo', spelling: 'held', sided: true })
+        expect(welteT100.operationOf('Crescendo')).toBeUndefined()
+        expect(welteT100.operationOf('Rewind')).toBeUndefined()
+        expect(welteT100.operationOf('toString')).toBeUndefined()
+    })
+
+    it('shares the T-100\'s words with the Licensee', () => {
+        expect(welteLicensee.operationOf('ForzandoOn')).toEqual(welteT100.operationOf('ForzandoOn'))
+        expect(welteLicensee.accents).toEqual(welteT100.accents)
+    })
+
+    it('spells an accent as a latched pair on the red and one hold on the green', () => {
+        expect(welteT100.accents).toContainEqual(['ForzandoOn', 'ForzandoOff'])
+        expect(welteT98.accents).toContainEqual(['SforzandoForte'])
+    })
+
+    it('refuses a spec naming a word its bar does not read', () => {
+        const spec = {
+            id: 'test', name: 'Test', width: mm(100), trackCount: 3,
+            notes: { from: 2, to: 2, lowestPitch: 60 },
+            expressions: new Map([[1, 'Rewind'], [3, 'Loud']])
+        }
+        expect(() => describeTrackerBar({ ...spec, accents: [['Soft']] })).toThrow(/Soft/)
+        expect(() => describeTrackerBar({
+            ...spec, operations: { Soft: { operates: 'soft', spelling: 'held', sided: false } }
+        })).toThrow(/Soft/)
+        expect(() => describeTrackerBar({ ...spec, accents: [['Loud']] })).not.toThrow()
     })
 })

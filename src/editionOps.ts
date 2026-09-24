@@ -1181,21 +1181,8 @@ const sameSequence = (a: readonly string[], b: readonly string[]) =>
 const expressionTypesOf = (symbols: readonly AnySymbol[]) =>
     symbols.filter((symbol): symbol is Expression => symbol.type === 'expression').map(symbol => symbol.expressionType)
 
-/**
- * How a single added accent is spelled. The red Welte latches a valve
- * on and off again, the green holds one perforation for as long as the
- * accent lasts, so the spelling is the system's and not the music's.
- * Which of them a bar can spell decides which ones it is offered.
- */
-const ACCENTS = [
-    ['SlowCrescendoOn', 'SlowCrescendoOff'],
-    ['ForzandoOn', 'ForzandoOff'],
-    ['Crescendo'],
-    ['SforzandoForte']
-]
-
-const accentsOn = (bar: TrackerBar | undefined): string[][] =>
-    bar ? ACCENTS.filter(accent => accent.every(type => bar.expressionTypes.includes(type))) : []
+/** The spellings of a single added accent the bar offers, none where no bar is known. */
+const accentsOn = (bar: TrackerBar | undefined): readonly (readonly string[])[] => bar?.accents ?? []
 
 const lengthOf = (span: HorizontalSpan): Millimeters => subtract(span.to, span.from)
 
