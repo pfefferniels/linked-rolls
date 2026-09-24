@@ -1,18 +1,11 @@
 import {
-    geometryInMm,
-    Grid,
-    levelChanges,
-    mezzoforteTravel,
-    paperSeconds,
     pedalBrushing,
     pedalDefaults,
     ROWS_PER_MM,
-    travelBetweenRails,
     WELTE_T98_SPOOL,
+    Grid,
     Half,
     Parameters,
-    PedalMode,
-    Spool,
 } from "welte-mignon-emulator";
 import {
     aperturePorts,
@@ -33,24 +26,22 @@ import {
     Punch,
     WelteT98InstrumentName,
 } from "welte-mignon-emulator/t98";
-import { Expression, Note } from "../../Symbol.js";
+import { Expression } from "../../Symbol.js";
 import { welteT98, WelteT98ExpressionType } from "./bar.js";
 import {
     DynamicsCurve,
     NegotiatedEvent,
     PedalCurve,
     Performance,
-    PerformedNoteOffEvent,
-    PerformedNoteOnEvent,
-    PerformedPedalEvent,
     ReproducingSystem,
     RollProperties
 } from "../../ReproducingSystem.js";
-import { inCentimeters, Millimeters, mm, Seconds, seconds, Track, track } from "../../Quantity.js";
-import { partitionPoint } from "../../sorted.js";
-import { defaultVelocityMap, velocityOf, type VelocityMap } from "../velocity.js";
+import { Millimeters, mm, Seconds, seconds, track } from "../../Quantity.js";
+import { defaultVelocityMap } from "../velocity.js";
+import { performWelte, Ports, sameParameters, type WelteOptions } from "../welte.js";
 
 export type { VelocityMap } from "../velocity.js";
+export { secondsAt } from "../welte.js";
 export type { WelteT98Instrument, WelteT98InstrumentName } from "welte-mignon-emulator/t98";
 
 /**
@@ -88,10 +79,6 @@ export const instrumentNames: readonly WelteT98InstrumentName[] = [
     { unfitted: 'starting-values' }
 ]
 
-const sameParameters = (a: Parameters, b: Parameters): boolean =>
-    Object.keys(a).length === Object.keys(b).length
-    && Object.entries(a).every(([name, value]) => b[name] === value)
-
 /** The instrument a pair of nuancing constants belongs to, if it is one. */
 export const instrumentNameOf = (nuance: Record<Half, Parameters>): WelteT98InstrumentName | undefined =>
     instrumentNames.find(name => {
@@ -118,34 +105,22 @@ export type PedalPreset = keyof typeof pedalPresets
 export const pedalPresetOf = (pedals: Parameters): PedalPreset | undefined =>
     (Object.keys(pedalPresets) as PedalPreset[]).find(name => sameParameters(pedalPresets[name], pedals))
 
-export type WelteT98Options = {
-    /**
-     * The take-up spool, which sets the time axis. No source states a T-98
-     * spool geometry, so the default keeps the red circumference and layer and
-     * sets the revolution to make the initial paper speed 220 cm/min. It is
-     * better varied than trusted: it scales every conductance by k and every
-     * time constant by 1/k, and touches nothing dimensionless.
-     */
-    spool: Spool
-
-    /** Constants of the nuancing mechanism, one set for each half of the keyboard. */
-    nuance: Record<Half, Parameters>
-
-    /** Which instrument those constants are, so that a curve can say so. */
+/**
+ * The options every Welte system takes (see `WelteOptions`), with what the
+ * T-98 adds. No source states a T-98 spool geometry, so the default keeps the
+ * red circumference and layer and sets the revolution to make the initial
+ * paper speed 220 cm/min; it is better varied than trusted, since it scales
+ * every conductance by k and every time constant by 1/k and touches nothing
+ * dimensionless. No source gives the T-98's tracker bore either, and the red
+ * figure is carried over. Welte puts the division between f♯ and g
+ * (Betriebsanleitung p. 7), which on this bar is track 52; PlaySK's green
+ * configuration independently gives the last bass note as MIDI 66. A green
+ * roll re-cut from a Mignon master uses only the middle 80 of the 88 note
+ * positions, so the division falls inside the used compass either way.
+ */
+export type WelteT98Options = WelteOptions & {
+    /** Which instrument the nuancing constants are, so that a curve can say so. */
     instrument: WelteT98InstrumentName
-
-    /** Constants of the two pedal actions, one of `pedalPresets` or a set of one's own. */
-    pedals: Parameters
-
-    velocity: VelocityMap
-
-    pedalMode: PedalMode
-
-    /** Diameter of the tracker-bar bore. No source gives the T-98's; the red figure is carried over. */
-    trackerBore: Millimeters
-
-    /** Punch diameter for an edition whose copies record none. */
-    punchDiameter: Millimeters
 
     /**
      * Chained punches whose gap is shorter than this are one perforation. A held
@@ -155,19 +130,6 @@ export type WelteT98Options = {
      * same port only if the chain is merged.
      */
     chainGap: Millimeters
-
-    /**
-     * The track at which the keyboard is divided, so that notes from here
-     * upwards follow the treble expression and the ones below it the bass.
-     * Welte puts the division between f♯ and g (Betriebsanleitung p. 7), which
-     * on this bar is track 52; PlaySK's green configuration independently gives
-     * the last bass note as MIDI 66. Which side an expression perforation
-     * belongs to is not decided here but read off the tracker bar.
-     *
-     * A green roll re-cut from a Mignon master uses only the middle 80 of the 88
-     * note positions, so the division falls inside the used compass either way.
-     */
-    division: Track
 
     /**
      * What a long perforation on the bass sforzando-piano line does. It is the
@@ -215,164 +177,11 @@ const CODES: Record<WelteT98ExpressionType, Control> = {
 const isWelteT98ExpressionType = (type: string): type is WelteT98ExpressionType =>
     Object.hasOwn(CODES, type)
 
-const codeOf = (expressionType: string) =>
-    isWelteT98ExpressionType(expressionType) ? CODES[expressionType] : undefined
-
-/** Paper the grid runs on past the last hole, so that a final pedal release completes. */
-const RUN_OUT = mm(100)
-
-const isNote = (event: NegotiatedEvent): event is NegotiatedEvent & Note => event.type === 'note'
-const isExpression = (event: NegotiatedEvent): event is NegotiatedEvent & Expression => event.type === 'expression'
-
-/**
- * Between the edition's shared place axis and this version's own paper. A
- * green version's places are in the axis the red was measured on, so
- * `toOwnPaper` is about 0.775 there and 1 on its own axis; see
- * `RollProperties`.
- *
- * Rows are rows of the version's own paper, so the spool is asked in
- * `paperOfRow` and never in `placeOfRow`: one is the paper that passes the
- * tracker bar, the other is the coordinate the edition states.
- */
-type Paper = {
-    readonly rowOf: (place: Millimeters) => number
-    readonly placeOfRow: (row: number) => Millimeters
-    readonly paperOfRow: (row: number) => Millimeters
-}
-
-const paperOf = (toOwnPaper: number): Paper => ({
-    rowOf: place => place * toOwnPaper * ROWS_PER_MM,
-    placeOfRow: row => mm(row / (toOwnPaper * ROWS_PER_MM)),
-    paperOfRow: row => mm(row / ROWS_PER_MM)
-})
-
-/** When the spool brings a place on the roll to the tracker bar. */
-export const secondsAt = (spool: Spool, place: Millimeters): Seconds =>
-    seconds(paperSeconds(spool, inCentimeters(place)))
-
-const halfOf = (note: NegotiatedEvent, division: Track): Half =>
-    note.vertical.from >= division ? 'treble' : 'bass'
-
-/** A perforation as the tracker bar meets it, kept with the symbol it carries. */
-type Reading = {
-    readonly event: NegotiatedEvent & Expression
-    readonly punch: Punch
-}
-
-const readingOf = (paper: Paper) => (event: NegotiatedEvent & Expression): Reading | undefined => {
-    const control = codeOf(event.expressionType)
-    if (!control) return undefined
-
-    const half = event.scope
-    return {
-        event,
-        punch: {
-            half,
-            control,
-            rowOn: paper.rowOf(event.horizontal.from),
-            rowOff: paper.rowOf(event.horizontal.to)
-        }
-    }
-}
-
-const clamp = (value: number, low: number, high: number) => Math.min(Math.max(value, low), high)
-
-/**
- * One sample per row of the scan the constants were fitted on, from the
- * beginning of the roll to a little past the last hole.
- */
-const gridOver = (events: readonly NegotiatedEvent[], spool: Spool, paper: Paper): Grid => {
-    const last = mm(events.reduce((furthest, event) => Math.max(furthest, event.horizontal.to), 0))
-    const length = Math.ceil(paper.rowOf(last) + RUN_OUT * ROWS_PER_MM) + 1
-    const times = new Float64Array(length).map((_, row) => secondsAt(spool, paper.paperOfRow(row)))
-    return new Grid(0, times)
-}
-
-type Ports = ReturnType<typeof aperturePorts>
-type Samples = Pick<DynamicsCurve, 'place' | 'seconds'>
-
-const nuanceCurves = (
-    grid: Grid,
-    ports: Ports,
-    samples: Samples,
-    options: WelteT98Options
-): Record<Half, DynamicsCurve> => {
-    const instrument = `Welte-Mignon T-98, ${labelOf(options.instrument)}`
-    const curveOf = (half: Half): DynamicsCurve => {
-        const params = options.nuance[half]
-        const output = pneumaticT98Model.run({ grid, half, ports }, params)
-        const travel = travelBetweenRails(output, params)
-        const hook = clamp(mezzoforteTravel(params), 0.01, 0.99)
-        return {
-            ...samples,
-            name: half,
-            kind: 'dynamics',
-            instrument,
-            travel,
-            velocity: travel.map(value => velocityOf(value, hook, options.velocity))
-        }
-    }
-
-    return { bass: curveOf('bass'), treble: curveOf('treble') }
-}
-
-const pedalCurves = (
-    grid: Grid,
-    ports: Ports,
-    samples: Samples,
-    options: WelteT98Options
-): { damper: PedalCurve, hammerRail: PedalCurve } => {
-    const travel = runPedals({ grid, ports }, options.pedals)
-    return {
-        damper: { ...samples, name: 'damper', kind: 'pedal', travel: travel.damper },
-        hammerRail: { ...samples, name: 'hammerRail', kind: 'pedal', travel: travel.hammerRail }
-    }
-}
-
-const performNotes = (
-    events: readonly NegotiatedEvent[],
-    grid: Grid,
-    nuance: Record<Half, DynamicsCurve>,
-    options: WelteT98Options,
-    paper: Paper
-): (PerformedNoteOnEvent | PerformedNoteOffEvent)[] =>
-    events
-        .filter(isNote)
-        .flatMap((note): (PerformedNoteOnEvent | PerformedNoteOffEvent)[] => {
-            const curve = nuance[halfOf(note, options.division)]
-            const velocity = curve.velocity[grid.indexOfRow(paper.rowOf(note.horizontal.from))]
-            return [
-                { type: 'noteOn', performs: note, pitch: note.pitch, velocity, at: secondsAt(options.spool, note.horizontal.from) },
-                { type: 'noteOff', performs: note, pitch: note.pitch, velocity: 127, at: secondsAt(options.spool, note.horizontal.to) }
-            ]
-        })
-
-/**
- * The travel of one pedal as controller steps, each attributed to the last
- * perforation of that pedal the tracker bar has reached.
- */
-const performPedal = (
-    type: PerformedPedalEvent['type'],
-    curve: PedalCurve,
-    grid: Grid,
-    readings: readonly Reading[],
-    mode: PedalMode
-): PerformedPedalEvent[] => {
-    if (readings.length === 0) return []
-
-    const ordered = readings.toSorted((a, b) => a.punch.rowOn - b.punch.rowOn)
-    const causeOf = (row: number): NegotiatedEvent =>
-        ordered[Math.max(partitionPoint(ordered, reading => reading.punch.rowOn <= row) - 1, 0)].event
-
-    return levelChanges(curve.travel, { mode })
-        .filter(change => change.index > 0)
-        .map(change => ({
-            type,
-            performs: causeOf(grid.rowAt(change.index)),
-            value: change.value,
-            at: seconds(curve.seconds[change.index])
-        }))
-}
+/** The punch a T-98 expression is read as: its control, held for as long as it runs. */
+const punchOf = (event: NegotiatedEvent & Expression, rows: { rowOn: number, rowOff: number }): Punch | undefined =>
+    isWelteT98ExpressionType(event.expressionType)
+        ? { half: event.scope, control: CODES[event.expressionType], ...rows }
+        : undefined
 
 /**
  * The row at which the Abstellbalg trips and the roll goes back, or the end of
@@ -398,43 +207,30 @@ const cutCurve = <C extends DynamicsCurve | PedalCurve>(curve: C, rows: number):
 })
 
 /**
- * The edition's tempo adjustment is left aside, as on the T-100: it is stated as
- * a paper speed, and what the spool holds constant is its rate of revolution.
+ * The shared Welte performance, cut off where the rewind takes hold unless
+ * the options ignore it.
  */
 const perform = (
     events: readonly NegotiatedEvent[],
     options: WelteT98Options,
     roll: RollProperties
 ): Performance => {
-    const paper = paperOf(roll.toOwnPaper ?? 1)
-    const readings = events
-        .filter(isExpression)
-        .map(readingOf(paper))
-        .filter((reading): reading is Reading => reading !== undefined)
-    const grid = gridOver(events, options.spool, paper)
-    const geometry = geometryInMm(roll.punchDiameter ?? options.punchDiameter, options.trackerBore)
     const gap = options.chainGap * ROWS_PER_MM
-    const ports = aperturePorts(grid, readings.map(reading => reading.punch), geometry, gap)
-    const samples: Samples = {
-        place: grid.seconds.map((_, row) => paper.placeOfRow(row)),
-        seconds: grid.seconds
-    }
-
-    const nuance = nuanceCurves(grid, ports, samples, options)
-    const pedals = pedalCurves(grid, ports, samples, options)
-    const readingsOf = (control: Control) => readings.filter(reading => reading.punch.control === control)
+    const { grid, ports, events: performed, curves } = performWelte(events, options, roll, {
+        punchOf,
+        portsOf: (grid, punches, geometry) => aperturePorts(grid, punches, geometry, gap),
+        model: pneumaticT98Model,
+        runPedals,
+        instrument: `Welte-Mignon T-98, ${labelOf(options.instrument)}`
+    })
 
     const stops = rewindRow(grid, ports, options)
     const until = seconds(grid.seconds[Math.min(stops, grid.length - 1)]!)
     const rows = Math.min(stops + 1, grid.length)
 
     return {
-        events: truncated([
-            ...performNotes(events, grid, nuance, options, paper),
-            ...performPedal('damper', pedals.damper, grid, readingsOf('sustainPedal'), options.pedalMode),
-            ...performPedal('hammerRail', pedals.hammerRail, grid, readingsOf('hammerRail'), options.pedalMode)
-        ], until),
-        curves: [nuance.bass, nuance.treble, pedals.damper, pedals.hammerRail].map(curve => cutCurve(curve, rows))
+        events: truncated(performed, until),
+        curves: curves.map(curve => cutCurve(curve, rows))
     }
 }
 
