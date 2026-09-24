@@ -1,6 +1,4 @@
-import { conditions, isFeatureType, media, techniques } from "./Feature.js";
-import { DriveId } from "./Perforator.js";
-import { rollConditions } from "./RollCopy.js";
+import type { DriveId } from "./Perforator.js";
 import { systemIdIn, systemOf, TrackerBar, translationBetween } from "./TrackerBar.js";
 import { trackerBars } from "./systems/index.js";
 import { welteT100 } from "./systems/welteT100/bar.js";
@@ -22,7 +20,22 @@ import { isDateString } from "./utils.js";
 type Json = any
 
 const retiredVersionTypes = new Set(['edition', 'unicum'])
-const conditionTypeValues = new Set<string>([...rollConditions, ...Object.values(conditions).flat()])
+/**
+ * The vocabulary the steps below were written against, as it stood when
+ * the format was first given a revision number. It is copied here rather
+ * than imported from the model, so that changing today's vocabulary
+ * cannot change how an old document is read. The tracker bars are still
+ * asked, being the layout of instruments rather than a choice of the
+ * format.
+ */
+const conditionTypeValues = new Set<string>([
+    'general', 'paper-stretch',
+    'partially-torn', 'missing-perforation', 'illegible', 'faded', 'detaching', 'ripped'
+])
+const techniques = ['print', 'handwriting', 'stamp'] as const
+const media = ['ink', 'pencil', 'crayon'] as const
+const featureTypes: readonly string[] = ['HoleChain', 'Writing', 'Mark', 'Patch']
+const isFeatureType = (value: unknown): boolean => typeof value === 'string' && featureTypes.includes(value)
 
 const renamedKeys: Record<string, string> = {
     productionEvent: 'production',
@@ -556,69 +569,23 @@ const withDerivationTolerance = (edition: Json): Json => {
     }
 }
 
-/** A statement an export quoted rather than stated: an included node whose id is a triple. */
-const isQuotedStatement = (node: Json): boolean =>
-    node !== null && typeof node === 'object' && node['@id'] !== null && typeof node['@id'] === 'object'
-
-interface QuotedReference {
-    subject: string
-    key: string
-    listed: boolean
-    reference: Json
-}
-
-/** The reference a quoted statement made, annotated again with the belief the export set beside it. */
-const referenceOf = (statement: Json): QuotedReference => {
-    const { '@id': { '@id': subject, ...made }, annotation, ...about } = statement
-    const [key, value] = Object.entries<Json>(made)[0]
-    const listed = Array.isArray(value)
-    return {
-        subject,
-        key,
-        listed,
-        reference: {
-            ...(listed ? value[0] : value),
-            '@annotation': { ...(annotation !== undefined && { '@id': annotation }), ...about }
-        }
-    }
-}
-
-/** Whether the object states anything beside its id, which a reference to a node does not. */
-const isNode = (value: Json): boolean =>
-    typeof value['@id'] === 'string' && Object.keys(value).some(key => key !== '@id' && key !== '@annotation')
-
-/** The document with each quoted reference back on the node that makes it. */
-const withReferencesOn = (value: Json, bySubject: ReadonlyMap<string, QuotedReference[]>): Json => {
-    if (Array.isArray(value)) return value.map(item => withReferencesOn(item, bySubject))
-    if (!value || typeof value !== 'object') return value
-
-    const walked = Object.fromEntries(Object.entries(value).map(([key, child]) => [key, withReferencesOn(child, bySubject)]))
-    const references = isNode(value)
-        ? bySubject.get(value['@id']) ?? []
-        : []
-    return references.reduce((node: Json, { key, listed, reference }) =>
-        ({ ...node, [key]: listed ? [...(node[key] ?? []), reference] : reference }), walked)
-}
+const editionSteps = [withoutEditionType, withSystems, withEditors, withDerivationTolerance]
 
 /**
- * Puts back what an export quoted. A reference the edition doubts goes
- * out as a JSON-LD-star embedded node beside the document, so that RDF
- * does not state it; in the edition it belongs on the node that makes
- * it, under its belief. In a list it comes back after the references
- * that were stated.
+ * The revision of the format this release writes, stated in every export
+ * as `formatVersion`. A document stating it is in the current shape and
+ * passes through untouched; one stating none was written before the
+ * revisions were numbered and is brought up by recognising its shapes.
+ * A step added later is to run on the documents of the revisions before
+ * it, and to raise this number.
  */
-const withQuotedStatementsInPlace = (edition: Json): Json => {
-    const included: Json[] = Array.isArray(edition['@included']) ? edition['@included'] : []
-    const statements = included.filter(isQuotedStatement)
-    if (statements.length === 0) return edition
+export const formatVersion = 1
 
-    const others = included.filter(node => !isQuotedStatement(node))
-    const { '@included': _quoted, ...rest } = edition
-    const bySubject = Map.groupBy(statements.map(referenceOf), ({ subject }) => subject)
-    return withReferencesOn({ ...rest, ...(others.length > 0 && { '@included': others }) }, bySubject)
+export const migrate = (edition: Json): Json => {
+    const stated = edition?.formatVersion
+    if (stated === formatVersion) return edition
+    if (typeof stated === 'number' && stated > formatVersion) {
+        throw new Error(`The document is written in revision ${stated} of the format, which this release, reading up to ${formatVersion}, does not know`)
+    }
+    return walk(editionSteps.reduce((result, step) => step(result), edition))
 }
-
-const editionSteps = [withoutEditionType, withQuotedStatementsInPlace, withSystems, withEditors, withDerivationTolerance]
-
-export const migrate = (edition: Json): Json =>
-    walk(editionSteps.reduce((result, step) => step(result), edition))

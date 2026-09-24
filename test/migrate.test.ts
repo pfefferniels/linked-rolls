@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { readFileSync } from 'fs'
 import * as path from 'path'
-import { migrate } from '../src/migrate'
+import { formatVersion, migrate } from '../src/migrate'
 import { importJsonLd } from '../src/importJsonLd'
 import { asJsonLd } from '../src/asJsonLd'
 import { CollationTolerance } from '../src/Collation'
@@ -36,7 +36,7 @@ const twoCopiesApart = (): Edition => editionOf(
 const writtenBefore = (tolerance: CollationTolerance) => {
     const edition = twoCopiesApart()
     edition.creation.collationTolerance = tolerance
-    const written = JSON.parse(JSON.stringify(asJsonLd(edition)))
+    const { formatVersion: _unnumbered, ...written } = JSON.parse(JSON.stringify(asJsonLd(edition)))
     return {
         ...written,
         versions: written.versions.map(({ basedOn, ...version }: any) =>
@@ -388,5 +388,29 @@ describe('migrating a document that is not an edition', () => {
         }
         expect(() => migrate(odd)).not.toThrow()
         expect(migrate(odd).copies).toEqual([null, 'a copy'])
+    })
+})
+
+/**
+ * An export states the revision of the format it is written in, so that
+ * a document in the current shape is read as it stands and one of a
+ * later revision is refused rather than misread.
+ */
+describe('the revision of the format a document states', () => {
+    it('is stated in every export', () => {
+        expect(asJsonLd(twoCopiesApart()).formatVersion).toBe(formatVersion)
+    })
+
+    it('passes a document in the current revision through untouched', () => {
+        const current = JSON.parse(JSON.stringify(asJsonLd(twoCopiesApart())))
+        expect(migrate(current)).toBe(current)
+    })
+
+    it('does not carry the revision into the edition', () => {
+        expect(importJsonLd(JSON.parse(JSON.stringify(asJsonLd(twoCopiesApart()))))).not.toHaveProperty('formatVersion')
+    })
+
+    it('refuses a revision it does not know yet', () => {
+        expect(() => migrate({ formatVersion: formatVersion + 1 })).toThrow(/revision/)
     })
 })

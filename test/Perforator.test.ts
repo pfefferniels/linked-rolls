@@ -56,6 +56,7 @@ const withPerforator = (perforator: Perforator) => {
 /** The small edition as a release before the move wrote it, the first copy measured with a punch diameter. */
 const writtenBefore = (diameter: number, id = 'first') => {
     const written = JSON.parse(JSON.stringify(asJsonLd(edition())))
+    delete written.formatVersion
     written.copies[0]['@id'] = id
     written.copies[0].measurements = { punchDiameter: { value: diameter, unit: 'mm' } }
     return written
@@ -117,6 +118,7 @@ describe('the perforator a copy was punched on', () => {
 
     it('gives a perforator that stated no type one', () => {
         const written = JSON.parse(JSON.stringify(asJsonLd(withPerforator(surveyed()))))
+        delete written.formatVersion
         delete written.copies[0].production.perforator['@type']
         expect(firstCopyOf(written).production?.perforator).toEqual(surveyed())
     })
@@ -159,6 +161,7 @@ describe('the drive of a perforator', () => {
 describe('the punching pattern each hole once stated', () => {
     const writtenWith = (pattern: string, where: 'production' | 'alteration') => {
         const written = JSON.parse(JSON.stringify(asJsonLd(edition())))
+        delete written.formatVersion
         const [staggered, ...rest] = written.copies[0].production.produced
         const marked = { ...staggered, pattern }
         if (where === 'production') written.copies[0].production.produced = [marked, ...rest]

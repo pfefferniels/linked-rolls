@@ -76,8 +76,70 @@ const withPlainCopyIds = (json: Json) => ({
     }))
 })
 
+/** A statement an export quoted rather than stated: an included node whose id is a triple. */
+const isQuotedStatement = (node: Json): boolean =>
+    node !== null && typeof node === 'object' && node['@id'] !== null && typeof node['@id'] === 'object'
+
+interface QuotedReference {
+    subject: string
+    key: string
+    listed: boolean
+    reference: Json
+}
+
+/** The reference a quoted statement made, annotated again with the belief the export set beside it. */
+const referenceOf = (statement: Json): QuotedReference => {
+    const { '@id': { '@id': subject, ...made }, annotation, ...about } = statement
+    const [key, value] = Object.entries<Json>(made)[0]
+    const listed = Array.isArray(value)
+    return {
+        subject,
+        key,
+        listed,
+        reference: {
+            ...(listed ? value[0] : value),
+            '@annotation': { ...(annotation !== undefined && { '@id': annotation }), ...about }
+        }
+    }
+}
+
+/** Whether the object states anything beside its id, which a reference to a node does not. */
+const isNode = (value: Json): boolean =>
+    typeof value['@id'] === 'string' && Object.keys(value).some(key => key !== '@id' && key !== '@annotation')
+
+/** The document with each quoted reference back on the node that makes it. */
+const withReferencesOn = (value: Json, bySubject: ReadonlyMap<string, QuotedReference[]>): Json => {
+    if (Array.isArray(value)) return value.map(item => withReferencesOn(item, bySubject))
+    if (!value || typeof value !== 'object') return value
+
+    const walked = Object.fromEntries(Object.entries(value).map(([key, child]) => [key, withReferencesOn(child, bySubject)]))
+    const references = isNode(value)
+        ? bySubject.get(value['@id']) ?? []
+        : []
+    return references.reduce((node: Json, { key, listed, reference }) =>
+        ({ ...node, [key]: listed ? [...(node[key] ?? []), reference] : reference }), walked)
+}
+
+/**
+ * Puts back what an export quoted. A reference the edition doubts goes
+ * out as a JSON-LD-star embedded node beside the document, so that RDF
+ * does not state it; in the edition it belongs on the node that makes
+ * it, under its belief. In a list it comes back after the references
+ * that were stated.
+ */
+const withQuotedStatementsInPlace = (edition: Json): Json => {
+    const included: Json[] = Array.isArray(edition['@included']) ? edition['@included'] : []
+    const statements = included.filter(isQuotedStatement)
+    if (statements.length === 0) return edition
+
+    const others = included.filter(node => !isQuotedStatement(node))
+    const { '@included': _quoted, ...rest } = edition
+    const bySubject = Map.groupBy(statements.map(referenceOf), ({ subject }) => subject)
+    return withReferencesOn({ ...rest, ...(others.length > 0 && { '@included': others }) }, bySubject)
+}
+
 export const importJsonLd = (json: Json): Edition => {
-    const { '@context': context, ...document } = withPlainCopyIds(migrate(json))
+    const { '@context': context, formatVersion: _revision, ...document } = withPlainCopyIds(migrate(withQuotedStatementsInPlace(json)))
     const edition = fromJsonLdEntity(document) as Edition;
     edition.base = Array.isArray(context)
         ? context.find((c: Json) => c['@base'])?.['@base'] || ''

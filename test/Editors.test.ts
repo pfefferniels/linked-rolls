@@ -23,6 +23,7 @@ describe('Editors', () => {
 
     it('reads an edition written before editors were carried', () => {
         const exported = asJsonLd(edition()) as any
+        delete exported.formatVersion
         delete exported.creation.editors
 
         expect(reimported(exported).creation.editors).toEqual([])

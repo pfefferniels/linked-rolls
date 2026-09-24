@@ -292,6 +292,7 @@ describe('what a reasoner derives from the acts', () => {
 
     it('reads an export that still states what the copy and a patch bear', () => {
         const older = exported()
+        delete older.formatVersion
         const [first] = older.copies
         const [, attachment] = first.modifications
         const [patch] = attachment.added
