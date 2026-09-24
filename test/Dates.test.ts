@@ -103,3 +103,25 @@ describe('a date as a time-span', () => {
         expect(quads).toContain(`<http://purl.org/dc/terms/date> ${date('2020-01-01')}`)
     })
 })
+
+describe('reading dates back in', () => {
+    /**
+     * A label may well carry a date, and its transcription is text. Only
+     * what the schema holds as a date is read as one.
+     */
+    it('leaves a transcription that reads like a date as text', async () => {
+        const { importJsonLd } = await import('../src/importJsonLd')
+        const edition = smallEdition()
+        edition.versions[0].edits!.push({
+            type: 'edit',
+            id: 'edit-dated-label',
+            insert: [{ type: 'text', id: 'dated-label', text: '1924-05-01', carriers: [] }]
+        })
+        edition.creation.publicationDate = new Date(2024, 4, 1)
+
+        const back = importJsonLd(JSON.parse(JSON.stringify(asJsonLd(edition))))
+        const label = back.versions[0].edits!.find(edit => edit.id === 'edit-dated-label')!.insert![0]
+        expect(label).toMatchObject({ type: 'text', text: '1924-05-01' })
+        expect(back.creation.publicationDate).toEqual(new Date(2024, 4, 1))
+    })
+})
