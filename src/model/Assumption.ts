@@ -168,6 +168,35 @@ export type ObjectAssumption<O extends object> =  Assumption & O
  */
 export type ActorAssignment = ObjectAssumption<Person>
 
+/** The day an event falls within. */
+interface DateWithin {
+    /**
+     * The day the event falls within.
+     * @format date
+     * @see crm:P82 at some time within
+     */
+    within: Date
+}
+
+/** The bounds an event lies between. */
+interface DateBounds {
+    /**
+     * The earliest day the event can have happened on: it did not
+     * happen before it.
+     * @format date
+     * @see crm:P82a begin of the begin
+     */
+    after: Date
+
+    /**
+     * The latest day the event can have happened on: it did not
+     * happen after it.
+     * @format date
+     * @see crm:P82b end of the end
+     */
+    before: Date
+}
+
 /**
  * When something happened, as far as the edition can state it: the day
  * it falls `within`, or the bounds it lies between. A bound nobody can
@@ -175,9 +204,9 @@ export type ActorAssignment = ObjectAssumption<Person>
  * @see crm:E52 Time-Span
  */
 export type DateAssignment = Assumption & (
-    | { within: Date }
-    | { after: Date, before?: Date }
-    | { before: Date, after?: Date }
+    | DateWithin
+    | Pick<DateBounds, 'after'> & Partial<Pick<DateBounds, 'before'>>
+    | Pick<DateBounds, 'before'> & Partial<Pick<DateBounds, 'after'>>
 )
 
 export function valueOf<ValueT>(

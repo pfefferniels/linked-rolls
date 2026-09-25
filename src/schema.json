@@ -316,8 +316,10 @@
               "type": "object"
             },
             "within": {
+              "description": "The day the event falls within.",
               "format": "date",
-              "type": "string"
+              "type": "string",
+              "ontology": "crm:P82 at some time within"
             }
           },
           "required": [
@@ -347,12 +349,16 @@
               "type": "object"
             },
             "after": {
+              "description": "The earliest day the event can have happened on: it did not happen before it.",
               "format": "date",
-              "type": "string"
+              "type": "string",
+              "ontology": "crm:P82a begin of the begin"
             },
             "before": {
+              "description": "The latest day the event can have happened on: it did not happen after it.",
               "format": "date",
-              "type": "string"
+              "type": "string",
+              "ontology": "crm:P82b end of the end"
             }
           },
           "required": [
@@ -382,12 +388,16 @@
               "type": "object"
             },
             "after": {
+              "description": "The earliest day the event can have happened on: it did not happen before it.",
               "format": "date",
-              "type": "string"
+              "type": "string",
+              "ontology": "crm:P82a begin of the begin"
             },
             "before": {
+              "description": "The latest day the event can have happened on: it did not happen after it.",
               "format": "date",
-              "type": "string"
+              "type": "string",
+              "ontology": "crm:P82b end of the end"
             }
           },
           "required": [
