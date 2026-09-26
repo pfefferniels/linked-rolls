@@ -61,24 +61,37 @@ export interface Inference extends Argumentation<'inference'> {
     /**
      * References (by `@id`) to the beliefs
      * from which the conclusion is drawn.
+     *
+     * A belief the editor holds and publishes elsewhere under an IRI of
+     * its own, such as a bound from a catalogue of premises the editor
+     * keeps, is named by that IRI. Someone else's belief is not: it is
+     * adopted first, and the belief of the edition's own that the
+     * adoption concludes is named instead.
      * @see crminf:J1 used as premise
      */
     premises: string[]
 
     /**
      * References (by `@id`) to what the inference worked on besides
-     * beliefs, such as the versions it compared or the analysis output
-     * it cites.
+     * beliefs, such as the versions it compared, the analysis output it
+     * cites, or the document holding a premise named by IRI, in the
+     * state it was read in, since a belief published elsewhere may move
+     * after the edition has used it.
      * @see crm:P16 used specific object
      */
     used?: string[]
 }
 
 /**
- * A belief adoption adopts someone else's belief. This type is used
- * to indicate e.g. knowledge through private communication or
- * from secondary literature, or a belief published elsewhere under
- * an IRI of its own, such as a premise from a catalogue of premises.
+ * A belief adoption takes over someone else's belief without checking it:
+ * knowledge through private communication, from the secondary
+ * literature, or from another edition. Like every reason, it concludes
+ * the belief it is a reason of, which is the edition's own and holds of
+ * the edition's statement what the adopted belief held. An inference that
+ * relies on it names that belief among its premises.
+ *
+ * The editor's own beliefs need no adoption, wherever they are
+ * published: an inference names them directly (see `Inference`).
  * @see crminf:I7 Belief Adoption
  */
 export interface BeliefAdoption extends Argumentation<'beliefAdoption'> {
@@ -94,9 +107,8 @@ export interface BeliefAdoption extends Argumentation<'beliefAdoption'> {
 
     /**
      * The beliefs this adoption takes over, by IRI, where they are
-     * published with one. An inference that uses such a belief names it
-     * among its premises by the same IRI; the adoption says where it
-     * comes from.
+     * published with one. They are someone else's, and stay theirs: what
+     * the edition holds is the belief the adoption concludes.
      * @see crminf:J6 adopted
      */
     adopted?: string[]
