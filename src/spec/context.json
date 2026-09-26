@@ -9,6 +9,7 @@
     "crm": "http://www.cidoc-crm.org/cidoc-crm/",
     "crmdig": "http://www.cidoc-crm.org/extensions/crmdig/",
     "crminf": "http://www.cidoc-crm.org/extensions/crminf/",
+    "crmsci": "http://www.cidoc-crm.org/extensions/crmsci/",
     "lrmoo": "http://iflastandards.info/ns/lrm/lrmoo/",
     "reo": "https://w3id.org/reo/",
 
@@ -75,6 +76,16 @@
     "meaningComprehension": {
       "@id": "crminf:I16_Meaning_Comprehension",
       "@context": { "note": "crm:P3_has_note" }
+    },
+    "measurement": {
+      "@id": "crmsci:S21_Measurement",
+      "@context": {
+        "note": "crm:P3_has_note",
+        "used": {
+          "@id": "crm:P16_used_specific_object",
+          "@type": "@id"
+        }
+      }
     },
 
     "title": "dcterms:title",

@@ -90,10 +90,29 @@ export interface BeliefAdoption extends Argumentation<'beliefAdoption'> {
 }
 
 /**
- * An argumentation can be either a plain argumentation, a
- * meaning comprehension, an inference, or a belief adoption.
+ * A measurement takes a value off an object by a stated procedure: the
+ * period the slot lengths of a copy keep, the median pitch of its held
+ * notes. It concludes the belief in that value by itself, with no
+ * premises. CRMinf counts observations, and a measurement is one, among
+ * the ways a belief comes about, so the value does not have to be
+ * passed off as an inference.
+ * @see crmsci:S21 Measurement
  */
-export type AnyArgumentation = MeaningComprehension | Inference | BeliefAdoption | Argumentation
+export interface Measurement extends Argumentation<'measurement'> {
+    /**
+     * References (by `@id` or URL) to what the measurement was taken on
+     * or with, such as the scan, the analysis output or the script.
+     * @see crm:P16 used specific object
+     */
+    used?: string[]
+}
+
+/**
+ * An argumentation can be either a plain argumentation, a
+ * meaning comprehension, an inference, a belief adoption or a
+ * measurement.
+ */
+export type AnyArgumentation = MeaningComprehension | Inference | BeliefAdoption | Measurement | Argumentation
 
 /**
  * A belief is a temporal object and associates a proposition (i.e.

@@ -4,6 +4,7 @@ const namespaces = new Map([
     ['crm', 'https://cidoc-crm.org/html/cidoc_crm_v7.1.3.html'],
     ['lrmoo', 'https://cidoc-crm.org/extensions/lrmoo/html/LRMoo_v1.0.html'],
     ['crminf', 'https://cidoc-crm.org/extensions/crminf/html/CRMinf_v1.0.html'],
+    ['crmsci', 'https://cidoc-crm.org/extensions/crmsci/html/CRMsci_v3.2.html'],
     ['crmdig', 'https://cidoc-crm.org/crmdig/ModelVersion/version-4.0'],
     ['rdf', 'https://www.w3.org/1999/02/22-rdf-syntax-ns'],
     ['rdfs', 'https://www.w3.org/2000/01/rdf-schema'],

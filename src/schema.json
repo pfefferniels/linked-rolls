@@ -70,10 +70,13 @@
           "$ref": "#/definitions/BeliefAdoption"
         },
         {
+          "$ref": "#/definitions/Measurement"
+        },
+        {
           "$ref": "#/definitions/Argumentation"
         }
       ],
-      "description": "An argumentation can be either a plain argumentation, a meaning comprehension, an inference, or a belief adoption."
+      "description": "An argumentation can be either a plain argumentation, a meaning comprehension, an inference, a belief adoption or a measurement."
     },
     "AnyFeature": {
       "anyOf": [
@@ -1146,6 +1149,40 @@
       ],
       "type": "object",
       "ontology": "crm:E54 Dimension"
+    },
+    "Measurement": {
+      "description": "A measurement takes a value off an object by a stated procedure: the period the slot lengths of a copy keep, the median pitch of its held notes. It concludes the belief in that value by itself, with no premises. CRMinf counts observations, and a measurement is one, among the ways a belief comes about, so the value does not have to be passed off as an inference.",
+      "properties": {
+        "actor": {
+          "$ref": "#/definitions/Person",
+          "description": "The person who carried out this activity.",
+          "ontology": "crm:P14 carried out by"
+        },
+        "note": {
+          "description": "A free-text note providing additional context.",
+          "type": "string",
+          "ontology": "crm:P3 has note"
+        },
+        "used": {
+          "description": "References (by `@id` or URL) to what the measurement was taken on or with, such as the scan, the analysis output or the script.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "ontology": "crm:P16 used specific object"
+        },
+        "@type": {
+          "const": "measurement",
+          "type": "string",
+          "description": "The type discriminator for this object.",
+          "ontology": "rdf:type"
+        }
+      },
+      "required": [
+        "@type"
+      ],
+      "type": "object",
+      "ontology": "crmsci:S21 Measurement"
     },
     "Medium": {
       "description": "What a trace was put on with.",
