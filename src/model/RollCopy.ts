@@ -96,16 +96,20 @@ export type ScaleReading =
 export interface ProductionEvent {
     /**
      * The company that produced the roll copy
-     * (e.g. "M. Welte & Söhne").
+     * (e.g. "M. Welte & Söhne"). An object assumption, so that a
+     * company read off a box label or adopted from a letter can say
+     * where it comes from.
      * @see crm:P14 carried out by
      */
-    company?: Agent
+    company?: ObjectAssumption<Agent>
 
     /**
-     * The paper the roll copy was cut on.
+     * The paper the roll copy was cut on. An object assumption, so that
+     * what the paper is taken to be can say how that was found and serve
+     * as a premise, e.g. of a dating.
      * @see crm:P126 employed
      */
-    paper?: Concept
+    paper?: ObjectAssumption<Concept>
 
     /**
      * The date of production, if known.

@@ -1970,6 +1970,106 @@
       ],
       "type": "object"
     },
+    "ObjectAssumption<Concept>": {
+      "anyOf": [
+        {
+          "properties": {
+            "@annotation": {
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+              "properties": {
+                "belief": {
+                  "$ref": "#/definitions/Belief",
+                  "description": "The belief held about the annotated statement.",
+                  "ontology": "crminf:J4i is subject of"
+                },
+                "@id": {
+                  "description": "A unique identifier for this object.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "belief",
+                "@id"
+              ],
+              "type": "object"
+            },
+            "name": {
+              "description": "The name, e.g. \"Grünfeld, Alfred\", \"Wien\", \"M. Welte & Söhne\".",
+              "type": "string",
+              "ontology": "rdfs:label"
+            },
+            "sameAs": {
+              "description": "Authority records for the same thing: GND, Wikidata, geonames or similar.",
+              "examples": [
+                "https://d-nb.info/gnd/116888652"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "ontology": "owl:sameAs"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "@id"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "@annotation": {
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+              "properties": {
+                "belief": {
+                  "$ref": "#/definitions/Belief",
+                  "description": "The belief held about the annotated statement.",
+                  "ontology": "crminf:J4i is subject of"
+                },
+                "@id": {
+                  "description": "A unique identifier for this object.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "belief",
+                "@id"
+              ],
+              "type": "object"
+            },
+            "name": {
+              "description": "The name, e.g. \"Grünfeld, Alfred\", \"Wien\", \"M. Welte & Söhne\".",
+              "type": "string",
+              "ontology": "rdfs:label"
+            },
+            "sameAs": {
+              "description": "Authority records for the same thing: GND, Wikidata, geonames or similar.",
+              "examples": [
+                "https://d-nb.info/gnd/116888652"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "ontology": "owl:sameAs"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "sameAs"
+          ],
+          "type": "object"
+        }
+      ],
+      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain."
+    },
     "ObjectAssumption<ConditionState<\"general\">>": {
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
@@ -2746,8 +2846,8 @@
       "description": "Describes the production of a roll copy: the manufacturer, the paper used, the date, and the system and paper speed the copy was cut for.",
       "properties": {
         "company": {
-          "$ref": "#/definitions/Agent",
-          "description": "The company that produced the roll copy (e.g. \"M. Welte & Söhne\").",
+          "$ref": "#/definitions/ObjectAssumption%3CAgent%3E",
+          "description": "The company that produced the roll copy (e.g. \"M. Welte & Söhne\"). An object assumption, so that a company read off a box label or adopted from a letter can say where it comes from.",
           "ontology": "crm:P14 carried out by"
         },
         "date": {
@@ -2756,8 +2856,8 @@
           "ontology": "crm:P4 has time-span"
         },
         "paper": {
-          "$ref": "#/definitions/Concept",
-          "description": "The paper the roll copy was cut on.",
+          "$ref": "#/definitions/ObjectAssumption%3CConcept%3E",
+          "description": "The paper the roll copy was cut on. An object assumption, so that what the paper is taken to be can say how that was found and serve as a premise, e.g. of a dating.",
           "ontology": "crm:P126 employed"
         },
         "perforator": {
