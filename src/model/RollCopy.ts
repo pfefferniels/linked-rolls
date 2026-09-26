@@ -406,6 +406,16 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
     keeper?: KeeperAssignment
 
     /**
+     * The same copy as others name it: the record its keeper gives it,
+     * such as Stanford's PURL for a copy of the Condon collection. It
+     * names the copy as the GND names a pianist, and takes over nothing
+     * the record says about it; what the edition holds of the copy it
+     * states itself.
+     * @see owl:sameAs
+     */
+    sameAs?: string[]
+
+    /**
      * @see crm:P31i was modified by
      */
     modifications: Modification[]

@@ -169,15 +169,23 @@
       "ontology": "crminf:I2 Belief"
     },
     "BeliefAdoption": {
-      "description": "A belief adoption adopts someone else's belief. This type is used to indicate e.g. knowledge through private communication or from secondary literature.",
+      "description": "A belief adoption adopts someone else's belief. This type is used to indicate e.g. knowledge through private communication or from secondary literature, or a belief published elsewhere under an IRI of its own, such as a premise from a catalogue of premises.",
       "properties": {
         "actor": {
           "$ref": "#/definitions/Person",
           "description": "The person who carried out this activity.",
           "ontology": "crm:P14 carried out by"
         },
+        "adopted": {
+          "description": "The beliefs this adoption takes over, by IRI, where they are published with one. An inference that uses such a belief names it among its premises by the same IRI; the adoption says where it comes from.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "ontology": "crminf:J6 adopted"
+        },
         "note": {
-          "description": "A note describing the source of the adopted belief, e.g. a bibliographic reference or personal communication.",
+          "description": "A note describing the source of the adopted belief, e.g. a bibliographic reference or personal communication. Where the belief is adopted by its IRI, the note says in which state it was taken over, since a belief published elsewhere may move after the edition has taken it.",
           "type": "string",
           "ontology": "crm:P3 has note"
         },
@@ -3178,6 +3186,14 @@
           "$ref": "#/definitions/FeatureSource",
           "description": "What this copy's features were read from. A copy that states no source is one whose features reached the edition by a way that was not written down.",
           "ontology": "reo:capture"
+        },
+        "sameAs": {
+          "description": "The same copy as others name it: the record its keeper gives it, such as Stanford's PURL for a copy of the Condon collection. It names the copy as the GND names a pianist, and takes over nothing the record says about it; what the edition holds of the copy it states itself.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "ontology": "owl:sameAs"
         },
         "scan": {
           "description": "The scan URL or IIIF URL of the roll.",

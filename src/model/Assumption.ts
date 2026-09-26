@@ -77,16 +77,29 @@ export interface Inference extends Argumentation<'inference'> {
 /**
  * A belief adoption adopts someone else's belief. This type is used
  * to indicate e.g. knowledge through private communication or
- * from secondary literature.
+ * from secondary literature, or a belief published elsewhere under
+ * an IRI of its own, such as a premise from a catalogue of premises.
  * @see crminf:I7 Belief Adoption
  */
 export interface BeliefAdoption extends Argumentation<'beliefAdoption'> {
     /**
      * A note describing the source of the adopted belief,
      * e.g. a bibliographic reference or personal communication.
+     * Where the belief is adopted by its IRI, the note says in which
+     * state it was taken over, since a belief published elsewhere may
+     * move after the edition has taken it.
      * @see crm:P3 has note
      */
     note: string;
+
+    /**
+     * The beliefs this adoption takes over, by IRI, where they are
+     * published with one. An inference that uses such a belief names it
+     * among its premises by the same IRI; the adoption says where it
+     * comes from.
+     * @see crminf:J6 adopted
+     */
+    adopted?: string[]
 }
 
 /**
