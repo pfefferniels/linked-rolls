@@ -461,3 +461,38 @@ reo:strength
     rdfs:label "strength"@en ;
     rdfs:comment "This property states, on an advance, how closely the lengths of the slots keep the period stated: the mean resultant length of the lengths folded onto it, from 0 where they scatter to 1 where every one falls on the period."@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+
+#################################################################
+# The condition of a copy
+#
+# A condition state of a copy (P44 has condition) may hold for one
+# stretch of the roll alone, as a tear does. CIDOC CRM gives a
+# condition state no place of its own, hence the properties of this
+# ontology.
+#################################################################
+
+reo:horizontal
+    a owl:ObjectProperty ;
+    rdfs:domain crm:E3_Condition_State ;
+    rdfs:range crm:E54_Dimension ;
+    rdfs:label "horizontal"@en ;
+    rdfs:comment """This property associates a condition state of a copy with the stretch of the roll it holds for, as a dimension along the roll in millimetres from its beginning (reo:from, reo:to, P91 has unit). A tear is such a state: the paper is torn there and nowhere else. The stretch is measured as the extents of the copy's chains of holes are, so that the two stand in one frame and a tear can be set beside the perforations next to it. The extent of a chain is stated with P43 has dimension, which takes a thing and so no condition state, hence this property. The format gives both the one key."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:edge
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf crm:P2_has_type ;
+    rdfs:domain crm:E3_Condition_State ;
+    rdfs:range crm:E55_Type ;
+    rdfs:label "edge"@en ;
+    rdfs:comment """This property states which edge of the paper a tear runs in from: the types bass and treble at https://w3id.org/reo/type/, the bass edge being the one that passes the bass end of the tracker bar. A tear that runs in from no edge takes none."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:depth
+    a owl:ObjectProperty ;
+    rdfs:domain crm:E3_Condition_State ;
+    rdfs:range crm:E54_Dimension ;
+    rdfs:label "depth"@en ;
+    rdfs:comment """This property associates a tear with how far it reaches into the paper, taken across the roll from the edge it runs in from (reo:edge) and stated with P90 has value and P91 has unit. It tells a tear that stays in the margin from one that reaches the perforations. The analyses Stanford made of its roll scans list an edge tear only once it is deeper than a tenth of an inch."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .

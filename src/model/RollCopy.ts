@@ -4,7 +4,7 @@ import { AnySymbol } from "./Symbol.js";
 import { TrackerBar } from "../systems/TrackerBar.js";
 import { defaultTrackerBar, trackerBarOf } from "../systems/index.js";
 import { TrackCalibration } from "./TrackCalibration.js";
-import { AnyFeature, FeatureOrPatch, Patch } from "./Feature.js";
+import { AnyFeature, FeatureOrPatch, HorizontalSpan, Patch } from "./Feature.js";
 import { ActorAssignment, assignReference, certaintyOf, DateAssignment, isAsserted, ObjectAssumption, ReferenceAssumption } from "./Assumption.js";
 import { WithId, WithType } from "../shared/utils.js";
 import { Agent, Concept } from "./Agent.js";
@@ -35,10 +35,47 @@ export interface PaperStretch extends ConditionState<'paper-stretch'> {
 export interface GeneralRollCondition extends ConditionState<'general'> { }
 
 /**
- * An assignment of a condition (general or paper-stretch)
+ * The paper of the copy torn at one place, most often a tear running in
+ * from one of its edges. Each tear is a condition of its own, so that
+ * each can carry the belief it rests on and serve as a premise. A tear
+ * that runs into a chain of holes damages the chain as well, which is
+ * then stated of the chain as `partially-torn`.
+ * @see crm:E3 Condition State
+ */
+export interface Tear extends ConditionState<'torn'> {
+    /**
+     * Where along the roll the tear lies, measured as the copy's
+     * features are, so that it moves with them when the copy is aligned.
+     * @see reo:horizontal
+     */
+    horizontal: HorizontalSpan
+
+    /**
+     * The edge of the paper the tear runs in from, where it runs in
+     * from one.
+     * @see reo:edge
+     */
+    edge?: 'bass' | 'treble'
+
+    /**
+     * How far the tear reaches into the paper, taken across the roll
+     * from the edge it runs in from.
+     * @see reo:depth
+     */
+    depth?: Measure<'mm'>
+
+    /**
+     * IIIF region pointing to a depiction of the tear in the scan.
+     * @see crm:P138i has representation
+     */
+    depiction?: string
+}
+
+/**
+ * An assignment of a condition (general, paper-stretch or a tear)
  * to a roll copy, annotatable with a belief about its certainty.
  */
-export type RollConditionAssignment = ObjectAssumption<GeneralRollCondition | PaperStretch>
+export type RollConditionAssignment = ObjectAssumption<GeneralRollCondition | PaperStretch | Tear>
 
 /**
  * The keeper a copy is held by, as an object assumption, so that the
@@ -48,7 +85,8 @@ export type KeeperAssignment = ObjectAssumption<Agent>
 
 export const rollConditions = [
     'general',
-    'paper-stretch'
+    'paper-stretch',
+    'torn'
 ] as const
 
 /**
@@ -380,7 +418,7 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
 
     /**
      * Condition assessments of this roll copy (e.g. paper stretch,
-     * general wear). Each condition is an assumption annotatable
+     * general wear, a tear). Each condition is an assumption annotatable
      * with a belief.
      * @see crm:P44 has condition
      */
@@ -476,6 +514,14 @@ export const featuresOf = (copy: Pick<RollCopy, 'production' | 'modifications'>)
  */
 export const isPaperStretch = (condition: RollConditionAssignment): boolean =>
     condition.conditionType === 'paper-stretch'
+
+/** Whether the condition is a tear in the paper. */
+export const isTear = (condition: RollConditionAssignment): condition is ObjectAssumption<Tear> =>
+    condition.conditionType === 'torn'
+
+/** The tears the copy is stated to have. */
+export const tearsOf = (copy: Pick<RollCopy, 'conditions'>): ObjectAssumption<Tear>[] =>
+    copy.conditions.filter(isTear)
 
 /**
  * The bar a copy is read by, which is the one it was cut for. A copy

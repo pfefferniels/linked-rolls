@@ -3,7 +3,7 @@ import { Draft } from "immer"
 import { v4 } from "uuid"
 import { Edition } from "../model/Edition.js"
 import { AnySymbol } from "../model/Symbol.js"
-import { asSymbols, barOf, featuresOf, GeneralRollCondition, isPaperStretch, RollCopy, ScaleReading, Shift } from "../model/RollCopy.js"
+import { asSymbols, barOf, featuresOf, GeneralRollCondition, isPaperStretch, RollCopy, ScaleReading, Shift, Tear } from "../model/RollCopy.js"
 import { systemOf } from "../systems/TrackerBar.js"
 import { FeatureSource } from "../model/FeatureSource.js"
 import { applyShift, applyScale, revertShift, revertScale, revertShortening, shortenChains } from "../collation/alignment.js"
@@ -142,6 +142,16 @@ export const clearCarriage = (copyId: string, versionId: string): EditionOp =>
 export const addGeneralCondition = (copyId: string, condition: ObjectAssumption<GeneralRollCondition>): EditionOp =>
     onCopy(copyId, copy => {
         copy.conditions.push(condition)
+    })
+
+/**
+ * Adds a tear to the copy, beside whatever is stated of it already. The
+ * tear is taken to be measured where the copy's features now stand, so a
+ * copy aligned since it was read wants the tear aligned with it.
+ */
+export const addTear = (copyId: string, tear: ObjectAssumption<Tear>): EditionOp =>
+    onCopy(copyId, copy => {
+        copy.conditions.push(tear)
     })
 
 /** The symbols of the versions that no other copy carries. */

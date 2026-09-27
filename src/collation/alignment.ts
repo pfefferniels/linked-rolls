@@ -1,5 +1,5 @@
 import { FeatureOrPatch } from "../model/Feature.js";
-import { featuresOf, RollCopy, Shift } from "../model/RollCopy.js";
+import { featuresOf, RollCopy, Shift, tearsOf } from "../model/RollCopy.js";
 import { TrackerBar } from "../systems/TrackerBar.js";
 import { defaultTrackerBar } from "../systems/index.js";
 import { add, Millimeters, mm, Quantity, scale, subtract, Unit } from "../model/Quantity.js";
@@ -21,43 +21,49 @@ const stretch = <U extends Unit>(span: Ends<U>, factor: number) => {
 const back = (shift: Shift): Shift =>
     ({ horizontal: scale(shift.horizontal, -1), vertical: scale(shift.vertical, -1) })
 
+/**
+ * Where along the roll the copy states anything: its features, and its
+ * tears, which are measured as the features are. A tear states no track,
+ * so a shift across the roll leaves it where it is.
+ */
+const spansAlong = (copy: RollCopy) =>
+    [...featuresOf(copy), ...tearsOf(copy)].map(placed => placed.horizontal)
+
+const moveBy = (shift: Shift, copy: RollCopy) => {
+    spansAlong(copy).forEach(span => move(span, shift.horizontal))
+    featuresOf(copy).forEach(feature => move(feature.vertical, shift.vertical))
+}
+
 export const applyShift = (shift: Shift, copy: RollCopy) => {
     if (copy.measurements.shift) return
 
-    featuresOf(copy).forEach(feature => {
-        move(feature.horizontal, shift.horizontal)
-        move(feature.vertical, shift.vertical)
-    })
+    moveBy(shift, copy)
     copy.measurements.shift = shift
 }
 
-/** Scales the copy's features away from the beginning of the roll, and records the factor. */
+/** Scales the copy's features and tears away from the beginning of the roll, and records the factor. */
 export const applyScale = (factor: number, copy: RollCopy) => {
     if (copy.measurements.scale !== undefined) return
 
-    featuresOf(copy).forEach(feature => stretch(feature.horizontal, factor))
+    spansAlong(copy).forEach(span => stretch(span, factor))
     copy.measurements.scale = factor
 }
 
-/** Takes the shift off the copy's features again, as far as one was applied. */
+/** Takes the shift off the copy's features and tears again, as far as one was applied. */
 export const revertShift = (copy: RollCopy) => {
     const shift = copy.measurements.shift
     if (!shift) return
 
-    const reversed = back(shift)
-    featuresOf(copy).forEach(feature => {
-        move(feature.horizontal, reversed.horizontal)
-        move(feature.vertical, reversed.vertical)
-    })
+    moveBy(back(shift), copy)
     delete copy.measurements.shift
 }
 
-/** Takes the scale off the copy's features again, as far as one was applied. */
+/** Takes the scale off the copy's features and tears again, as far as one was applied. */
 export const revertScale = (copy: RollCopy) => {
     const factor = copy.measurements.scale
     if (factor === undefined) return
 
-    featuresOf(copy).forEach(feature => stretch(feature.horizontal, 1 / factor))
+    spansAlong(copy).forEach(span => stretch(span, 1 / factor))
     delete copy.measurements.scale
 }
 

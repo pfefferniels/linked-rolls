@@ -17,6 +17,7 @@ export {
     stateCarriage,
     clearCarriage,
     addGeneralCondition,
+    addTear,
     symbolsCarriedOnlyBy,
     removeCopy
 } from "./copies.js"

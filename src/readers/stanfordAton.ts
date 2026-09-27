@@ -1,7 +1,7 @@
 import { v4 } from "uuid";
 import { AtonParser } from "./AtonParser.js";
 import { HoleChain } from "../model/Feature.js";
-import { RollCopy } from "../model/RollCopy.js";
+import { RollCopy, Tear } from "../model/RollCopy.js";
 import { TrackCalibration } from "../model/TrackCalibration.js";
 import { systemOf, TrackerBar } from "../systems/TrackerBar.js";
 import { welteT100 } from "../systems/welteT100/bar.js";
@@ -17,6 +17,20 @@ interface AtonHole {
     PERIMETER: string
     NOTE_ATTACK?: string
     OFF_TIME?: string
+}
+
+/** A tear record, as the analysis lists the edge tears on either side. */
+interface AtonTear {
+    ORIGIN_ROW: string
+    ORIGIN_COL: string
+    WIDTH_ROW: string
+    WIDTH_COL: string
+}
+
+/** The tears an analysis lists, those on the bass edge apart from those on the treble. */
+interface AtonTears {
+    BASS_TEARS?: { TEAR?: AtonTear | AtonTear[] }
+    TREBLE_TEARS?: { TEAR?: AtonTear | AtonTear[] }
 }
 
 /** Values in these files carry their unit as a suffix, e.g. "37.7646px". */
@@ -158,6 +172,40 @@ const stanfordScan = (druid: string) => ({
 })
 
 /**
+ * The edge tears the analysis found, one condition each. The analysis
+ * lists only those that reach deeper into the paper than a tenth of an
+ * inch, and measures each by the box around it, so the tear runs across
+ * the roll as far as the box is wide.
+ */
+const tearsIn = (
+    tears: AtonTears | undefined,
+    dpi: number,
+    depictionOf?: (column: Pixels, row: Pixels, width: Pixels, height: Pixels) => string
+): Tear[] => {
+    const onEdge = (edge: 'bass' | 'treble', listed?: AtonTear | AtonTear[]) =>
+        listOf(listed).map((tear): Tear => {
+            const row = readPx(tear.ORIGIN_ROW)
+            const length = readPx(tear.WIDTH_ROW)
+            const column = readPx(tear.ORIGIN_COL)
+            const depth = readPx(tear.WIDTH_COL)
+            return {
+                conditionType: 'torn',
+                horizontal: {
+                    unit: 'mm',
+                    from: inMillimeters(row, dpi),
+                    to: inMillimeters(px(row + length), dpi)
+                },
+                edge,
+                depth: { value: inMillimeters(depth, dpi), unit: 'mm' },
+                ...(depictionOf && { depiction: depictionOf(column, row, depth, length) })
+            }
+        })
+
+    return [...onEdge('bass', tears?.BASS_TEARS?.TEAR), ...onEdge('treble', tears?.TREBLE_TEARS?.TEAR)]
+        .sort((a, b) => a.horizontal.from - b.horizontal.from)
+}
+
+/**
  * The software behind an analysis and when it was run, as the
  * analysis file states them.
  */
@@ -229,7 +277,7 @@ export function readFromStanfordAton(
     return {
         type: 'RollCopy',
         id: v4(),
-        conditions: [],
+        conditions: tearsIn(json.ROLLINFO.TEARS, dpi, stanford?.depictionOf),
         production: {
             system: systemOf(system),
             ...(punchDiameter !== undefined && {

@@ -1687,7 +1687,7 @@
       "type": "object",
       "ontology": "reo:Note"
     },
-    "ObjectAssumption<(GeneralRollCondition|PaperStretch)>": {
+    "ObjectAssumption<(GeneralRollCondition|PaperStretch|Tear)>": {
       "anyOf": [
         {
           "properties": {
@@ -1768,6 +1768,69 @@
           "required": [
             "conditionType",
             "factor"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "@annotation": {
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+              "properties": {
+                "belief": {
+                  "$ref": "#/definitions/Belief",
+                  "description": "The belief held about the annotated statement.",
+                  "ontology": "crminf:J4i is subject of"
+                },
+                "@id": {
+                  "description": "A unique identifier for this object.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "belief",
+                "@id"
+              ],
+              "type": "object"
+            },
+            "conditionType": {
+              "const": "torn",
+              "description": "The kind of condition, from the list the roll or the kind of feature allows.",
+              "type": "string",
+              "ontology": "crm:P2 has type"
+            },
+            "depiction": {
+              "description": "IIIF region pointing to a depiction of the tear in the scan.",
+              "type": "string",
+              "ontology": "crm:P138i has representation"
+            },
+            "depth": {
+              "$ref": "#/definitions/Measure%3C%22mm%22%3E",
+              "description": "How far the tear reaches into the paper, taken across the roll from the edge it runs in from.",
+              "ontology": "reo:depth"
+            },
+            "description": {
+              "description": "A free-text description of the condition, providing details beyond the type classification.",
+              "type": "string",
+              "ontology": "crm:P3 has note"
+            },
+            "edge": {
+              "description": "The edge of the paper the tear runs in from, where it runs in from one.",
+              "enum": [
+                "bass",
+                "treble"
+              ],
+              "type": "string",
+              "ontology": "reo:edge"
+            },
+            "horizontal": {
+              "$ref": "#/definitions/HorizontalSpan",
+              "description": "Where along the roll the tear lies, measured as the copy's features are, so that it moves with them when the copy is aligned.",
+              "ontology": "reo:horizontal"
+            }
+          },
+          "required": [
+            "conditionType",
+            "horizontal"
           ],
           "type": "object"
         }
@@ -3020,8 +3083,8 @@
       "ontology": "lrmoo:F1 Work"
     },
     "RollConditionAssignment": {
-      "$ref": "#/definitions/ObjectAssumption%3C(GeneralRollCondition%7CPaperStretch)%3E",
-      "description": "An assignment of a condition (general or paper-stretch) to a roll copy, annotatable with a belief about its certainty."
+      "$ref": "#/definitions/ObjectAssumption%3C(GeneralRollCondition%7CPaperStretch%7CTear)%3E",
+      "description": "An assignment of a condition (general, paper-stretch or a tear) to a roll copy, annotatable with a belief about its certainty."
     },
     "RollCopy": {
       "description": "A physical copy of a roll, held at a specific location. Each roll copy has its own measurements, conditions and modifications, and states its features in the act that brought each of them about. Multiple copies of the same roll may exist across different archives or collections.",
@@ -3035,7 +3098,7 @@
           "ontology": "crm:P128 carries"
         },
         "conditions": {
-          "description": "Condition assessments of this roll copy (e.g. paper stretch, general wear). Each condition is an assumption annotatable with a belief.",
+          "description": "Condition assessments of this roll copy (e.g. paper stretch, general wear, a tear). Each condition is an assumption annotatable with a belief.",
           "items": {
             "$ref": "#/definitions/RollConditionAssignment"
           },

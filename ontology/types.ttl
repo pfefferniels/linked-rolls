@@ -19,14 +19,15 @@
     dcterms:isPartOf <https://w3id.org/reo/> .
 
 
-# Scope of an expression command (reo:scope)
+# Scope of an expression command (reo:scope), and the edge of the paper
+# a tear runs in from (reo:edge)
 
 reot:bass a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "bass"@en ;
-    rdfs:comment "The lower half of the keyboard, as controlled by the bass expression commands."@en .
+    rdfs:comment "The lower half of the keyboard, as controlled by the bass expression commands, and the side of the roll that passes the bass end of the tracker bar."@en .
 reot:treble a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "treble"@en ;
-    rdfs:comment "The upper half of the keyboard, as controlled by the treble expression commands."@en .
+    rdfs:comment "The upper half of the keyboard, as controlled by the treble expression commands, and the side of the roll that passes the treble end of the tracker bar."@en .
 
 
 # Drive of a perforator (reo:drive). An edition names one by its IRI.
@@ -101,6 +102,9 @@ reot:general a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/
 reot:paper-stretch a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "paper stretch"@en ;
     rdfs:comment "The paper of a copy has stretched or shrunk; the factor states by how much."@en .
+reot:torn a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "torn"@en ;
+    rdfs:comment "The paper of a copy is torn at one place, which the condition states (reo:horizontal), most often in from one of its edges (reo:edge). A tear that runs into a chain of holes also leaves the chain partially torn."@en .
 reot:setting a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "setting"@en ;
     rdfs:comment "How a machine was set when it did the work at hand, such as the punch, pitch and advance of the perforator that cut a copy."@en .

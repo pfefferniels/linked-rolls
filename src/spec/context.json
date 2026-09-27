@@ -214,7 +214,23 @@
     "drive": "reo:drive",
     "company": "crm:P14_carried_out_by",
     "paper": "crm:P126_employed",
-    "conditions": "crm:P44_has_condition",
+    "conditions": {
+      "@id": "crm:P44_has_condition",
+      "@context": {
+        "horizontal": "reo:horizontal",
+        "edge": {
+          "@id": "reo:edge",
+          "@type": "@vocab",
+          "@context": { "@vocab": "https://w3id.org/reo/type/" }
+        },
+        "depth": {
+          "@id": "reo:depth",
+          "@context": {
+            "value": "crm:P90_has_value"
+          }
+        }
+      }
+    },
     "condition": "crm:P44_has_condition",
     "conditionType": {
       "@id": "crm:P2_has_type",
