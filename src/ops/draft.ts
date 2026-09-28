@@ -1,5 +1,5 @@
 /** What the operations are built from: the type of an operation, how one finds what it writes to on the draft, and the edits it writes. */
-import { current, Draft, isDraft } from "immer"
+import { Draft, isDraft } from "immer"
 import { v4 } from "uuid"
 import { Edition } from "../model/Edition.js"
 import { AnySymbol } from "../model/Symbol.js"
@@ -11,6 +11,7 @@ import { Belief, ReferenceAssumption, assignReference } from "../model/Assumptio
 import { FeatureOrPatch } from "../model/Feature.js"
 import { WithId } from "../shared/utils.js"
 import { without, pruned } from "./immutable.js"
+import { takenOf } from "../lookup/perState.js"
 
 /**
  * A change to an edition, written onto an immer draft of it. One
@@ -54,9 +55,10 @@ export const reading = (build: (edition: Edition) => EditionOp): EditionOp =>
 
 /**
  * The state a draft stands at, as plain data. Reading a draft proxies
- * everything it touches, so what is only read is read from this.
+ * everything it touches, so what is only read is read from this, and
+ * what is looked up in an edition is looked up in this (`takenOf`).
  */
-export const stateOf = <T,>(draft: Draft<T>): T => isDraft(draft) ? current(draft) : draft as T
+export const stateOf = <T,>(draft: Draft<T>): T => isDraft(draft) ? takenOf(draft as Draft<T & object>) : draft as T
 
 /** The ids of the items the rewriting left out. */
 export const droppedIds = (before: readonly WithId[], after: readonly WithId[]): string[] => {

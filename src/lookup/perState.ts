@@ -1,4 +1,23 @@
-import { freeze, isDraft } from "immer"
+import { current, Draft, freeze, isDraft, original } from "immer"
+
+/**
+ * Copies taken of a draft as it stood, for an operation to read. Such a
+ * copy is the operation's alone and is not frozen: what the operation
+ * reads from it may go into the draft, and a later operation on the same
+ * draft may go on to change it there, as it may anything written there.
+ */
+const takenOfDrafts = new WeakSet<object>()
+
+/**
+ * The draft as it stands, as plain data: the state it was drafted from
+ * while nothing has changed it, and a copy of it as it now stands once
+ * something has.
+ */
+export const takenOf = <T extends object>(draft: Draft<T>): T => {
+    const state = current(draft) as T
+    if (state !== original(draft)) takenOfDrafts.add(state)
+    return state
+}
 
 /**
  * The edition as a state that no longer changes. It is frozen, deeply
@@ -6,18 +25,19 @@ import { freeze, isDraft } from "immer"
  * from a state is kept for as long as the state is: changed in place
  * afterwards, it would leave that behind unnoticed, and frozen, the
  * change throws instead. An edition immer produced is frozen already,
- * and freezing stops at whatever is.
+ * and freezing stops at whatever is. A copy taken of a draft is left as
+ * it is (`takenOf`).
  *
  * A draft is no such state, since the next write changes it. It is read
- * as it stands by taking immer's `current(draft)` first (`stateOf` in the
- * operations), once for all that is asked of it; asked of directly, it
- * would have to be copied for every question.
+ * as it stands by taking `stateOf(draft)` first, once for all that is
+ * asked of it; asked of directly, it would have to be copied for every
+ * question.
  */
 export const settled = <T extends object>(edition: T): T => {
     if (isDraft(edition)) {
-        throw new Error('An edition is asked about as a state, not as a draft: take current(draft) first.')
+        throw new Error('An edition is asked about as a state, not as a draft: take stateOf(draft) first.')
     }
-    return freeze(edition, true)
+    return takenOfDrafts.has(edition) ? edition : freeze(edition, true)
 }
 
 /**

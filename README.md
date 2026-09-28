@@ -45,7 +45,7 @@ kept for as long as the state is. Every change through `produce` yields
 a new state, so nothing needs to be told that the edition changed. For
 the same reason an edition is frozen once anything has been asked of it,
 as immer freezes what it produces: change it through an operation, not
-in place. A draft is asked about as `current(draft)`.
+in place. A draft is asked about as `stateOf(draft)`.
 
 Within the library every place along the roll is a place on the edition's
 axis, the millimetres of its reference copy. A document holds each copy's

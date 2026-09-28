@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { produce } from 'immer'
+import { freeze, produce } from 'immer'
 import { edition } from './editionFixture'
 import { symbolIn } from '../src/lookup/lookup'
 import { AnyCommand } from '../src/model/Symbol'
 import { Edition } from '../src/model/Edition'
-import { placeCommand, removeSymbols } from '../src/ops'
+import { pairCommands, placeCommand, removeSymbols, removeVersion } from '../src/ops'
 import { reading } from '../src/ops/draft'
 
 const commandIn = (e: Edition, id: string) =>
@@ -44,6 +44,23 @@ describe('operations run one after another on one draft', () => {
         })
         expect(read).not.toBe(e)
         expect(symbolIn(read!, 'note')).toBeUndefined()
+    })
+
+    /**
+     * Taking a version out writes what it showed into the versions read
+     * against it, from the draft as it then stood. What was written there
+     * is the draft's, and an operation after it may go on to change it.
+     */
+    it('change what an operation before them took over from the draft', () => {
+        const e = freeze(edition(), true)
+        const next = produce(e, draft => {
+            pairCommands('forzando-off', 'forzando-on')(draft)
+            removeVersion('A')(draft)
+            pairCommands('forzando-off', 'note')(draft)
+        })
+
+        expect(next.versions.map(version => version.id)).toEqual(['B'])
+        expect(commandIn(next, 'forzando-off').pairedWith?.id).toBe('note')
     })
 
     it('place a command on a draft nothing has changed', () => {

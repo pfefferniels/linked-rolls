@@ -3,7 +3,7 @@
  * They are grouped by what they change under `ops/`; this module names
  * the ones the library offers.
  */
-export type { EditionOp } from "./draft.js"
+export { stateOf, type EditionOp } from "./draft.js"
 export {
     createVersion,
     addCopy,

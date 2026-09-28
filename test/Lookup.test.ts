@@ -211,7 +211,7 @@ describe('what is known of a state', () => {
     it('reads a draft only as a state taken of it', () => {
         const seen = edition()
         produce(seen, draft => {
-            expect(() => snapshotOf(draft, 'A')).toThrow(/current\(draft\)/)
+            expect(() => snapshotOf(draft, 'A')).toThrow(/stateOf\(draft\)/)
             expect(stateOf(draft)).toBe(seen)
             expect(snapshotOf(stateOf(draft), 'A')).toBe(snapshotOf(seen, 'A'))
         })
