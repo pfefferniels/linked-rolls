@@ -96,22 +96,22 @@ const changing = (copyId: Json) => (act: Json): Json => {
     return act
 }
 
+/** The copy with what each of its acts changed stated. */
+const withChangesOf = (copy: Json): Json =>
+    isRecord(copy) && Array.isArray(copy.modifications)
+        ? { ...copy, modifications: copy.modifications.map(changing(copy['@id'])) }
+        : copy
+
 /**
  * The document with what each act changed stated. Which of P110
  * augmented and P112 diminished applies depends on the class of the
  * act, which no property chain in OWL 2 RL can test, so the export
  * states it. What a copy or a patch bears is left to a reasoner (see
- * the entailments in reo.ttl).
+ * the entailments in reo.ttl). The copies are the only nodes that are
+ * modified, and the edition holds them in its list of copies alone.
  */
-const withChanges = (value: Json): Json => {
-    if (Array.isArray(value)) return value.map(withChanges)
-    if (!isRecord(value)) return value
-
-    const node = Object.fromEntries(Object.entries(value).map(([key, child]) => [key, withChanges(child)]))
-    return node['@type'] === 'RollCopy' && Array.isArray(node.modifications)
-        ? { ...node, modifications: node.modifications.map(changing(node['@id'])) }
-        : node
-}
+const withChanges = (edition: Json): Json =>
+    Array.isArray(edition.copies) ? { ...edition, copies: edition.copies.map(withChangesOf) } : edition
 
 /** Terms the context sets to null, which say nothing when the edition is read as RDF. */
 const silentTerms = new Set(
@@ -141,24 +141,23 @@ const quote = (subject: string, key: string, reference: Record<string, Json>, li
     return { '@id': { '@id': subject, [key]: listed ? [object] : object }, annotation, ...about }
 }
 
-type Quoting = { readonly node: Json, readonly quoted: readonly Json[] }
-
-/** The value a node states under a key, less the doubted references, and those references quoted. */
-const quotingValue = (subject: string, key: string, value: Json): Quoting => {
+/** The value a node states under a key, less the doubted references, which go to the quoted. */
+const unquoted = (subject: string, key: string, value: Json, quoted: Json[]): Json => {
     if (Array.isArray(value)) {
-        return {
-            node: value.filter(item => !isDoubtedReference(item)),
-            quoted: value.filter(isDoubtedReference).map(item => quote(subject, key, item, true))
-        }
+        return value.filter(item => {
+            if (!isDoubtedReference(item)) return true
+            quoted.push(quote(subject, key, item, true))
+            return false
+        })
     }
-    return isDoubtedReference(value)
-        ? { node: undefined, quoted: [quote(subject, key, value, false)] }
-        : { node: value, quoted: [] }
+    if (!isDoubtedReference(value)) return value
+    quoted.push(quote(subject, key, value, false))
+    return undefined
 }
 
 /**
  * The document with every doubted reference taken off the node that
- * states it, and quoted instead.
+ * states it, and quoted instead, in the order the document states them.
  *
  * An `@annotation` in JSON-LD-star states the triple it annotates and
  * then says something about it, so a statement the edition holds
@@ -166,26 +165,18 @@ const quotingValue = (subject: string, key: string, value: Json): Quoting => {
  * between nodes are quoted, since only they can be put back where they
  * stood; a doubted date or attribution stays annotated in place.
  */
-const withDoubtedReferencesQuoted = (value: Json): Quoting => {
-    if (Array.isArray(value)) {
-        const quotings = value.map(withDoubtedReferencesQuoted)
-        return { node: quotings.map(({ node }) => node), quoted: quotings.flatMap(({ quoted }) => quoted) }
-    }
-    if (!isRecord(value)) return { node: value, quoted: [] }
+const withDoubtedReferencesQuoted = (value: Json, quoted: Json[]): Json => {
+    if (Array.isArray(value)) return value.map(item => withDoubtedReferencesQuoted(item, quoted))
+    if (!isRecord(value)) return value
 
     const subject = value['@id']
-    const entries = Object.entries(value).map(([key, child]) => {
-        const own: Quoting = typeof subject === 'string' && !key.startsWith('@')
-            ? quotingValue(subject, key, child)
-            : { node: child, quoted: [] }
-        const below = withDoubtedReferencesQuoted(own.node)
-        return { key, node: below.node, quoted: [...own.quoted, ...below.quoted] }
+    const node: Record<string, Json> = {}
+    Object.entries(value).forEach(([key, child]) => {
+        const stated = typeof subject === 'string' && !key.startsWith('@') ? unquoted(subject, key, child, quoted) : child
+        const below = withDoubtedReferencesQuoted(stated, quoted)
+        if (below !== undefined) node[key] = below
     })
-
-    return {
-        node: Object.fromEntries(entries.filter(({ node }) => node !== undefined).map(({ key, node }) => [key, node])),
-        quoted: entries.flatMap(({ quoted }) => quoted)
-    }
+    return node
 }
 
 /** The edition with each copy's features and tears at the copy's own places, as a document holds them. */
@@ -195,7 +186,8 @@ const atOwnPlacesAll = (edition: Edition): Edition =>
         : edition
 
 export const asJsonLd = (edition: Edition) => {
-    const { node, quoted } = withDoubtedReferencesQuoted(withSystemContexts(withCreations(withChanges(asJsonLdEntity(atOwnPlacesAll(edition))))))
+    const quoted: Json[] = []
+    const node = withDoubtedReferencesQuoted(withSystemContexts(withCreations(withChanges(asJsonLdEntity(atOwnPlacesAll(edition))))), quoted)
     // The context is the export's own; one carried in from an import must not override it.
     const { base, '@context': carried, ...rest } = node
 
