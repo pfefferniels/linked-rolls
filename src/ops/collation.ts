@@ -10,7 +10,7 @@ import { collationToleranceOf, derivesFrom, editsOf, insertedBy, principalDeriva
 import { Substitution, substitutionsBetween } from "../collation/substitution.js"
 import { trackerBarOf } from "../systems/index.js"
 import { ObjectAssumption, ReferenceAssumption, assignReference, idOf } from "../model/Assumption.js"
-import { EditionOp, noChange, onVersion, stateOf, insertion, deletion, asUnchecked, declaring, insertedIn, dropInsertions, reading } from "./draft.js"
+import { EditionOp, noChange, onVersion, insertion, deletion, asUnchecked, declaring, dropInsertions, reading } from "./draft.js"
 import { hypothesesBeside } from "./versions.js"
 import { placeOf, snapshotOf } from "../analysis/text.js"
 import { copyOfFeature, versionIn } from "../lookup/lookup.js"
@@ -145,14 +145,19 @@ export const connectVersions = (
             .map(symbol => asUnchecked(deletion(symbol.id)))
     ]
 
-    return onVersion(childId, (child, draft) => {
+    // Read off the child as it stands, since once its edits are written a
+    // reading of it would copy them all.
+    const motivations = declaring(child?.motivations ?? [], edits)
+    const basedOn = [
+        { ...assignReference(parentId), collationTolerance: tolerance },
+        ...(child ? hypothesesBeside(child, parentId) : [])
+    ]
+
+    return onVersion(childId, (version, draft) => {
         handOverCarriers(edition, draft, collations)
-        child.edits = edits
-        child.motivations = declaring(stateOf<Version>(child).motivations, edits)
-        child.basedOn = [
-            { ...assignReference(parentId), collationTolerance: tolerance },
-            ...hypothesesBeside(stateOf<Version>(child), parentId)
-        ]
+        version.edits = edits
+        version.motivations = motivations
+        version.basedOn = basedOn
     })
 })
 
@@ -171,7 +176,7 @@ export const collateSymbols = (
     if (!version || !principal) return noChange
 
     const chosen = new Set(symbolIds)
-    const own = insertedIn([version]).filter(symbol => chosen.has(symbol.id))
+    const own = insertedBy(version).filter(symbol => chosen.has(symbol.id))
     const collations = collationsOf(
         own,
         snapshotOf(edition, idOf(principal)),

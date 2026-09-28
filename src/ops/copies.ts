@@ -94,9 +94,16 @@ export const alignCopies = (date: Date = new Date()): EditionOp =>
 
         const own = draft.copies.find(c => c.id === reference.id)
         if (own) revertAlignment(own)
-        stateOf<Edition>(draft).copies
-            .filter(copy => copy.id !== reference.id && featuresOf(copy).length > 0)
-            .forEach(copy => alignCopy(copy.id, date)(draft))
+
+        // Aligning a copy moves neither the reference copy nor any other,
+        // so every copy is aligned from the one state. Read afresh after
+        // each, the draft would be copied with every copy aligned so far.
+        const state = stateOf<Edition>(draft)
+        state.copies.forEach((copy, i) => {
+            if (copy.id === reference.id || featuresOf(copy).length === 0) return
+            const alignment = alignmentFor(state, copy, date)
+            if (alignment) applyAlignment(alignment, draft.copies[i])
+        })
     }
 
 /**
