@@ -3,6 +3,7 @@ import { Alignment, featuresOf, isTear, RollCopy, tearsOf } from "../model/RollC
 import { TrackerBar } from "../systems/TrackerBar.js";
 import { defaultTrackerBar } from "../systems/index.js";
 import { add, Millimeters, mm, Quantity, subtract, Track, track, Unit } from "../model/Quantity.js";
+import { partitionPoint } from "../shared/sorted.js";
 
 type Ends<U extends Unit> = { from: Quantity<U>, to?: Quantity<U> }
 
@@ -302,14 +303,37 @@ const noteOnsets = (features: readonly FeatureOrPatch[], bar: TrackerBar): Onset
         })
         .sort(byPlace)
 
-const median = (values: readonly number[]): number => {
-    const sorted = [...values].sort((x, y) => x - y)
-    return sorted[Math.floor(sorted.length / 2)] ?? 0
+/**
+ * The middle one of the values, the upper of the two where their number
+ * is even. It is selected rather than the values sorted (Hoare's FIND,
+ * as Wirth writes it): a long roll gives over a million slopes, and only
+ * the one in the middle is wanted. The values are reordered where they
+ * lie.
+ */
+const median = (values: Float64Array): number => {
+    const middle = values.length >> 1
+    let low = 0
+    let high = values.length - 1
+    while (low < high) {
+        const pivot = values[middle]
+        let i = low
+        let j = high
+        while (i <= j) {
+            while (values[i] < pivot) i++
+            while (pivot < values[j]) j--
+            if (i <= j) {
+                const swapped = values[i]
+                values[i] = values[j]
+                values[j] = swapped
+                i++
+                j--
+            }
+        }
+        if (j < middle) low = i
+        if (middle < i) high = j
+    }
+    return values[middle] ?? 0
 }
-
-/** The slope of the line through two matches, or nothing where they share a place on the copy. */
-const slopeBetween = (m: Match, n: Match): number[] =>
-    n.a === m.a ? [] : [(n.b - m.b) / (n.a - m.a)]
 
 /** Matches beyond this are thinned before the slopes are taken, whose number grows with the square. */
 const SLOPE_SAMPLE = 1500
@@ -323,10 +347,18 @@ const SLOPE_SAMPLE = 1500
 const robustLine = (matches: readonly Match[]): Line | undefined => {
     const step = Math.max(1, Math.ceil(matches.length / SLOPE_SAMPLE))
     const sample = matches.filter((_, i) => i % step === 0)
-    const slopes = sample.flatMap((m, i) => sample.slice(i + 1).flatMap(n => slopeBetween(m, n)))
-    if (slopes.length === 0) return undefined
-    const slope = median(slopes)
-    return { slope, intercept: median(matches.map(m => m.b - slope * m.a)) }
+    const slopes = new Float64Array(sample.length * (sample.length - 1) / 2)
+    let count = 0
+    sample.forEach((m, i) => {
+        for (let j = i + 1; j < sample.length; j++) {
+            const n = sample[j]
+            // Two matches at one place on the copy give no slope.
+            if (n.a !== m.a) slopes[count++] = (n.b - m.b) / (n.a - m.a)
+        }
+    })
+    if (count === 0) return undefined
+    const slope = median(slopes.subarray(0, count))
+    return { slope, intercept: median(Float64Array.from(matches, m => m.b - slope * m.a)) }
 }
 
 const placed = (line: Line, a: number): number => line.slope * a + line.intercept
@@ -337,14 +369,9 @@ const residualOf = (line: Line, match: Match): number => match.b - placed(line, 
 const ANCHOR_LENGTH = 6
 
 /** Every run of `length` pitches, keyed by the run, with the onsets it starts at. */
-const runsOf = (onsets: readonly Onset[], length: number): Map<string, Onset[]> => {
-    const runs = new Map<string, Onset[]>()
-    onsets.slice(0, Math.max(0, onsets.length - length + 1)).forEach((start, i) => {
-        const key = onsets.slice(i, i + length).map(onset => onset.pitch).join(',')
-        runs.set(key, [...(runs.get(key) ?? []), start])
-    })
-    return runs
-}
+const runsOf = (onsets: readonly Onset[], length: number): Map<string, Onset[]> =>
+    Map.groupBy(onsets.slice(0, Math.max(0, onsets.length - length + 1)), (_, i) =>
+        onsets.slice(i, i + length).map(onset => onset.pitch).join(','))
 
 /** The places a run of pitches found once on each roll ties together. */
 const anchors = (a: readonly Onset[], b: readonly Onset[]): Match[] => {
@@ -377,14 +404,20 @@ const pairedNearestFirst = (candidates: readonly Candidate[]): Match[] => {
     return matches
 }
 
-/** Each onset of A paired with the nearest onset of B of its pitch within the window around where the line puts it. */
-const nearestMatches = (a: readonly Onset[], b: readonly Onset[], line: Line, window: number): Match[] => {
-    const bByPitch = new Map<number, Onset[]>()
-    b.forEach(onset => bByPitch.set(onset.pitch, [...(bByPitch.get(onset.pitch) ?? []), onset]))
+/** The onsets of B by pitch, each pitch in the order its onsets pass the bar. */
+type ByPitch = ReadonlyMap<number, readonly Onset[]>
 
+/** Widens the window by a hair before it is searched, so that rounding in its bounds cannot leave out what the distance admits. */
+const WINDOW_SLACK = 1e-9
+
+/** Each onset of A paired with the nearest onset of B of its pitch within the window around where the line puts it. */
+const nearestMatches = (a: readonly Onset[], b: ByPitch, line: Line, window: number): Match[] => {
     const candidates = a.flatMap(onset => {
         const expected = placed(line, onset.at)
-        return (bByPitch.get(onset.pitch) ?? [])
+        const ofPitch = b.get(onset.pitch) ?? []
+        const first = partitionPoint(ofPitch, other => other.at < expected - window - WINDOW_SLACK)
+        const end = partitionPoint(ofPitch, other => other.at <= expected + window + WINDOW_SLACK)
+        return ofPitch.slice(first, end)
             .map(other => ({ distance: Math.abs(other.at - expected), a: onset, b: other }))
             .filter(candidate => candidate.distance <= window)
     })
@@ -404,7 +437,7 @@ interface Fit {
     readonly matches: readonly Match[]
 }
 
-const settled = (a: readonly Onset[], b: readonly Onset[]) => (fit: Fit, window: Millimeters): Fit => {
+const settled = (a: readonly Onset[], b: ByPitch) => (fit: Fit, window: Millimeters): Fit => {
     const matches = nearestMatches(a, b, fit.line, window)
     return { line: robustLine(matches) ?? fit.line, matches }
 }
@@ -455,5 +488,5 @@ export function alignFeatures(
     const b = noteOnsets(rollB, barB)
     const coarse = robustLine(anchors(a, b))
     if (!coarse) return undefined
-    return resultOf(WINDOWS.reduce(settled(a, b), { line: coarse, matches: [] }))
+    return resultOf(WINDOWS.reduce(settled(a, Map.groupBy(b, onset => onset.pitch)), { line: coarse, matches: [] }))
 }
