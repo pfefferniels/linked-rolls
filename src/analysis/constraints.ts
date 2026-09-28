@@ -5,7 +5,6 @@ import { AnyCommand, AnySymbol, Expression, PlacementRelation, isCommand, pairsA
 import { keyOf } from "../systems/TrackerBar.js"
 import { trackerBarOf } from "../systems/index.js"
 import { barOf } from "../model/RollCopy.js"
-import { FeatureOrPatch } from "../model/Feature.js"
 import { deletedBy, insertedBy, Version } from "../model/Version.js"
 import { predecessorOf } from "./stemma.js"
 import { placedCarriersOf, snapshotOf } from "./text.js"
@@ -115,25 +114,21 @@ const typesNotOnTheBar = (version: Version, snapshot: readonly AnySymbol[]): Con
  * out says 59. Collation across systems consults only the place, so
  * without this nothing checks the tracks at all.
  */
-const carriersOffTheirMeaning = (
-    edition: Edition,
-    version: string,
-    commands: readonly AnyCommand[]
-): ConstraintProblem[] => {
-    const misread = (carrier: FeatureOrPatch, symbol: AnyCommand): boolean => {
+const carriedOffItsMeaning = (edition: Edition) => (symbol: AnyCommand): boolean => {
+    const key = keyOf(symbol)
+    return placedCarriersOf(edition, symbol).some(carrier => {
         const copy = copyOfFeature(edition, carrier.id)
-        if (!copy) return false
-
         // A carrier lying across several positions reads as several commands,
         // and carries the symbol as long as one of them is the symbol's.
-        return !barOf(copy).meaningsOf(carrier.vertical)
-            .some(meaning => keyOf(meaning) === keyOf(symbol))
-    }
-
-    return commands
-        .filter(symbol => placedCarriersOf(edition, symbol).some(carrier => misread(carrier, symbol)))
-        .map(symbol => ({ version, symbol: symbol.id, problem: 'carrier-on-another-track' as const }))
+        return copy !== undefined && !barOf(copy).meaningsOf(carrier.vertical).some(meaning => keyOf(meaning) === key)
+    })
 }
+
+/** The commands the version shows among those carried off their meaning. */
+const carriersOffTheirMeaning = (misread: ReadonlySet<AnyCommand>, version: string, commands: readonly AnyCommand[]): ConstraintProblem[] =>
+    commands
+        .filter(symbol => misread.has(symbol))
+        .map(symbol => ({ version, symbol: symbol.id, problem: 'carrier-on-another-track' as const }))
 
 /**
  * Where a copy of the version's own system strays from the others in
@@ -145,13 +140,10 @@ const carriersOffTheirMeaning = (
  * speed, and averaging it in would hide both that and the fact that the
  * playback rests on a guess.
  */
-const paperDisagreed = (edition: Edition, version: Version): ConstraintProblem[] => {
-    const own = new Set(paperOfVersion(edition, version)?.copies ?? [])
-    return alignmentProblems(edition)
-        .some(({ copy, problem }) => problem === 'paper-beyond-its-spread' && own.has(copy))
+const paperDisagreed = (edition: Edition, strays: ReadonlySet<string>, version: Version): ConstraintProblem[] =>
+    paperOfVersion(edition, version)?.copies.some(copy => strays.has(copy))
         ? [{ version: version.id, symbol: version.id, problem: 'copies-disagree-on-the-paper' as const }]
         : []
-}
 
 /**
  * A version's strikes that take nothing out of its text: each deleted
@@ -187,16 +179,24 @@ const strikesBitingNothing = (edition: Edition, version: Version): ConstraintPro
  * track that does not say what its symbol says, and a strike that takes
  * nothing out.
  */
-export const constraintProblems = (edition: Edition): ConstraintProblem[] =>
-    edition.versions.flatMap(version => {
+export const constraintProblems = (edition: Edition): ConstraintProblem[] => {
+    // What a symbol's carriers and the copies' paper say holds whichever
+    // version shows them, so it is asked once for the edition.
+    const misread = new Set(edition.versions.flatMap(insertedBy).filter(isCommand).filter(carriedOffItsMeaning(edition)))
+    const strays = new Set(alignmentProblems(edition)
+        .filter(({ problem }) => problem === 'paper-beyond-its-spread')
+        .map(({ copy }) => copy))
+
+    return edition.versions.flatMap(version => {
         const snapshot = snapshotOf(edition, version.id)
         const commands = snapshot.filter(isCommand)
 
         return [
             ...problemsIn(version.id, commands),
             ...typesNotOnTheBar(version, snapshot),
-            ...carriersOffTheirMeaning(edition, version.id, commands),
-            ...paperDisagreed(edition, version),
+            ...carriersOffTheirMeaning(misread, version.id, commands),
+            ...paperDisagreed(edition, strays, version),
             ...strikesBitingNothing(edition, version)
         ]
     })
+}

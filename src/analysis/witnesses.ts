@@ -4,6 +4,7 @@ import { insertedBy } from "../model/Version.js";
 import { lineageOf } from "./stemma.js";
 import { copyOfFeature, versionIn } from "../lookup/lookup.js";
 import { Edition } from "../model/Edition.js";
+import { perState } from "../lookup/perState.js";
 
 export type WitnessBy = 'carriers' | 'statement'
 
@@ -59,25 +60,27 @@ const carriagesIn = (edition: Edition): Carriage[] =>
 /** What the copies' features attest, gathered once for the whole edition. */
 interface Carriers {
     /** By version, the copies whose features carry what it inserts. */
-    copiesOf: Map<string, string[]>
+    readonly copiesOf: ReadonlyMap<string, readonly string[]>
 
     /** By copy, the latest version whose insertions it carries: the state it attests at first hand. */
-    latestOf: Map<string, string>
+    readonly latestOf: ReadonlyMap<string, string>
 }
 
-const carriersIn = (edition: Edition): Carriers => {
+/** What the copies' features attest, worked out once for each state of the edition. */
+const carriersIn = perState((edition: Edition): Carriers => {
     const carriages = carriagesIn(edition)
+    const byVersion = Map.groupBy(carriages, carriage => carriage.version)
     return {
         copiesOf: new Map(edition.versions.map(version => [
             version.id,
-            carriages.filter(carriage => carriage.version === version.id).map(carriage => carriage.copy)
+            (byVersion.get(version.id) ?? []).map(carriage => carriage.copy)
         ])),
         // Written in order of depth, so a copy's latest carriage is set last and stands.
         latestOf: new Map([...carriages]
             .sort((one, other) => one.depth - other.depth)
             .map(carriage => [carriage.copy, carriage.version]))
     }
-}
+})
 
 /**
  * The versions a copy's features carry at first hand: for every copy,
