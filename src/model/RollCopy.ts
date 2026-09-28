@@ -9,22 +9,50 @@ import { ActorAssignment, assignReference, certaintyOf, DateAssignment, isAssert
 import { WithId, WithType } from "../shared/utils.js";
 import { Agent, Concept } from "./Agent.js";
 import { FeatureSource } from "./FeatureSource.js";
-import { Measure, Millimeters, Quantity, px, Track, track } from "./Quantity.js";
+import { Measure, Millimeters, Percent, Quantity, px, Track, track } from "./Quantity.js";
 import { Perforator } from "./Perforator.js";
 
 /**
- * This condition state is used to describe the roll's
- * paper shrinkage or stretching. It might be calculated
- * on the basis of comparing the vertical or horizontal
- * extent with other witnesses of the same roll.
+ * How far the paper has stretched, or shrunk where it is negative, since
+ * it was perforated, as a share of its length then: the strain
+ * ΔL / L. It is a ratio of two lengths and so has no unit of its own,
+ * and it is stated in per cent because what paper does is a matter of
+ * tenths of one. It is taken in one direction, along the roll or across
+ * it, since machine-made paper does not stretch the same way in both.
+ * @see crm:E54 Dimension
+ */
+export interface Strain extends Measure<'percent'> {
+    /**
+     * The standard uncertainty of the value, one standard deviation.
+     * Left out where the measurement gave none, which leaves it no more
+     * precise than paper is known to vary.
+     * @see reo:uncertainty
+     */
+    uncertainty?: Percent
+}
+
+/**
+ * The paper of the copy stretched or shrunk, as measured on the copy:
+ * with a rule against a length the perforator fixed, or across the roll
+ * against the pitch of the punch block. What the alignments of the
+ * copies say about the paper is worked out from them (`paperOf`) and not
+ * stated here, so that a condition stands only where something was
+ * measured. A strain along the roll goes into that working out.
+ * @see crm:E3 Condition State
  */
 export interface PaperStretch extends ConditionState<'paper-stretch'> {
     /**
-     * The stretch factor, e.g. 1.02 means the paper has
-     * stretched by 2% compared to its original dimensions.
-     * @see rdf:value
+     * The strain along the roll, the direction the alignment measures.
+     * @see reo:strainAlong
      */
-    factor: number
+    along?: Strain
+
+    /**
+     * The strain across the roll. Paper stretches more across than
+     * along, so this is no measure of the other.
+     * @see reo:strainAcross
+     */
+    across?: Strain
 }
 
 /**
@@ -90,9 +118,9 @@ export const rollConditions = [
 ] as const
 
 /**
- * A shift correction applied to a roll copy to align it
- * with other copies. The shift is defined as horizontal
- * (along the roll length, in mm) and vertical (across tracks).
+ * How far an alignment moves a copy's places before it scales them:
+ * along the roll, in the copy's own millimetres, and across it, in
+ * tracks.
  */
 export interface Shift {
     /** Along the roll. */
@@ -100,6 +128,63 @@ export interface Shift {
 
     /** Across the tracker bar. */
     vertical: Track
+}
+
+/**
+ * How the copy's own places are carried onto the edition's axis, which
+ * is the millimetres of its reference copy (`Edition.referenceCopy`):
+ *
+ *     x_axis = (x + shift.horizontal) · scale
+ *     track_axis = track + shift.vertical
+ *
+ * It is found, not given: `alignCopy` matches the copy's notes with the
+ * reference copy's and records what it found, and can find it again.
+ * The document holds the copy's features and tears at its own places,
+ * as they were read, and this beside them; `importJsonLd` puts them
+ * onto the axis and `asJsonLd` takes them back, so that within the
+ * library every place along the roll is a place on the axis.
+ *
+ * What the scale is put down to, the paper or the speed the copy was
+ * cut for, is worked out from all the alignments together (`paperOf`).
+ * Not exported to RDF.
+ */
+export interface Alignment {
+    /**
+     * The copy it was found against, by id: the edition's reference
+     * copy at the time. Left out by alignments recorded before this was.
+     */
+    against?: string
+
+    /** Applied before the scale. */
+    shift: Shift
+
+    /** Own millimetres to the axis's, applied after the shift. */
+    scale: number
+
+    /** How many notes of the copy found their counterpart on the reference copy. */
+    matched?: number
+
+    /** How far the counterparts still lie apart, as a root mean square in millimetres of the axis. */
+    residual?: Millimeters
+
+    /**
+     * The standard error of the scale: the residual over the spread of
+     * the matched notes along the roll, as for a line of least squares.
+     */
+    scaleError?: number
+
+    /** The software that found it, and when. */
+    foundBy?: {
+        /** The name of the method. */
+        software: string
+        /** Its revision (`ALIGNMENT_METHOD`). */
+        version: string
+        /**
+         * The day it was found.
+         * @format date
+         */
+        date: Date
+    }
 }
 
 /** The margins on the treble and bass sides of the roll, in the unit the scan was measured in. */
@@ -115,15 +200,6 @@ export interface Margins<U extends 'px' | 'mm'> {
  * @see crm:E54 Dimension
  */
 export type PaperSpeed = Measure<'ft/min'> | Measure<'m/min'>
-
-/**
- * What the scale an alignment found is put down to: the paper of the
- * copy having stretched or shrunk, or the copy having been cut for
- * another paper speed than the roll it is aligned with.
- */
-export type ScaleReading =
-    | { cause: 'paper', condition: ObjectAssumption<PaperStretch> }
-    | { cause: 'speed', speed: ObjectAssumption<PaperSpeed> }
 
 /**
  * Describes the production of a roll copy: the manufacturer,
@@ -167,8 +243,10 @@ export interface ProductionEvent {
     /**
      * The paper speed the copy was cut for. A copy cut from the same
      * master for another speed comes out longer or shorter than the
-     * roll it is aligned with by the ratio of the speeds, which is
-     * what the alignment then measures.
+     * roll it is aligned with by the ratio of the speeds. The alignment
+     * measures that ratio far more closely than a label states a speed,
+     * so the speed is held against what the alignments give
+     * (`alignmentProblems`) rather than used to find it.
      * @see reo:paperSpeed
      */
     speed?: ObjectAssumption<PaperSpeed>
@@ -284,8 +362,8 @@ export type Modification = Partial<{
 export interface RollCopy extends WithType<'RollCopy'>, WithId {
     /**
      * Physical measurements of this roll copy, including
-     * dimensions, hole separation, margins, shift corrections,
-     * and information about the measuring software. What the
+     * dimensions, hole separation, margins, the alignment onto the
+     * edition's axis, and information about the measuring software. What the
      * perforations tell about the machine that cut them is stated
      * with the production.
      * @see crm:P39i was measured by
@@ -330,18 +408,12 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
         margins: Margins<'px'> | Margins<'mm'>
 
         /**
-         * The shift applied to align this copy with the others.
+         * How the copy's places are carried onto the edition's axis.
+         * Left out for the reference copy, whose places are the axis,
+         * and for a copy not aligned yet.
          * Not exported to RDF.
          */
-        shift: Shift
-
-        /**
-         * The factor this copy's features were scaled by to align them
-         * with the others. What it is put down to is stated apart: a
-         * paper-stretch condition, or the speed the copy was cut for.
-         * Not exported to RDF.
-         */
-        scale: number
+        alignment: Alignment
 
         /**
          * What a pneumatic reader added to this copy's chains of holes,
@@ -507,13 +579,13 @@ export const featuresByAct = (copy: Pick<RollCopy, 'production' | 'modifications
 export const featuresOf = (copy: Pick<RollCopy, 'production' | 'modifications'>): FeatureOrPatch[] =>
     featuresByAct(copy).flat()
 
-/**
- * Whether the condition is the stretch or shrinkage of the paper. A
- * scale put down to this belongs to the one exemplar and says nothing
- * about the speed its system's rolls were cut at.
- */
-export const isPaperStretch = (condition: RollConditionAssignment): boolean =>
+/** Whether the condition is the stretch or shrinkage of the paper, as measured on the copy. */
+export const isPaperStretch = (condition: RollConditionAssignment): condition is ObjectAssumption<PaperStretch> =>
     condition.conditionType === 'paper-stretch'
+
+/** What the copy's paper was measured to have done, where anything was measured. */
+export const paperStretchOf = (copy: Pick<RollCopy, 'conditions'>): ObjectAssumption<PaperStretch> | undefined =>
+    copy.conditions.find(isPaperStretch)
 
 /** Whether the condition is a tear in the paper. */
 export const isTear = (condition: RollConditionAssignment): condition is ObjectAssumption<Tear> =>

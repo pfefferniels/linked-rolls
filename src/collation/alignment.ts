@@ -1,73 +1,151 @@
 import { FeatureOrPatch } from "../model/Feature.js";
-import { featuresOf, RollCopy, Shift, tearsOf } from "../model/RollCopy.js";
+import { Alignment, featuresOf, isTear, RollCopy, tearsOf } from "../model/RollCopy.js";
 import { TrackerBar } from "../systems/TrackerBar.js";
 import { defaultTrackerBar } from "../systems/index.js";
-import { add, Millimeters, mm, Quantity, scale, subtract, Unit } from "../model/Quantity.js";
+import { add, Millimeters, mm, Quantity, subtract, Track, track, Unit } from "../model/Quantity.js";
 
 type Ends<U extends Unit> = { from: Quantity<U>, to?: Quantity<U> }
 
-/** Moves both ends of a span, the far end only where the span has one. */
-const move = <U extends Unit>(span: Ends<U>, by: Quantity<NoInfer<U>>) => {
-    span.from = add(span.from, by)
-    if (span.to !== undefined) span.to = add(span.to, by)
-}
+/** A place on the copy's own paper, on the edition's axis. */
+export const toAxis = (alignment: Alignment | undefined) => (place: Millimeters): Millimeters =>
+    alignment ? mm((place + alignment.shift.horizontal) * alignment.scale) : place
 
-/** Stretches both ends of a span away from the beginning of the roll. */
-const stretch = <U extends Unit>(span: Ends<U>, factor: number) => {
-    span.from = scale(span.from, factor)
-    if (span.to !== undefined) span.to = scale(span.to, factor)
-}
+/** A place on the edition's axis, on the copy's own paper. */
+export const fromAxis = (alignment: Alignment | undefined) => (place: Millimeters): Millimeters =>
+    alignment ? mm(place / alignment.scale - alignment.shift.horizontal) : place
 
-const back = (shift: Shift): Shift =>
-    ({ horizontal: scale(shift.horizontal, -1), vertical: scale(shift.vertical, -1) })
+const acrossToAxis = (alignment: Alignment | undefined) => (position: Track): Track =>
+    alignment ? track(position + alignment.shift.vertical) : position
+
+const acrossFromAxis = (alignment: Alignment | undefined) => (position: Track): Track =>
+    alignment ? track(position - alignment.shift.vertical) : position
+
+/** Both ends of a span taken through the mapping, the far end only where the span has one. */
+const mapped = <U extends Unit>(span: Ends<U>, through: (at: Quantity<U>) => Quantity<U>) => {
+    span.from = through(span.from)
+    if (span.to !== undefined) span.to = through(span.to)
+}
 
 /**
  * Where along the roll the copy states anything: its features, and its
  * tears, which are measured as the features are. A tear states no track,
- * so a shift across the roll leaves it where it is.
+ * so the shift across the roll leaves it where it is.
  */
 const spansAlong = (copy: RollCopy) =>
     [...featuresOf(copy), ...tearsOf(copy)].map(placed => placed.horizontal)
 
-const moveBy = (shift: Shift, copy: RollCopy) => {
-    spansAlong(copy).forEach(span => move(span, shift.horizontal))
-    featuresOf(copy).forEach(feature => move(feature.vertical, shift.vertical))
+/** Puts the copy's own places onto the axis in place. */
+const moveOnto = (alignment: Alignment, copy: RollCopy) => {
+    spansAlong(copy).forEach(span => mapped(span, toAxis(alignment)))
+    featuresOf(copy).forEach(feature => mapped(feature.vertical, acrossToAxis(alignment)))
 }
 
-export const applyShift = (shift: Shift, copy: RollCopy) => {
-    if (copy.measurements.shift) return
-
-    moveBy(shift, copy)
-    copy.measurements.shift = shift
+/** Takes the copy's places on the axis back to its own paper in place. */
+const moveOff = (alignment: Alignment, copy: RollCopy) => {
+    spansAlong(copy).forEach(span => mapped(span, fromAxis(alignment)))
+    featuresOf(copy).forEach(feature => mapped(feature.vertical, acrossFromAxis(alignment)))
 }
 
-/** Scales the copy's features and tears away from the beginning of the roll, and records the factor. */
-export const applyScale = (factor: number, copy: RollCopy) => {
-    if (copy.measurements.scale !== undefined) return
-
-    spansAlong(copy).forEach(span => stretch(span, factor))
-    copy.measurements.scale = factor
+/**
+ * Carries the copy's features and tears from its own places onto the
+ * axis, and records how, in place of any alignment it had: that one is
+ * taken off first.
+ */
+export const applyAlignment = (alignment: Alignment, copy: RollCopy) => {
+    revertAlignment(copy)
+    moveOnto(alignment, copy)
+    copy.measurements.alignment = alignment
 }
 
-/** Takes the shift off the copy's features and tears again, as far as one was applied. */
-export const revertShift = (copy: RollCopy) => {
-    const shift = copy.measurements.shift
-    if (!shift) return
+/** Takes the copy's features and tears back to its own places, as far as it was aligned. */
+export const revertAlignment = (copy: RollCopy) => {
+    const alignment = copy.measurements.alignment
+    if (!alignment) return
 
-    moveBy(back(shift), copy)
-    delete copy.measurements.shift
+    moveOff(alignment, copy)
+    delete copy.measurements.alignment
 }
 
-/** Takes the scale off the copy's features and tears again, as far as one was applied. */
-export const revertScale = (copy: RollCopy) => {
-    const factor = copy.measurements.scale
-    if (factor === undefined) return
+/**
+ * Places are written to the nanometre. Carried onto the axis and back,
+ * a place comes back a rounding error away from where it was, and a
+ * document saved again would change in its last digits every time.
+ * A scan resolves a tenth of a millimetre at best.
+ */
+const PLACES_PER_MM = 1e6
 
-    spansAlong(copy).forEach(span => stretch(span, 1 / factor))
-    delete copy.measurements.scale
+const written = (place: Millimeters): Millimeters => mm(Math.round(place * PLACES_PER_MM) / PLACES_PER_MM)
+
+/**
+ * The copy with its features and tears at its own places, as a document
+ * holds them, and its alignment kept to say how they go onto the axis.
+ * The copy given is left as it is. A copy that is not aligned is the
+ * very same copy.
+ */
+export const atOwnPlaces = (copy: RollCopy): RollCopy => {
+    const alignment = copy.measurements.alignment
+    if (!alignment) return copy
+
+    const along = (place: Millimeters) => written(fromAxis(alignment)(place))
+    const across = acrossFromAxis(alignment)
+    const ownSpan = <U extends Unit, S extends Ends<U>>(span: S, through: (at: Quantity<U>) => Quantity<U>): S => {
+        const own = { ...span }
+        mapped(own, through)
+        return own
+    }
+    const ownFeature = <F extends FeatureOrPatch>(feature: F): F =>
+        ({ ...feature, horizontal: ownSpan(feature.horizontal, along), vertical: ownSpan(feature.vertical, across) })
+
+    return {
+        ...copy,
+        ...(copy.production && {
+            production: {
+                ...copy.production,
+                ...(copy.production.produced && { produced: copy.production.produced.map(ownFeature) })
+            }
+        }),
+        modifications: copy.modifications.map(act => {
+            if (act.type === 'Alteration') return { ...act, produced: act.produced.map(ownFeature) }
+            if (act.type === 'Attachment') return { ...act, added: act.added.map(ownFeature) }
+            return act
+        }),
+        conditions: copy.conditions.map(condition => isTear(condition)
+            ? { ...condition, horizontal: ownSpan(condition.horizontal, along) }
+            : condition)
+    }
+}
+
+/**
+ * Puts the features and tears of a copy read from a document, which
+ * holds them at the copy's own places, onto the axis. The copy given is
+ * changed.
+ */
+export const putOnAxis = (copy: RollCopy) => {
+    const alignment = copy.measurements.alignment
+    if (alignment) moveOnto(alignment, copy)
+}
+
+/** The copy's features at its own places, as it was read, whatever alignment it has. */
+export const ownFeaturesOf = (copy: RollCopy): FeatureOrPatch[] => {
+    const alignment = copy.measurements.alignment
+    if (!alignment) return featuresOf(copy)
+
+    return featuresOf(copy).map(feature => {
+        const own = { ...feature, horizontal: { ...feature.horizontal }, vertical: { ...feature.vertical } }
+        mapped(own.horizontal, fromAxis(alignment))
+        mapped(own.vertical, acrossFromAxis(alignment))
+        return own
+    })
 }
 
 const chainsOf = (copy: RollCopy) => featuresOf(copy).filter(feature => feature.type === 'HoleChain')
+
+/**
+ * The reader's extension as it lies on the axis. It is a length on the
+ * copy's own paper, which the alignment scales like any other.
+ */
+const extensionOnAxis = (extension: Millimeters, copy: RollCopy): Millimeters =>
+    mm(extension * (copy.measurements.alignment?.scale ?? 1))
 
 /**
  * Takes the extension a pneumatic reader adds off the ends of the
@@ -108,9 +186,11 @@ export const tooShortToShorten = (
     extension: Millimeters,
     copy: RollCopy,
     leaving: ReadonlySet<string> = new Set()
-): Readonly<FeatureOrPatch>[] =>
-    chainsOf(copy).filter(chain =>
-        !leaving.has(chain.id) && chain.horizontal.to - chain.horizontal.from <= extension)
+): Readonly<FeatureOrPatch>[] => {
+    const onAxis = extensionOnAxis(extension, copy)
+    return chainsOf(copy).filter(chain =>
+        !leaving.has(chain.id) && chain.horizontal.to - chain.horizontal.from <= onAxis)
+}
 
 /**
  * Takes the extension off, leaving the named chains as the reader gave
@@ -138,10 +218,11 @@ export const shortenChains = (
             + `${tooShort.map(chain => chain.id).join(', ')}`)
     }
 
+    const onAxis = extensionOnAxis(extension, copy)
     const left = chainsOf(copy).filter(chain => leaving.has(chain.id)).map(chain => chain.id)
     chainsOf(copy)
         .filter(chain => !leaving.has(chain.id))
-        .forEach(chain => { chain.horizontal.to = subtract(chain.horizontal.to, extension) })
+        .forEach(chain => { chain.horizontal.to = subtract(chain.horizontal.to, onAxis) })
 
     copy.measurements.readerExtension = { length: extension, ...(left.length > 0 && { leaving: left }) }
 }
@@ -151,13 +232,22 @@ export const revertShortening = (copy: RollCopy) => {
     const taken = copy.measurements.readerExtension
     if (taken === undefined) return
 
+    const onAxis = extensionOnAxis(taken.length, copy)
     const left = new Set(taken.leaving ?? [])
     chainsOf(copy)
         .filter(chain => !left.has(chain.id))
-        .forEach(chain => { chain.horizontal.to = add(chain.horizontal.to, taken.length) })
+        .forEach(chain => { chain.horizontal.to = add(chain.horizontal.to, onAxis) })
 
     delete copy.measurements.readerExtension
 }
+
+/**
+ * The method `alignFeatures` follows, as an alignment records it. Its
+ * revision changes when the method does and at no other release, so
+ * that an alignment found by an earlier method can be told from one
+ * that would be found again as it stands.
+ */
+export const ALIGNMENT_METHOD = { software: 'linked-rolls alignFeatures', version: '1' } as const
 
 /**
  * How a copy's places are carried onto another copy's:
@@ -171,6 +261,14 @@ export interface AlignmentResult {
     matched: number
     /** How far the counterparts still lie apart, as a root mean square in the other copy's millimetres. */
     residual: Millimeters
+    /**
+     * The standard error of the scale, as for a line of least squares
+     * through the matches: the residual over the spread of the matched
+     * notes along the copy, and over the root of their number. The
+     * robust line is fitted otherwise, but on Welte 225 this comes
+     * within a few per cent of what resampling the matches gives.
+     */
+    scaleError: number
 }
 
 /** A note the bar reads: its pitch and where along the roll its chain of holes begins. */
@@ -311,14 +409,23 @@ const settled = (a: readonly Onset[], b: readonly Onset[]) => (fit: Fit, window:
     return { line: robustLine(matches) ?? fit.line, matches }
 }
 
+/** How far the places of the matches on the copy spread, as a standard deviation. */
+const spreadOf = (matches: readonly Match[]): number => {
+    const centre = matches.reduce((total, m) => total + m.a, 0) / matches.length
+    return Math.sqrt(matches.reduce((total, m) => total + (m.a - centre) ** 2, 0) / matches.length)
+}
+
 const resultOf = ({ line, matches }: Fit): AlignmentResult | undefined => {
     if (matches.length < 2 || line.slope <= 0) return undefined
     const squares = matches.reduce((total, m) => total + residualOf(line, m) ** 2, 0)
+    const residual = Math.sqrt(squares / matches.length)
+    const spread = spreadOf(matches)
     return {
         shift: mm(line.intercept / line.slope),
         scale: line.slope,
         matched: matches.length,
-        residual: mm(Math.sqrt(squares / matches.length))
+        residual: mm(residual),
+        scaleError: spread > 0 ? residual / (spread * Math.sqrt(matches.length)) : Infinity
     }
 }
 

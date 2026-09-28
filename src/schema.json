@@ -58,6 +58,64 @@
       ],
       "description": "The role an agent plays in the context of the edition."
     },
+    "Alignment": {
+      "description": "How the copy's own places are carried onto the edition's axis, which is the millimetres of its reference copy (`Edition.referenceCopy`):\n\n    x_axis = (x + shift.horizontal) · scale     track_axis = track + shift.vertical\n\nIt is found, not given: `alignCopy` matches the copy's notes with the reference copy's and records what it found, and can find it again. The document holds the copy's features and tears at its own places, as they were read, and this beside them; `importJsonLd` puts them onto the axis and `asJsonLd` takes them back, so that within the library every place along the roll is a place on the axis.\n\nWhat the scale is put down to, the paper or the speed the copy was cut for, is worked out from all the alignments together (`paperOf`). Not exported to RDF.",
+      "properties": {
+        "against": {
+          "description": "The copy it was found against, by id: the edition's reference copy at the time. Left out by alignments recorded before this was.",
+          "type": "string"
+        },
+        "foundBy": {
+          "description": "The software that found it, and when.",
+          "properties": {
+            "date": {
+              "description": "The day it was found.",
+              "format": "date",
+              "type": "string"
+            },
+            "software": {
+              "description": "The name of the method.",
+              "type": "string"
+            },
+            "version": {
+              "description": "Its revision (`ALIGNMENT_METHOD`).",
+              "type": "string"
+            }
+          },
+          "required": [
+            "software",
+            "version",
+            "date"
+          ],
+          "type": "object"
+        },
+        "matched": {
+          "description": "How many notes of the copy found their counterpart on the reference copy.",
+          "type": "number"
+        },
+        "residual": {
+          "$ref": "#/definitions/Millimeters",
+          "description": "How far the counterparts still lie apart, as a root mean square in millimetres of the axis."
+        },
+        "scale": {
+          "description": "Own millimetres to the axis's, applied after the shift.",
+          "type": "number"
+        },
+        "scaleError": {
+          "description": "The standard error of the scale: the residual over the spread of the matched notes along the roll, as for a line of least squares.",
+          "type": "number"
+        },
+        "shift": {
+          "$ref": "#/definitions/Shift",
+          "description": "Applied before the scale."
+        }
+      },
+      "required": [
+        "shift",
+        "scale"
+      ],
+      "type": "object"
+    },
     "AnyArgumentation": {
       "anyOf": [
         {
@@ -567,6 +625,10 @@
           ],
           "type": "string",
           "ontology": "dcterms:license"
+        },
+        "referenceCopy": {
+          "description": "The copy whose millimetres are the edition's axis, by id: every place the edition gives along the roll is a place on this copy's paper, counted from where its scan begins, and every other copy is aligned onto it. Choosing it is the one editorial decision the alignment leaves; a copy scanned whole and without tears serves best, since its places are what notes and readers cite. Left out, it is the first copy with features that is not aligned (`referenceCopyOf`). Not exported to RDF.",
+          "type": "string"
         },
         "roll": {
           "$ref": "#/definitions/Roll",
@@ -1748,6 +1810,16 @@
               ],
               "type": "object"
             },
+            "across": {
+              "$ref": "#/definitions/Strain",
+              "description": "The strain across the roll. Paper stretches more across than along, so this is no measure of the other.",
+              "ontology": "reo:strainAcross"
+            },
+            "along": {
+              "$ref": "#/definitions/Strain",
+              "description": "The strain along the roll, the direction the alignment measures.",
+              "ontology": "reo:strainAlong"
+            },
             "conditionType": {
               "const": "paper-stretch",
               "description": "The kind of condition, from the list the roll or the kind of feature allows.",
@@ -1758,16 +1830,10 @@
               "description": "A free-text description of the condition, providing details beyond the type classification.",
               "type": "string",
               "ontology": "crm:P3 has note"
-            },
-            "factor": {
-              "description": "The stretch factor, e.g. 1.02 means the paper has stretched by 2% compared to its original dimensions.",
-              "type": "number",
-              "ontology": "rdf:value"
             }
           },
           "required": [
-            "conditionType",
-            "factor"
+            "conditionType"
           ],
           "type": "object"
         },
@@ -2814,6 +2880,10 @@
       "type": "object",
       "ontology": "reo:Patch"
     },
+    "Percent": {
+      "$ref": "#/definitions/Quantity%3C%22percent%22%3E",
+      "description": "A share of a length, such as how far the paper has stretched: dimensionless, in hundredths."
+    },
     "Perforator": {
       "description": "The machine that punched the copy. It stands for this production alone. Whether it is the one another copy was punched on is left to a statement of identity made about it elsewhere, which its id allows.",
       "properties": {
@@ -2946,7 +3016,7 @@
         },
         "speed": {
           "$ref": "#/definitions/ObjectAssumption%3CPaperSpeed%3E",
-          "description": "The paper speed the copy was cut for. A copy cut from the same master for another speed comes out longer or shorter than the roll it is aligned with by the ratio of the speeds, which is what the alignment then measures.",
+          "description": "The paper speed the copy was cut for. A copy cut from the same master for another speed comes out longer or shorter than the roll it is aligned with by the ratio of the speeds. The alignment measures that ratio far more closely than a label states a speed, so the speed is held against what the alignments give (`alignmentProblems`) rather than used to find it.",
           "ontology": "reo:paperSpeed"
         },
         "system": {
@@ -2968,6 +3038,9 @@
       "type": "number"
     },
     "Quantity<\"mm\">": {
+      "type": "number"
+    },
+    "Quantity<\"percent\">": {
       "type": "number"
     },
     "Quantity<\"px\">": {
@@ -3111,8 +3184,12 @@
           "ontology": "crm:P50 has current keeper"
         },
         "measurements": {
-          "description": "Physical measurements of this roll copy, including dimensions, hole separation, margins, shift corrections, and information about the measuring software. What the perforations tell about the machine that cut them is stated with the production.",
+          "description": "Physical measurements of this roll copy, including dimensions, hole separation, margins, the alignment onto the edition's axis, and information about the measuring software. What the perforations tell about the machine that cut them is stated with the production.",
           "properties": {
+            "alignment": {
+              "$ref": "#/definitions/Alignment",
+              "description": "How the copy's places are carried onto the edition's axis. Left out for the reference copy, whose places are the axis, and for a copy not aligned yet. Not exported to RDF."
+            },
             "dimensions": {
               "description": "The physical dimensions of the roll.",
               "properties": {
@@ -3212,18 +3289,10 @@
               ],
               "type": "object"
             },
-            "scale": {
-              "description": "The factor this copy's features were scaled by to align them with the others. What it is put down to is stated apart: a paper-stretch condition, or the speed the copy was cut for. Not exported to RDF.",
-              "type": "number"
-            },
             "scanResolution": {
               "$ref": "#/definitions/Measure%3C%22px%2Fin%22%3E",
               "description": "The resolution this copy's scan was read at, along the roll. It is what the measurements given in pixels are to be read against, and what every conversion between a place in the scan and one on the paper goes through. A scanner may read across the roll at another resolution, which the analysis files do not state.",
               "ontology": "reo:scanResolution"
-            },
-            "shift": {
-              "$ref": "#/definitions/Shift",
-              "description": "The shift applied to align this copy with the others. Not exported to RDF."
             },
             "trackCalibration": {
               "$ref": "#/definitions/TrackCalibration",
@@ -3290,7 +3359,7 @@
       "ontology": "reo:RollCopy"
     },
     "Shift": {
-      "description": "A shift correction applied to a roll copy to align it with other copies. The shift is defined as horizontal (along the roll length, in mm) and vertical (across tracks).",
+      "description": "How far an alignment moves a copy's places before it scales them: along the roll, in the copy's own millimetres, and across it, in tracks.",
       "properties": {
         "horizontal": {
           "$ref": "#/definitions/Millimeters",
@@ -3336,6 +3405,33 @@
         "recording"
       ],
       "type": "string"
+    },
+    "Strain": {
+      "description": "How far the paper has stretched, or shrunk where it is negative, since it was perforated, as a share of its length then: the strain ΔL / L. It is a ratio of two lengths and so has no unit of its own, and it is stated in per cent because what paper does is a matter of tenths of one. It is taken in one direction, along the roll or across it, since machine-made paper does not stretch the same way in both.",
+      "properties": {
+        "uncertainty": {
+          "$ref": "#/definitions/Percent",
+          "description": "The standard uncertainty of the value, one standard deviation. Left out where the measurement gave none, which leaves it no more precise than paper is known to vary.",
+          "ontology": "reo:uncertainty"
+        },
+        "unit": {
+          "const": "percent",
+          "description": "The unit of measurement.",
+          "type": "string",
+          "ontology": "crm:P91 has unit"
+        },
+        "value": {
+          "$ref": "#/definitions/Quantity%3C%22percent%22%3E",
+          "description": "The measured value.",
+          "ontology": "crm:P90 has value"
+        }
+      },
+      "required": [
+        "unit",
+        "value"
+      ],
+      "type": "object",
+      "ontology": "crm:E54 Dimension"
     },
     "Technique": {
       "description": "How a trace was put on the paper.",

@@ -7,7 +7,10 @@ export type { EditionOp } from "./draft.js"
 export {
     createVersion,
     addCopy,
+    alignmentFor,
     alignCopy,
+    alignCopies,
+    chooseReferenceCopy,
     unalignCopy,
     shortenCopy,
     unshortenCopy,
@@ -17,6 +20,7 @@ export {
     stateCarriage,
     clearCarriage,
     addGeneralCondition,
+    statePaperStretch,
     addTear,
     symbolsCarriedOnlyBy,
     removeCopy

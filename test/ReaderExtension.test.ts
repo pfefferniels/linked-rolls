@@ -3,9 +3,10 @@ import { produce } from 'immer'
 import { Edition } from '../src/model/Edition'
 import { EditionView } from '../src/view/EditionView'
 import { AnyFeature, isPlaced } from '../src/model/Feature'
-import { revertShortening, shortenChains, tooShortToShorten } from '../src/collation/alignment'
+import { applyAlignment, revertShortening, shortenChains, tooShortToShorten } from '../src/collation/alignment'
+import { asJsonLd } from '../src/io/asJsonLd'
 import { shortenCopy, unshortenCopy } from '../src/ops'
-import { mm } from '../src/model/Quantity'
+import { mm, track } from '../src/model/Quantity'
 import { alteration, copy, editionOf, hole } from './editionFixture'
 
 /**
@@ -134,5 +135,32 @@ describe('the functions the ops are built from', () => {
 
         revertShortening(copy)
         expect(copy.measurements.readerExtension).toBeUndefined()
+    })
+})
+
+describe('the extension on a copy that is aligned', () => {
+    /** The pneumatic copy put onto an axis 30 % longer than its own paper. */
+    const scaled = (): Edition => produce(read(), draft => {
+        applyAlignment({ shift: { horizontal: mm(0), vertical: track(0) }, scale: 1.3 }, draft.copies[0])
+    })
+
+    it('is taken off at the length it has on the axis, being a length on the copy\'s own paper', () => {
+        const next = produce(scaled(), shortenCopy('pneumatic', mm(1.6)))
+        expect(lengthOf(next, 'long')).toBeCloseTo((340.6 - 200 - 1.6) * 1.3, 9)
+        expect(next.copies[0].measurements.readerExtension).toEqual({ length: 1.6 })
+    })
+
+    it('is written off the copy\'s own places as the length it is', () => {
+        const next = produce(scaled(), shortenCopy('pneumatic', mm(1.6)))
+        const [, long] = asJsonLd(next).copies[0].production.produced
+        expect(long.horizontal).toEqual({ unit: 'mm', from: 200, to: 339 })
+    })
+
+    it('goes back on as it came off, whatever the copy was aligned by in between', () => {
+        const next = produce(produce(scaled(), shortenCopy('pneumatic', mm(1.6))), draft => {
+            applyAlignment({ shift: { horizontal: mm(10), vertical: track(0) }, scale: 0.9 }, draft.copies[0])
+        })
+        const back = produce(next, unshortenCopy('pneumatic'))
+        expect(lengthOf(back, 'long')).toBeCloseTo((340.6 - 200) * 0.9, 9)
     })
 })

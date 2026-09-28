@@ -338,7 +338,7 @@ reo:paperSpeed
     rdfs:domain lrmoo:F32_Item_Production_Event ;
     rdfs:range crm:E54_Dimension ;
     rdfs:label "paper speed"@en ;
-    rdfs:comment """This property associates the production of a copy with the paper speed the copy was cut for, as its label, its catalogue or its format states it: a value (P90 has value) in the unit given by P91 has unit, as feet or metres per minute. Rolls for the Green Welte and the Licensee were cut from the Welte-Mignon masters for slower paper speeds (Phillips 2016, pp. 121 and 123), so such a copy comes out shorter than the red roll of the same recording by the ratio of the speeds. An alignment of the two measures that ratio; this property states its cause, which lies in the production and not in the condition of the paper. CIDOC CRM gives an activity no dimension of its own, hence a property of this ontology."""@en ;
+    rdfs:comment """This property associates the production of a copy with the paper speed the copy was cut for, as its label, its catalogue or its format states it: a value (P90 has value) in the unit given by P91 has unit, as feet or metres per minute. Rolls for the Green Welte and the Licensee were cut from the Welte-Mignon masters for slower paper speeds (Phillips 2016, pp. 121 and 123), so such a copy comes out shorter than the red roll of the same recording by the ratio of the speeds. An alignment of the two measures that ratio together with how far the paper of each has stretched, and measures it more closely than a label states a speed; this property states what the label or the catalogue says, which is held against the ratio rather than used to find it. CIDOC CRM gives an activity no dimension of its own, hence a property of this ontology."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:dimensions
@@ -495,4 +495,27 @@ reo:depth
     rdfs:range crm:E54_Dimension ;
     rdfs:label "depth"@en ;
     rdfs:comment """This property associates a tear with how far it reaches into the paper, taken across the roll from the edge it runs in from (reo:edge) and stated with P90 has value and P91 has unit. It tells a tear that stays in the margin from one that reaches the perforations. The analyses Stanford made of its roll scans list an edge tear only once it is deeper than a tenth of an inch."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:strainAlong
+    a owl:ObjectProperty ;
+    rdfs:domain crm:E3_Condition_State ;
+    rdfs:range crm:E54_Dimension ;
+    rdfs:label "strain along the roll"@en ;
+    rdfs:comment """This property associates the paper-stretch condition of a copy with how far its paper was measured to have stretched along the roll since it was perforated, or shrunk where the value is negative: the strain, a share of the length, stated with P90 has value and P91 has unit in per cent, and with reo:uncertainty where the measurement gives one. It is stated only where something was measured on the copy. What the alignments of several copies say about their paper is worked out from them rather than stated, since the scale of one alignment has three causes that it cannot tell apart: the paper of each of the two copies and the paper speed each was cut for."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:strainAcross
+    a owl:ObjectProperty ;
+    rdfs:domain crm:E3_Condition_State ;
+    rdfs:range crm:E54_Dimension ;
+    rdfs:label "strain across the roll"@en ;
+    rdfs:comment """This property associates the paper-stretch condition of a copy with how far its paper was measured to have stretched across the roll, stated as reo:strainAlong is. Machine-made paper stretches more across than along, so the one is no measure of the other. The width of a roll is a poor measure of it, since the paper was slit to width with a tolerance of its own; the track pitch against that of the punch block is a better one."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:uncertainty
+    a owl:DatatypeProperty ;
+    rdfs:domain crm:E54_Dimension ;
+    rdfs:label "uncertainty"@en ;
+    rdfs:comment """This property associates a dimension with the standard uncertainty of its value (P90 has value): one standard deviation, in the unit of the value. CIDOC CRM states a dimension by a value and leaves how surely it is known unstated, hence this property."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .

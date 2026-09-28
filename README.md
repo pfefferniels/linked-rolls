@@ -22,12 +22,15 @@ single undo step.
 
 ```ts
 import { produce } from 'immer'
-import { asJsonLd, connectVersions, createVersion, EditionView, importJsonLd, readFromStanfordAton } from 'linked-rolls'
+import { alignCopy, asJsonLd, connectVersions, createVersion, EditionView, importJsonLd, readFromStanfordAton } from 'linked-rolls'
 
 let edition = importJsonLd(json)
 
-// Add a copy read from a SUPRA analysis file, with a version of its own
-edition = produce(edition, createVersion(readFromStanfordAton(aton)))
+// Add a copy read from a SUPRA analysis file, with a version of its own,
+// and align it with the reference copy, whose millimetres are the axis
+const copy = readFromStanfordAton(aton)
+edition = produce(edition, createVersion(copy))
+edition = produce(edition, alignCopy(copy.id))
 
 // Collate that version against another one
 const view = new EditionView(edition)
@@ -35,6 +38,14 @@ edition = produce(edition, connectVersions(view, childId, parentId))
 
 const document = asJsonLd(edition)
 ```
+
+Within the library every place along the roll is a place on the edition's
+axis, the millimetres of its reference copy. A document holds each copy's
+features at the copy's own places, as they were read, together with the
+alignment that carries them onto the axis; the import and the export map
+between the two. What the alignments say about the paper of the copies,
+how far each has stretched and how the papers of the systems relate, is
+worked out by `paperOf`.
 
 Documents written by earlier releases are brought up to date on import.
 To check a document against the schema:

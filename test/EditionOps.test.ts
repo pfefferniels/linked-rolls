@@ -4,17 +4,17 @@ import { Edition } from '../src/model/Edition'
 import { EditionView, Path } from '../src/view/EditionView'
 import { Edit } from '../src/model/Edit'
 import { AnySymbol, isCommand, placementsOf } from '../src/model/Symbol'
-import { featuresOf, PaperSpeed, PaperStretch } from '../src/model/RollCopy'
+import { featuresOf } from '../src/model/RollCopy'
 import { constraintProblems } from '../src/analysis/constraints'
-import { Assumption, assignObject, idOf, idsOf } from '../src/model/Assumption'
+import { Assumption, idOf, idsOf } from '../src/model/Assumption'
 import { CollationTolerance, defaultCollationTolerance } from '../src/collation/Collation'
 import {
-    addReason, alignCopy, clearBelief, collateSymbols, connectVersions, createBelief, createVersion, deriveVersion,
+    addReason, clearBelief, collateSymbols, connectVersions, createBelief, createVersion, deriveVersion,
     detachVersion, mergeEdits, nameCopy, pairCommands, placeCommand, removeFeatures, removeReason, removeSymbols,
-    removeVersion, setCertainty, splitEdit, unalignCopy, unpairCommand, unplaceCommand
+    removeVersion, setCertainty, splitEdit, unpairCommand, unplaceCommand
 } from '../src/ops'
 import { copy, cutFor, edition, editionOf, expression, hole, note, version } from './editionFixture'
-import { feetPerMinute, mm, track } from '../src/model/Quantity'
+import { mm } from '../src/model/Quantity'
 import { systemOf } from '../src/systems/TrackerBar'
 import { welteT98 } from '../src/systems/welteT98/bar'
 import { welteT100 } from '../src/systems/welteT100/bar'
@@ -99,62 +99,6 @@ describe('creating a version from a copy', () => {
         expect(inserted.map(symbols => symbols.length)).toEqual([1, 1])
         expect(inserted.flat().map(describeSymbol)).toEqual(['note 60', 'ForzandoOn'])
         expect(inserted.flat().map(symbol => idsOf(symbol.carriers))).toEqual([['hole-note'], ['hole-on']])
-    })
-})
-
-describe('aligning a copy', () => {
-    const stretch = assignObject<PaperStretch>({ conditionType: 'paper-stretch', factor: 1.5 })
-    const shift = { horizontal: mm(2), vertical: track(1) }
-    const holeOf = (edition: Edition) => featuresOf(edition.copies[1])[0]
-
-    const speed = assignObject<PaperSpeed>({ value: feetPerMinute(8), unit: 'ft/min' })
-
-    it('shifts and then scales its features, recording both', () => {
-        const next = produce(edition(), alignCopy('second', shift, 1.5))
-        const aligned = next.copies[1]
-
-        expect(holeOf(next).horizontal).toEqual({ unit: 'mm', from: 1504.5, to: 1519.5 })
-        expect(holeOf(next).vertical.from).toBe(48)
-        expect(aligned.measurements.shift).toEqual(shift)
-        expect(aligned.measurements.scale).toBe(1.5)
-        expect(aligned.conditions).toEqual([])
-    })
-
-    it('puts the scale down to the paper where the reading says so', () => {
-        const next = produce(edition(), alignCopy('second', shift, 1.5, { cause: 'paper', condition: stretch }))
-        expect(next.copies[1].conditions).toEqual([stretch])
-        expect(next.copies[1].production?.speed).toBeUndefined()
-    })
-
-    it('puts the scale down to the speed the copy was cut for where the reading says so', () => {
-        const next = produce(edition(), alignCopy('second', shift, 1.5, { cause: 'speed', speed }))
-        expect(next.copies[1].production?.speed).toEqual(speed)
-        expect(next.copies[1].conditions).toEqual([])
-    })
-
-    it('is undone completely by unaligning, the paper stretch going with it', () => {
-        const aligned = produce(edition(), alignCopy('second', shift, 1.5, { cause: 'paper', condition: stretch }))
-        const next = produce(aligned, unalignCopy('second'))
-
-        expect(holeOf(next).horizontal.from).toBeCloseTo(1001)
-        expect(holeOf(next).horizontal.to).toBeCloseTo(1011)
-        expect(holeOf(next).vertical.from).toBe(47)
-        expect(next.copies[1].measurements.shift).toBeUndefined()
-        expect(next.copies[1].measurements.scale).toBeUndefined()
-        expect(next.copies[1].conditions).toEqual([])
-    })
-
-    it('keeps a speed stated when unaligning, being a fact about the copy', () => {
-        const aligned = produce(edition(), alignCopy('second', shift, 1.5, { cause: 'speed', speed }))
-        const next = produce(aligned, unalignCopy('second'))
-
-        expect(next.copies[1].production?.speed).toEqual(speed)
-        expect(next.copies[1].measurements.scale).toBeUndefined()
-    })
-
-    it('leaves a copy that was never aligned as it is', () => {
-        const before = edition()
-        expect(produce(before, unalignCopy('second'))).toBe(before)
     })
 })
 
