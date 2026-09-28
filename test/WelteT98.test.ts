@@ -119,11 +119,11 @@ describe('the dynamics of a green roll', () => {
     })
 
     it('keeps the bellows between its rails', () => {
+        // Asked of each curve at once: a curve has a sample for every row
+        // of the scan, and an expectation for every sample took seconds.
+        const offTheRails = (value: number) => !(value >= -1e-9 && value <= 1 + 1e-9)
         for (const curve of [dynamics(green, 'bass'), dynamics(green, 'treble')]) {
-            curve.travel.forEach(value => {
-                expect(value).toBeGreaterThanOrEqual(-1e-9)
-                expect(value).toBeLessThanOrEqual(1 + 1e-9)
-            })
+            expect(curve.travel.find(offTheRails)).toBeUndefined()
         }
     })
 
