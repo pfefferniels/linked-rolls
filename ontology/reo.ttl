@@ -253,7 +253,9 @@ reo:produced
 # Entailments
 #
 # What the edition leaves to a reasoner. Each chain is within
-# OWL 2 RL.
+# OWL 2 RL. The chains on time order events and compare no dates:
+# which of the dates they relate an event to bounds it closest is
+# for a query to pick.
 #################################################################
 
 crm:P56_bears_feature
@@ -268,6 +270,14 @@ crm:P184_ends_before_or_with_the_end_of
                              crm:P128i_is_carried_by
                              [ owl:inverseOf reo:produced ] ) .
 
+crm:P175_starts_before_or_with_the_start_of
+    owl:propertyChainAxiom ( lrmoo:R81_recorded
+                             lrmoo:R81i_is_recorded_in
+                             lrmoo:R19_created_a_realisation_of
+                             lrmoo:R3_is_realised_in
+                             lrmoo:R75_incorporates
+                             reo:involvedEdit ) .
+
 
 #################################################################
 # Shortcuts
@@ -281,7 +291,7 @@ reo:involvedEdit
     rdfs:domain lrmoo:F2_Expression ;
     rdfs:range reo:Edit ;
     rdfs:label "involved edit"@en ;
-    rdfs:comment """This property associates a version of a roll with an edit by which it was made from the version it is based on. It is a shortcut of the path R17i was created by, F28 Expression Creation, P9 consists of."""@en ;
+    rdfs:comment """This property associates a version of a roll with an edit by which it was made from the version it is based on. It is a shortcut of the path R17i was created by, F28 Expression Creation, P9 consists of. Every edit of a version of a roll began no earlier than the recording of the roll, since every version derives from it: the recording starts before or with the start of the edit (P175), and not strictly before it, as the edits of the mother roll may be part of the recording. The axiom on P175 among the entailments states this over the path from the recording through the roll to the edition that incorporates the version, so that it needs neither a creation stated for every version nor to know which version is the mother roll. The path sets out from the performance recorded and back again, since a creation that recorded nothing may realise the roll as well, as the creation of the edition does."""@en ;
     owl:propertyChainAxiom ( lrmoo:R17i_was_created_by crm:P9_consists_of ) ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 

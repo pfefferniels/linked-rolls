@@ -134,10 +134,16 @@ const theOne = (all: Triple[], klass: string): string => {
     return found[0]
 }
 
-/** LRMoo 1.0, p. 44: R28 produced is a subproperty of P108 has produced. */
+/**
+ * LRMoo 1.0, p. 44: R28 produced is a subproperty of P108 has produced.
+ * The inverses are those the LRMoo 1.0 OWL declares.
+ */
 const lrmooAxioms = `
     <${lrmoo}R28_produced> <${rdfs}subPropertyOf> <${crm}P108_has_produced> .
     <${lrmoo}R28i_was_produced_by> <${owl}inverseOf> <${lrmoo}R28_produced> .
+    <${lrmoo}R81_recorded> <${owl}inverseOf> <${lrmoo}R81i_is_recorded_in> .
+    <${lrmoo}R19_created_a_realisation_of> <${owl}inverseOf> <${lrmoo}R19i_was_realised_through> .
+    <${lrmoo}R3_is_realised_in> <${owl}inverseOf> <${lrmoo}R3i_realises> .
 `
 
 /** A property of a chain, or its inverse where the chain names it by owl:inverseOf. */
@@ -329,6 +335,29 @@ describe('what a reasoner derives from the acts', () => {
     })
 })
 
+/**
+ * Two versions, the second derived from the first, and a copy of each.
+ * The note the first version adds is kept by the second, so the copy of
+ * the second carries it as well.
+ */
+const withStemma = () => editionOf(
+    [copy('first', [hole('first-note', 10, 12, 47)]),
+        copy('second', [hole('second-note', 10, 12, 47), hole('second-added', 20, 22, 48)])],
+    [version('A', [{ type: 'edit', id: 'edit-a', insert: [note('kept', 60, 'first-note', 'second-note')] }]),
+        version('B', [{ type: 'edit', id: 'edit-b', insert: [note('added', 61, 'second-added')] }], 'A')]
+)
+
+const productionOf = (all: Triple[], copyId: string): string => {
+    const [production] = statedOf(all, of(copyId), `${lrmoo}R28i_was_produced_by`)
+    return production
+}
+
+const recordingIn = (all: Triple[]): string => {
+    const [roll] = statedOf(all, base, `${lrmoo}R3i_realises`)
+    const [recording] = statedOf(all, roll, `${lrmoo}R19i_was_realised_through`)
+    return recording
+}
+
 describe('what a reasoner derives about when a version was made', () => {
     it('lets an edit end no later than the punching of a chain carrying what it added', async () => {
         const all = entailedBy(await triples())
@@ -346,5 +375,33 @@ describe('what a reasoner derives about when a version was made', () => {
         const [handPunching] = statedOf(all, of('older'), `${crm}P31i_was_modified_by`)
         expect(statedOf(all, of('edit-b'), `${crm}P184_ends_before_or_with_the_end_of`)).toEqual([handPunching])
         expect(handPunching).not.toEqual(production)
+    })
+
+    it('states no order in time itself', async () => {
+        const all = await triples(withStemma())
+        const ordering = [`${crm}P175_starts_before_or_with_the_start_of`, `${crm}P184_ends_before_or_with_the_end_of`]
+        expect(all.filter(({ property }) => ordering.includes(property))).toEqual([])
+    })
+
+    it('lets the copies of a later version bound the edits of an earlier one', async () => {
+        const all = entailedBy(await triples(withStemma()))
+        expect(statedOf(all, of('edit-b'), `${crm}P184_ends_before_or_with_the_end_of`))
+            .toEqual([productionOf(all, 'second')])
+        expect(statedOf(all, of('edit-a'), `${crm}P184_ends_before_or_with_the_end_of`).sort())
+            .toEqual([productionOf(all, 'first'), productionOf(all, 'second')].sort())
+    })
+
+    it('lets the recording start no later than any edit of any version', async () => {
+        const all = entailedBy(await triples(withStemma()))
+        expect(statedOf(all, recordingIn(all), `${crm}P175_starts_before_or_with_the_start_of`).sort())
+            .toEqual([of('edit-a'), of('edit-b')])
+    })
+
+    it('does not take the creation of the edition for the recording, though it realises the roll too', async () => {
+        const stated = await triples(withStemma())
+        const [creation] = statedOf(stated, base, `${lrmoo}R17i_was_created_by`)
+        const [roll] = statedOf(stated, base, `${lrmoo}R3i_realises`)
+        const all = entailedBy([...stated, { subject: creation, property: `${lrmoo}R19_created_a_realisation_of`, object: roll }])
+        expect(statedOf(all, creation, `${crm}P175_starts_before_or_with_the_start_of`)).toEqual([])
     })
 })

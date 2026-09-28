@@ -523,7 +523,7 @@
       "type": "string"
     },
     "Edit": {
-      "description": "A set of edits transforms a version of a roll into another version. Edits insert or delete symbols, or both (= replace). Edits may be motivated by a given set of reasons, e.g. to add an additional accent or to correct an error. If an edit is the interpretation of a metamark, such as a pencil mark, this should be made explicit using a meaning comprehension on the `@annotation` field.",
+      "description": "A set of edits transforms a version of a roll into another version. Edits insert or delete symbols, or both (= replace). Edits may be motivated by a given set of reasons, e.g. to add an additional accent or to correct an error. If an edit is the interpretation of a metamark, such as a pencil mark, this should be made explicit using a meaning comprehension on the `@annotation` field. An edit states no date. That it ended no later than the act that made a feature carrying a symbol it inserts, and began no earlier than the recording, a reasoner derives with the axioms of reo.ttl; which of those dates bounds it closest is for a query to pick.",
       "properties": {
         "@annotation": {
           "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",

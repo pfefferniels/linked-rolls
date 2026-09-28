@@ -86,7 +86,9 @@ copies and patches. The ontology derives them by property chains over
 `reo:produced`, added for the purpose, and `migrate` drops the keys
 from older exports. A chain over `reo:added` followed, which lets an
 edit end before or with the end of the act that punched a chain of
-holes carrying what the edit added (P184).
+holes carrying what the edit added (P184), and one over the recording
+of the roll, which lets the recording start before or with the start
+of every edit of a version of the roll (P175).
 
 ## Publishing
 
