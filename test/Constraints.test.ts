@@ -4,7 +4,7 @@ import * as path from 'path'
 import { importJsonLd } from '../src/io/importJsonLd'
 import { produce } from 'immer'
 import { symbolIn, versionIn } from '../src/lookup/lookup'
-import { getAt, pathOf } from '../src/lookup/paths'
+import { getAt, pathIn } from '../src/lookup/paths'
 import { placedCarriersOf, placeOf, snapshotOf } from '../src/analysis/text'
 import { Edition } from '../src/model/Edition'
 import { FeatureOrPatch } from '../src/model/Feature'
@@ -49,11 +49,11 @@ const setUp = () => {
 
     /** States something of the command, in the edition as it now stands. */
     const stating = (symbol: Note | Expression, statement: (command: Note | Expression) => void) => {
-        const path = pathOf(edition, symbol.id)!
+        const path = pathIn(edition, symbol.id)!
         edition = produce(edition, draft => statement(getAt<Note | Expression>(path, draft)!))
     }
 
-    const copyOf = (featureId: string) => pathOf(edition, featureId)?.[1]
+    const copyOf = (featureId: string) => pathIn(edition, featureId)?.[1]
     const onsetOn = (symbol: Note | Expression, copy: number | string | undefined) => {
         const carrier = placedCarriersOf(edition, symbol).find(c => copyOf(c.id) === copy)
         if (!carrier) throw new Error(`${symbol.id} has no carrier on copy ${copy}`)
@@ -71,7 +71,7 @@ const setUp = () => {
             if (distance === undefined) throw new Error(`no distance for copy ${copy}`)
             const length = horizontal.to - horizontal.from
             const from = mm(onsetOn(reference, copy) + distance)
-            return { path: pathOf(edition, id)!, from, to: mm(from + length) }
+            return { path: pathIn(edition, id)!, from, to: mm(from + length) }
         })
         edition = produce(edition, draft => moves.forEach(({ path, from, to }) => {
             const { horizontal } = getAt<FeatureOrPatch>(path, draft)!

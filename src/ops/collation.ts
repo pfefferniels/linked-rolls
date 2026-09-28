@@ -1,7 +1,7 @@
 /** Collating a version against the one it derives from, and taking a collation apart again. */
 import { Draft } from "immer"
 import { v4 } from "uuid"
-import { getAt, pathOf } from "../lookup/paths.js"
+import { getAt, pathIn } from "../lookup/paths.js"
 import { Edition } from "../model/Edition.js"
 import { AnySymbol } from "../model/Symbol.js"
 import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance, isCollationsOwn, unchecked } from "../collation/Collation.js"
@@ -18,7 +18,7 @@ import { copyOfFeature, versionIn } from "../lookup/lookup.js"
 /** The carriers of each collated symbol pass to its counterpart. */
 const handOverCarriers = (edition: Edition, draft: Draft<Edition>, collations: readonly Collation[]) =>
     collations.forEach(({ symbol, counterpart }) => {
-        const path = pathOf(edition, counterpart.id)
+        const path = pathIn(edition, counterpart.id)
         const target = path && getAt<Draft<AnySymbol>>(path, draft)
         target?.carriers.push(...symbol.carriers)
     })
@@ -276,7 +276,7 @@ export const separateReadings = (
 
     return onVersion(versionId, (version, draft) => {
         shared.forEach(({ symbol, theirs }) => {
-            const path = pathOf(edition, symbol.id)
+            const path = pathIn(edition, symbol.id)
             const target = path && getAt<Draft<AnySymbol>>(path, draft)
             if (target) target.carriers = theirs
         })

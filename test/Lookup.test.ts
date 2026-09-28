@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { copyIn, versionIn } from '../src/lookup/lookup'
-import { getAt, linksTo, pathOf } from '../src/lookup/paths'
+import { getAt, linksTo, pathIn } from '../src/lookup/paths'
 import { predecessorOf } from '../src/analysis/stemma'
 import { placeOf, snapshotOf } from '../src/analysis/text'
 import { stateOf } from '../src/ops/draft'
@@ -37,7 +37,7 @@ describe('indexing an edition', () => {
         const seen = childFirst()
         expect(predecessorOf(seen, 'B')?.id).toEqual('A')
         expect(snapshotOf(seen, 'B').map(symbol => symbol.id)).toEqual(['note'])
-        expect(pathOf(seen, 'A')).toEqual(['versions', 1])
+        expect(pathIn(seen, 'A')).toEqual(['versions', 1])
     })
 })
 
@@ -196,7 +196,7 @@ describe('what is known of a state', () => {
 
         expect(snapshotOf(after, 'A')).not.toContain(struck)
         expect(snapshotOf(before, 'A')).toContain(struck)
-        expect(pathOf(after, struck.id)).toBeUndefined()
+        expect(pathIn(after, struck.id)).toBeUndefined()
     })
 
     /** What was worked out would otherwise stay behind unnoticed. */
@@ -226,7 +226,7 @@ describe('what is known of a state', () => {
 
     it('returns what stands at a path, a zero included', () => {
         const seen = editionOf([copy('first', [hole('at-start', 0, 5, 47)])], [])
-        const path = [...pathOf(seen, 'at-start')!, 'horizontal', 'from']
+        const path = [...pathIn(seen, 'at-start')!, 'horizontal', 'from']
         expect(getAt<number>(path, seen)).toBe(0)
         expect(getAt(['copies', 0, 'measurements', 'nothing'], seen)).toBeUndefined()
     })

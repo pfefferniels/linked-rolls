@@ -98,7 +98,7 @@ const placesIn = perState((edition: Edition): Places => {
 })
 
 /** Where the entity with the id stands in the edition, or nothing where it holds none. */
-export const pathOf = (edition: Edition, id: string): Path | undefined => {
+export const pathIn = (edition: Edition, id: string): Path | undefined => {
     const trail = placesIn(edition).paths.get(id);
     return trail === undefined ? undefined : laidOut(trail);
 }

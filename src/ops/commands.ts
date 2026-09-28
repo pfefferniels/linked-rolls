@@ -1,6 +1,6 @@
 /** Statements that place a command relative to another, or pair two. */
 import { Draft } from "immer"
-import { getAt, pathOf } from "../lookup/paths.js"
+import { getAt, pathIn } from "../lookup/paths.js"
 import { AnyCommand, AnySymbol, PlacementRelation, isCommand, placementRelations } from "../model/Symbol.js"
 import { assignReference } from "../model/Assumption.js"
 import { EditionOp, reading } from "./draft.js"
@@ -12,7 +12,7 @@ import { EditionOp, reading } from "./draft.js"
  */
 const onCommand = (id: string, op: (command: Draft<AnyCommand>) => void): EditionOp =>
     reading(edition => draft => {
-        const path = pathOf(edition, id)
+        const path = pathIn(edition, id)
         const symbol = path && getAt<Draft<AnySymbol>>(path, draft)
         if (isCommand(symbol)) op(symbol)
     })

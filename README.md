@@ -40,7 +40,7 @@ const document = asJsonLd(edition)
 ```
 
 What is read off an edition, such as `snapshotOf`, `placeOf`,
-`versionIn` or `pathOf`, is worked out once for each state of it and
+`versionIn` or `pathIn`, is worked out once for each state of it and
 kept for as long as the state is. Every change through `produce` yields
 a new state, so nothing needs to be told that the edition changed. For
 the same reason an edition is frozen once anything has been asked of it,

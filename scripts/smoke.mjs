@@ -20,7 +20,7 @@ const check = async (what, run) => {
 const lib = await import('../lib/index.js')
 
 await check('the package exports what it is for', () => {
-    ;['validate', 'migrate', 'importJsonLd', 'asJsonLd', 'snapshotOf', 'pathOf', 'scatterOf', 'sidesOf']
+    ;['validate', 'migrate', 'importJsonLd', 'asJsonLd', 'snapshotOf', 'pathIn', 'scatterOf', 'sidesOf']
         .forEach(name => assert.equal(typeof lib[name], 'function', `${name} is missing`))
 })
 
