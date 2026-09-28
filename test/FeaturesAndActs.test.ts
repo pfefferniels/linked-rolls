@@ -8,7 +8,7 @@ import welteLicenseeContext from '../src/spec/welte-licensee.context.json'
 import welteT98Context from '../src/spec/welte-t98.context.json'
 import { AnyFeature, Patch, Mark, NestedFeature, Transcription, Writing } from '../src/model/Feature'
 import { Modification } from '../src/model/RollCopy'
-import { assignObject } from '../src/model/Assumption'
+import { assignObject, notBefore } from '../src/model/Assumption'
 import { asJsonLd } from '../src/io/asJsonLd'
 import { importJsonLd } from '../src/io/importJsonLd'
 import { degrees, mm, track } from '../src/model/Quantity'
@@ -102,8 +102,8 @@ interface Triple { subject: string, property: string, object: string }
 
 const withoutBrackets = (term: string) => term.replace(/^<|>$/g, '')
 
-const triples = async (edition: Edition = withFeatures()): Promise<Triple[]> => {
-    const quads = await jsonld.toRDF(exportOf(edition), {
+const triplesOf = async (document: Json): Promise<Triple[]> => {
+    const quads = await jsonld.toRDF(document, {
         format: 'application/n-quads',
         documentLoader
     }) as unknown as string
@@ -115,6 +115,8 @@ const triples = async (edition: Edition = withFeatures()): Promise<Triple[]> => 
             : []
     })
 }
+
+const triples = async (edition: Edition = withFeatures()): Promise<Triple[]> => triplesOf(exportOf(edition))
 
 const of = (id: string) => `${base}${id}`
 
@@ -144,6 +146,8 @@ const lrmooAxioms = `
     <${lrmoo}R81_recorded> <${owl}inverseOf> <${lrmoo}R81i_is_recorded_in> .
     <${lrmoo}R19_created_a_realisation_of> <${owl}inverseOf> <${lrmoo}R19i_was_realised_through> .
     <${lrmoo}R3_is_realised_in> <${owl}inverseOf> <${lrmoo}R3i_realises> .
+    <${lrmoo}R17_created> <${owl}inverseOf> <${lrmoo}R17i_was_created_by> .
+    <${lrmoo}R76_is_derivative_of> <${owl}inverseOf> <${lrmoo}R76i_has_derivative> .
 `
 
 /** A property of a chain, or its inverse where the chain names it by owl:inverseOf. */
@@ -155,6 +159,7 @@ interface Axioms {
     readonly supers: ReadonlyMap<string, string[]>
     readonly inverses: ReadonlyMap<string, string[]>
     readonly chains: readonly Chain[]
+    readonly transitive: ReadonlySet<string>
 }
 
 const axioms = (): Axioms => {
@@ -182,7 +187,10 @@ const axioms = (): Axioms => {
         chains: quads.filter((quad: Quad) => quad.predicate.value === `${owl}propertyChainAxiom`).map(quad => ({
             steps: listOf(quad.object).map(stepOf),
             implied: quad.subject.value
-        }))
+        })),
+        transitive: new Set(quads
+            .filter(quad => quad.predicate.value === `${rdf}type` && quad.object.value === `${owl}TransitiveProperty`)
+            .map(quad => quad.subject.value))
     }
 }
 
@@ -200,15 +208,17 @@ const startsOf = (all: Triple[], { property, inverse }: Step): string[] =>
 const along = (all: Triple[], node: string, steps: readonly Step[]): string[] =>
     steps.reduce((nodes, step) => nodes.flatMap(from => reached(all, from, step)), [node])
 
-/** What one application of the rules for subproperties, inverses and chains adds to the triples. */
-const oneStep = (all: Triple[], { supers, inverses, chains }: Axioms): Triple[] => [
+/** What one application of the rules for subproperties, inverses, chains and transitive properties adds to the triples. */
+const oneStep = (all: Triple[], { supers, inverses, chains, transitive }: Axioms): Triple[] => [
     ...all.flatMap(t => (supers.get(t.property) ?? []).map(property => ({ ...t, property }))),
     ...all.flatMap(t => (inverses.get(t.property) ?? []).map(property => ({ subject: t.object, property, object: t.subject }))),
     ...chains.flatMap(({ steps, implied }) => startsOf(all, steps[0])
-        .flatMap(subject => along(all, subject, steps).map(object => ({ subject, property: implied, object }))))
+        .flatMap(subject => along(all, subject, steps).map(object => ({ subject, property: implied, object })))),
+    ...all.filter(t => transitive.has(t.property))
+        .flatMap(t => statedOf(all, t.object, t.property).map(object => ({ ...t, object })))
 ]
 
-/** The triples together with everything the rules derive from them, as OWL 2 RL applies prp-spo1, prp-inv and prp-spo2. */
+/** The triples together with everything the rules derive from them, as OWL 2 RL applies prp-spo1, prp-inv, prp-spo2 and prp-trp. */
 const entailedBy = (all: Triple[], rules: Axioms = axioms()): Triple[] => {
     const known = new Set(all.map(keyOf))
     const added = [...new Map(oneStep(all, rules).filter(t => !known.has(keyOf(t))).map(t => [keyOf(t), t])).values()]
@@ -352,6 +362,24 @@ const productionOf = (all: Triple[], copyId: string): string => {
     return production
 }
 
+/** The act that made the version, which the export states for every version. */
+const creationOf = (all: Triple[], versionId: string): string => {
+    const [creation] = statedOf(all, of(versionId), `${lrmoo}R17i_was_created_by`)
+    return creation
+}
+
+/** Three versions, each derived from the one before. */
+const throughThree = () => editionOf(
+    [],
+    [version('A', []), version('B', [], 'A'), version('C', [], 'B')]
+)
+
+/** A copy altered by hand, a chain punched in it carrying what a version added. */
+const punchedByHand = () => editionOf(
+    [{ ...copy('older', []), modifications: [alteration(hole('by-hand', 10, 12, 47))] }],
+    [version('B', [{ type: 'edit', id: 'edit-b', insert: [note('added', 60, 'by-hand')] }])]
+)
+
 const recordingIn = (all: Triple[]): string => {
     const [roll] = statedOf(all, base, `${lrmoo}R3i_realises`)
     const [recording] = statedOf(all, roll, `${lrmoo}R19i_was_realised_through`)
@@ -366,11 +394,7 @@ describe('what a reasoner derives about when a version was made', () => {
     })
 
     it('bounds it by the act that punched the chain, not by the older copy altered by hand', async () => {
-        const punchedByHand = editionOf(
-            [{ ...copy('older', []), modifications: [alteration(hole('by-hand', 10, 12, 47))] }],
-            [version('B', [{ type: 'edit', id: 'edit-b', insert: [note('added', 60, 'by-hand')] }])]
-        )
-        const all = entailedBy(await triples(punchedByHand))
+        const all = entailedBy(await triples(punchedByHand()))
         const [production] = statedOf(all, of('older'), `${lrmoo}R28i_was_produced_by`)
         const [handPunching] = statedOf(all, of('older'), `${crm}P31i_was_modified_by`)
         expect(statedOf(all, of('edit-b'), `${crm}P184_ends_before_or_with_the_end_of`)).toEqual([handPunching])
@@ -391,10 +415,36 @@ describe('what a reasoner derives about when a version was made', () => {
             .toEqual([productionOf(all, 'first'), productionOf(all, 'second')].sort())
     })
 
-    it('lets the recording start no later than any edit of any version', async () => {
+    it('gives every version a creation, and reads none back that states nothing', async () => {
+        const all = await triples(withStemma())
+        expect(creationOf(all, 'A')).toBeTruthy()
+        expect(creationOf(all, 'B')).toBeTruthy()
+        const read = importJsonLd(exportOf(withStemma()))
+        expect(read.versions.map(version => version.creation)).toEqual([undefined, undefined])
+        const made = { ...withStemma(), versions: withStemma().versions.map(version =>
+            ({ ...version, creation: { date: notBefore(new Date(1924, 0, 1)) } })) }
+        expect(importJsonLd(exportOf(made)).versions[0].creation).toEqual(made.versions[0].creation)
+    })
+
+    it('lets the creation of a version end no later than the punching of a copy carrying what it added', async () => {
+        const all = entailedBy(await triples(withStemma()))
+        expect(statedOf(all, creationOf(all, 'B'), `${crm}P184_ends_before_or_with_the_end_of`))
+            .toEqual([productionOf(all, 'second')])
+        expect(statedOf(all, creationOf(all, 'A'), `${crm}P184_ends_before_or_with_the_end_of`).sort())
+            .toEqual([productionOf(all, 'first'), productionOf(all, 'second')].sort())
+    })
+
+    it('bounds the creation by the punching of a copy alone, not by an alteration by hand', async () => {
+        const all = entailedBy(await triples(punchedByHand()))
+        const [handPunching] = statedOf(all, of('older'), `${crm}P31i_was_modified_by`)
+        expect(statedOf(all, of('edit-b'), `${crm}P184_ends_before_or_with_the_end_of`)).toEqual([handPunching])
+        expect(statedOf(all, creationOf(all, 'B'), `${crm}P184_ends_before_or_with_the_end_of`)).toEqual([])
+    })
+
+    it('lets the recording start no later than the creation of any version', async () => {
         const all = entailedBy(await triples(withStemma()))
         expect(statedOf(all, recordingIn(all), `${crm}P175_starts_before_or_with_the_start_of`).sort())
-            .toEqual([of('edit-a'), of('edit-b')])
+            .toEqual([creationOf(all, 'A'), creationOf(all, 'B')].sort())
     })
 
     it('does not take the creation of the edition for the recording, though it realises the roll too', async () => {
@@ -403,5 +453,24 @@ describe('what a reasoner derives about when a version was made', () => {
         const [roll] = statedOf(stated, base, `${lrmoo}R3i_realises`)
         const all = entailedBy([...stated, { subject: creation, property: `${lrmoo}R19_created_a_realisation_of`, object: roll }])
         expect(statedOf(all, creation, `${crm}P175_starts_before_or_with_the_start_of`)).toEqual([])
+    })
+
+    it('lets the creation of a version start no earlier than that of every version it derives from', async () => {
+        const all = entailedBy(await triples(throughThree()))
+        expect(statedOf(all, creationOf(all, 'A'), `${crm}P175_starts_before_or_with_the_start_of`).sort())
+            .toEqual([creationOf(all, 'B'), creationOf(all, 'C')].sort())
+        expect(statedOf(all, creationOf(all, 'C'), `${crm}P175_starts_before_or_with_the_start_of`)).toEqual([])
+    })
+
+    it('orders nothing by a derivation the edition doubts', async () => {
+        const doubted = throughThree()
+        doubted.versions[2].basedOn = [{ id: 'B', '@annotation': { id: 'doubted', belief: { type: 'belief', id: 'doubt', certainty: 'possible', reasons: [] } } }]
+        // A reader of JSON-LD-star names a quoted statement without stating it. jsonld.js reads
+        // no JSON-LD-star, so the quotes are left out here, which states as little of them.
+        const { '@included': quoted, ...stated } = exportOf(doubted)
+        expect(quoted).toHaveLength(1)
+        const all = entailedBy(await triplesOf(stated))
+        expect(statedOf(all, creationOf(all, 'B'), `${crm}P175_starts_before_or_with_the_start_of`)).toEqual([])
+        expect(statedOf(all, creationOf(all, 'A'), `${crm}P175_starts_before_or_with_the_start_of`)).toEqual([creationOf(all, 'B')])
     })
 })

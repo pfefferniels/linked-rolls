@@ -71,6 +71,18 @@ const withSystemContext = (version: any): any => {
 const withSystemContexts = (edition: any): any =>
     Array.isArray(edition.versions) ? { ...edition, versions: edition.versions.map(withSystemContext) } : edition
 
+/**
+ * Gives every version the act that made it, stating nothing of it where
+ * nothing is known. The axioms of reo.ttl order that act in time against
+ * the recording, the copies and the act that made the version it derives
+ * from, and a reasoner cannot place a node the graph lacks. An import
+ * drops it again where it states nothing.
+ */
+const withCreations = (edition: any): any =>
+    Array.isArray(edition.versions)
+        ? { ...edition, versions: edition.versions.map((version: any) => version.creation ? version : { ...version, creation: {} }) }
+        : edition
+
 type Json = any
 
 const isRecord = (value: unknown): value is Record<string, Json> =>
@@ -183,7 +195,7 @@ const atOwnPlacesAll = (edition: Edition): Edition =>
         : edition
 
 export const asJsonLd = (edition: Edition) => {
-    const { node, quoted } = withDoubtedReferencesQuoted(withSystemContexts(withChanges(asJsonLdEntity(atOwnPlacesAll(edition)))))
+    const { node, quoted } = withDoubtedReferencesQuoted(withSystemContexts(withCreations(withChanges(asJsonLdEntity(atOwnPlacesAll(edition))))))
     // The context is the export's own; one carried in from an import must not override it.
     const { base, '@context': carried, ...rest } = node
 

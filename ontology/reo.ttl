@@ -270,13 +270,46 @@ crm:P184_ends_before_or_with_the_end_of
                              crm:P128i_is_carried_by
                              [ owl:inverseOf reo:produced ] ) .
 
+# The creation of a version ended no later than the punching of any
+# copy carrying a symbol one of its edits added, a copy being punched
+# from a finished version. The chain passes from the act that made the
+# carrying feature to the copy it produced and back, so that it takes
+# the punching of a copy alone: an alteration by hand may be the
+# editor's own work on the version and so part of its creation, which
+# bounds the edit but not the creation.
+crm:P184_ends_before_or_with_the_end_of
+    owl:propertyChainAxiom ( lrmoo:R17_created
+                             reo:involvedEdit
+                             reo:added
+                             crm:P128i_is_carried_by
+                             [ owl:inverseOf reo:produced ]
+                             lrmoo:R28_produced
+                             lrmoo:R28i_was_produced_by ) .
+
+# The recording of a roll started no later than the creation of any
+# version of it, every version of a roll deriving from its recording.
+# The first chain runs through the roll to each version an edition of
+# it incorporates, and sets out from the performance recorded and back
+# again, since a creation that recorded nothing may realise the roll
+# as well: the creation of the edition does. The creation of a version
+# started no earlier than that of the version it derives from, work on
+# a version not beginning before its model was begun; so the second.
+# A derivation the edition doubts is quoted rather than stated and
+# orders nothing. It is P175 and not the strict P176, as the mother
+# roll may be made in the recording. Starting before or with is
+# transitive, so that the date of one creation reaches the creations
+# of all the versions derived from it.
 crm:P175_starts_before_or_with_the_start_of
+    a owl:TransitiveProperty ;
     owl:propertyChainAxiom ( lrmoo:R81_recorded
                              lrmoo:R81i_is_recorded_in
                              lrmoo:R19_created_a_realisation_of
                              lrmoo:R3_is_realised_in
                              lrmoo:R75_incorporates
-                             reo:involvedEdit ) .
+                             lrmoo:R17i_was_created_by ) ,
+                           ( lrmoo:R17_created
+                             lrmoo:R76i_has_derivative
+                             lrmoo:R17i_was_created_by ) .
 
 
 #################################################################
@@ -291,7 +324,7 @@ reo:involvedEdit
     rdfs:domain lrmoo:F2_Expression ;
     rdfs:range reo:Edit ;
     rdfs:label "involved edit"@en ;
-    rdfs:comment """This property associates a version of a roll with an edit by which it was made from the version it is based on. It is a shortcut of the path R17i was created by, F28 Expression Creation, P9 consists of. Every edit of a version of a roll began no earlier than the recording of the roll, since every version derives from it: the recording starts before or with the start of the edit (P175), and not strictly before it, as the edits of the mother roll may be part of the recording. The axiom on P175 among the entailments states this over the path from the recording through the roll to the edition that incorporates the version, so that it needs neither a creation stated for every version nor to know which version is the mother roll. The path sets out from the performance recorded and back again, since a creation that recorded nothing may realise the roll as well, as the creation of the edition does."""@en ;
+    rdfs:comment """This property associates a version of a roll with an edit by which it was made from the version it is based on. It is a shortcut of the path R17i was created by, F28 Expression Creation, P9 consists of."""@en ;
     owl:propertyChainAxiom ( lrmoo:R17i_was_created_by crm:P9_consists_of ) ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 

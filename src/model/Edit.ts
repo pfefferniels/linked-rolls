@@ -35,9 +35,9 @@ export type EditType = typeof editTypes[number];
  * such as a pencil mark, this should be made explicit
  * using a meaning comprehension on the `@annotation` field.
  * An edit states no date. That it ended no later than the act that
- * made a feature carrying a symbol it inserts, and began no earlier
- * than the recording, a reasoner derives with the axioms of reo.ttl;
- * which of those dates bounds it closest is for a query to pick.
+ * made a feature carrying a symbol it inserts, a reasoner derives with
+ * the axioms of reo.ttl; which of those dates bounds it closest is for
+ * a query to pick.
  * @see reo:Edit
  */
 export interface Edit extends WithId, Assumption {

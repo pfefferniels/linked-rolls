@@ -86,9 +86,14 @@ copies and patches. The ontology derives them by property chains over
 `reo:produced`, added for the purpose, and `migrate` drops the keys
 from older exports. A chain over `reo:added` followed, which lets an
 edit end before or with the end of the act that punched a chain of
-holes carrying what the edit added (P184), and one over the recording
-of the roll, which lets the recording start before or with the start
-of every edit of a version of the roll (P175).
+holes carrying what the edit added (P184). The creation of a version
+is ordered by three more: it ends before or with the end of the
+punching of any copy carrying a symbol one of its edits added (P184),
+and it starts after or with the start of the recording of the roll and
+of the creation of every version it derives from (P175, declared
+transitive for the purpose). The export states a creation for every
+version so that these have a node to reach, and the import drops those
+that state nothing.
 
 ## Publishing
 

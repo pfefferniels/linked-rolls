@@ -77,6 +77,17 @@ const withPlainCopyIds = (json: Json) => ({
     }))
 })
 
+/** The document without the creations an export gave versions that state none. */
+const withoutEmptyCreations = (json: Json) => Array.isArray(json.versions)
+    ? {
+        ...json,
+        versions: json.versions.map((version: Json) => {
+            const { creation, ...rest } = version
+            return creation !== null && typeof creation === 'object' && Object.keys(creation).length === 0 ? rest : version
+        })
+    }
+    : json
+
 /** A statement an export quoted rather than stated: an included node whose id is a triple. */
 const isQuotedStatement = (node: Json): boolean =>
     node !== null && typeof node === 'object' && node['@id'] !== null && typeof node['@id'] === 'object'
@@ -145,7 +156,7 @@ const withQuotedStatementsInPlace = (edition: Json): Json => {
  * its axis, which is where the copy's alignment carries them.
  */
 export const importJsonLd = (json: Json): Edition => {
-    const { '@context': context, ...document } = withPlainCopyIds(migrate(withQuotedStatementsInPlace(json)))
+    const { '@context': context, ...document } = withoutEmptyCreations(withPlainCopyIds(migrate(withQuotedStatementsInPlace(json))))
     const edition = fromJsonLdEntity(document) as Edition;
     edition.base = Array.isArray(context)
         ? context.find((c: Json) => c['@base'])?.['@base'] || ''
