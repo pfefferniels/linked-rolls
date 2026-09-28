@@ -5,10 +5,18 @@
 export const without = <T,>(items: T[], matches: (item: T) => boolean): T[] =>
     items.some(matches) ? items.filter(item => !matches(item)) : items
 
-/** The items each changed, or the very same array when the change left every one as it was. */
+/**
+ * The items each changed, or the very same array when the change left
+ * every one as it was. The array is copied at the first item that
+ * changes, so that one left as it was costs no copy.
+ */
 export const mapped = <T,>(items: T[], change: (item: T) => T): T[] => {
-    const changed = items.map(change)
-    return changed.every((item, i) => item === items[i]) ? items : changed
+    let changed: T[] | undefined
+    items.forEach((item, i) => {
+        const after = change(item)
+        if (after !== item) (changed ??= items.slice())[i] = after
+    })
+    return changed ?? items
 }
 
 /** The items each changed, less those the change emptied; the very same array where it changed none. */
@@ -27,11 +35,15 @@ export type Node = Record<string, unknown>
 export const isRecord = (value: unknown): value is Node =>
     typeof value === 'object' && value !== null
 
-/** The record's values each changed, or the very same record where the change left every one as it was. */
+/** The record's values each changed, or the very same record where the change left every one as it was, copied as `mapped` copies. */
 const withValues = (record: Node, change: (value: unknown) => unknown): Node => {
-    const entries = Object.entries(record)
-    const changed = entries.map(([key, value]): [string, unknown] => [key, change(value)])
-    return changed.every(([, value], i) => value === entries[i][1]) ? record : Object.fromEntries(changed)
+    let changed: Node | undefined
+    Object.keys(record).forEach(key => {
+        const value = record[key]
+        const after = change(value)
+        if (after !== value) (changed ??= { ...record })[key] = after
+    })
+    return changed ?? record
 }
 
 /** The value with the change applied to every record within it and then to itself, innermost first. */
