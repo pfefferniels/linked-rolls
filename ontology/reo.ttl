@@ -286,20 +286,21 @@ crm:P184_ends_before_or_with_the_end_of
                              lrmoo:R28_produced
                              lrmoo:R28i_was_produced_by ) .
 
-# The recording of a roll started no later than the creation of any
-# version of it, every version of a roll deriving from its recording.
-# The first chain runs through the roll to each version an edition of
-# it incorporates, and sets out from the performance recorded and back
+# The recording of a roll started before the creation of any version
+# of it: the recording only marks the performance on a roll, and the
+# first version is made by perforating those marks afterwards. The
+# first chain runs through the roll to each version an edition of it
+# incorporates, and sets out from the performance recorded and back
 # again, since a creation that recorded nothing may realise the roll
 # as well: the creation of the edition does. The creation of a version
-# started no earlier than that of the version it derives from, work on
-# a version not beginning before its model was begun; so the second.
-# A derivation the edition doubts is quoted rather than stated and
-# orders nothing. It is P175 and not the strict P176, as the mother
-# roll may be made in the recording. Starting before or with is
-# transitive, so that the date of one creation reaches the creations
-# of all the versions derived from it.
-crm:P175_starts_before_or_with_the_start_of
+# started after that of the version it derives from, a version being
+# made from its model; so the second. A derivation the edition doubts
+# is quoted rather than stated and orders nothing. The version the
+# recording itself created is the recording roll, which the stemma
+# does not hold, so that no creation is ordered before itself.
+# Starting before is transitive, so that the date of one creation
+# reaches the creations of all the versions derived from it.
+crm:P176_starts_before_the_start_of
     a owl:TransitiveProperty ;
     owl:propertyChainAxiom ( lrmoo:R81_recorded
                              lrmoo:R81i_is_recorded_in

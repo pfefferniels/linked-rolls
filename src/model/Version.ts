@@ -105,10 +105,10 @@ export interface Version extends WithId {
      * The act that made this version, where it is known: who carried it
      * out, when, and by what rule. The export states the act for every
      * version, stating nothing of it where nothing is known, so that the
-     * axioms of reo.ttl can place it in time: it started no earlier than
-     * the recording and the creation of every version it derives from,
-     * and ended no later than the punching of any copy carrying a
-     * symbol it added. A date stated here stands beside those; which of
+     * axioms of reo.ttl can place it in time: it started after the
+     * recording and the creation of every version it derives from had
+     * started, and ended no later than the punching of any copy carrying
+     * a symbol it added. A date stated here stands beside those; which of
      * them bounds the act closest is for a query to pick.
      * @see lrmoo:R17i was created by
      */

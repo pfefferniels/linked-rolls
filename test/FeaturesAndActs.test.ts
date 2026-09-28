@@ -403,7 +403,7 @@ describe('what a reasoner derives about when a version was made', () => {
 
     it('states no order in time itself', async () => {
         const all = await triples(withStemma())
-        const ordering = [`${crm}P175_starts_before_or_with_the_start_of`, `${crm}P184_ends_before_or_with_the_end_of`]
+        const ordering = [`${crm}P176_starts_before_the_start_of`, `${crm}P184_ends_before_or_with_the_end_of`]
         expect(all.filter(({ property }) => ordering.includes(property))).toEqual([])
     })
 
@@ -441,9 +441,9 @@ describe('what a reasoner derives about when a version was made', () => {
         expect(statedOf(all, creationOf(all, 'B'), `${crm}P184_ends_before_or_with_the_end_of`)).toEqual([])
     })
 
-    it('lets the recording start no later than the creation of any version', async () => {
+    it('lets the recording start before the creation of any version', async () => {
         const all = entailedBy(await triples(withStemma()))
-        expect(statedOf(all, recordingIn(all), `${crm}P175_starts_before_or_with_the_start_of`).sort())
+        expect(statedOf(all, recordingIn(all), `${crm}P176_starts_before_the_start_of`).sort())
             .toEqual([creationOf(all, 'A'), creationOf(all, 'B')].sort())
     })
 
@@ -452,14 +452,14 @@ describe('what a reasoner derives about when a version was made', () => {
         const [creation] = statedOf(stated, base, `${lrmoo}R17i_was_created_by`)
         const [roll] = statedOf(stated, base, `${lrmoo}R3i_realises`)
         const all = entailedBy([...stated, { subject: creation, property: `${lrmoo}R19_created_a_realisation_of`, object: roll }])
-        expect(statedOf(all, creation, `${crm}P175_starts_before_or_with_the_start_of`)).toEqual([])
+        expect(statedOf(all, creation, `${crm}P176_starts_before_the_start_of`)).toEqual([])
     })
 
-    it('lets the creation of a version start no earlier than that of every version it derives from', async () => {
+    it('lets the creation of a version start after that of every version it derives from', async () => {
         const all = entailedBy(await triples(throughThree()))
-        expect(statedOf(all, creationOf(all, 'A'), `${crm}P175_starts_before_or_with_the_start_of`).sort())
+        expect(statedOf(all, creationOf(all, 'A'), `${crm}P176_starts_before_the_start_of`).sort())
             .toEqual([creationOf(all, 'B'), creationOf(all, 'C')].sort())
-        expect(statedOf(all, creationOf(all, 'C'), `${crm}P175_starts_before_or_with_the_start_of`)).toEqual([])
+        expect(statedOf(all, creationOf(all, 'C'), `${crm}P176_starts_before_the_start_of`)).toEqual([])
     })
 
     it('orders nothing by a derivation the edition doubts', async () => {
@@ -470,7 +470,7 @@ describe('what a reasoner derives about when a version was made', () => {
         const { '@included': quoted, ...stated } = exportOf(doubted)
         expect(quoted).toHaveLength(1)
         const all = entailedBy(await triplesOf(stated))
-        expect(statedOf(all, creationOf(all, 'B'), `${crm}P175_starts_before_or_with_the_start_of`)).toEqual([])
-        expect(statedOf(all, creationOf(all, 'A'), `${crm}P175_starts_before_or_with_the_start_of`)).toEqual([creationOf(all, 'B')])
+        expect(statedOf(all, creationOf(all, 'B'), `${crm}P176_starts_before_the_start_of`)).toEqual([])
+        expect(statedOf(all, creationOf(all, 'A'), `${crm}P176_starts_before_the_start_of`)).toEqual([creationOf(all, 'B')])
     })
 })
