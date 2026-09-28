@@ -62,12 +62,19 @@ describe('migrating a 0.1 edition', () => {
             expect(version).not.toHaveProperty('versionType')
         })
 
-        const conditions = migrated.copies.flatMap((copy: any) => copy.conditions)
-        expect(conditions.length).toBeGreaterThan(0)
-        conditions.forEach((condition: any) => {
-            expect(condition).not.toHaveProperty('@type')
-            expect(condition.conditionType).toBeTruthy()
-        })
+        const conditions = migrate({
+            copies: [{ '@type': 'RollCopy', conditions: [{ '@type': 'general', description: 'brittle' }] }]
+        }).copies[0].conditions
+        expect(conditions).toEqual([{ conditionType: 'general', description: 'brittle' }])
+    })
+
+    it('drops the paper-stretch factors, which stated the scales of the alignments again', () => {
+        const migrated = migrate(edition01())
+        const stretches = migrated.copies.flatMap((copy: any) => copy.conditions)
+            .filter((condition: any) => condition.conditionType === 'paper-stretch')
+        expect(stretches).toEqual([])
+        expect(migrated.copies.map((copy: any) => copy.measurements.alignment?.scale))
+            .toEqual([undefined, 0.9978034872721986, 1.0016647616495822])
     })
 
     it('takes the label off a version and leaves a copy the siglum it is cited by', () => {
@@ -419,12 +426,13 @@ describe('a copy whose ops and measurements disagreed', () => {
 
     it('records an act the list names without its amount as one that moved nothing', () => {
         expect(copyWith(['shifted', 'stretched', 'shortened'], {}).measurements)
-            .toEqual({ shift: { horizontal: 0, vertical: 0 }, scale: 1, readerExtension: { length: 0 } })
+            .toEqual({ alignment: { shift: { horizontal: 0, vertical: 0 }, scale: 1 }, readerExtension: { length: 0 } })
     })
 
-    it('leaves measurements that agree with the list as they were', () => {
+    it('leaves measurements that agree with the list as they were, the alignment stated as one', () => {
         const shift = { horizontal: 2, vertical: 0 }
-        expect(copyWith(['shifted'], { shift, dimensions: { width: 1 } }).measurements).toEqual({ shift, dimensions: { width: 1 } })
+        expect(copyWith(['shifted'], { shift, dimensions: { width: 1 } }).measurements)
+            .toEqual({ alignment: { shift, scale: 1 }, dimensions: { width: 1 } })
     })
 })
 
@@ -432,5 +440,59 @@ describe('an edit typed as a replacement with an equivalent', () => {
     it('is read as a recoding, of which it is the exchanging kind', () => {
         const migrated = migrate({ versions: [{ '@type': 'Version', edits: [{ '@type': 'edit', editType: 'replace-with-equivalent' }] }] })
         expect(migrated.versions[0].edits[0].editType).toBe('recoding')
+    })
+})
+
+describe('a copy whose features stood where its alignment had put them', () => {
+    /** A copy as a release before this one wrote it: its features and a tear on the axis, the shift and scale that put them there beside. */
+    const written = () => ({
+        copies: [
+            {
+                '@type': 'RollCopy', '@id': 'reference', measurements: {}, conditions: [],
+                production: { produced: [{ '@type': 'HoleChain', '@id': 'r', horizontal: { unit: 'mm', from: 1000, to: 1010 }, vertical: { unit: 'track', from: 47 } }] }
+            },
+            {
+                '@type': 'RollCopy', '@id': 'copy/aligned',
+                measurements: { shift: { horizontal: 100, vertical: 2 }, scale: 1.25 },
+                conditions: [
+                    { conditionType: 'paper-stretch', factor: 1.25, description: 'calculated by alignment' },
+                    { conditionType: 'torn', horizontal: { unit: 'mm', from: 1375, to: 1500 }, edge: 'bass' }
+                ],
+                production: { produced: [{ '@type': 'HoleChain', '@id': 'a', horizontal: { unit: 'mm', from: 1250, to: 1262.5 }, vertical: { unit: 'track', from: 49 } }] },
+                modifications: [{ '@type': 'Alteration', produced: [{ '@type': 'Mark', '@id': 'm', horizontal: { unit: 'mm', from: 2500 }, vertical: { unit: 'track', from: 12 } }] }]
+            }
+        ]
+    })
+
+    const aligned = () => migrate(written()).copies[1]
+
+    it('takes the features back to the copy\'s own places, along the roll and across it', () => {
+        expect(aligned().production.produced[0].horizontal).toEqual({ unit: 'mm', from: 900, to: 910 })
+        expect(aligned().production.produced[0].vertical).toEqual({ unit: 'track', from: 47 })
+        expect(aligned().modifications[0].produced[0].horizontal).toEqual({ unit: 'mm', from: 1900 })
+    })
+
+    it('takes the tears back with them, which stand where the features do', () => {
+        expect(aligned().conditions).toEqual([
+            { conditionType: 'torn', horizontal: { unit: 'mm', from: 1000, to: 1100 }, edge: 'bass' }
+        ])
+    })
+
+    it('states the alignment that carries them onto the axis instead', () => {
+        expect(aligned().measurements).toEqual({ alignment: { shift: { horizontal: 100, vertical: 2 }, scale: 1.25 } })
+    })
+
+    it('names the copy nothing had been done to as the reference copy', () => {
+        expect(migrate(written()).referenceCopy).toBe('reference')
+    })
+
+    it('reads back onto the axis as it stood', () => {
+        const edition = importJsonLd({ '@context': [], ...written() })
+        expect(edition.copies[1].production!.produced![0].horizontal).toEqual({ unit: 'mm', from: 1250, to: 1262.5 })
+        expect(edition.copies[1].production!.produced![0].vertical).toEqual({ unit: 'track', from: 49 })
+    })
+
+    it('is migrated once, however often it is migrated', () => {
+        expect(migrate(migrate(written()))).toEqual(migrate(written()))
     })
 })

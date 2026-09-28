@@ -1,5 +1,6 @@
 import { EditionView } from "../view/EditionView.js"
-import { speedScalesIn } from "./ownPaper.js"
+import { paperOfVersion } from "./ownPaper.js"
+import { alignmentProblems } from "./paper.js"
 import { idOf } from "../model/Assumption.js"
 import { AnyCommand, AnySymbol, Expression, PlacementRelation, isCommand, pairsAmong, placementsOf } from "../model/Symbol.js"
 import { keyOf } from "../systems/TrackerBar.js"
@@ -132,18 +133,22 @@ const carriersOffTheirMeaning = (
 }
 
 /**
- * Where the copies of the version's own system disagree about the scale
- * that put them on the edition's shared axis.
+ * Where a copy of the version's own system strays from the others in
+ * its paper by more than paper does.
  *
- * That scale is what takes a place back to the paper the version's roll
- * ran on, so a performance needs one number. Copies disagreeing about it
- * is evidence about the copies, and averaging it away would hide both
- * the disagreement and the fact that the playback rests on a guess.
+ * The paper of the system is what takes a place back to the paper the
+ * version's roll ran on, so a performance needs one figure. A copy far
+ * off it is evidence about the copies, perhaps one cut for another
+ * speed, and averaging it in would hide both that and the fact that the
+ * playback rests on a guess.
  */
-const paperDisagreed = (view: EditionView, version: Version): ConstraintProblem[] =>
-    speedScalesIn(view, version).length > 1
+const paperDisagreed = (view: EditionView, version: Version): ConstraintProblem[] => {
+    const own = new Set(paperOfVersion(view, version)?.copies ?? [])
+    return alignmentProblems(view.edition)
+        .some(({ copy, problem }) => problem === 'paper-beyond-its-spread' && own.has(copy))
         ? [{ version: version.id, symbol: version.id, problem: 'copies-disagree-on-the-paper' as const }]
         : []
+}
 
 /**
  * A version's strikes that take nothing out of its text: each deleted

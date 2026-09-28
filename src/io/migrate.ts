@@ -418,6 +418,89 @@ const withFeaturesInActs = (node: Json): Json => {
     }
 }
 
+/** A place written to the nanometre, as the export writes places it has carried off the axis. */
+const writtenPlace = (place: number): number => Math.round(place * 1e6) / 1e6
+
+/** The span with both ends taken through the mapping, the far end only where it has one. */
+const spanThrough = (span: Json, through: (at: number) => number): Json =>
+    span && typeof span.from === 'number'
+        ? { ...span, from: through(span.from), ...(typeof span.to === 'number' && { to: through(span.to) }) }
+        : span
+
+const isLegacyAligned = (copy: Json): boolean =>
+    copy?.measurements?.shift !== undefined || copy?.measurements?.scale !== undefined
+
+const isLegacyPaperStretch = (condition: Json): boolean =>
+    isPaperStretch(condition) && Object.hasOwn(condition, 'factor')
+
+const conditionTypeOf = (condition: Json): unknown => condition?.conditionType ?? condition?.['@type']
+
+/**
+ * A copy's features once stood where its alignment had put them, on the
+ * edition's axis, with the shift and the scale that had done it recorded
+ * beside them. They stand at the copy's own places now, as they were
+ * read, and the alignment says how they go onto the axis; so they are
+ * taken back by it, and so are the tears, which were measured as the
+ * features are. The features are in their acts here, `withFeaturesInActs`
+ * having run.
+ *
+ * The factor of a paper-stretch condition was the alignment's scale
+ * stated again, which is how every such condition came about. It is
+ * dropped: the scale stays with the alignment, and what it says about the
+ * paper is worked out from all the alignments together.
+ */
+const withOwnPlaces = (node: Json): Json => {
+    if (node['@type'] !== 'RollCopy' || !isLegacyAligned(node)) return node
+
+    const { shift: legacyShift, scale: legacyScale, ...measurements } = node.measurements
+    const shift = {
+        horizontal: legacyShift?.horizontal ?? 0,
+        vertical: legacyShift?.vertical ?? 0
+    }
+    const scale = legacyScale ?? 1
+    const along = (place: number) => writtenPlace(place / scale - shift.horizontal)
+    const across = (position: number) => position - shift.vertical
+
+    const ownFeature = (feature: Json): Json => {
+        if (!feature || typeof feature !== 'object' || !feature.horizontal) return feature
+        return {
+            ...feature,
+            horizontal: spanThrough(feature.horizontal, along),
+            ...(feature.vertical?.unit === 'track' && shift.vertical !== 0 && { vertical: spanThrough(feature.vertical, across) })
+        }
+    }
+    const ownFeatures = (features: Json) => Array.isArray(features) ? features.map(ownFeature) : features
+
+    const production = node.production && {
+        ...node.production,
+        ...(Array.isArray(node.production.produced) && { produced: ownFeatures(node.production.produced) })
+    }
+    const modifications = Array.isArray(node.modifications)
+        ? node.modifications.map((act: Json) => act && typeof act === 'object'
+            ? {
+                ...act,
+                ...(Array.isArray(act.produced) && { produced: ownFeatures(act.produced) }),
+                ...(Array.isArray(act.added) && { added: ownFeatures(act.added) })
+            }
+            : act)
+        : node.modifications
+    const conditions = Array.isArray(node.conditions)
+        ? node.conditions
+            .filter((condition: Json) => !isLegacyPaperStretch(condition))
+            .map((condition: Json) => conditionTypeOf(condition) === 'torn' && condition.horizontal
+                ? { ...condition, horizontal: spanThrough(condition.horizontal, along) }
+                : condition)
+        : node.conditions
+
+    return {
+        ...node,
+        measurements: { ...measurements, alignment: { shift, scale } },
+        ...(production && { production }),
+        ...(modifications && { modifications }),
+        ...(conditions && { conditions })
+    }
+}
+
 /** A keeper nobody could name was written as an empty one before a copy could leave it out. */
 const withoutEmptyKeeper = (node: Json): Json => {
     if (node.keeper?.name !== '' || node.keeper.sameAs?.length) return node
@@ -439,7 +522,7 @@ const withTimeSpanDates = (node: Json): Json => {
 const migrateNode = (node: Json): Json =>
     [withRenamedKeys, withRenamedEditType, withTypology, withRenamedType, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
         withPerforator, withProductionNodes, withTypedPerforator, withScale, withoutOps, withDerivationList, withReadingKind, withTimeSpanDates,
-        withoutFeatureKind, withBorneFeaturesNamed, withFeaturesInActs, withDriveOfStaggering, withoutPattern, withoutBearings, withoutEntailedType]
+        withoutFeatureKind, withBorneFeaturesNamed, withFeaturesInActs, withOwnPlaces, withDriveOfStaggering, withoutPattern, withoutBearings, withoutEntailedType]
         .reduce((result, step) => step(result), node)
 
 /** The items each walked, or the very same list where the walk changed none. */
@@ -606,7 +689,32 @@ const withoutFormatVersion = (edition: Json): Json => {
     return rest
 }
 
-const editionSteps = [withoutFormatVersion, withoutEditionType, withSystems, withEditors, withDerivationTolerance]
+/** Whether the copy states features, in either shape. */
+const hasFeatures = (copy: Json): boolean =>
+    [copy?.features, copy?.production?.produced, copy?.productionEvent?.produced]
+        .some(features => Array.isArray(features) && features.length > 0)
+
+const statesLegacyAlignment = (copy: Json): boolean =>
+    isLegacyAligned(copy)
+    || (Array.isArray(copy?.ops) && (copy.ops.includes('shifted') || copy.ops.includes('stretched')))
+
+/**
+ * The copy whose millimetres were the edition's axis went unnamed while
+ * the copies aligned onto it recorded only what had been done to them.
+ * It was the copy nothing had been done to, and of those the first with
+ * features, so that is the one named.
+ */
+const withReferenceCopy = (edition: Json): Json => {
+    const copies = listAt(edition, 'copies')
+    if (edition.referenceCopy !== undefined || !copies?.some(statesLegacyAlignment)) return edition
+
+    const reference = copies.find(copy => !statesLegacyAlignment(copy) && hasFeatures(copy))
+    return typeof reference?.['@id'] === 'string'
+        ? { ...edition, referenceCopy: plainCopyId(reference['@id']) }
+        : edition
+}
+
+const editionSteps = [withoutFormatVersion, withoutEditionType, withSystems, withEditors, withDerivationTolerance, withReferenceCopy]
 
 export const migrate = (edition: Json): Json =>
     walk(editionSteps.reduce((result, step) => step(result), edition))

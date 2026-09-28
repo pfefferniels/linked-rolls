@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { asJsonLd } from '../src/io/asJsonLd';
 import { assignDate, assignObject, BeliefAdoption, Certainty, dateOf, earliestOf, latestOf, notBefore } from '../src/model/Assumption';
 import { edition as smallEdition } from './editionFixture';
+import { Edition } from '../src/model/Edition';
 import { PaperSpeed } from '../src/model/RollCopy';
 import { systemOf } from '../src/systems/TrackerBar';
 import { welteLicensee } from '../src/systems/welteLicensee/bar';
@@ -203,14 +204,13 @@ describe('Export', () => {
         expect(dateOf(date)).toBeUndefined()
     })
 
-    it('carries the system and the speed a copy was cut for, and the scale of its alignment only in the features', () => {
+    it('carries the system and the speed a copy was cut for', () => {
         const withLicensee = edition()
         withLicensee.copies[0].production = {
             ...withLicensee.copies[0].production,
             system: systemOf(welteLicensee),
             speed: assignObject<PaperSpeed>({ value: feetPerMinute(8), unit: 'ft/min' })
         }
-        withLicensee.copies[0].measurements.scale = 1.3
 
         const exported = asJsonLd(withLicensee)
         const production = exported.copies[0].production
@@ -220,12 +220,35 @@ describe('Export', () => {
             sameAs: []
         })
         expect(production.speed).toEqual({ value: 8, unit: 'ft/min' })
-        expect(exported.copies[0].measurements.scale).toBe(1.3)
 
         const reimported = importJsonLd(JSON.parse(JSON.stringify(exported)))
         expect(reimported.copies[0].production?.speed).toEqual({ value: 8, unit: 'ft/min' })
         expect(reimported.copies[0].production?.system?.id).toEqual('https://w3id.org/reo/type/system/welte-licensee')
-        expect(reimported.copies[0].measurements.scale).toBe(1.3)
+    })
+
+    it('writes an aligned copy\'s features at its own places, with the alignment that carries them onto the axis', () => {
+        const aligned = edition().copies[1]
+        const { shift, scale } = aligned.measurements.alignment!
+        const onAxis = aligned.production!.produced![0].horizontal.from
+
+        const written = asJsonLd(edition()).copies[1]
+        expect(written.measurements.alignment).toEqual({ shift, scale })
+        expect(written.production.produced[0].horizontal.from).toBeCloseTo(onAxis / scale - shift.horizontal, 6)
+    })
+
+    it('reads an aligned copy back onto the axis, and writes it again as it was written', () => {
+        const exported = JSON.parse(JSON.stringify(asJsonLd(edition())))
+        const again = asJsonLd(importJsonLd(exported))
+        expect(JSON.parse(JSON.stringify(again))).toEqual(exported)
+
+        const places = (e: Edition) => e.copies.flatMap(copy => copy.production?.produced ?? []).map(feature => feature.horizontal.from)
+        const before = places(edition())
+        const drift = places(importJsonLd(exported)).map((place, i) => Math.abs(place - before[i]))
+        expect(Math.max(...drift)).toBeLessThan(1e-5)
+    })
+
+    it('names the reference copy, whose places are the axis', () => {
+        expect(asJsonLd(edition()).referenceCopy).toBe(edition().copies[0].id)
     })
 
     it('carries the siglum of a copy there and back, and none where a copy has none', () => {

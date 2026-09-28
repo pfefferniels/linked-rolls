@@ -238,3 +238,6 @@ reot:px a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.o
     rdfs:comment "A paper speed, as roll tempos are stated: tempo 80 is eight feet per minute."@en .
 <https://w3id.org/reo/type/m/min> a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "metres per minute"@en .
+reot:percent a crm:E58_Measurement_Unit, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "per cent"@en ;
+    rdfs:comment "A share of a length in hundredths, such as the strain of the paper (reo:strainAlong)."@en .

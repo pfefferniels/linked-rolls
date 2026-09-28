@@ -1,4 +1,4 @@
-import { RollCopy } from "./RollCopy.js";
+import { featuresOf, RollCopy } from "./RollCopy.js";
 import { Version } from "./Version.js";
 import { CollationTolerance } from "../collation/Collation.js";
 import { DateAssignment, ObjectAssumption } from "./Assumption.js";
@@ -159,6 +159,19 @@ export interface Edition {
     copies: RollCopy[]
 
     /**
+     * The copy whose millimetres are the edition's axis, by id: every
+     * place the edition gives along the roll is a place on this copy's
+     * paper, counted from where its scan begins, and every other copy is
+     * aligned onto it. Choosing it is the one editorial decision the
+     * alignment leaves; a copy scanned whole and without tears serves
+     * best, since its places are what notes and readers cite. Left out,
+     * it is the first copy with features that is not aligned
+     * (`referenceCopyOf`).
+     * Not exported to RDF.
+     */
+    referenceCopy?: string
+
+    /**
      * The different versions of the roll on which
      * this edition is based.
      * @see lrmoo:R75 incorporates
@@ -174,3 +187,13 @@ export interface Edition {
 }
 
 export type EditionMetadata = Pick<Edition, 'base' | 'title' | 'license' | 'creation' | 'roll'>
+
+/**
+ * The copy whose millimetres are the edition's axis: the one it names,
+ * or where it names none or one it no longer has, the first copy with
+ * features that is not aligned, which is how an edition stood before it
+ * named one.
+ */
+export const referenceCopyOf = (edition: Pick<Edition, 'copies' | 'referenceCopy'>): RollCopy | undefined =>
+    edition.copies.find(copy => copy.id === edition.referenceCopy)
+    ?? edition.copies.find(copy => !copy.measurements.alignment && featuresOf(copy).length > 0)

@@ -108,6 +108,7 @@
       "@type": "xsd:date"
     },
     "collationTolerance": null,
+    "referenceCopy": null,
     "annotation": null,
     "roll": "lrmoo:R3i_realises",
     "catalogueNumber": "dcterms:identifier",
@@ -170,6 +171,7 @@
       "@context": {
         "shift": null,
         "scale": null,
+        "alignment": null,
         "readerExtension": null,
         "trackCalibration": null,
         "margins": null,
@@ -227,6 +229,20 @@
           "@id": "reo:depth",
           "@context": {
             "value": "crm:P90_has_value"
+          }
+        },
+        "along": {
+          "@id": "reo:strainAlong",
+          "@context": {
+            "value": "crm:P90_has_value",
+            "uncertainty": "reo:uncertainty"
+          }
+        },
+        "across": {
+          "@id": "reo:strainAcross",
+          "@context": {
+            "value": "crm:P90_has_value",
+            "uncertainty": "reo:uncertainty"
           }
         }
       }

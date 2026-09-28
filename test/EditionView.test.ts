@@ -3,7 +3,7 @@ import { EditionView } from '../src/view/EditionView'
 import { toOwnPaperOf } from '../src/analysis/ownPaper'
 import { negotiatedEventOf } from '../src/emulation/negotiation'
 import { copy, cutFor, edition, editionOf, expression, hole, note, version } from './editionFixture'
-import { mm } from '../src/model/Quantity'
+import { mm, percent, track } from '../src/model/Quantity'
 import { Expression, Note } from '../src/model/Symbol'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteT98 } from '../src/systems/welteT98/bar'
@@ -93,11 +93,13 @@ describe('where a symbol lies and which track it sits on', () => {
     })
 })
 
+/** An alignment by the scale alone. */
+const scaledBy = (scale: number) => ({ alignment: { shift: { horizontal: mm(0), vertical: track(0) }, scale } })
+
 /**
  * The red copy sets the edition's place axis; the green copy of the
  * same recording was scaled onto it by 1.29072, the figure the
- * alignment of Welte 225 measured, and its scale is put down to the
- * speed rather than to the paper.
+ * alignment of Welte 225 measured.
  */
 const twoIssues = () => {
     const edition = editionOf(
@@ -105,7 +107,7 @@ const twoIssues = () => {
             { ...copy('red', [hole('hole-red', 1000, 1010, 47)]) },
             {
                 ...cutFor(copy('green', [hole('hole-green', 1000, 1010, 45)]), systemOf(welteT98)),
-                measurements: { scale: 1.29072 }
+                measurements: scaledBy(1.29072)
             }
         ],
         [
@@ -127,12 +129,9 @@ const twoIssues = () => {
 
 describe('the paper a version ran on', () => {
     /**
-     * The factor is arithmetic on the alignment's scale, not a second
-     * measurement of the two papers: `alignFeatures` fits the scale over
-     * the matched note onsets of the same two scans a length ratio would
-     * be taken from. That it comes out near the ratio measured on 225 is
-     * consistency, and says nothing more until someone establishes that
-     * the two rest on different evidence.
+     * With one green copy the ratio of the papers takes the whole scale:
+     * nothing tells the copy's own stretch apart from the speed it was
+     * cut for, so the one is left at nothing and the other takes all.
      */
     it('takes a green version back off the shared axis onto its own paper', () => {
         const view = new EditionView(twoIssues())
@@ -141,31 +140,34 @@ describe('the paper a version ran on', () => {
         expect(toOwnPaperOf(view, green)).toBeCloseTo(1 / 1.29072, 9)
     })
 
-    it('says nothing for a version whose copies were never scaled', () => {
+    it('leaves a version of the reference copy\'s own system on the axis, where that copy alone measures the paper', () => {
         const view = new EditionView(twoIssues())
-        expect(toOwnPaperOf(view, view.version('A')!)).toBeUndefined()
+        expect(toOwnPaperOf(view, view.version('A')!)).toBeCloseTo(1, 8)
     })
 
-    /**
-     * A stretch belongs to the one exemplar and says nothing about the
-     * speed its system's rolls were cut at, so it must not be read as a
-     * paper factor.
-     */
-    it('leaves out a scale put down to the copy having stretched', () => {
+    it('takes a stretch measured on the copy out of the ratio of the papers', () => {
         const edition = twoIssues()
         edition.copies[1].conditions = [assignObject<PaperStretch>({
-            conditionType: 'paper-stretch', factor: 1.29072
+            conditionType: 'paper-stretch',
+            along: { value: percent(1), uncertainty: percent(0.01), unit: 'percent' }
         })]
 
+        const view = new EditionView(edition)
+        expect(toOwnPaperOf(view, view.version('B')!)).toBeCloseTo(1 / (1.29072 * 1.01), 5)
+    })
+
+    it('says nothing for a version of a system no copy measures', () => {
+        const edition = twoIssues()
+        edition.copies.pop()
         const view = new EditionView(edition)
         expect(toOwnPaperOf(view, view.version('B')!)).toBeUndefined()
     })
 
-    it('reports copies of one system that disagree instead of averaging them', () => {
+    it('reports copies of one system that disagree beyond what paper does', () => {
         const edition = twoIssues()
         edition.copies.push({
             ...cutFor(copy('green-other', [hole('hole-green-other', 1000, 1010, 45)]), systemOf(welteT98)),
-            measurements: { scale: 1.35 }
+            measurements: scaledBy(1.35)
         })
         edition.versions[1].edits.push({
             type: 'edit', id: 'edit-b2',
@@ -173,7 +175,6 @@ describe('the paper a version ran on', () => {
         })
 
         const view = new EditionView(edition)
-        expect(toOwnPaperOf(view, view.version('B')!)).toBeUndefined()
         expect(constraintProblems(view).map(problem => problem.problem))
             .toContain('copies-disagree-on-the-paper')
     })

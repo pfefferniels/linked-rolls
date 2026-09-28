@@ -2,6 +2,7 @@ import { Edition } from "../model/Edition.js";
 import { systemIdIn } from "../systems/TrackerBar.js";
 import { certaintyOf, isAsserted } from "../model/Assumption.js";
 import context from "../spec/context.json" with { type: 'json' };
+import { atOwnPlaces } from "../collation/alignment.js";
 
 /**
  * The keys an export derives from the tree, which no node of the
@@ -175,8 +176,14 @@ const withDoubtedReferencesQuoted = (value: Json): Quoting => {
     }
 }
 
+/** The edition with each copy's features and tears at the copy's own places, as a document holds them. */
+const atOwnPlacesAll = (edition: Edition): Edition =>
+    edition.copies.some(copy => copy.measurements.alignment)
+        ? { ...edition, copies: edition.copies.map(atOwnPlaces) }
+        : edition
+
 export const asJsonLd = (edition: Edition) => {
-    const { node, quoted } = withDoubtedReferencesQuoted(withSystemContexts(withChanges(asJsonLdEntity(edition))))
+    const { node, quoted } = withDoubtedReferencesQuoted(withSystemContexts(withChanges(asJsonLdEntity(atOwnPlacesAll(edition)))))
     // The context is the export's own; one carried in from an import must not override it.
     const { base, '@context': carried, ...rest } = node
 

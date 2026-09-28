@@ -5,9 +5,9 @@ import { AnyFeature, FeatureConditionType, Patch, Mark, Transcription, Writing }
 import { ConditionState } from '../src/model/ConditionState'
 import { featuresOf, GeneralRollCondition, PaperStretch } from '../src/model/RollCopy'
 import { ObjectAssumption, assignObject } from '../src/model/Assumption'
-import { addGeneralCondition, stateFeatureCondition } from '../src/ops'
+import { addGeneralCondition, stateFeatureCondition, statePaperStretch } from '../src/ops'
 import { attachment, copy, editionOf, hole, note, version } from './editionFixture'
-import { mm, track } from '../src/model/Quantity'
+import { mm, percent, track } from '../src/model/Quantity'
 
 const damage = <T extends FeatureConditionType>(conditionType: T): ObjectAssumption<ConditionState<T>> =>
     assignObject<ConditionState<T>>({ conditionType })
@@ -15,7 +15,10 @@ const damage = <T extends FeatureConditionType>(conditionType: T): ObjectAssumpt
 const general = (description: string): ObjectAssumption<GeneralRollCondition> =>
     assignObject<GeneralRollCondition>({ conditionType: 'general', description })
 
-const stretch = assignObject<PaperStretch>({ conditionType: 'paper-stretch', factor: 1.02 })
+const stretch = assignObject<PaperStretch>({
+    conditionType: 'paper-stretch',
+    along: { value: percent(0.2), uncertainty: percent(0.05), unit: 'percent' }
+})
 
 const at = (from: number, to: number) => ({
     horizontal: { unit: 'mm' as const, from: mm(from), to: mm(to) },
@@ -62,6 +65,29 @@ describe('adding a condition to a copy', () => {
     it('leaves the edition as it is for a copy it does not have', () => {
         const before = withFeatures()
         expect(produce(before, addGeneralCondition('nothing', general('torn')))).toBe(before)
+    })
+})
+
+describe('stating what the paper of a copy was measured to have done', () => {
+    const across = assignObject<PaperStretch>({
+        conditionType: 'paper-stretch',
+        across: { value: percent(-0.05), unit: 'percent' }
+    })
+
+    it('states it beside the other conditions', () => {
+        const wear = general('browned')
+        const before = produce(withFeatures(), addGeneralCondition('first', wear))
+        expect(produce(before, statePaperStretch('first', stretch)).copies[0].conditions).toEqual([wear, stretch])
+    })
+
+    it('takes the place of what was stated before, a copy having one paper', () => {
+        const stated = produce(withFeatures(), statePaperStretch('first', stretch))
+        expect(produce(stated, statePaperStretch('first', across)).copies[0].conditions).toEqual([across])
+    })
+
+    it('takes the statement away where nothing is given', () => {
+        const stated = produce(withFeatures(), statePaperStretch('first', stretch))
+        expect(produce(stated, statePaperStretch('first')).copies[0].conditions).toEqual([])
     })
 })
 

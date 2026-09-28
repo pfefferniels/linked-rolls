@@ -2,6 +2,7 @@ import { Edition } from "../model/Edition.js";
 import { derivedKeys } from "./asJsonLd.js";
 import { migrate, plainCopyId } from "./migrate.js";
 import { isDateString } from "../shared/utils.js";
+import { putOnAxis } from "../collation/alignment.js";
 import schema from "../schema.json" with { type: 'json' };
 
 export const importDate = (str: string): Date => {
@@ -138,12 +139,18 @@ const withQuotedStatementsInPlace = (edition: Json): Json => {
     return withReferencesOn({ ...rest, ...(others.length > 0 && { '@included': others }) }, bySubject)
 }
 
+/**
+ * Reads an edition. A document holds each copy's features and tears at
+ * the copy's own places, as they were read; the edition holds them on
+ * its axis, which is where the copy's alignment carries them.
+ */
 export const importJsonLd = (json: Json): Edition => {
     const { '@context': context, ...document } = withPlainCopyIds(migrate(withQuotedStatementsInPlace(json)))
     const edition = fromJsonLdEntity(document) as Edition;
     edition.base = Array.isArray(context)
         ? context.find((c: Json) => c['@base'])?.['@base'] || ''
         : '';
+    (edition.copies ?? []).forEach(putOnAxis);
 
     return edition;
 }

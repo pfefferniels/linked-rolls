@@ -6,9 +6,10 @@ import { produce } from 'immer'
 import context from '../src/spec/context.json'
 import welteT100Context from '../src/spec/welte-t100.context.json'
 import { Edition } from '../src/model/Edition'
-import { featuresOf, isTear, PaperStretch, Tear, tearsOf } from '../src/model/RollCopy'
+import { Alignment, featuresOf, isTear, Tear, tearsOf } from '../src/model/RollCopy'
 import { assignObject, ObjectAssumption } from '../src/model/Assumption'
-import { addGeneralCondition, addTear, alignCopy, unalignCopy } from '../src/ops'
+import { addGeneralCondition, addTear, unalignCopy } from '../src/ops'
+import { applyAlignment } from '../src/collation/alignment'
 import { readFromStanfordAton } from '../src/readers/stanfordAton'
 import { asJsonLd } from '../src/io/asJsonLd'
 import { importJsonLd } from '../src/io/importJsonLd'
@@ -53,35 +54,37 @@ describe('adding a tear to a copy', () => {
 })
 
 describe('aligning a copy with tears', () => {
-    const shift = { horizontal: mm(2), vertical: track(1) }
-    const stretch = assignObject<PaperStretch>({ conditionType: 'paper-stretch', factor: 1.5 })
+    const alignment: Alignment = { shift: { horizontal: mm(2), vertical: track(1) }, scale: 1.5 }
+    const aligned = () => produce(withTear(), draft => { applyAlignment(alignment, draft.copies[0]) })
 
     it('moves the tears with the features along the roll', () => {
-        const next = produce(withTear(), alignCopy('first', shift, 1.5, { cause: 'paper', condition: stretch }))
-        const [aligned] = tearsOf(next.copies[0])
+        const [moved] = tearsOf(aligned().copies[0])
 
-        expect(featuresOf(next.copies[0])[0].horizontal).toEqual({ unit: 'mm', from: 1503, to: 1518 })
-        expect(aligned.horizontal).toEqual({ unit: 'mm', from: 1653, to: 1728 })
+        expect(featuresOf(aligned().copies[0])[0].horizontal).toEqual({ unit: 'mm', from: 1503, to: 1518 })
+        expect(moved.horizontal).toEqual({ unit: 'mm', from: 1653, to: 1728 })
     })
 
     it('leaves the edge and the depth of a tear to the shift across the roll', () => {
-        const next = produce(withTear(), alignCopy('first', shift, 1.5))
-        const [aligned] = tearsOf(next.copies[0])
+        const [moved] = tearsOf(aligned().copies[0])
 
-        expect(featuresOf(next.copies[0])[0].vertical.from).toBe(48)
-        expect(aligned.edge).toBe('bass')
-        expect(aligned.depth).toEqual({ value: 5.9, unit: 'mm' })
+        expect(featuresOf(aligned().copies[0])[0].vertical.from).toBe(48)
+        expect(moved.edge).toBe('bass')
+        expect(moved.depth).toEqual({ value: 5.9, unit: 'mm' })
     })
 
-    it('puts the tears back by unaligning, and keeps them while the paper stretch goes', () => {
-        const aligned = produce(withTear(), alignCopy('first', shift, 1.5, { cause: 'paper', condition: stretch }))
-        const next = produce(aligned, unalignCopy('first'))
+    it('puts the tears back by unaligning', () => {
+        const next = produce(aligned(), unalignCopy('first'))
         const [back] = tearsOf(next.copies[0])
 
-        expect(next.copies[0].conditions.filter(isTear)).toHaveLength(1)
         expect(next.copies[0].conditions).toHaveLength(1)
         expect(back.horizontal.from).toBeCloseTo(1100)
         expect(back.horizontal.to).toBeCloseTo(1150)
+    })
+
+    it('writes the tears at the copy\'s own places, where the features are written', () => {
+        const [written] = asJsonLd(aligned()).copies[0].conditions
+        expect(written.horizontal).toEqual({ unit: 'mm', from: 1100, to: 1150 })
+        expect(tearsOf(importJsonLd(asJsonLd(aligned())).copies[0])[0].horizontal).toEqual({ unit: 'mm', from: 1653, to: 1728 })
     })
 })
 
