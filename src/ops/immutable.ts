@@ -36,7 +36,7 @@ export const isRecord = (value: unknown): value is Node =>
     typeof value === 'object' && value !== null
 
 /** The record's values each changed, or the very same record where the change left every one as it was, copied as `mapped` copies. */
-const withValues = (record: Node, change: (value: unknown) => unknown): Node => {
+export const withValues = (record: Node, change: (value: unknown) => unknown): Node => {
     let changed: Node | undefined
     Object.keys(record).forEach(key => {
         const value = record[key]

@@ -4,6 +4,7 @@ import { trackerBars } from "../systems/index.js";
 import { welteT100 } from "../systems/welteT100/bar.js";
 import { Track } from "../model/Quantity.js";
 import { isDateString } from "../shared/utils.js";
+import { mapped, withValues } from "../ops/immutable.js";
 
 /**
  * Brings the JSON of an edition written by an earlier release of the
@@ -58,10 +59,10 @@ const referenceKeys = ['alignedWith', 'pairedWith', 'basedOn']
  * The five type terms that were capitalised while the rest of the
  * vocabulary was not, under the keys that carried them then.
  */
-const lowerCasedTerms: Record<string, Record<string, string>> = {
+const lowerCasedTerms = Object.entries<Record<string, string>>({
     method: { Print: 'print', Handwriting: 'handwriting', Stamp: 'stamp' },
     material: { Paper: 'paper', Tape: 'tape' }
-}
+})
 
 const named = (name: string) => ({ name, sameAs: [] })
 
@@ -116,7 +117,7 @@ const withoutVersionSiglum = (node: Json): Json => {
 }
 
 const withLowerCaseTerms = (node: Json): Json =>
-    Object.entries(lowerCasedTerms).reduce((result, [key, terms]) => {
+    lowerCasedTerms.reduce((result, [key, terms]) => {
         const lowered = terms[result[key]]
         return lowered ? { ...result, [key]: lowered } : result
     }, node)
@@ -519,28 +520,16 @@ const withTimeSpanDates = (node: Json): Json => {
     return { ...rest, within }
 }
 
-const migrateNode = (node: Json): Json =>
-    [withRenamedKeys, withRenamedEditType, withTypology, withRenamedType, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
-        withPerforator, withProductionNodes, withTypedPerforator, withScale, withoutOps, withDerivationList, withReadingKind, withTimeSpanDates,
-        withoutFeatureKind, withBorneFeaturesNamed, withFeaturesInActs, withOwnPlaces, withDriveOfStaggering, withoutPattern, withoutBearings, withoutEntailedType]
-        .reduce((result, step) => step(result), node)
+const nodeSteps = [withRenamedKeys, withRenamedEditType, withTypology, withRenamedType, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
+    withPerforator, withProductionNodes, withTypedPerforator, withScale, withoutOps, withDerivationList, withReadingKind, withTimeSpanDates,
+    withoutFeatureKind, withBorneFeaturesNamed, withFeaturesInActs, withOwnPlaces, withDriveOfStaggering, withoutPattern, withoutBearings, withoutEntailedType]
 
-/** The items each walked, or the very same list where the walk changed none. */
-const walked = (items: Json[]): Json[] => {
-    const result = items.map(walk)
-    return result.every((item, i) => item === items[i]) ? items : result
-}
+const migrateNode = (node: Json): Json => nodeSteps.reduce((result, step) => step(result), node)
 
-/** The node with each child walked, or the very same node where the walk changed none. */
-const withWalkedChildren = (node: Json): Json => {
-    const entries = Object.entries(node)
-    const result = entries.map(([key, child]) => [key, walk(child)])
-    return result.every(([, child], i) => child === entries[i][1]) ? node : Object.fromEntries(result)
-}
-
+/** The value with every node in it migrated, a node before its children; the very same value where nothing changed. */
 const walk = (value: Json): Json => {
-    if (Array.isArray(value)) return walked(value)
-    if (value && typeof value === 'object') return withWalkedChildren(migrateNode(value))
+    if (Array.isArray(value)) return mapped(value, walk)
+    if (value && typeof value === 'object') return withValues(migrateNode(value), walk)
     return value
 }
 
