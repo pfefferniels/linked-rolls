@@ -84,7 +84,9 @@ about, which the attachment that glued them on states already.
 export stopped stating P56 bears feature and P46 is composed of on
 copies and patches. The ontology derives them by property chains over
 `reo:produced`, added for the purpose, and `migrate` drops the keys
-from older exports.
+from older exports. A chain over `reo:added` followed, which lets an
+edit end before or with the end of the act that punched a chain of
+holes carrying what the edit added (P184).
 
 ## Publishing
 

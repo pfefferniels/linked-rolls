@@ -209,7 +209,7 @@ reo:added
     rdfs:domain reo:Edit ;
     rdfs:range crm:E90_Symbolic_Object ;
     rdfs:label "added"@en ;
-    rdfs:comment """This property associates an edit with a symbol it adds to the version being created: a command, or a text written onto the roll."""@en ;
+    rdfs:comment """This property associates an edit with a symbol it adds to the version being created: a command, or a text written onto the roll. What an edit adds is found only in its version and in those derived from it, so every feature carrying it was made after the edit: the edit ends before or with the end of the act that made the feature (P184). The axiom below states this, so that a version need not be dated where the acts that made its features are. The chain ends at the act that made the feature rather than at the production of the copy, since a copy altered by hand may bear features younger than itself. A copy that states it carries a version without its features being read is left out, because that statement rests on a belief which the entailment would drop."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:removed
@@ -262,6 +262,11 @@ crm:P56_bears_feature
 
 crm:P46_is_composed_of
     owl:propertyChainAxiom ( crm:P31i_was_modified_by crm:P111_added ) .
+
+crm:P184_ends_before_or_with_the_end_of
+    owl:propertyChainAxiom ( reo:added
+                             crm:P128i_is_carried_by
+                             [ owl:inverseOf reo:produced ] ) .
 
 
 #################################################################

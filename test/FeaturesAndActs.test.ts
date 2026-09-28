@@ -12,7 +12,8 @@ import { assignObject } from '../src/model/Assumption'
 import { asJsonLd } from '../src/io/asJsonLd'
 import { importJsonLd } from '../src/io/importJsonLd'
 import { degrees, mm, track } from '../src/model/Quantity'
-import { copy, editionOf, hole, note, version } from './editionFixture'
+import { Edition } from '../src/model/Edition'
+import { alteration, copy, editionOf, hole, note, version } from './editionFixture'
 
 /**
  * Each kind of feature is a class of its own, three of them under E25
@@ -90,18 +91,19 @@ const withFeatures = () => editionOf(
     [version('A', [{ type: 'edit', id: 'edit-a', insert: [note('note', 60, 'perforation')] }])]
 )
 
-const exported = () => {
-    const edition = withFeatures()
+const exportOf = (edition: Edition) => {
     edition.base = base
     return JSON.parse(JSON.stringify(asJsonLd(edition)))
 }
+
+const exported = () => exportOf(withFeatures())
 
 interface Triple { subject: string, property: string, object: string }
 
 const withoutBrackets = (term: string) => term.replace(/^<|>$/g, '')
 
-const triples = async (): Promise<Triple[]> => {
-    const quads = await jsonld.toRDF(exported(), {
+const triples = async (edition: Edition = withFeatures()): Promise<Triple[]> => {
+    const quads = await jsonld.toRDF(exportOf(edition), {
         format: 'application/n-quads',
         documentLoader
     }) as unknown as string
@@ -138,7 +140,10 @@ const lrmooAxioms = `
     <${lrmoo}R28i_was_produced_by> <${owl}inverseOf> <${lrmoo}R28_produced> .
 `
 
-interface Chain { first: string, second: string, implied: string }
+/** A property of a chain, or its inverse where the chain names it by owl:inverseOf. */
+interface Step { property: string, inverse: boolean }
+
+interface Chain { steps: Step[], implied: string }
 
 interface Axioms {
     readonly supers: ReadonlyMap<string, string[]>
@@ -150,34 +155,51 @@ const axioms = (): Axioms => {
     const quads = new Parser().parse(readFileSync('ontology/reo.ttl', 'utf-8') + lrmooAxioms)
     const objectsOf = (subject: Term, predicate: string): Term[] =>
         quads.filter(quad => quad.subject.equals(subject) && quad.predicate.value === predicate).map(quad => quad.object)
-    const listOf = (head: Term): string[] => head.value === `${rdf}nil`
+    const listOf = (head: Term): Term[] => head.value === `${rdf}nil`
         ? []
-        : [objectsOf(head, `${rdf}first`)[0].value, ...listOf(objectsOf(head, `${rdf}rest`)[0])]
+        : [objectsOf(head, `${rdf}first`)[0], ...listOf(objectsOf(head, `${rdf}rest`)[0])]
     const pairs = (predicate: string): [string, string][] =>
-        quads.filter(quad => quad.predicate.value === predicate).map(quad => [quad.subject.value, quad.object.value])
+        quads.filter(quad => quad.predicate.value === predicate && quad.subject.termType === 'NamedNode')
+            .map(quad => [quad.subject.value, quad.object.value])
     const grouped = (entries: [string, string][]) =>
         new Map([...Map.groupBy(entries, ([from]) => from)].map(([from, all]) => [from, all.map(([, to]) => to)]))
+
+    const stepOf = (term: Term): Step => {
+        const [inverted] = objectsOf(term, `${owl}inverseOf`)
+        return inverted ? { property: inverted.value, inverse: true } : { property: term.value, inverse: false }
+    }
 
     const inverseOf = pairs(`${owl}inverseOf`)
     return {
         supers: grouped(pairs(`${rdfs}subPropertyOf`)),
         inverses: grouped([...inverseOf, ...inverseOf.map(([a, b]): [string, string] => [b, a])]),
-        chains: quads.filter((quad: Quad) => quad.predicate.value === `${owl}propertyChainAxiom`).map(quad => {
-            const [first, second] = listOf(quad.object)
-            return { first, second, implied: quad.subject.value }
-        })
+        chains: quads.filter((quad: Quad) => quad.predicate.value === `${owl}propertyChainAxiom`).map(quad => ({
+            steps: listOf(quad.object).map(stepOf),
+            implied: quad.subject.value
+        }))
     }
 }
 
 const keyOf = ({ subject, property, object }: Triple) => `${subject} ${property} ${object}`
 
+/** The nodes one step leads to from the node. */
+const reached = (all: Triple[], node: string, { property, inverse }: Step): string[] => inverse
+    ? all.filter(t => t.property === property && t.object === node).map(({ subject }) => subject)
+    : statedOf(all, node, property)
+
+/** The nodes a step can be taken from. */
+const startsOf = (all: Triple[], { property, inverse }: Step): string[] =>
+    [...new Set(all.filter(t => t.property === property).map(t => inverse ? t.object : t.subject))]
+
+const along = (all: Triple[], node: string, steps: readonly Step[]): string[] =>
+    steps.reduce((nodes, step) => nodes.flatMap(from => reached(all, from, step)), [node])
+
 /** What one application of the rules for subproperties, inverses and chains adds to the triples. */
 const oneStep = (all: Triple[], { supers, inverses, chains }: Axioms): Triple[] => [
     ...all.flatMap(t => (supers.get(t.property) ?? []).map(property => ({ ...t, property }))),
     ...all.flatMap(t => (inverses.get(t.property) ?? []).map(property => ({ subject: t.object, property, object: t.subject }))),
-    ...chains.flatMap(({ first, second, implied }) => all
-        .filter(t => t.property === first)
-        .flatMap(t => statedOf(all, t.object, second).map(object => ({ subject: t.subject, property: implied, object }))))
+    ...chains.flatMap(({ steps, implied }) => startsOf(all, steps[0])
+        .flatMap(subject => along(all, subject, steps).map(object => ({ subject, property: implied, object }))))
 ]
 
 /** The triples together with everything the rules derive from them, as OWL 2 RL applies prp-spo1, prp-inv and prp-spo2. */
@@ -304,5 +326,25 @@ describe('what a reasoner derives from the acts', () => {
                 : act)
         }]
         expect(importJsonLd(older).copies[0]).toEqual(withFeatures().copies[0])
+    })
+})
+
+describe('what a reasoner derives about when a version was made', () => {
+    it('lets an edit end no later than the punching of a chain carrying what it added', async () => {
+        const all = entailedBy(await triples())
+        const [production] = statedOf(all, of('first'), `${lrmoo}R28i_was_produced_by`)
+        expect(statedOf(all, of('edit-a'), `${crm}P184_ends_before_or_with_the_end_of`)).toEqual([production])
+    })
+
+    it('bounds it by the act that punched the chain, not by the older copy altered by hand', async () => {
+        const punchedByHand = editionOf(
+            [{ ...copy('older', []), modifications: [alteration(hole('by-hand', 10, 12, 47))] }],
+            [version('B', [{ type: 'edit', id: 'edit-b', insert: [note('added', 60, 'by-hand')] }])]
+        )
+        const all = entailedBy(await triples(punchedByHand))
+        const [production] = statedOf(all, of('older'), `${lrmoo}R28i_was_produced_by`)
+        const [handPunching] = statedOf(all, of('older'), `${crm}P31i_was_modified_by`)
+        expect(statedOf(all, of('edit-b'), `${crm}P184_ends_before_or_with_the_end_of`)).toEqual([handPunching])
+        expect(handPunching).not.toEqual(production)
     })
 })
