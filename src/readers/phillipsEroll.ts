@@ -199,16 +199,6 @@ const controlOffsetOf = (system: TrackerBar, given: number | undefined): number 
     return measured
 }
 
-/** The position each note of the bar sounds from. */
-const positionsByPitch = (bar: TrackerBar): Map<number, Track> =>
-    new Map(
-        Array.from({ length: bar.trackCount }, (_, index) => track(index + 1))
-            .flatMap((position): [number, Track][] => {
-                const meaning = bar.meaningOf(position)
-                return meaning?.type === 'note' ? [[meaning.pitch, position]] : []
-            })
-    )
-
 /**
  * Reads one of his e-roll files as a copy of the roll, in millimetres
  * of paper, on the bar it was cut for and in that bar's numbering. A
@@ -228,10 +218,8 @@ export function readFromPhillipsEroll(
     const elapsedAt = clockOf(temposIn(timed), file.header.ticksPerBeat)
     const place = placeAt ?? atStatedSpeed(system)
     const offset = controlOffsetOf(system, controlOffset)
-    const notePositions = positionsByPitch(system)
-
     const positionOf = (number: number): Track =>
-        notePositions.get(number) ?? track(number - offset)
+        system.positionOf({ type: 'note', pitch: number }) ?? track(number - offset)
 
     const features = notesIn(timed).flatMap((note): HoleChain[] => {
         const position = positionOf(note.pitch)

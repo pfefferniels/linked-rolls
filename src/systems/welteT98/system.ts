@@ -1,6 +1,4 @@
 import {
-    pedalBrushing,
-    pedalDefaults,
     ROWS_PER_MM,
     WELTE_T98_SPOOL,
     Grid,
@@ -38,10 +36,10 @@ import {
 } from "../ReproducingSystem.js";
 import { Millimeters, mm, Seconds, seconds, track } from "../../model/Quantity.js";
 import { defaultVelocityMap } from "../velocity.js";
-import { performWelte, Ports, sameParameters, type WelteOptions } from "../welte.js";
+import { pedalPresets, performWelte, Ports, sameParameters, type WelteOptions } from "../welte.js";
 
 export type { VelocityMap } from "../velocity.js";
-export { secondsAt } from "../welte.js";
+export { pedalPresetOf, pedalPresets, secondsAt, type PedalPreset } from "../welte.js";
 export type { WelteT98Instrument, WelteT98InstrumentName } from "welte-mignon-emulator/t98";
 
 /**
@@ -89,21 +87,6 @@ export const instrumentNameOf = (nuance: Record<Half, Parameters>): WelteT98Inst
     })
 
 export { instrumentT98Of, labelOf, nuanceOf }
-
-/**
- * The two readings of the pedal mechanism, which is the T-100's below the
- * command: Hagmann has the valves and bellows that carry out the movements "in
- * beiden Systemen dieselbe" (p. 106), and only the Vorpneumatik differs.
- */
-export const pedalPresets = {
-    damping: pedalDefaults,
-    brushing: pedalBrushing
-} satisfies Record<string, Parameters>
-
-export type PedalPreset = keyof typeof pedalPresets
-
-export const pedalPresetOf = (pedals: Parameters): PedalPreset | undefined =>
-    (Object.keys(pedalPresets) as PedalPreset[]).find(name => sameParameters(pedalPresets[name], pedals))
 
 /**
  * The options every Welte system takes (see `WelteOptions`), with what the

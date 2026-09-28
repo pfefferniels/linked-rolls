@@ -6,6 +6,7 @@ import { TrackCalibration } from "../model/TrackCalibration.js";
 import { systemOf, TrackerBar } from "../systems/TrackerBar.js";
 import { welteT100 } from "../systems/welteT100/bar.js";
 import { inMillimeters, mean, Millimeters, mm, Pixels, pixelsPerInch, px, subtract, Track, track } from "../model/Quantity.js";
+import { medianOf } from "../collation/statistics.js";
 
 /** A hole record as the Stanford analysis files spell it. */
 interface AtonHole {
@@ -54,12 +55,6 @@ const chainedBadHoles = (holes: AtonHole[], calibration: TrackCalibration): Aton
             ...hole,
             TRACKER_HOLE: `${Math.round((readPx(hole.CENTROID_COL) - calibration.offset) / calibration.separation)}`
         }))
-
-const median = (values: number[]) => {
-    const sorted = [...values].sort((a, b) => a - b)
-    const middle = Math.floor(sorted.length / 2)
-    return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2
-}
 
 const mostFrequent = (values: number[]) => {
     const counts = values.reduce(
@@ -118,7 +113,7 @@ const calibrationShiftIn = (holes: AtonHole[], bar: TrackerBar): Track => {
 const gridOffsetOf = (holes: AtonHole[], separation: Pixels, stated?: string): Pixels => {
     if (stated !== undefined) return readPx(stated)
 
-    return px(median(holes.map(hole => readPx(hole.CENTROID_COL) - +hole.TRACKER_HOLE * separation)))
+    return medianOf(holes.map(hole => px(readPx(hole.CENTROID_COL) - +hole.TRACKER_HOLE * separation))) ?? px(0)
 }
 
 /** The head of a chain of holes, with the attack and the off time it carries read once. */

@@ -5,6 +5,8 @@ import {
     levelChanges,
     mezzoforteTravel,
     paperSeconds,
+    pedalBrushing,
+    pedalDefaults,
     ROWS_PER_MM,
     travelBetweenRails,
     Half,
@@ -82,6 +84,27 @@ export type WelteOptions = {
 export const sameParameters = (a: Parameters, b: Parameters): boolean =>
     Object.keys(a).length === Object.keys(b).length
     && Object.entries(a).every(([name, value]) => b[name] === value)
+
+/**
+ * The two readings of the pedal mechanism the emulator offers, by name,
+ * which the systems share: Hagmann has the valves and bellows that carry
+ * out the movements "in beiden Systemen dieselbe" (p. 106), and only the
+ * Vorpneumatik differs. Under `damping` the dampers reach the strings
+ * within the shortest lift the rolls punch, so every lift damps. Under
+ * `brushing` their fall is slowed until the quick runs of latch changes
+ * in the SUPRA corpus dip without damping, at the price that lifts
+ * shorter than about 265 ms brush as well.
+ */
+export const pedalPresets = {
+    damping: pedalDefaults,
+    brushing: pedalBrushing
+} satisfies Record<string, Parameters>
+
+export type PedalPreset = keyof typeof pedalPresets
+
+/** The preset a set of pedal constants is, if it is one. */
+export const pedalPresetOf = (pedals: Parameters): PedalPreset | undefined =>
+    (Object.keys(pedalPresets) as PedalPreset[]).find(name => sameParameters(pedalPresets[name], pedals))
 
 /** Paper the grid runs on past the last hole, so that a final pedal release completes. */
 const RUN_OUT = mm(100)

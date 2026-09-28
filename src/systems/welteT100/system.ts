@@ -1,7 +1,5 @@
 import {
     DEFAULT_PUNCH_MM,
-    pedalBrushing,
-    pedalDefaults,
     TRACKER_BORE_MM,
     WELTE_SPOOL,
     Half,
@@ -24,10 +22,10 @@ import { welteT100, WelteT100ExpressionType } from "./bar.js";
 import { NegotiatedEvent, Performance, ReproducingSystem, RollProperties } from "../ReproducingSystem.js";
 import { mm, track } from "../../model/Quantity.js";
 import { defaultVelocityMap } from "../velocity.js";
-import { performWelte, sameParameters, type WelteOptions } from "../welte.js";
+import { pedalPresets, performWelte, sameParameters, type WelteOptions } from "../welte.js";
 
 export type { VelocityMap } from "../velocity.js";
-export { secondsAt } from "../welte.js";
+export { pedalPresetOf, pedalPresets, secondsAt, type PedalPreset } from "../welte.js";
 
 export type { Instrument } from "welte-mignon-emulator/t100";
 
@@ -52,25 +50,6 @@ export const nuanceOf = (instrument: Instrument): Record<Half, Parameters> =>
 export const instrumentNameOf = (nuance: Record<Half, Parameters>): InstrumentName | undefined =>
     instrumentNames.find(name =>
         sameParameters(instruments[name].bass, nuance.bass) && sameParameters(instruments[name].treble, nuance.treble))
-
-/**
- * The two readings of the pedal mechanism the emulator offers, by name.
- * Under `damping` the dampers reach the strings within the shortest lift
- * the rolls punch, so every lift damps. Under `brushing` their fall is
- * slowed until the quick runs of latch changes in the SUPRA corpus dip
- * without damping, at the price that lifts shorter than about 265 ms brush
- * as well.
- */
-export const pedalPresets = {
-    damping: pedalDefaults,
-    brushing: pedalBrushing
-} satisfies Record<string, Parameters>
-
-export type PedalPreset = keyof typeof pedalPresets
-
-/** The preset a set of pedal constants is, if it is one. */
-export const pedalPresetOf = (pedals: Parameters): PedalPreset | undefined =>
-    (Object.keys(pedalPresets) as PedalPreset[]).find(name => sameParameters(pedalPresets[name], pedals))
 
 /** The T-100 takes the options every Welte system does; see `WelteOptions`. */
 export type WelteT100Options = WelteOptions
