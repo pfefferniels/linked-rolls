@@ -1,4 +1,3 @@
-import { EditionView } from "../view/EditionView.js"
 import { paperOfVersion } from "./ownPaper.js"
 import { alignmentProblems } from "./paper.js"
 import { idOf } from "../model/Assumption.js"
@@ -8,6 +7,10 @@ import { trackerBarOf } from "../systems/index.js"
 import { barOf } from "../model/RollCopy.js"
 import { FeatureOrPatch } from "../model/Feature.js"
 import { deletedBy, insertedBy, Version } from "../model/Version.js"
+import { predecessorOf } from "./stemma.js"
+import { placedCarriersOf, snapshotOf } from "./text.js"
+import { copyOfFeature } from "../lookup/lookup.js"
+import { Edition } from "../model/Edition.js"
 
 export type ConstraintProblem = {
     version: string
@@ -113,12 +116,12 @@ const typesNotOnTheBar = (version: Version, snapshot: readonly AnySymbol[]): Con
  * without this nothing checks the tracks at all.
  */
 const carriersOffTheirMeaning = (
-    view: EditionView,
+    edition: Edition,
     version: string,
     commands: readonly AnyCommand[]
 ): ConstraintProblem[] => {
     const misread = (carrier: FeatureOrPatch, symbol: AnyCommand): boolean => {
-        const copy = view.copyOf(carrier.id)
+        const copy = copyOfFeature(edition, carrier.id)
         if (!copy) return false
 
         // A carrier lying across several positions reads as several commands,
@@ -128,7 +131,7 @@ const carriersOffTheirMeaning = (
     }
 
     return commands
-        .filter(symbol => view.placedCarriersOf(symbol).some(carrier => misread(carrier, symbol)))
+        .filter(symbol => placedCarriersOf(edition, symbol).some(carrier => misread(carrier, symbol)))
         .map(symbol => ({ version, symbol: symbol.id, problem: 'carrier-on-another-track' as const }))
 }
 
@@ -142,9 +145,9 @@ const carriersOffTheirMeaning = (
  * speed, and averaging it in would hide both that and the fact that the
  * playback rests on a guess.
  */
-const paperDisagreed = (view: EditionView, version: Version): ConstraintProblem[] => {
-    const own = new Set(paperOfVersion(view, version)?.copies ?? [])
-    return alignmentProblems(view.edition)
+const paperDisagreed = (edition: Edition, version: Version): ConstraintProblem[] => {
+    const own = new Set(paperOfVersion(edition, version)?.copies ?? [])
+    return alignmentProblems(edition)
         .some(({ copy, problem }) => problem === 'paper-beyond-its-spread' && own.has(copy))
         ? [{ version: version.id, symbol: version.id, problem: 'copies-disagree-on-the-paper' as const }]
         : []
@@ -162,10 +165,10 @@ const paperDisagreed = (view: EditionView, version: Version): ConstraintProblem[
  * into the text unstruck. Nothing else in the edition shows it: the
  * counts move, and only by a handful.
  */
-const strikesBitingNothing = (view: EditionView, version: Version): ConstraintProblem[] => {
-    const parent = view.predecessorOf(version.id)
+const strikesBitingNothing = (edition: Edition, version: Version): ConstraintProblem[] => {
+    const parent = predecessorOf(edition, version.id)
     const reachable = new Set([
-        ...(parent ? view.snapshot(parent.id).map(symbol => symbol.id) : []),
+        ...(parent ? snapshotOf(edition, parent.id).map(symbol => symbol.id) : []),
         ...insertedBy(version).map(symbol => symbol.id)
     ])
 
@@ -184,16 +187,16 @@ const strikesBitingNothing = (view: EditionView, version: Version): ConstraintPr
  * track that does not say what its symbol says, and a strike that takes
  * nothing out.
  */
-export const constraintProblems = (view: EditionView): ConstraintProblem[] =>
-    view.edition.versions.flatMap(version => {
-        const snapshot = view.snapshot(version.id)
+export const constraintProblems = (edition: Edition): ConstraintProblem[] =>
+    edition.versions.flatMap(version => {
+        const snapshot = snapshotOf(edition, version.id)
         const commands = snapshot.filter(isCommand)
 
         return [
             ...problemsIn(version.id, commands),
             ...typesNotOnTheBar(version, snapshot),
-            ...carriersOffTheirMeaning(view, version.id, commands),
-            ...paperDisagreed(view, version),
-            ...strikesBitingNothing(view, version)
+            ...carriersOffTheirMeaning(edition, version.id, commands),
+            ...paperDisagreed(edition, version),
+            ...strikesBitingNothing(edition, version)
         ]
     })

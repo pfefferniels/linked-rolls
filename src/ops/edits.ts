@@ -1,6 +1,5 @@
 /** Merging and splitting the edits of a version. */
 import { v4 } from "uuid"
-import { EditionView } from "../view/EditionView.js"
 import { AnySymbol, Expression } from "../model/Symbol.js"
 import { Edit, EditType } from "../model/Edit.js"
 import { editsOf } from "../model/Version.js"
@@ -9,6 +8,10 @@ import { trackerBarOf } from "../systems/index.js"
 import { HorizontalSpan } from "../model/Feature.js"
 import { distance, Millimeters, mm, subtract } from "../model/Quantity.js"
 import { EditionOp, noChange, onVersion, insertion, deletion, reading } from "./draft.js"
+import { predecessorOf } from "../analysis/stemma.js"
+import { placeOf } from "../analysis/text.js"
+import { symbolsIn, versionIn } from "../lookup/lookup.js"
+import { Edition } from "../model/Edition.js"
 
 const sameSequence = (a: readonly string[], b: readonly string[]) =>
     a.length === b.length && a.every((value, i) => value === b[i])
@@ -25,9 +28,9 @@ const lengthOf = (span: HorizontalSpan): Millimeters => subtract(span.to, span.f
 const REPLACEMENT_TOLERANCE = mm(5)
 
 /** Shorten or prolong, where the inserted symbol starts about where the deleted one did. */
-const replacementType = (view: EditionView, inserted: AnySymbol, deleted: AnySymbol): EditType | undefined => {
-    const after = view.placeOf(inserted)
-    const before = view.placeOf(deleted)
+const replacementType = (edition: Edition, inserted: AnySymbol, deleted: AnySymbol): EditType | undefined => {
+    const after = placeOf(edition, inserted)
+    const before = placeOf(edition, deleted)
     if (!after || !before || distance(after.from, before.from) >= REPLACEMENT_TOLERANCE) return undefined
 
     return lengthOf(after) < lengthOf(before) ? 'shorten' : 'prolong'
@@ -37,14 +40,14 @@ const replacementType = (view: EditionView, inserted: AnySymbol, deleted: AnySym
  * A guess at what an edit does, from the symbols it exchanges and from
  * the systems the version and the one it is based on are coded for.
  */
-const guessEditType = (view: EditionView, versionId: string, edit: Edit): EditType => {
+const guessEditType = (edition: Edition, versionId: string, edit: Edit): EditType => {
     const inserts = edit.insert ?? []
-    const deletes = view.symbols(edit.delete ?? [])
+    const deletes = symbolsIn(edition, edit.delete ?? [])
     const inserted = expressionTypesOf(inserts)
     const deleted = expressionTypesOf(deletes)
 
-    const bar = trackerBarOf(view.version(versionId)?.system)
-    const parentBar = trackerBarOf(view.predecessorOf(versionId)?.system)
+    const bar = trackerBarOf(versionIn(edition, versionId)?.system)
+    const parentBar = trackerBarOf(predecessorOf(edition, versionId)?.system)
 
     /**
      * Where the version is coded for another system than its parent,
@@ -66,7 +69,7 @@ const guessEditType = (view: EditionView, versionId: string, edit: Edit): EditTy
     if (transferred && onlyExpressions && inserted.length + deleted.length > 0) return 'recoding'
     if (inserted.length > 1 && sameSequence(inserted, deleted)) return 'shift'
     if (inserted.length === 0 && deleted.length === 1) return 'remove-redundancy'
-    if (inserts.length === 1 && deletes.length === 1) return replacementType(view, inserts[0], deletes[0]) ?? 'correct-error'
+    if (inserts.length === 1 && deletes.length === 1) return replacementType(edition, inserts[0], deletes[0]) ?? 'correct-error'
 
     return 'correct-error'
 }
@@ -75,7 +78,7 @@ const guessEditType = (view: EditionView, versionId: string, edit: Edit): EditTy
  * Replaces the edits with a single one carrying all their insertions
  * and deletions, classified by a guess at what the exchange does.
  */
-export const mergeEdits = (given: EditionView, versionId: string, toMerge: readonly Edit[]): EditionOp => reading(given, view => {
+export const mergeEdits = (versionId: string, toMerge: readonly Edit[]): EditionOp => reading(edition => {
     if (toMerge.length === 0) return noChange
 
     const merged: Edit = {
@@ -84,7 +87,7 @@ export const mergeEdits = (given: EditionView, versionId: string, toMerge: reado
         insert: toMerge.flatMap(edit => edit.insert ?? []),
         delete: toMerge.flatMap(edit => edit.delete ?? [])
     }
-    merged.editType = guessEditType(view, versionId, merged)
+    merged.editType = guessEditType(edition, versionId, merged)
     const mergedIds = new Set(toMerge.map(edit => edit.id))
 
     return onVersion(versionId, version => {

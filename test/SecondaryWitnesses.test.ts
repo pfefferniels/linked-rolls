@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { copy, editionOf, hole, note, version } from './editionFixture'
-import { EditionView } from '../src/view/EditionView'
 import { AnyArgumentation, Belief, Certainty, certaintyOf, idOf } from '../src/model/Assumption'
 import { RollCopy } from '../src/model/RollCopy'
 import { Version } from '../src/model/Version'
@@ -89,7 +88,7 @@ describe('a copy stating which versions it carries', () => {
 
     it('loses the statement with the version it names', () => {
         const next = stating(['C', 'likely'], ['S', 'possible'])
-        const removed = produce(next, removeVersion(new EditionView(next), 'S'))
+        const removed = produce(next, removeVersion('S'))
 
         expect(statementsOf(removed, 'recorded')).toEqual([['C', 'likely']])
     })
@@ -97,19 +96,19 @@ describe('a copy stating which versions it carries', () => {
 
 describe('the witnesses of a version', () => {
     it('counts a copy by what the version inserts, and a statement with its certainty and belief', () => {
-        const view = new EditionView(stating(['C', 'likely'], ['S', 'possible']))
+        const stated = stating(['C', 'likely'], ['S', 'possible'])
 
-        expect(witnessesOf(view, 'A')).toEqual([{ copy: 'paper', by: 'carriers', through: 'C' }])
-        expect(witnessesOf(view, 'C')).toEqual([
+        expect(witnessesOf(stated, 'A')).toEqual([{ copy: 'paper', by: 'carriers', through: 'C' }])
+        expect(witnessesOf(stated, 'C')).toEqual([
             { copy: 'paper', by: 'carriers' },
             { copy: 'recorded', by: 'statement', certainty: 'likely', belief: belief('likely') }
         ])
-        expect(witnessesOf(view, 'S')).toEqual([{ copy: 'recorded', by: 'statement', certainty: 'possible', belief: belief('possible') }])
+        expect(witnessesOf(stated, 'S')).toEqual([{ copy: 'recorded', by: 'statement', certainty: 'possible', belief: belief('possible') }])
     })
 
     it('names the later version a copy bears witness through, and leaves the latest one it carries direct', () => {
-        const view = new EditionView(chain())
-        const through = (versionId: string) => witnessesOf(view, versionId).map(witness => witness.through)
+        const chained = chain()
+        const through = (versionId: string) => witnessesOf(chained, versionId).map(witness => witness.through)
 
         expect(through('A')).toEqual(['D'])
         expect(through('C')).toEqual(['D'])
@@ -119,29 +118,28 @@ describe('the witnesses of a version', () => {
     it('reads past a version that inserts nothing, which leaves the text as it found it', () => {
         const unstated = produce(chain(), draft => { draft.versions.push(version('E', [], 'D')) })
 
-        expect(witnessesOf(new EditionView(unstated), 'D')).toEqual([{ copy: 'roll', by: 'carriers' }])
-        expect(witnessesOf(new EditionView(unstated), 'E')).toEqual([])
+        expect(witnessesOf(unstated, 'D')).toEqual([{ copy: 'roll', by: 'carriers' }])
+        expect(witnessesOf(unstated, 'E')).toEqual([])
     })
 
     it('gathers the versions carried at first hand, passing over those a statement alone attests', () => {
-        expect(attestedVersions(new EditionView(chain()))).toEqual(new Set(['D']))
-        expect(attestedVersions(new EditionView(stating(['S', 'possible'])))).toEqual(new Set(['C']))
+        expect(attestedVersions(chain())).toEqual(new Set(['D']))
+        expect(attestedVersions(stating(['S', 'possible']))).toEqual(new Set(['C']))
     })
 
     it('gathers the versions a copy bears witness to, in the order of the edition', () => {
-        const view = new EditionView(stating(['S', 'possible'], ['C', 'likely']))
+        const stated = stating(['S', 'possible'], ['C', 'likely'])
 
-        expect(versionsWitnessedBy(view, 'paper').map(({ version, by, through }) => [version, by, through]))
+        expect(versionsWitnessedBy(stated, 'paper').map(({ version, by, through }) => [version, by, through]))
             .toEqual([['A', 'carriers', 'C'], ['C', 'carriers', undefined]])
-        expect(versionsWitnessedBy(view, 'recorded').map(({ version, certainty }) => [version, certainty]))
+        expect(versionsWitnessedBy(stated, 'recorded').map(({ version, certainty }) => [version, certainty]))
             .toEqual([['C', 'likely'], ['S', 'possible']])
     })
 
     it('reports a version to which only statements bear witness', () => {
         const next = stating(['C', 'likely'], ['S', 'possible'])
-        const view = new EditionView(next)
         const typesFor = (versionId: string) =>
-            reservationsAboutVersion(view, next.versions.find(candidate => candidate.id === versionId)!)
+            reservationsAboutVersion(next, next.versions.find(candidate => candidate.id === versionId)!)
                 .map(reservation => reservation.type)
 
         expect(typesFor('S')).toEqual(['text-not-stated', 'witnessed-by-statement-only'])
@@ -150,15 +148,14 @@ describe('the witnesses of a version', () => {
 
     it('reports a version no copy carries at first hand, and says nothing of one with no witness at all', () => {
         const next = chain()
-        const view = new EditionView(next)
         const typesFor = (versionId: string) =>
-            reservationsAboutVersion(view, next.versions.find(candidate => candidate.id === versionId)!)
+            reservationsAboutVersion(next, next.versions.find(candidate => candidate.id === versionId)!)
                 .map(reservation => reservation.type)
 
         expect(typesFor('A')).toEqual(['no-direct-witness'])
         expect(typesFor('C')).toEqual(['no-direct-witness'])
         expect(typesFor('D')).toEqual([])
-        expect(reservationsAboutVersion(new EditionView(editionOf([], [version('X', [])])), version('X', [])))
+        expect(reservationsAboutVersion(editionOf([], [version('X', [])]), version('X', [])))
             .toEqual([])
     })
 })
@@ -167,14 +164,14 @@ describe('statements of carriage that cannot stand', () => {
     it('reports one beside features that carry symbols, and one naming a version the edition lacks', () => {
         const next = applying(stating(['C', 'likely']), stateCarriage('paper', 'C'), stateCarriage('recorded', 'missing'))
 
-        expect(carriageProblems(new EditionView(next))).toEqual([
+        expect(carriageProblems(next)).toEqual([
             { copy: 'paper', version: 'C', problem: 'stated-beside-carriers' },
             { copy: 'recorded', version: 'missing', problem: 'version-missing' }
         ])
     })
 
     it('finds nothing to report where only the recorded copy states', () => {
-        expect(carriageProblems(new EditionView(stating(['C', 'likely'])))).toEqual([])
+        expect(carriageProblems(stating(['C', 'likely']))).toEqual([])
     })
 })
 

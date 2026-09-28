@@ -1,7 +1,9 @@
 import { Belief, Certainty, certaintyOf, idOf, idsOf } from "../model/Assumption.js";
-import { EditionView } from "../view/EditionView.js";
 import { AnySymbol } from "../model/Symbol.js";
 import { insertedBy } from "../model/Version.js";
+import { lineageOf } from "./stemma.js";
+import { copyOfFeature, versionIn } from "../lookup/lookup.js";
+import { Edition } from "../model/Edition.js";
 
 export type WitnessBy = 'carriers' | 'statement'
 
@@ -29,11 +31,11 @@ export interface Witness {
 }
 
 /** The copies whose features carry any of the symbols. */
-const copiesCarrying = (view: EditionView, symbols: readonly AnySymbol[]): Set<string> =>
+const copiesCarrying = (edition: Edition, symbols: readonly AnySymbol[]): Set<string> =>
     new Set(symbols
         .flatMap(symbol => idsOf(symbol.carriers))
         .flatMap(id => {
-            const copy = view.copyOf(id)
+            const copy = copyOfFeature(edition, id)
             return copy ? [copy.id] : []
         }))
 
@@ -45,11 +47,11 @@ interface Carriage {
 }
 
 /** Every copy carrying what a version inserts, version by version, the copies in the order the edition lists them. */
-const carriagesIn = (view: EditionView): Carriage[] =>
-    view.edition.versions.flatMap(version => {
-        const carrying = copiesCarrying(view, insertedBy(version))
-        const depth = view.lineageOf(version.id).length
-        return view.edition.copies
+const carriagesIn = (edition: Edition): Carriage[] =>
+    edition.versions.flatMap(version => {
+        const carrying = copiesCarrying(edition, insertedBy(version))
+        const depth = lineageOf(edition, version.id).length
+        return edition.copies
             .filter(copy => carrying.has(copy.id))
             .map((copy): Carriage => ({ copy: copy.id, version: version.id, depth }))
     })
@@ -63,10 +65,10 @@ interface Carriers {
     latestOf: Map<string, string>
 }
 
-const carriersIn = (view: EditionView): Carriers => {
-    const carriages = carriagesIn(view)
+const carriersIn = (edition: Edition): Carriers => {
+    const carriages = carriagesIn(edition)
     return {
-        copiesOf: new Map(view.edition.versions.map(version => [
+        copiesOf: new Map(edition.versions.map(version => [
             version.id,
             carriages.filter(carriage => carriage.version === version.id).map(carriage => carriage.copy)
         ])),
@@ -83,17 +85,17 @@ const carriersIn = (view: EditionView): Carriers => {
  * the versions derived from it, or is attested by statement alone, and
  * its text is a reconstruction rather than a reading.
  */
-export const attestedVersions = (view: EditionView): ReadonlySet<string> =>
-    new Set(carriersIn(view).latestOf.values())
+export const attestedVersions = (edition: Edition): ReadonlySet<string> =>
+    new Set(carriersIn(edition).latestOf.values())
 
-const witnessesIn = (carriers: Carriers, view: EditionView, versionId: string): Witness[] => {
+const witnessesIn = (carriers: Carriers, edition: Edition, versionId: string): Witness[] => {
     const carrying = carriers.copiesOf.get(versionId) ?? []
     const byCarriers = carrying.map((copy): Witness => {
         const latest = carriers.latestOf.get(copy)
         return { copy, by: 'carriers', ...(latest !== undefined && latest !== versionId && { through: latest }) }
     })
     const carryingIt = new Set(carrying)
-    const byStatement = view.edition.copies
+    const byStatement = edition.copies
         .filter(copy => !carryingIt.has(copy.id))
         .flatMap(copy => (copy.carries ?? [])
             .filter(statement => idOf(statement) === versionId)
@@ -123,16 +125,16 @@ const witnessesIn = (carriers: Carriers, view: EditionView, versionId: string): 
  * reported as it stands. A version whose edits are not stated inserts
  * nothing and is witnessed by statement alone.
  */
-export const witnessesOf = (view: EditionView, versionId: string): Witness[] =>
-    view.version(versionId) ? witnessesIn(carriersIn(view), view, versionId) : []
+export const witnessesOf = (edition: Edition, versionId: string): Witness[] =>
+    versionIn(edition, versionId) ? witnessesIn(carriersIn(edition), edition, versionId) : []
 
 /**
  * The versions the copy bears witness to, each with how, in the order the
  * edition lists its versions.
  */
-export const versionsWitnessedBy = (view: EditionView, copyId: string): (Witness & { version: string })[] => {
-    const carriers = carriersIn(view)
-    return view.edition.versions.flatMap(version => witnessesIn(carriers, view, version.id)
+export const versionsWitnessedBy = (edition: Edition, copyId: string): (Witness & { version: string })[] => {
+    const carriers = carriersIn(edition)
+    return edition.versions.flatMap(version => witnessesIn(carriers, edition, version.id)
         .filter(witness => witness.copy === copyId)
         .map(witness => ({ ...witness, version: version.id })))
 }
@@ -148,14 +150,14 @@ export type CarriageProblem = {
  * made although the copy's features carry symbols, which say by
  * themselves what it carries, and one naming a version the edition lacks.
  */
-export const carriageProblems = (view: EditionView): CarriageProblem[] => {
-    const carrying = copiesCarrying(view, view.edition.versions.flatMap(insertedBy))
+export const carriageProblems = (edition: Edition): CarriageProblem[] => {
+    const carrying = copiesCarrying(edition, edition.versions.flatMap(insertedBy))
 
-    return view.edition.copies.flatMap(copy => (copy.carries ?? []).flatMap((statement): CarriageProblem[] => {
+    return edition.copies.flatMap(copy => (copy.carries ?? []).flatMap((statement): CarriageProblem[] => {
         const version = idOf(statement)
         return [
             ...(carrying.has(copy.id) ? [{ copy: copy.id, version, problem: 'stated-beside-carriers' as const }] : []),
-            ...(view.version(version) ? [] : [{ copy: copy.id, version, problem: 'version-missing' as const }])
+            ...(versionIn(edition, version) ? [] : [{ copy: copy.id, version, problem: 'version-missing' as const }])
         ]
     }))
 }

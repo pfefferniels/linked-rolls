@@ -2,8 +2,8 @@ import { bearsPhysicalEvidence, isMeasured, sourceLabels } from "../model/Featur
 import { calibrationOf, featuresOf, RollCopy } from "../model/RollCopy.js";
 import { trackerBarOf } from "../systems/index.js";
 import { Version } from "../model/Version.js";
-import { EditionView } from "../view/EditionView.js";
 import { witnessesOf } from "./witnesses.js";
+import { Edition } from "../model/Edition.js";
 
 export const reservationTypes = [
     'source-not-stated',
@@ -153,16 +153,16 @@ export const versionReservationTypes = [
 
 export type VersionReservationType = typeof versionReservationTypes[number]
 
-type VersionCheck = (view: EditionView, version: Readonly<Version>) => Reservation<VersionReservationType> | undefined
+type VersionCheck = (edition: Edition, version: Readonly<Version>) => Reservation<VersionReservationType> | undefined
 
-const textStated: VersionCheck = (_view, version) =>
+const textStated: VersionCheck = (_edition, version) =>
     version.edits ? undefined : {
         type: 'text-not-stated',
         note: 'The version does not state its edits, so it reads as the version it derives from.'
     }
 
-const witnessedByFeatures: VersionCheck = (view, version) => {
-    const witnesses = witnessesOf(view, version.id)
+const witnessedByFeatures: VersionCheck = (edition, version) => {
+    const witnesses = witnessesOf(edition, version.id)
     return witnesses.length > 0 && witnesses.every(({ by }) => by === 'statement') ? {
         type: 'witnessed-by-statement-only',
         note: 'No copy\'s features carry what the version inserts; only copies that state they carry it bear witness to it.'
@@ -174,8 +174,8 @@ const witnessedByFeatures: VersionCheck = (view, version) => {
  * Its text is a reconstruction from below, as a lost state's is, and
  * nothing surviving shows it as it stood.
  */
-const witnessedAtFirstHand: VersionCheck = (view, version) => {
-    const carriers = witnessesOf(view, version.id).filter(({ by }) => by === 'carriers')
+const witnessedAtFirstHand: VersionCheck = (edition, version) => {
+    const carriers = witnessesOf(edition, version.id).filter(({ by }) => by === 'carriers')
     return carriers.length > 0 && carriers.every(({ through }) => through !== undefined) ? {
         type: 'no-direct-witness',
         note: 'No copy carries it at first hand; its text is a reconstruction from the versions derived from it.'
@@ -185,5 +185,5 @@ const witnessedAtFirstHand: VersionCheck = (view, version) => {
 const versionChecks: readonly VersionCheck[] = [textStated, witnessedByFeatures, witnessedAtFirstHand]
 
 /** What the edition cannot vouch for in a version, in the order the checks are listed. */
-export const reservationsAboutVersion = (view: EditionView, version: Readonly<Version>): Reservation<VersionReservationType>[] =>
-    versionChecks.flatMap(check => check(view, version) ?? [])
+export const reservationsAboutVersion = (edition: Edition, version: Readonly<Version>): Reservation<VersionReservationType>[] =>
+    versionChecks.flatMap(check => check(edition, version) ?? [])

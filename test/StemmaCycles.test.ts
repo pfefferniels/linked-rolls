@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { edition } from './editionFixture'
-import { EditionView } from '../src/view/EditionView'
+import { lineageOf, withGenerations } from '../src/analysis/stemma'
+import { snapshotOf } from '../src/analysis/text'
 import { assignReference } from '../src/model/Assumption'
 import { derivesFrom } from '../src/model/Version'
 import { connectVersions, stateDerivation } from '../src/ops'
@@ -24,7 +25,7 @@ describe('a stemma that would loop', () => {
 
     it('does not connect a version to its descendant', () => {
         const e = edition()
-        expect(produce(e, connectVersions(new EditionView(e), 'A', 'B'))).toBe(e)
+        expect(produce(e, connectVersions('A', 'B'))).toBe(e)
     })
 
     it('reads an edition that loops already, walking the loop once', () => {
@@ -32,8 +33,17 @@ describe('a stemma that would loop', () => {
         const looped = produce(e, draft => {
             draft.versions.find(v => v.id === 'A')!.basedOn = [assignReference('B')]
         })
-        const view = new EditionView(looped)
-        expect(view.lineageOf('A').map(v => v.id)).toEqual(['A', 'B'])
-        expect(() => view.snapshot('A')).not.toThrow()
+        expect(lineageOf(looped, 'A').map(v => v.id)).toEqual(['A', 'B'])
+        expect(() => snapshotOf(looped, 'A')).not.toThrow()
+    })
+
+    it('draws an edition that loops already, counting the loop once round', () => {
+        const e = edition()
+        expect(withGenerations(e).map(v => [v.id, v.generation])).toEqual([['A', 0], ['B', 1]])
+
+        const looped = produce(e, draft => {
+            draft.versions.find(v => v.id === 'A')!.basedOn = [assignReference('B')]
+        })
+        expect(withGenerations(looped).map(v => [v.id, v.generation])).toEqual([['A', 1], ['B', 1]])
     })
 })

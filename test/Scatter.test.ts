@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { Edition } from '../src/model/Edition'
-import { EditionView } from '../src/view/EditionView'
+import { snapshotOf } from '../src/analysis/text'
 import { Millimeters, mm } from '../src/model/Quantity'
 import { normalQuantile } from '../src/collation/statistics'
 import { admits, CollationTolerance, offsetEndOf, offsetStartOf } from '../src/collation/Collation'
@@ -38,7 +38,7 @@ const witnessed = (displacements: readonly number[], expressions: readonly numbe
 }
 
 const scatterIn = (edition: Edition, group = 'note'): Scatter =>
-    scatterOfCopy(new EditionView(edition), 'A', 'witness').find(scatter => scatter.group === group)!
+    scatterOfCopy(edition, 'A', 'witness').find(scatter => scatter.group === group)!
 
 describe('how far out a reading must lie to be a departure', () => {
     /**
@@ -81,14 +81,14 @@ describe('the scatter of one copy against the copies read with it', () => {
         const edition = witnessed(normalSample(50, 0, 0.5))
         edition.versions[0].edits![0].insert!.push(note('inserted', 61, 'witness-0'))
 
-        const readings = readingsOf(new EditionView(edition), new EditionView(edition).snapshot('A'), new Set(['witness']))
+        const readings = readingsOf(edition, snapshotOf(edition, 'A'), new Set(['witness']))
         expect(readings.map(reading => reading.symbol.id)).not.toContain('inserted')
         expect(readings.length).toBe(50)
     })
 
     it('takes notes and expressions apart, since they scatter differently', () => {
         const edition = witnessed(normalSample(300, 0.2, 0.77), normalSample(300, 1.55, 1.38))
-        const groups = scatterOfCopy(new EditionView(edition), 'A', 'witness')
+        const groups = scatterOfCopy(edition, 'A', 'witness')
 
         expect(groups.map(group => group.group).sort()).toEqual(['expression', 'note'])
         expect(scatterIn(edition, 'note').spread.from.sigma).toBeCloseTo(0.77, 2)
@@ -97,8 +97,8 @@ describe('the scatter of one copy against the copies read with it', () => {
 
     it('yields nothing for a sample whose readings all sit at one place', () => {
         expect(scatterOf(readingsOf(
-            new EditionView(witnessed([0, 0, 0, 0])),
-            new EditionView(witnessed([0, 0, 0, 0])).snapshot('A'),
+            witnessed([0, 0, 0, 0]),
+            snapshotOf(witnessed([0, 0, 0, 0]), 'A'),
             new Set(['witness'])))).toEqual([])
     })
 })
@@ -141,9 +141,9 @@ describe('the readings the tolerance does not admit', () => {
     })
 
     it('says whether the tolerance stated at present still admits each of them', () => {
-        const view = new EditionView(planted())
+        const edition = planted()
         const stated = { toleranceStart: mm(8), toleranceEnd: mm(8) }
-        const scatter = scatterOfCopy(view, 'A', 'witness', { stated })
+        const scatter = scatterOfCopy(edition, 'A', 'witness', { stated })
             .find(group => group.group === 'note')!
 
         expect(scatter.departures.every(departure => departure.admittedAsStated)).toBe(true)
@@ -184,7 +184,7 @@ describe('the histogram the scatter is drawn as', () => {
 describe('one tolerance over samples that scatter differently', () => {
     const bothSamples = (): Scatter[] =>
         scatterOfCopy(
-            new EditionView(witnessed(normalSample(300, 0.2, 0.77), normalSample(300, 1.55, 1.38))),
+            witnessed(normalSample(300, 0.2, 0.77), normalSample(300, 1.55, 1.38)),
             'A', 'witness')
 
     it('admits the whole reach of each sample, notes and expressions alike', () => {
@@ -212,7 +212,7 @@ describe('one tolerance over samples that scatter differently', () => {
 
 describe('the direction a window is stored in', () => {
     const scatters = () =>
-        scatterOfCopy(new EditionView(witnessed(normalSample(400, 0.6, 0.9))), 'A', 'witness')
+        scatterOfCopy(witnessed(normalSample(400, 0.6, 0.9)), 'A', 'witness')
 
     it('turns a window measured over the parent, leaving its width alone', () => {
         const asChild = toleranceAcross(scatters(), 'child')!
@@ -245,8 +245,8 @@ describe('the direction a window is stored in', () => {
 
 describe('what a window would change if it were applied', () => {
     const readings = () => {
-        const view = new EditionView(witnessed([0, 0.2, 4, -4]))
-        return readingsOf(view, view.snapshot('A'), new Set(['witness']))
+        const edition = witnessed([0, 0.2, 4, -4])
+        return readingsOf(edition, snapshotOf(edition, 'A'), new Set(['witness']))
     }
 
     const wide: CollationTolerance = { toleranceStart: mm(6), toleranceEnd: mm(6) }
@@ -298,24 +298,24 @@ describe('which copies attest each side of a derivation', () => {
             }], 'A')
         })
 
-        const sides = sidesOf(new EditionView(edition), 'B')!
+        const sides = sidesOf(edition, 'B')!
         expect(sides.child.map(attested => attested.copy)).toEqual(['witness'])
         expect(sides.parent.map(attested => attested.copy)).toEqual(['ground', 'witness'])
     })
 
     it('attests neither side for a version that inserts and strikes nothing', () => {
-        const sides = sidesOf(new EditionView(witnessed([0.2])), 'A')!
+        const sides = sidesOf(witnessed([0.2]), 'A')!
         expect(sides.parent).toEqual([])
     })
 
     it('is nothing for a version the edition does not have', () => {
-        expect(sidesOf(new EditionView(witnessed([0.2])), 'nothing')).toBeUndefined()
+        expect(sidesOf(witnessed([0.2]), 'nothing')).toBeUndefined()
     })
 })
 
 describe('the warrant a calculated tolerance carries', () => {
     const belief = () => inferredTolerance(
-        scatterOfCopy(new EditionView(witnessed(normalSample(400, 0.38, 0.9))), 'A', 'witness'),
+        scatterOfCopy(witnessed(normalSample(400, 0.38, 0.9)), 'A', 'witness'),
         ['witness'])
 
     it('is an inference held likely rather than true, the sample being normal only so far', () => {

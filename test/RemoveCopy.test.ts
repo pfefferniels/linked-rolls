@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { Edition } from '../src/model/Edition'
-import { EditionView } from '../src/view/EditionView'
+import { placeOf } from '../src/analysis/text'
+import { symbolIn } from '../src/lookup/lookup'
 import { idsOf } from '../src/model/Assumption'
 import { removeCopy, symbolsCarriedOnlyBy } from '../src/ops'
 import { edition } from './editionFixture'
 
-const noteIn = (edition: Edition) => new EditionView(edition).symbol('note')!
+const noteIn = (edition: Edition) => symbolIn(edition, 'note')!
 
 describe('removing a copy', () => {
     it('names the symbols only the copy carries', () => {
@@ -18,12 +19,11 @@ describe('removing a copy', () => {
 
     it('takes the copy and the symbols only it carries out of the edition', () => {
         const next = produce(edition(), removeCopy('first'))
-        const view = new EditionView(next)
 
         expect(next.copies.map(copy => copy.id)).toEqual(['second'])
         expect(next.versions[0].edits[0].insert?.map(symbol => symbol.id)).toEqual(['note', 'label'])
         expect(idsOf(noteIn(next).carriers)).toEqual(['hole-note-second'])
-        expect(view.placeOf(noteIn(next))?.from).toBe(1001)
+        expect(placeOf(next, noteIn(next))?.from).toBe(1001)
     })
 
     it('leaves no reference to a dropped symbol behind', () => {

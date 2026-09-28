@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { copy, editionOf, hole, note, version } from './editionFixture'
-import { EditionView } from '../src/view/EditionView'
+import { predecessorOf, withGenerations } from '../src/analysis/stemma'
+import { snapshotOf } from '../src/analysis/text'
 import { Belief, Certainty, idOf } from '../src/model/Assumption'
 import { Derivation, derivationsOf, principalDerivationOf, Version } from '../src/model/Version'
 import { clearDerivation, connectVersions, removeSymbols, removeVersion, stateDerivation } from '../src/ops'
@@ -38,7 +39,7 @@ const principalOf = (derived: Version): string | undefined => {
 }
 
 const textOf = (edition: Edition, versionId: string): string[] =>
-    new EditionView(edition).snapshot(versionId).map(symbol => symbol.id)
+    snapshotOf(edition, versionId).map(symbol => symbol.id)
 
 const versionIn = (edition: Edition, versionId: string): Version =>
     edition.versions.find(candidate => candidate.id === versionId)!
@@ -64,11 +65,10 @@ describe('the derivation a version is read against', () => {
 
     it('gives the text, which a hypothesis beside it leaves alone', () => {
         const edition = editionWith(deriving(from('C'), from('B', 'possible')))
-        const view = new EditionView(edition)
 
         expect(textOf(edition, 'S')).toEqual(['note-c'])
-        expect(view.predecessorOf('S')?.id).toBe('C')
-        expect(view.withGenerations().find(candidate => candidate.id === 'S')?.generation).toBe(1)
+        expect(predecessorOf(edition, 'S')?.id).toBe('C')
+        expect(withGenerations(edition).find(candidate => candidate.id === 'S')?.generation).toBe(1)
         expect(derivationsOf(versionIn(edition, 'S'))).toEqual([
             { parent: 'C', certainty: 'true' },
             { parent: 'B', certainty: 'possible', belief: belief('possible') }
@@ -107,7 +107,7 @@ describe('stating and clearing a hypothesis of derivation', () => {
 describe('connecting and removing where hypotheses are stated', () => {
     it('replaces the principal derivation and keeps the hypotheses', () => {
         const before = editionWith(deriving(from('A'), from('B', 'possible')))
-        const next = produce(before, connectVersions(new EditionView(before), 'S', 'C'))
+        const next = produce(before, connectVersions('S', 'C'))
 
         expect(derivationsOf(versionIn(next, 'S'))).toEqual([
             { parent: 'C', certainty: 'true' },
@@ -118,7 +118,7 @@ describe('connecting and removing where hypotheses are stated', () => {
 
     it('drops a hypothesis that names the version removed, and keeps the text', () => {
         const before = editionWith(deriving(from('C'), from('B', 'possible')))
-        const next = produce(before, removeVersion(new EditionView(before), 'B'))
+        const next = produce(before, removeVersion('B'))
 
         expect(derivationsOf(versionIn(next, 'S'))).toEqual([{ parent: 'C', certainty: 'true' }])
         expect(textOf(next, 'S')).toEqual(['note-c'])
@@ -132,11 +132,11 @@ describe('a version that does not state its text', () => {
     }
 
     it('reads as the version it derives from, and says so', () => {
-        const view = new EditionView(editionWith(unstated()))
+        const edition = editionWith(unstated())
         expect(textOf(editionWith(unstated()), 'S')).toEqual(['note-c'])
-        expect(reservationsAboutVersion(view, unstated()).map(reservation => reservation.type))
+        expect(reservationsAboutVersion(edition, unstated()).map(reservation => reservation.type))
             .toEqual(['text-not-stated'])
-        expect(reservationsAboutVersion(view, version('S', [], 'C'))).toEqual([])
+        expect(reservationsAboutVersion(edition, version('S', [], 'C'))).toEqual([])
     })
 
     it('stays unstated where an operation on its edits finds none', () => {

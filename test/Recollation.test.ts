@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { Edition } from '../src/model/Edition'
-import { EditionView } from '../src/view/EditionView'
+import { snapshotOf } from '../src/analysis/text'
+import { symbolIn } from '../src/lookup/lookup'
 import { Edit } from '../src/model/Edit'
 import { AnySymbol, Note } from '../src/model/Symbol'
 import { CollationTolerance } from '../src/collation/Collation'
@@ -42,21 +43,20 @@ const twoReadings = (): Edition => editionOf(
 
 const tight: CollationTolerance = { toleranceStart: mm(1), toleranceEnd: mm(1) }
 
-const viewOf = (edition: Edition) => new EditionView(edition)
-const carriersOf = (edition: Edition, symbolId: string) => idsOf(viewOf(edition).symbol(symbolId)!.carriers)
-const textOf = (edition: Edition, versionId: string) => viewOf(edition).snapshot(versionId).map(s => s.id)
+const carriersOf = (edition: Edition, symbolId: string) => idsOf(symbolIn(edition, symbolId)!.carriers)
+const textOf = (edition: Edition, versionId: string) => snapshotOf(edition, versionId).map(s => s.id)
 const editsIn = (edition: Edition, versionId: string) => edition.versions.find(v => v.id === versionId)!.edits!
 
 /** The two versions collated at the generous window, every reading folded into the ground copy's symbols. */
 const collated = (): Edition => {
     const before = twoReadings()
-    return produce(before, connectVersions(viewOf(before), 'B', 'A'))
+    return produce(before, connectVersions('B', 'A'))
 }
 
 describe('collating a pair that is already collated', () => {
     it('leaves the carriers as they were, rather than handing each symbol its own a second time', () => {
         const once = collated()
-        const twice = produce(once, connectVersions(viewOf(once), 'B', 'A'))
+        const twice = produce(once, connectVersions('B', 'A'))
 
         expect(carriersOf(once, 'ground-note-0')).toEqual(['ground-0', 'witness-0'])
         expect(carriersOf(twice, 'ground-note-0')).toEqual(['ground-0', 'witness-0'])
@@ -64,14 +64,14 @@ describe('collating a pair that is already collated', () => {
 
     it('leaves the text of the child as it was', () => {
         const once = collated()
-        expect(textOf(produce(once, connectVersions(viewOf(once), 'B', 'A')), 'B')).toEqual(textOf(once, 'B'))
+        expect(textOf(produce(once, connectVersions('B', 'A')), 'B')).toEqual(textOf(once, 'B'))
     })
 })
 
 describe("taking a copy's reading back out of a collated symbol", () => {
     const separated = (): Edition => {
         const before = collated()
-        return produce(before, separateReadings(viewOf(before), 'B', new Set(['witness'])))
+        return produce(before, separateReadings('B', new Set(['witness'])))
     }
 
     it('leaves the other copies the symbol they had', () => {
@@ -80,8 +80,8 @@ describe("taking a copy's reading back out of a collated symbol", () => {
     })
 
     it("gives the copy a symbol of the version's own, carrying what it read", () => {
-        const view = viewOf(separated())
-        const readings = view.snapshot('B')
+        const edition = separated()
+        const readings = snapshotOf(edition, 'B')
 
         expect(readings.length).toBe(3)
         expect(readings.flatMap(reading => idsOf(reading.carriers)))
@@ -89,7 +89,7 @@ describe("taking a copy's reading back out of a collated symbol", () => {
     })
 
     it('says what it says, and stands in no relation of the symbol it came out of', () => {
-        const reading = viewOf(separated()).snapshot('B')[0] as Note
+        const reading = snapshotOf(separated(), 'B')[0] as Note
 
         expect(reading.type).toBe('note')
         expect(reading.pitch).toBe(60)
@@ -107,14 +107,14 @@ describe("taking a copy's reading back out of a collated symbol", () => {
 
     it('passes over a symbol the copy alone carries, so a reading separated by hand keeps its identifier', () => {
         const before = separated()
-        const again = produce(before, separateReadings(viewOf(before), 'B', new Set(['witness'])))
+        const again = produce(before, separateReadings('B', new Set(['witness'])))
 
         expect(again).toBe(before)
     })
 
     it('narrows the act to the symbols named', () => {
         const before = collated()
-        const one = produce(before, separateReadings(viewOf(before), 'B', new Set(['witness']), ['ground-note-2']))
+        const one = produce(before, separateReadings('B', new Set(['witness']), ['ground-note-2']))
 
         expect(carriersOf(one, 'ground-note-2')).toEqual(['ground-2'])
         expect(carriersOf(one, 'ground-note-0')).toEqual(['ground-0', 'witness-0'])
@@ -150,12 +150,12 @@ const threeCopies = (): Edition => editionOf(
 describe('separating a side that several copies attest', () => {
     const wholeSide = (): Edition => {
         const before = threeCopies()
-        return produce(before, separateReadings(viewOf(before), 'B', new Set(['witness', 'later'])))
+        return produce(before, separateReadings('B', new Set(['witness', 'later'])))
     }
 
     const oneOfIt = (): Edition => {
         const before = threeCopies()
-        return produce(before, separateReadings(viewOf(before), 'B', new Set(['witness'])))
+        return produce(before, separateReadings('B', new Set(['witness'])))
     }
 
     it('leaves the other side alone with what it read', () => {
@@ -163,7 +163,7 @@ describe('separating a side that several copies attest', () => {
     })
 
     it('gives the side one symbol carrying all of it, not one symbol each', () => {
-        const readings = viewOf(wholeSide()).snapshot('B')
+        const readings = snapshotOf(wholeSide(), 'B')
 
         expect(readings.length).toBe(2)
         expect(idsOf(readings[0].carriers)).toEqual(['witness-0', 'later-0'])
@@ -180,7 +180,7 @@ describe('separating a side that several copies attest', () => {
 
     it('passes over a symbol the named side alone carries, there being no other side to part from', () => {
         const before = wholeSide()
-        expect(produce(before, separateReadings(viewOf(before), 'B', new Set(['witness', 'later'])))).toBe(before)
+        expect(produce(before, separateReadings('B', new Set(['witness', 'later'])))).toBe(before)
     })
 })
 
@@ -227,7 +227,7 @@ describe('separating under a version whose descendants struck what it shares', (
      */
     it.fails('leaves the descendant reading what it read before', () => {
         const before = withADescendant()
-        const after = produce(before, separateReadings(viewOf(before), 'B', new Set(['witness'])))
+        const after = produce(before, separateReadings('B', new Set(['witness'])))
 
         expect(textOf(before, 'C')).toEqual(['shared-1'])
         expect(textOf(after, 'C').length).toBe(1)
@@ -236,8 +236,8 @@ describe('separating under a version whose descendants struck what it shares', (
 
 describe('collating a derivation again at a tolerance arrived at afterwards', () => {
     const recollated = (): Edition => {
-        const separated = produce(collated(), separateReadings(viewOf(collated()), 'B', new Set(['witness'])))
-        return produce(separated, connectVersions(viewOf(separated), 'B', 'A', tight))
+        const separated = produce(collated(), separateReadings('B', new Set(['witness'])))
+        return produce(separated, connectVersions('B', 'A', tight))
     }
 
     it('joins again what the tighter window still admits', () => {
@@ -311,7 +311,7 @@ describe('an equivalence an editor has written on', () => {
     /** The transfer collated once, with a motivation added to the equivalence afterwards, as an editor would. */
     const explained = (): Edition => {
         const before = twoIssues()
-        const attached = produce(before, connectVersions(viewOf(before), 'B', 'A'))
+        const attached = produce(before, connectVersions('B', 'A'))
         return produce(attached, draft => {
             const edit = draft.versions[1].edits!.find(e => e.editType === 'recoding')!
             edit.motivation = 'the green scale holds what the red latches'
@@ -320,7 +320,7 @@ describe('an equivalence an editor has written on', () => {
 
     it('keeps its identifier and its motivation where the collation draws it again over the same symbols', () => {
         const before = explained()
-        const again = produce(before, connectVersions(viewOf(before), 'B', 'A'))
+        const again = produce(before, connectVersions('B', 'A'))
 
         expect(equivalenceIn(again).id).toBe(equivalenceIn(before).id)
         expect(equivalenceIn(again).motivation).toBe('the green scale holds what the red latches')
@@ -335,7 +335,7 @@ describe('an equivalence an editor has written on', () => {
         const before = twoIssues()
         before.copies[0].production!.produced!.push(hole('hole-motor', 950, 952, 10))
         before.versions[0].edits![0].insert!.push(expression('motor-on', 'MotorOn', 'hole-motor'))
-        const attached = produce(before, connectVersions(viewOf(before), 'B', 'A'))
+        const attached = produce(before, connectVersions('B', 'A'))
         const typed = produce(attached, draft => {
             const edit = draft.versions[1].edits!.find(e => e.delete?.includes('motor-on'))!
             edit.editType = 'recoding'
@@ -343,14 +343,14 @@ describe('an equivalence an editor has written on', () => {
         })
         const struck = (edition: Edition) => editsIn(edition, 'B').filter(e => e.delete?.includes('motor-on'))
 
-        const again = produce(typed, connectVersions(viewOf(typed), 'B', 'A'))
+        const again = produce(typed, connectVersions('B', 'A'))
         expect(struck(again)).toEqual(struck(typed))
         expect(struck(again)[0].editType).toBe('recoding')
     })
 
     it('does not freeze the symbols it speaks for, so the transfer can be collated again at all', () => {
         const before = explained()
-        const again = produce(before, connectVersions(viewOf(before), 'B', 'A'))
+        const again = produce(before, connectVersions('B', 'A'))
         const symbols = (edition: Edition): string[] =>
             (equivalenceIn(edition).insert ?? []).map((s: AnySymbol) => s.id)
 

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { EditionView } from '../src/view/EditionView'
+import { produce } from 'immer'
+import { copyIn, versionIn } from '../src/lookup/lookup'
+import { getAt, linksTo, pathOf } from '../src/lookup/paths'
+import { predecessorOf } from '../src/analysis/stemma'
+import { placeOf, snapshotOf } from '../src/analysis/text'
+import { stateOf } from '../src/ops/draft'
+import { removeSymbols } from '../src/ops/versions'
+import { Edition } from '../src/model/Edition'
 import { toOwnPaperOf } from '../src/analysis/ownPaper'
 import { negotiatedEventOf } from '../src/emulation/negotiation'
 import { copy, cutFor, edition, editionOf, expression, hole, note, version } from './editionFixture'
@@ -27,10 +34,10 @@ const childFirst = () => {
 
 describe('indexing an edition', () => {
     it('reads a derivation stating a tolerance as a reference, not as the version it names', () => {
-        const view = new EditionView(childFirst())
-        expect(view.predecessorOf('B')?.id).toEqual('A')
-        expect(view.snapshot('B').map(symbol => symbol.id)).toEqual(['note'])
-        expect(view.getPath('A')).toEqual(['versions', 1])
+        const seen = childFirst()
+        expect(predecessorOf(seen, 'B')?.id).toEqual('A')
+        expect(snapshotOf(seen, 'B').map(symbol => symbol.id)).toEqual(['note'])
+        expect(pathOf(seen, 'A')).toEqual(['versions', 1])
     })
 })
 
@@ -53,12 +60,11 @@ const carriedByBoth = () => editionOf(
 )
 
 describe('where a symbol lies and which track it sits on', () => {
-    const view = () => new EditionView(carriedByBoth())
-    const noteOf = (view: EditionView) => view.snapshot('A')[0] as Note
+    const noteOf = (edition: Edition) => snapshotOf(edition, 'A')[0] as Note
 
     it('averages the place its carriers measure', () => {
-        const seen = view()
-        expect(seen.placeOf(noteOf(seen))).toEqual({ unit: 'mm', from: 1000.5, to: 1010.5 })
+        const seen = carriedByBoth()
+        expect(placeOf(seen, noteOf(seen))).toEqual({ unit: 'mm', from: 1000.5, to: 1010.5 })
     })
 
     /**
@@ -67,7 +73,7 @@ describe('where a symbol lies and which track it sits on', () => {
      * of a bar instead.
      */
     it('takes the track from the bar and never from the mean of the carriers', () => {
-        const seen = view()
+        const seen = carriedByBoth()
         const sounded = noteOf(seen)
         expect(welteT100.positionOf(sounded)).toBe(47)
         expect(welteT98.positionOf(sounded)).toBe(45)
@@ -85,11 +91,10 @@ describe('where a symbol lies and which track it sits on', () => {
                 insert: [expression('forzando-on', 'ForzandoOn', 'hole-on')]
             }])]
         )
-        const seen = new EditionView(edition)
-        const forzando = seen.snapshot('A')[0] as Expression
+        const forzando = snapshotOf(edition, 'A')[0] as Expression
 
-        expect(negotiatedEventOf(seen, forzando, welteT100)?.vertical.from).toBe(95)
-        expect(negotiatedEventOf(seen, forzando, welteT98)).toBeNull()
+        expect(negotiatedEventOf(edition, forzando, welteT100)?.vertical.from).toBe(95)
+        expect(negotiatedEventOf(edition, forzando, welteT98)).toBeNull()
     })
 })
 
@@ -134,15 +139,15 @@ describe('the paper a version ran on', () => {
      * cut for, so the one is left at nothing and the other takes all.
      */
     it('takes a green version back off the shared axis onto its own paper', () => {
-        const view = new EditionView(twoIssues())
-        const green = view.version('B')!
+        const edition = twoIssues()
+        const green = versionIn(edition, 'B')!
 
-        expect(toOwnPaperOf(view, green)).toBeCloseTo(1 / 1.29072, 9)
+        expect(toOwnPaperOf(edition, green)).toBeCloseTo(1 / 1.29072, 9)
     })
 
     it('leaves a version of the reference copy\'s own system on the axis, where that copy alone measures the paper', () => {
-        const view = new EditionView(twoIssues())
-        expect(toOwnPaperOf(view, view.version('A')!)).toBeCloseTo(1, 8)
+        const edition = twoIssues()
+        expect(toOwnPaperOf(edition, versionIn(edition, 'A')!)).toBeCloseTo(1, 8)
     })
 
     it('takes a stretch measured on the copy out of the ratio of the papers', () => {
@@ -152,15 +157,13 @@ describe('the paper a version ran on', () => {
             along: { value: percent(1), uncertainty: percent(0.01), unit: 'percent' }
         })]
 
-        const view = new EditionView(edition)
-        expect(toOwnPaperOf(view, view.version('B')!)).toBeCloseTo(1 / (1.29072 * 1.01), 5)
+        expect(toOwnPaperOf(edition, versionIn(edition, 'B')!)).toBeCloseTo(1 / (1.29072 * 1.01), 5)
     })
 
     it('says nothing for a version of a system no copy measures', () => {
         const edition = twoIssues()
         edition.copies.pop()
-        const view = new EditionView(edition)
-        expect(toOwnPaperOf(view, view.version('B')!)).toBeUndefined()
+        expect(toOwnPaperOf(edition, versionIn(edition, 'B')!)).toBeUndefined()
     })
 
     it('reports copies of one system that disagree beyond what paper does', () => {
@@ -174,24 +177,57 @@ describe('the paper a version ran on', () => {
             insert: [note('note-green-other', 62, 'hole-green-other')]
         })
 
-        const view = new EditionView(edition)
-        expect(constraintProblems(view).map(problem => problem.problem))
+        expect(constraintProblems(edition).map(problem => problem.problem))
             .toContain('copies-disagree-on-the-paper')
     })
 })
 
-describe('the index of a view', () => {
-    it('records each reference once, however often it is built', () => {
-        const seen = new EditionView(edition())
-        const before = seen.linksTo('forzando-on')
-        seen.indexObjects()
-        expect(seen.linksTo('forzando-on')).toEqual(before)
+describe('what is known of a state', () => {
+    it('works a snapshot out once for each state and hands everyone the same', () => {
+        const seen = edition()
+        expect(snapshotOf(seen, 'A')).toBe(snapshotOf(seen, 'A'))
+        expect(Object.isFrozen(snapshotOf(seen, 'A'))).toBe(true)
+    })
+
+    it('answers a new state afresh', () => {
+        const before = edition()
+        const struck = snapshotOf(before, 'A')[0]
+        const after = produce(before, removeSymbols('A', [struck.id]))
+
+        expect(snapshotOf(after, 'A')).not.toContain(struck)
+        expect(snapshotOf(before, 'A')).toContain(struck)
+        expect(pathOf(after, struck.id)).toBeUndefined()
+    })
+
+    /** What was worked out would otherwise stay behind unnoticed. */
+    it('freezes a state it was asked about, so that it cannot be changed in place', () => {
+        const seen = edition()
+        versionIn(seen, 'A')
+        expect(() => { seen.versions.pop() }).toThrow()
+        expect(() => { seen.copies[0].modifications = [] }).toThrow()
+        expect(copyIn(seen, seen.copies[0].id)).toBe(seen.copies[0])
+    })
+
+    it('reads a draft only as a state taken of it', () => {
+        const seen = edition()
+        produce(seen, draft => {
+            expect(() => snapshotOf(draft, 'A')).toThrow(/current\(draft\)/)
+            expect(stateOf(draft)).toBe(seen)
+            expect(snapshotOf(stateOf(draft), 'A')).toBe(snapshotOf(seen, 'A'))
+        })
+    })
+
+    it('records each reference once, however often it is asked', () => {
+        const seen = edition()
+        const before = linksTo(seen, 'forzando-on')
+        expect(before.length).toBeGreaterThan(0)
+        expect(linksTo(seen, 'forzando-on')).toEqual(before)
     })
 
     it('returns what stands at a path, a zero included', () => {
-        const seen = new EditionView(editionOf([copy('first', [hole('at-start', 0, 5, 47)])], []))
-        const path = [...seen.getPath('at-start')!, 'horizontal', 'from']
-        expect(seen.atPath<number>(path)).toBe(0)
-        expect(seen.atPath(['copies', 0, 'measurements', 'nothing'])).toBeNull()
+        const seen = editionOf([copy('first', [hole('at-start', 0, 5, 47)])], [])
+        const path = [...pathOf(seen, 'at-start')!, 'horizontal', 'from']
+        expect(getAt<number>(path, seen)).toBe(0)
+        expect(getAt(['copies', 0, 'measurements', 'nothing'], seen)).toBeUndefined()
     })
 })

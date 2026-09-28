@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'fs'
 import * as path from 'path'
 import { importJsonLd } from '../src/io/importJsonLd'
-import { EditionView } from '../src/view/EditionView'
+import { produce } from 'immer'
+import { symbolIn, versionIn } from '../src/lookup/lookup'
+import { getAt, pathOf } from '../src/lookup/paths'
+import { placedCarriersOf, placeOf, snapshotOf } from '../src/analysis/text'
+import { Edition } from '../src/model/Edition'
+import { FeatureOrPatch } from '../src/model/Feature'
 import { Emulation } from '../src/emulation/Emulation'
 import { assignReference } from '../src/model/Assumption'
 import { Expression, Note } from '../src/model/Symbol'
@@ -20,29 +25,37 @@ const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'ut
 /**
  * A fresh edition for every test, with the first version's placed
  * commands at hand: three expressions and a note, in order of place.
+ * What a test states of them is written as an operation would write it,
+ * so that everything read afterwards reads the edition as it then stands.
  */
 const setUp = () => {
-    const edition = importJsonLd(JSON.parse(file))
-    const view = new EditionView(edition)
+    let edition = importJsonLd(JSON.parse(file))
     const version = edition.versions[0]
-    const placed = view.snapshot(version.id).filter(s => view.placeOf(s) !== undefined)
+    const placed = snapshotOf(edition, version.id).filter(s => placeOf(edition, s) !== undefined)
     const [first, second, third] = placed.filter((s): s is Expression => s.type === 'expression')
     const note = placed.find((s): s is Note => s.type === 'note')!
-    const onsetOf = (symbol: Note | Expression) => view.placeOf(symbol)!.from
+    const placeNow = (symbol: Note | Expression) => placeOf(edition, symbolIn(edition, symbol.id)!)!
+    const onsetOf = (symbol: Note | Expression) => placeNow(symbol).from
     const lengthOf = (symbol: Note | Expression) => {
-        const { from, to } = view.placeOf(symbol)!
+        const { from, to } = placeNow(symbol)
         return to - from
     }
     const emulate = () => {
         const emulation = new Emulation(flat)
-        emulation.emulateVersion(version, view)
+        emulation.emulateVersion(versionIn(edition, version.id)!, edition)
         const placedAs = (symbol: Note | Expression) => emulation.negotiatedEvents.find(e => e.id === symbol.id)!.horizontal
         return placedAs
     }
 
-    const copyOf = (featureId: string) => view.getPath(featureId)?.[1]
+    /** States something of the command, in the edition as it now stands. */
+    const stating = (symbol: Note | Expression, statement: (command: Note | Expression) => void) => {
+        const path = pathOf(edition, symbol.id)!
+        edition = produce(edition, draft => statement(getAt<Note | Expression>(path, draft)!))
+    }
+
+    const copyOf = (featureId: string) => pathOf(edition, featureId)?.[1]
     const onsetOn = (symbol: Note | Expression, copy: number | string | undefined) => {
-        const carrier = view.placedCarriersOf(symbol).find(c => copyOf(c.id) === copy)
+        const carrier = placedCarriersOf(edition, symbol).find(c => copyOf(c.id) === copy)
         if (!carrier) throw new Error(`${symbol.id} has no carrier on copy ${copy}`)
         return carrier.horizontal.from
     }
@@ -52,14 +65,19 @@ const setUp = () => {
      * onset there, keeping each hole's length.
      */
     const placeBeside = (symbol: Note | Expression, reference: Note | Expression, distances: readonly number[]) => {
-        view.placedCarriersOf(symbol).forEach(({ id, horizontal }) => {
+        const moves = placedCarriersOf(edition, symbol).map(({ id, horizontal }) => {
             const copy = copyOf(id)
             const distance = typeof copy === 'number' ? distances[copy] : undefined
             if (distance === undefined) throw new Error(`no distance for copy ${copy}`)
             const length = horizontal.to - horizontal.from
-            horizontal.from = mm(onsetOn(reference, copy) + distance)
-            horizontal.to = mm(horizontal.from + length)
+            const from = mm(onsetOn(reference, copy) + distance)
+            return { path: pathOf(edition, id)!, from, to: mm(from + length) }
         })
+        edition = produce(edition, draft => moves.forEach(({ path, from, to }) => {
+            const { horizontal } = getAt<FeatureOrPatch>(path, draft)!
+            horizontal.from = from
+            horizontal.to = to
+        }))
     }
 
     const punchDiameters = edition.copies
@@ -68,13 +86,13 @@ const setUp = () => {
     /** What the performance falls back on where no copy agrees with a statement. */
     const gap = mean(punchDiameters)
 
-    return { edition, view, version, first, second, third, note, onsetOf, lengthOf, placeBeside, gap, emulate }
+    return { current: () => edition, version, first, second, third, note, onsetOf, lengthOf, stating, placeBeside, gap, emulate }
 }
 
 describe('aligning a command with another', () => {
     it('takes the onset of the reference and keeps its length', () => {
-        const { first, note, onsetOf, lengthOf, emulate } = setUp()
-        first.alignedWith = assignReference(note.id)
+        const { first, note, onsetOf, lengthOf, emulate, stating } = setUp()
+        stating(first, command => { command.alignedWith = assignReference(note.id) })
 
         const placedAs = emulate()
         expect(placedAs(first).from).toEqual(onsetOf(note))
@@ -83,9 +101,9 @@ describe('aligning a command with another', () => {
     })
 
     it('follows a chain of references to its end', () => {
-        const { first, second, note, onsetOf, emulate } = setUp()
-        first.alignedWith = assignReference(second.id)
-        second.alignedWith = assignReference(note.id)
+        const { first, second, note, onsetOf, emulate, stating } = setUp()
+        stating(first, command => { command.alignedWith = assignReference(second.id) })
+        stating(second, command => { command.alignedWith = assignReference(note.id) })
 
         const placedAs = emulate()
         expect(placedAs(first).from).toEqual(onsetOf(note))
@@ -93,8 +111,8 @@ describe('aligning a command with another', () => {
     })
 
     it('leaves a command whose reference is absent where it is', () => {
-        const { first, onsetOf, emulate } = setUp()
-        first.alignedWith = assignReference('nowhere')
+        const { first, onsetOf, emulate, stating } = setUp()
+        stating(first, command => { command.alignedWith = assignReference('nowhere') })
 
         expect(emulate()(first).from).toEqual(onsetOf(first))
     })
@@ -102,45 +120,45 @@ describe('aligning a command with another', () => {
 
 describe('placing a command before or after another', () => {
     it('leaves it where the measurement already has it on that side', () => {
-        const { first, note, onsetOf, placeBeside, emulate } = setUp()
+        const { first, note, onsetOf, placeBeside, emulate, stating } = setUp()
         placeBeside(first, note, [-5, -3, -4])
-        first.before = assignReference(note.id)
+        stating(first, command => { command.before = assignReference(note.id) })
 
         expect(emulate()(first).from).toEqual(onsetOf(first))
     })
 
     it('puts it on that side as far as the copies that agree put it', () => {
-        const { first, note, onsetOf, placeBeside, emulate } = setUp()
+        const { first, note, onsetOf, placeBeside, emulate, stating } = setUp()
         placeBeside(first, note, [-2, 6, 8])
-        first.before = assignReference(note.id)
+        stating(first, command => { command.before = assignReference(note.id) })
 
         expect(onsetOf(first)).toBeGreaterThan(onsetOf(note))
         expect(emulate()(first).from).toBeCloseTo(onsetOf(note) - 2)
     })
 
     it('does the same after', () => {
-        const { first, note, onsetOf, placeBeside, emulate } = setUp()
+        const { first, note, onsetOf, placeBeside, emulate, stating } = setUp()
         placeBeside(first, note, [2, -6, -8])
-        first.after = assignReference(note.id)
+        stating(first, command => { command.after = assignReference(note.id) })
 
         expect(onsetOf(first)).toBeLessThan(onsetOf(note))
         expect(emulate()(first).from).toBeCloseTo(onsetOf(note) + 2)
     })
 
     it('puts it a punch diameter away where no copy agrees', () => {
-        const { first, note, onsetOf, placeBeside, gap, emulate } = setUp()
+        const { first, note, onsetOf, placeBeside, gap, emulate, stating } = setUp()
         placeBeside(first, note, [3, 6, 4])
-        first.before = assignReference(note.id)
+        stating(first, command => { command.before = assignReference(note.id) })
 
         expect(gap).toBeGreaterThan(0)
         expect(emulate()(first).from).toBeCloseTo(onsetOf(note) - gap)
     })
 
     it('judges the side against where the reference comes to lie', () => {
-        const { first, second, note, onsetOf, placeBeside, gap, emulate } = setUp()
-        second.alignedWith = assignReference(note.id)
+        const { first, second, note, onsetOf, placeBeside, gap, emulate, stating } = setUp()
+        stating(second, command => { command.alignedWith = assignReference(note.id) })
         placeBeside(first, note, [4, 4, 4])
-        first.before = assignReference(second.id)
+        stating(first, command => { command.before = assignReference(second.id) })
 
         const placedAs = emulate()
         expect(placedAs(second).from).toEqual(onsetOf(note))
@@ -150,9 +168,9 @@ describe('placing a command before or after another', () => {
 
 describe('pairing two commands', () => {
     it('moves the partner by the same distance', () => {
-        const { first, second, note, onsetOf, emulate } = setUp()
-        first.alignedWith = assignReference(note.id)
-        second.pairedWith = assignReference(first.id)
+        const { first, second, note, onsetOf, emulate, stating } = setUp()
+        stating(first, command => { command.alignedWith = assignReference(note.id) })
+        stating(second, command => { command.pairedWith = assignReference(first.id) })
 
         const placedAs = emulate()
         const displacement = placedAs(first).from - onsetOf(first)
@@ -162,17 +180,17 @@ describe('pairing two commands', () => {
     })
 
     it('holds in both directions', () => {
-        const { first, second, note, onsetOf, emulate } = setUp()
-        first.alignedWith = assignReference(note.id)
-        first.pairedWith = assignReference(second.id)
+        const { first, second, note, onsetOf, emulate, stating } = setUp()
+        stating(first, command => { command.alignedWith = assignReference(note.id) })
+        stating(first, command => { command.pairedWith = assignReference(second.id) })
 
         const placedAs = emulate()
         expect(placedAs(second).from - onsetOf(second)).toEqual(placedAs(first).from - onsetOf(first))
     })
 
     it('leaves a pair alone when neither member is aligned', () => {
-        const { first, second, onsetOf, emulate } = setUp()
-        first.pairedWith = assignReference(second.id)
+        const { first, second, onsetOf, emulate, stating } = setUp()
+        stating(first, command => { command.pairedWith = assignReference(second.id) })
 
         const placedAs = emulate()
         expect(placedAs(first).from).toEqual(onsetOf(first))
@@ -181,15 +199,15 @@ describe('pairing two commands', () => {
 })
 
 describe('reporting constraints that cannot hold', () => {
-    const problemsWith = (view: EditionView, versionId: string, symbolId: string) =>
-        constraintProblems(view)
+    const problemsWith = (edition: Edition, versionId: string, symbolId: string) =>
+        constraintProblems(edition)
             .filter(problem => problem.version === versionId && problem.symbol === symbolId)
             .map(problem => problem.problem)
 
     it('finds no placement or pairing to report in the edition as it is', () => {
-        const { view } = setUp()
+        const { current } = setUp()
         const known = new Set(['carrier-on-another-track', 'strike-bites-nothing'])
-        const stated = constraintProblems(view).filter(problem => !known.has(problem.problem))
+        const stated = constraintProblems(current()).filter(problem => !known.has(problem.problem))
         expect(stated).toEqual([])
     })
 
@@ -205,13 +223,13 @@ describe('reporting constraints that cannot hold', () => {
      * readings quietly returning.
      */
     it('reports a strike that takes nothing out of the text', () => {
-        const { view } = setUp()
-        const reported = constraintProblems(view)
+        const { current } = setUp()
+        const reported = constraintProblems(current())
             .filter(problem => problem.problem === 'strike-bites-nothing')
 
         expect(reported.length).toBe(11)
         expect(new Set(reported.map(problem => problem.version)).size).toBe(1)
-        reported.forEach(({ symbol }) => expect(view.symbol(symbol)).toBeUndefined())
+        reported.forEach(({ symbol }) => expect(symbolIn(current(), symbol)).toBeUndefined())
     })
 
     /**
@@ -222,75 +240,75 @@ describe('reporting constraints that cannot hold', () => {
      * before, so it went unnoticed.
      */
     it('reports a carrier sitting on a track that does not say what its symbol says', () => {
-        const { view } = setUp()
-        const reported = constraintProblems(view)
+        const { current } = setUp()
+        const reported = constraintProblems(current())
             .filter(problem => problem.problem === 'carrier-on-another-track')
 
         expect(new Set(reported.map(problem => problem.symbol)).size).toBe(4)
         reported.forEach(({ symbol }) => {
-            const carried = view.symbol(symbol)!
-            const tracks = view.placedCarriersOf(carried).map(carrier => carrier.vertical.from)
+            const carried = symbolIn(current(), symbol)!
+            const tracks = placedCarriersOf(current(), carried).map(carrier => carrier.vertical.from)
             expect(new Set(tracks).size).toBeGreaterThan(1)
         })
     })
 
     it('says nothing of carriers that agree across two systems', () => {
-        const { view, note } = setUp()
-        expect(problemsWith(view, view.edition.versions[0].id, note.id)).toEqual([])
+        const { current, note } = setUp()
+        expect(problemsWith(current(), current().versions[0].id, note.id)).toEqual([])
     })
 
     it('reports a missing reference and a missing partner', () => {
-        const { view, version, first, second } = setUp()
-        first.alignedWith = assignReference('nowhere')
-        second.pairedWith = assignReference('nowhere')
+        const { current, version, first, second, stating } = setUp()
+        stating(first, command => { command.alignedWith = assignReference('nowhere') })
+        stating(second, command => { command.pairedWith = assignReference('nowhere') })
 
-        expect(problemsWith(view, version.id, first.id)).toEqual(['alignment-reference-missing'])
-        expect(problemsWith(view, version.id, second.id)).toEqual(['partner-missing'])
+        expect(problemsWith(current(), version.id, first.id)).toEqual(['alignment-reference-missing'])
+        expect(problemsWith(current(), version.id, second.id)).toEqual(['partner-missing'])
     })
 
     it('reports a missing reference of an order as well', () => {
-        const { view, version, first, second } = setUp()
-        first.before = assignReference('nowhere')
-        second.after = assignReference('nowhere')
+        const { current, version, first, second, stating } = setUp()
+        stating(first, command => { command.before = assignReference('nowhere') })
+        stating(second, command => { command.after = assignReference('nowhere') })
 
-        expect(problemsWith(view, version.id, first.id)).toEqual(['before-reference-missing'])
-        expect(problemsWith(view, version.id, second.id)).toEqual(['after-reference-missing'])
+        expect(problemsWith(current(), version.id, first.id)).toEqual(['before-reference-missing'])
+        expect(problemsWith(current(), version.id, second.id)).toEqual(['after-reference-missing'])
     })
 
     it('reports a command placed relative to itself or in several ways', () => {
-        const { view, version, first, second, note } = setUp()
-        first.before = assignReference(first.id)
-        second.alignedWith = assignReference(note.id)
-        second.after = assignReference(note.id)
+        const { current, version, first, second, note, stating } = setUp()
+        stating(first, command => { command.before = assignReference(first.id) })
+        stating(second, command => { command.alignedWith = assignReference(note.id) })
+        stating(second, command => { command.after = assignReference(note.id) })
 
-        expect(problemsWith(view, version.id, first.id)).toEqual(['placed-relative-to-itself'])
-        expect(problemsWith(view, version.id, second.id)).toEqual(['placed-several-ways'])
+        expect(problemsWith(current(), version.id, first.id)).toEqual(['placed-relative-to-itself'])
+        expect(problemsWith(current(), version.id, second.id)).toEqual(['placed-several-ways'])
     })
 
     it('reports a command paired with itself', () => {
-        const { view, version, first } = setUp()
-        first.pairedWith = assignReference(first.id)
+        const { current, version, first, stating } = setUp()
+        stating(first, command => { command.pairedWith = assignReference(first.id) })
 
-        expect(problemsWith(view, version.id, first.id)).toEqual(['paired-with-itself'])
+        expect(problemsWith(current(), version.id, first.id)).toEqual(['paired-with-itself'])
     })
 
     it('reports a command claimed by several pairs', () => {
-        const { view, version, first, second, third } = setUp()
-        first.pairedWith = assignReference(second.id)
-        third.pairedWith = assignReference(second.id)
+        const { current, version, first, second, third, stating } = setUp()
+        stating(first, command => { command.pairedWith = assignReference(second.id) })
+        stating(third, command => { command.pairedWith = assignReference(second.id) })
 
-        expect(problemsWith(view, version.id, second.id)).toEqual(['in-several-pairs'])
-        expect(problemsWith(view, version.id, first.id)).toEqual([])
+        expect(problemsWith(current(), version.id, second.id)).toEqual(['in-several-pairs'])
+        expect(problemsWith(current(), version.id, first.id)).toEqual([])
     })
 
     it('reports a pair whose members are both placed', () => {
-        const { view, version, first, second, note } = setUp()
-        first.alignedWith = assignReference(note.id)
-        second.after = assignReference(note.id)
-        first.pairedWith = assignReference(second.id)
+        const { current, version, first, second, note, stating } = setUp()
+        stating(first, command => { command.alignedWith = assignReference(note.id) })
+        stating(second, command => { command.after = assignReference(note.id) })
+        stating(first, command => { command.pairedWith = assignReference(second.id) })
 
-        expect(problemsWith(view, version.id, first.id)).toEqual(['pair-placed-on-both-sides'])
-        expect(problemsWith(view, version.id, second.id)).toEqual(['pair-placed-on-both-sides'])
+        expect(problemsWith(current(), version.id, first.id)).toEqual(['pair-placed-on-both-sides'])
+        expect(problemsWith(current(), version.id, second.id)).toEqual(['pair-placed-on-both-sides'])
     })
 })
 
@@ -327,7 +345,7 @@ const afterTransfer = () => {
 
 describe('reporting a transfer between systems that is unfinished', () => {
     const typesNotRead = (edition: ReturnType<typeof afterTransfer>, versionId: string) =>
-        constraintProblems(new EditionView(edition))
+        constraintProblems(edition)
             .filter(problem => problem.problem === 'type-not-on-the-bar' && problem.version === versionId)
             .map(problem => problem.symbol)
 

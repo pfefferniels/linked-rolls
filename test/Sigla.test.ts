@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { assignReference } from '../src/model/Assumption'
-import { EditionView } from '../src/view/EditionView'
 import { stateCarriage } from '../src/ops'
 import { siglaOf, siglumOf } from '../src/analysis/sigla'
 import { systemOf, TrackerBar } from '../src/systems/TrackerBar'
@@ -163,12 +162,12 @@ const stemma = () => editionOf(
     ]
 )
 
-const siglaIn = (edition: Edition) => Object.fromEntries(siglaOf(new EditionView(edition)))
+const siglaIn = (edition: Edition) => Object.fromEntries(siglaOf(edition))
 
 describe('marking the versions no witness shows', () => {
     it('lowercases a version every copy reaches through a later one, and one nothing carries at all', () => {
         expect(siglaIn(stemma())).toEqual({ root: 'R1', second: 'r2', third: 'R3', branch: 'r1.1' })
-        expect(siglumOf(new EditionView(stemma()), 'second')).toBe('r2')
+        expect(siglumOf(stemma(), 'second')).toBe('r2')
     })
 
     it('leaves a version a copy does no more than state it carries in lowercase', () => {

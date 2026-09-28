@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { Edition } from '../src/model/Edition'
-import { EditionView } from '../src/view/EditionView'
+import { actOf } from '../src/lookup/lookup'
 import { Patch, Mark, NestedFeature, Transcription, Writing, withBorneFeatures } from '../src/model/Feature'
 import { featuresOf, isModification, Modification } from '../src/model/RollCopy'
 import { assignObject } from '../src/model/Assumption'
@@ -129,30 +129,28 @@ describe('stating a feature a patch bears', () => {
 describe('the act a feature stands in', () => {
     it('is the production for a punched feature and the modification for a later one', () => {
         const edition = dated()
-        const view = new EditionView(edition)
 
-        expect(view.actOf('perforation')).toBe(edition.copies[0].production)
-        expect(view.actOf('date')).toBe(edition.copies[0].modifications[0])
-        expect(isModification(view.actOf('date')!)).toBe(true)
-        expect(isModification(view.actOf('perforation')!)).toBe(false)
+        expect(actOf(edition, 'perforation')).toBe(edition.copies[0].production)
+        expect(actOf(edition, 'date')).toBe(edition.copies[0].modifications[0])
+        expect(isModification(actOf(edition, 'date')!)).toBe(true)
+        expect(isModification(actOf(edition, 'perforation')!)).toBe(false)
     })
 
     it('is the attachment that glued the patch on, for what the patch bears', () => {
         const edition = produce(
             produce(dated(), draft => { draft.copies[0].modifications.push(attachment(patch('label'))) }),
             addBorneFeature('first', 'label', borne('title')))
-        const view = new EditionView(edition)
 
-        expect(view.actOf('title')).toBe(edition.copies[0].modifications[1])
-        expect(view.actOf('title')).toBe(view.actOf('label'))
+        expect(actOf(edition, 'title')).toBe(edition.copies[0].modifications[1])
+        expect(actOf(edition, 'title')).toBe(actOf(edition, 'label'))
     })
 
     it('says nothing of an id no copy bears', () => {
-        expect(new EditionView(dated()).actOf('nowhere')).toBeUndefined()
+        expect(actOf(dated(), 'nowhere')).toBeUndefined()
     })
 
     it('tells two features of one act from two of different acts', () => {
-        const view = new EditionView(dated())
-        expect(view.actOf('date')).not.toBe(view.actOf('perforation'))
+        const edition = dated()
+        expect(actOf(edition, 'date')).not.toBe(actOf(edition, 'perforation'))
     })
 })

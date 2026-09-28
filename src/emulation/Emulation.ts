@@ -1,6 +1,5 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
 import { idOf } from "../model/Assumption.js";
-import { EditionView } from "../view/EditionView.js";
 import { isCommand, pairsAmong, placementsOf } from "../model/Symbol.js";
 import type { TrackerBar } from "../systems/TrackerBar.js";
 import { Version } from "../model/Version.js";
@@ -16,6 +15,9 @@ import { add, mean, Millimeters, mm, Seconds, seconds, subtract } from "../model
 import { punchDiameterOf } from "../model/RollCopy.js";
 import { toOwnPaperOf } from "../analysis/ownPaper.js";
 import { negotiatedEventOf } from "./negotiation.js";
+import { placedCarriersOf, snapshotOf } from "../analysis/text.js";
+import { copyOfFeature, symbolIn } from "../lookup/lookup.js";
+import { Edition } from "../model/Edition.js";
 
 export type EmulationScope = {
     /** Only notes whose onset lies within this span of the roll are played. */
@@ -26,26 +28,26 @@ export type EmulationScope = {
 }
 
 /** The punch diameter the edition's copies report, where any of them does. */
-const meanPunchDiameterOf = (view: EditionView): Millimeters | undefined => {
-    const measured = view.edition.copies
+const meanPunchDiameterOf = (edition: Edition): Millimeters | undefined => {
+    const measured = edition.copies
         .map(punchDiameterOf)
         .filter(value => value !== undefined)
     return measured.length > 0 ? mean(measured) : undefined
 }
 
-const propertiesOf = (view: EditionView, version: Readonly<Version>): RollProperties => ({
-    punchDiameter: meanPunchDiameterOf(view),
-    tempo: view.edition.tempoAdjustment,
-    toOwnPaper: toOwnPaperOf(view, version)
+const propertiesOf = (edition: Edition, version: Readonly<Version>): RollProperties => ({
+    punchDiameter: meanPunchDiameterOf(edition),
+    tempo: edition.tempoAdjustment,
+    toOwnPaper: toOwnPaperOf(edition, version)
 })
 
 /** The onset a symbol has on each copy carrying it, by the copy's id, as the mean of its chains there. */
-const onsetsByCopy = (view: EditionView, symbolId: string): Map<string, Millimeters> => {
-    const symbol = view.symbol(symbolId)
+const onsetsByCopy = (edition: Edition, symbolId: string): Map<string, Millimeters> => {
+    const symbol = symbolIn(edition, symbolId)
     if (!symbol) return new Map()
 
-    const onsets = view.placedCarriersOf(symbol).flatMap((carrier): [string, Millimeters][] => {
-        const copy = view.copyOf(carrier.id)
+    const onsets = placedCarriersOf(edition, symbol).flatMap((carrier): [string, Millimeters][] => {
+        const copy = copyOfFeature(edition, carrier.id)
         return copy ? [[copy.id, carrier.horizontal.from]] : []
     })
     const copies = new Set(onsets.map(([copy]) => copy))
@@ -59,9 +61,9 @@ const onsetsByCopy = (view: EditionView, symbolId: string): Map<string, Millimet
  * the follower on each copy carrying both, negative where the follower
  * comes first there.
  */
-const offsetsBetween = (view: EditionView, followerId: string, referenceId: string): Millimeters[] => {
-    const references = onsetsByCopy(view, referenceId)
-    return [...onsetsByCopy(view, followerId)].flatMap(([copy, onset]) => {
+const offsetsBetween = (edition: Edition, followerId: string, referenceId: string): Millimeters[] => {
+    const references = onsetsByCopy(edition, referenceId)
+    return [...onsetsByCopy(edition, followerId)].flatMap(([copy, onset]) => {
         const reference = references.get(copy)
         return reference === undefined ? [] : [subtract(onset, reference)]
     })
@@ -133,13 +135,13 @@ const earliestOf = (times: readonly Seconds[]): Seconds =>
 
 /**
  * The events moved to where their statements put them, the events given
- * left as they were. The view supplies the copies, whose measurements
+ * left as they were. The edition supplies the copies, whose measurements
  * decide how far before or after its reference a command goes, and a
  * punch diameter, or a millimetre, where no copy agrees with a statement.
  */
-export const withPlacementsApplied = (view: EditionView, events: readonly NegotiatedEvent[]): NegotiatedEvent[] => {
-    const gap = meanPunchDiameterOf(view) ?? mm(1)
-    const offsets: Offsets = (follower, reference) => offsetsBetween(view, follower, reference)
+export const withPlacementsApplied = (edition: Edition, events: readonly NegotiatedEvent[]): NegotiatedEvent[] => {
+    const gap = meanPunchDiameterOf(edition) ?? mm(1)
+    const offsets: Offsets = (follower, reference) => offsetsBetween(edition, follower, reference)
     const displacements = displacementsOf(events, offsets, gap)
     return events.map(event => {
         const distance = displacements.get(event)
@@ -156,7 +158,7 @@ export const withPlacementsApplied = (view: EditionView, events: readonly Negoti
  * where its onset falls in the range; expressions play throughout.
  */
 export const negotiatedEventsOf = (
-    view: EditionView,
+    edition: Edition,
     version: Readonly<Version>,
     bar: TrackerBar,
     { range }: Pick<EmulationScope, 'range'> = {}
@@ -164,9 +166,9 @@ export const negotiatedEventsOf = (
     const inScope = (event: NegotiatedEvent): boolean =>
         !range || event.type !== 'note' || (event.horizontal.from > range[0] && event.horizontal.from < range[1])
 
-    return withPlacementsApplied(view, view.snapshot(version.id)
+    return withPlacementsApplied(edition, snapshotOf(edition, version.id)
         .filter(isCommand)
-        .map(symbol => negotiatedEventOf(view, symbol, bar))
+        .map(symbol => negotiatedEventOf(edition, symbol, bar))
         .filter(event => event !== null)
         .filter(inScope))
 }
@@ -188,14 +190,14 @@ export interface Emulated {
 export const emulate = <Options extends object>(
     system: ReproducingSystem<Options>,
     version: Readonly<Version>,
-    view: EditionView,
+    edition: Edition,
     options: Options = system.defaultOptions,
     { range, skipToFirstNote = false }: EmulationScope = {}
 ): Emulated => {
-    const negotiated = negotiatedEventsOf(view, version, system.trackerBar, { range })
+    const negotiated = negotiatedEventsOf(edition, version, system.trackerBar, { range })
     if (negotiated.length === 0) return { source: version.id, negotiated, events: [], curves: [] }
 
-    const performance = system.perform(negotiated, options, propertiesOf(view, version))
+    const performance = system.perform(negotiated, options, propertiesOf(edition, version))
     const onsets = performance.events.filter(event => event.type === 'noteOn').map(event => event.at)
     const origin = skipToFirstNote ? earliestOf(onsets) : seconds(0)
 
@@ -323,12 +325,12 @@ export class Emulation<Options extends object> {
     }
 
     /** Moves the negotiated events to where their statements put them; see `withPlacementsApplied`. */
-    applyConstraints(view: EditionView) {
-        this.negotiatedEvents = withPlacementsApplied(view, this.negotiatedEvents)
+    applyConstraints(edition: Edition) {
+        this.negotiatedEvents = withPlacementsApplied(edition, this.negotiatedEvents)
     }
 
-    emulateVersion(version: Version, view: EditionView, scope: EmulationScope = {}) {
-        const emulated = emulate(this.system, version, view, this.options, scope)
+    emulateVersion(version: Version, edition: Edition, scope: EmulationScope = {}) {
+        const emulated = emulate(this.system, version, edition, this.options, scope)
         this.source = emulated.source
         this.negotiatedEvents = [...emulated.negotiated]
         this.curves = emulated.curves

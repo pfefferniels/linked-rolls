@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { Edition } from '../src/model/Edition'
-import { EditionView } from '../src/view/EditionView'
+import { snapshotOf } from '../src/analysis/text'
+import { symbolIn } from '../src/lookup/lookup'
 import { Edit } from '../src/model/Edit'
 import { admits, CollationTolerance, isCollatable, isCollationsOwn, unchecked } from '../src/collation/Collation'
 import { connectVersions } from '../src/ops'
@@ -123,7 +124,7 @@ const editsIn = (edition: Edition, versionId: string) => edition.versions.find(v
 describe('connecting two versions where an editor has already read the difference', () => {
     const connected = () => {
         const before = twoRootsWithAReading()
-        return produce(before, connectVersions(new EditionView(before), 'B', 'A'))
+        return produce(before, connectVersions('B', 'A'))
     }
 
     it('keeps the edit the editor established, with its identifier and everything on it', () => {
@@ -143,12 +144,12 @@ describe('connecting two versions where an editor has already read the differenc
         const next = connected()
 
         expect(editsIn(next, 'B').map(edit => edit.id)).not.toContain('bare')
-        expect(idsOf(new EditionView(next).symbol('shared')!.carriers))
+        expect(idsOf(symbolIn(next, 'shared')!.carriers))
             .toEqual(['hole-shared', 'hole-shared-too'])
     })
 
     it('leaves the text of the child as it was', () => {
-        expect(new EditionView(connected()).snapshot('B').map(symbol => symbol.id).sort())
+        expect(snapshotOf(connected(), 'B').map(symbol => symbol.id).sort())
             .toEqual(['own', 'shared'])
     })
 
@@ -169,7 +170,7 @@ const twoRootsApart = (): Edition => editionOf(
 describe('what a collation says about the edits it makes', () => {
     const connected = () => {
         const before = twoRootsApart()
-        return produce(before, connectVersions(new EditionView(before), 'B', 'A'))
+        return produce(before, connectVersions('B', 'A'))
     }
 
     it('marks them as unread, and says in the version what that means', () => {
@@ -188,15 +189,15 @@ describe('what a collation says about the edits it makes', () => {
      */
     it('rewrites what it marked before, rather than freezing against its own output', () => {
         const once = connected()
-        const twice = produce(once, connectVersions(new EditionView(once), 'B', 'A'))
+        const twice = produce(once, connectVersions('B', 'A'))
 
         expect(editsIn(twice, 'B').map(edit => edit.id)).not.toEqual(editsIn(once, 'B').map(edit => edit.id))
-        expect(new EditionView(twice).snapshot('B').map(symbol => symbol.id)).toEqual(['new'])
+        expect(snapshotOf(twice, 'B').map(symbol => symbol.id)).toEqual(['new'])
     })
 
     it('declares the motivation once, however often it collates', () => {
         const once = connected()
-        const twice = produce(once, connectVersions(new EditionView(once), 'B', 'A'))
+        const twice = produce(once, connectVersions('B', 'A'))
 
         expect(twice.versions[1].motivations.map(motivation => motivation.id)).toEqual([unchecked])
     })

@@ -1,7 +1,6 @@
 import { v4 } from "uuid"
 import { Belief } from "../model/Assumption.js"
 import { admits, BothEnds, CollationTolerance, Displacement, offsetEndOf, offsetStartOf } from "./Collation.js"
-import { EditionView } from "../view/EditionView.js"
 import { FeatureOrPatch } from "../model/Feature.js"
 import { mean, Millimeters, mm } from "../model/Quantity.js"
 import {
@@ -10,6 +9,9 @@ import {
 import { AnySymbol } from "../model/Symbol.js"
 import { groupBy } from "../shared/utils.js"
 import { deletedBy, insertedBy } from "../model/Version.js"
+import { carriersOf, placedCarriersOf, snapshotOf } from "../analysis/text.js"
+import { copyOfFeature, symbolsIn, versionIn } from "../lookup/lookup.js"
+import { Edition } from "../model/Edition.js"
 
 /**
  * How far the copies of a roll disagree about where a symbol lies, and
@@ -37,8 +39,8 @@ const placeOf = (carriers: readonly Readonly<FeatureOrPatch>[]): BothEnds<Millim
     to: mean(carriers.map(carrier => carrier.horizontal.to))
 })
 
-const sitsOn = (view: EditionView, copies: ReadonlySet<string>) => (feature: Readonly<FeatureOrPatch>): boolean => {
-    const copy = view.copyOf(feature.id)
+const sitsOn = (edition: Edition, copies: ReadonlySet<string>) => (feature: Readonly<FeatureOrPatch>): boolean => {
+    const copy = copyOfFeature(edition, feature.id)
     return copy !== undefined && copies.has(copy.id)
 }
 
@@ -65,14 +67,14 @@ const sitsOn = (view: EditionView, copies: ReadonlySet<string>) => (feature: Rea
  * which leaves out exactly the insertions and the deletions.
  */
 export const readingsOf = (
-    view: EditionView,
+    edition: Edition,
     symbols: readonly Readonly<AnySymbol>[],
     copies: ReadonlySet<string>
 ): Reading[] => {
-    const tested = sitsOn(view, copies)
+    const tested = sitsOn(edition, copies)
 
     return symbols.flatMap((symbol): Reading[] => {
-        const carriers = view.placedCarriersOf(symbol)
+        const carriers = placedCarriersOf(edition, symbol)
         const here = carriers.filter(tested)
         const there = carriers.filter(carrier => !tested(carrier))
         if (here.length === 0 || there.length === 0) return []
@@ -306,12 +308,12 @@ export const scatterOf = (readings: readonly Reading[], options: ScatterOptions 
 
 /** How one copy's readings of a version's text scatter against the readings of the copies it is collated with. */
 export const scatterOfCopy = (
-    view: EditionView,
+    edition: Edition,
     versionId: string,
     copyId: string,
     options: ScatterOptions = {}
 ): Scatter[] =>
-    scatterOf(readingsOf(view, view.snapshot(versionId), new Set([copyId])), options)
+    scatterOf(readingsOf(edition, snapshotOf(edition, versionId), new Set([copyId])), options)
 
 interface Window {
     offset: Millimeters
@@ -431,10 +433,10 @@ export interface Sides {
     parent: Attestation[]
 }
 
-const copiesBearing = (view: EditionView, symbols: readonly Readonly<AnySymbol>[]): Attestation[] => {
+const copiesBearing = (edition: Edition, symbols: readonly Readonly<AnySymbol>[]): Attestation[] => {
     const tally = symbols.reduce((counts, symbol) => {
-        const bearers = new Set(view.carriersOf(symbol).flatMap(carrier => {
-            const copy = view.copyOf(carrier.id)
+        const bearers = new Set(carriersOf(edition, symbol).flatMap(carrier => {
+            const copy = copyOfFeature(edition, carrier.id)
             return copy ? [copy.id] : []
         }))
         bearers.forEach(copy => counts.set(copy, (counts.get(copy) ?? 0) + 1))
@@ -463,13 +465,13 @@ const copiesBearing = (view: EditionView, symbols: readonly Readonly<AnySymbol>[
  * neither side, which is the case where the edition has genuinely
  * stopped saying and an editor has to.
  */
-export const sidesOf = (view: EditionView, versionId: string): Sides | undefined => {
-    const version = view.version(versionId)
+export const sidesOf = (edition: Edition, versionId: string): Sides | undefined => {
+    const version = versionIn(edition, versionId)
     if (!version) return undefined
 
     return {
-        child: copiesBearing(view, insertedBy(version)),
-        parent: copiesBearing(view, view.symbols(deletedBy(version)))
+        child: copiesBearing(edition, insertedBy(version)),
+        parent: copiesBearing(edition, symbolsIn(edition, deletedBy(version)))
     }
 }
 

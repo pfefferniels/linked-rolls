@@ -22,7 +22,7 @@ single undo step.
 
 ```ts
 import { produce } from 'immer'
-import { alignCopy, asJsonLd, connectVersions, createVersion, EditionView, importJsonLd, readFromStanfordAton } from 'linked-rolls'
+import { alignCopy, asJsonLd, connectVersions, createVersion, importJsonLd, readFromStanfordAton, snapshotOf } from 'linked-rolls'
 
 let edition = importJsonLd(json)
 
@@ -32,12 +32,20 @@ const copy = readFromStanfordAton(aton)
 edition = produce(edition, createVersion(copy))
 edition = produce(edition, alignCopy(copy.id))
 
-// Collate that version against another one
-const view = new EditionView(edition)
-edition = produce(edition, connectVersions(view, childId, parentId))
+// Collate that version against another one, and read what it shows
+edition = produce(edition, connectVersions(childId, parentId))
+const symbols = snapshotOf(edition, childId)
 
 const document = asJsonLd(edition)
 ```
+
+What is read off an edition, such as `snapshotOf`, `placeOf`,
+`versionIn` or `pathOf`, is worked out once for each state of it and
+kept for as long as the state is. Every change through `produce` yields
+a new state, so nothing needs to be told that the edition changed. For
+the same reason an edition is frozen once anything has been asked of it,
+as immer freezes what it produces: change it through an operation, not
+in place. A draft is asked about as `current(draft)`.
 
 Within the library every place along the roll is a place on the edition's
 axis, the millimetres of its reference copy. A document holds each copy's
@@ -65,7 +73,7 @@ optional peer dependency that you install only if you need playback.
 import { emulate, midiOf } from 'linked-rolls'
 import { welteT100System } from 'linked-rolls/welte-t100'
 
-const { events, source } = emulate(welteT100System, version, view)
+const { events, source } = emulate(welteT100System, version, edition)
 const midi = midiOf(events, welteT100System.name, welteT100System.defaultOptions, source)
 ```
 

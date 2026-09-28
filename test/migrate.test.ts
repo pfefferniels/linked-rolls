@@ -7,7 +7,7 @@ import { importJsonLd } from '../src/io/importJsonLd'
 import { asJsonLd } from '../src/io/asJsonLd'
 import { CollationTolerance } from '../src/collation/Collation'
 import { Edition } from '../src/model/Edition'
-import { EditionView } from '../src/view/EditionView'
+import { symbolIn } from '../src/lookup/lookup'
 import { collateSymbols } from '../src/ops'
 import { idsOf } from '../src/model/Assumption'
 import { mm } from '../src/model/Quantity'
@@ -43,7 +43,7 @@ const writtenBefore = (tolerance: CollationTolerance) => {
     }
 }
 
-const carriersOfNote = (edition: Edition) => idsOf(new EditionView(edition).symbol('note')!.carriers)
+const carriersOfNote = (edition: Edition) => idsOf(symbolIn(edition, 'note')!.carriers)
 
 /** Every feature of a migrated copy, whichever act states it, and whatever a patch bears. */
 const featuresIn = (copy: any): any[] => {
@@ -365,10 +365,10 @@ describe('migrating an edition whose collation tolerance was the edition\'s', ()
     it('keeps a version collating at the tolerance the edition stated', () => {
         const tight = importJsonLd(writtenBefore({ toleranceStart: mm(1), toleranceEnd: mm(1) }))
         expect(tight.versions[1].basedOn![0].collationTolerance).toEqual({ toleranceStart: 1, toleranceEnd: 1 })
-        expect(produce(tight, collateSymbols(new EditionView(tight), 'B', ['note-b']))).toBe(tight)
+        expect(produce(tight, collateSymbols('B', ['note-b']))).toBe(tight)
 
         const wide = importJsonLd(writtenBefore({ toleranceStart: mm(5), toleranceEnd: mm(5) }))
-        const collated = produce(wide, collateSymbols(new EditionView(wide), 'B', ['note-b']))
+        const collated = produce(wide, collateSymbols('B', ['note-b']))
         expect(carriersOfNote(collated)).toEqual(['hole-note', 'hole-note-second'])
     })
 })

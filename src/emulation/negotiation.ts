@@ -1,7 +1,8 @@
-import type { EditionView } from "../view/EditionView.js";
 import type { Expression, Note } from "../model/Symbol.js";
 import type { TrackerBar } from "../systems/TrackerBar.js";
 import type { NegotiatedEvent } from "../systems/ReproducingSystem.js";
+import { placeOf } from "../analysis/text.js";
+import { Edition } from "../model/Edition.js";
 
 /**
  * The symbol as a performance needs it: where it lies, and the
@@ -12,8 +13,8 @@ import type { NegotiatedEvent } from "../systems/ReproducingSystem.js";
  * green version still inherits cannot be performed on a green
  * machine, and an edit has yet to say what took its place.
  */
-export const negotiatedEventOf = (view: EditionView, symbol: Note | Expression, bar: TrackerBar): NegotiatedEvent | null => {
-    const horizontal = view.placeOf(symbol)
+export const negotiatedEventOf = (edition: Edition, symbol: Note | Expression, bar: TrackerBar): NegotiatedEvent | null => {
+    const horizontal = placeOf(edition, symbol)
     const position = bar.positionOf(symbol)
     if (!horizontal || position === undefined) return null
 

@@ -1,7 +1,6 @@
 /** Operations on the features a copy bears: adding, removing and merging them, and stating their condition. */
 import { Draft } from "immer"
 import { v4 } from "uuid"
-import { EditionView } from "../view/EditionView.js"
 import { Edition } from "../model/Edition.js"
 import { AnySymbol } from "../model/Symbol.js"
 import { Edit } from "../model/Edit.js"
@@ -13,6 +12,7 @@ import { mm } from "../model/Quantity.js"
 import { EditionOp, onCopy, onFeature, stateOf, Ids } from "./draft.js"
 import { without, mapped, pruned, replacing, isRecord } from "./immutable.js"
 import { renameReferences, forgetFeatures } from "./forget.js"
+import { copyOfFeature } from "../lookup/lookup.js"
 
 /**
  * Whether the feature's own kind allows a condition of this kind. The
@@ -270,8 +270,8 @@ const obstacleIn = (copy: RollCopy, featureIds: readonly string[]): MergeObstacl
  * feature is the work of one act, and where the features stand is the
  * edition's business rather than theirs.
  */
-export const mergeObstacleIn = (view: EditionView, featureIds: readonly string[]): MergeObstacle | undefined => {
-    const copy = featureIds.map(id => view.copyOf(id)).find(copy => copy !== undefined)
+export const mergeObstacleIn = (edition: Edition, featureIds: readonly string[]): MergeObstacle | undefined => {
+    const copy = featureIds.map(id => copyOfFeature(edition, id)).find(copy => copy !== undefined)
     return copy ? obstacleIn(copy, featureIds) : 'fewer-than-two'
 }
 

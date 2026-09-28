@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { Edition } from '../src/model/Edition'
-import { EditionView } from '../src/view/EditionView'
+import { symbolIn } from '../src/lookup/lookup'
 import { AnyFeature, HoleChain, Mark, Transcription, Writing, conditions } from '../src/model/Feature'
 import { ConditionState } from '../src/model/ConditionState'
 import { ObjectAssumption, ReferenceAssumption, assignObject, assignReference, idsOf } from '../src/model/Assumption'
@@ -44,7 +44,7 @@ const merge = (edition: Edition, ...featureIds: string[]) =>
 
 const featuresIn = (edition: Edition) => featuresOf(edition.copies[0])
 const carriersOf = (edition: Edition, symbolId: string) =>
-    idsOf(new EditionView(edition).symbol(symbolId)!.carriers)
+    idsOf(symbolIn(edition, symbolId)!.carriers)
 
 describe('merging the features of a copy', () => {
     it('replaces them with one spanning them all, the gap between them included', () => {
@@ -86,7 +86,7 @@ describe('merging the features of a copy', () => {
         const next = merge(before, 'part-one', 'part-two')
         const mergedId = featuresIn(next)[0].id
 
-        expect(new EditionView(next).symbol('one')!.carriers)
+        expect(symbolIn(next, 'one')!.carriers)
             .toEqual([{ ...believed, id: mergedId }])
     })
 
@@ -130,7 +130,7 @@ describe('merging the features of a copy', () => {
 
 describe('asking of the edition what stands in the way', () => {
     const obstacleIn = (edition: Edition, ...featureIds: string[]) =>
-        mergeObstacleIn(new EditionView(edition), featureIds)
+        mergeObstacleIn(edition, featureIds)
 
     const acrossActs = () => {
         const edition = scan([partOne])

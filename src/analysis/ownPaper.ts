@@ -1,12 +1,12 @@
-import type { EditionView } from "../view/EditionView.js";
 import type { Version } from "../model/Version.js";
 import { defaultTrackerBar, trackerBarOf } from "../systems/index.js";
 import { paperOf, PaperOfSystem } from "./paper.js";
+import { Edition } from "../model/Edition.js";
 
 /** What the alignments say about the paper of the version's own system, where they say anything. */
-export const paperOfVersion = (view: EditionView, version: Readonly<Version>): PaperOfSystem | undefined => {
+export const paperOfVersion = (edition: Edition, version: Readonly<Version>): PaperOfSystem | undefined => {
     const system = (trackerBarOf(version.system) ?? defaultTrackerBar).id
-    return paperOf(view.edition)?.systems.find(paper => paper.system === system)
+    return paperOf(edition)?.systems.find(paper => paper.system === system)
 }
 
 /**
@@ -24,5 +24,5 @@ export const paperOfVersion = (view: EditionView, version: Readonly<Version>): P
  * Nothing where no copy of the version's system measures its paper,
  * which leaves the performance on the axis.
  */
-export const toOwnPaperOf = (view: EditionView, version: Readonly<Version>): number | undefined =>
-    paperOfVersion(view, version)?.toOwnPaper
+export const toOwnPaperOf = (edition: Edition, version: Readonly<Version>): number | undefined =>
+    paperOfVersion(edition, version)?.toOwnPaper

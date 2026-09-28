@@ -1,7 +1,7 @@
 /** Collating a version against the one it derives from, and taking a collation apart again. */
 import { Draft } from "immer"
 import { v4 } from "uuid"
-import { EditionView, getAt } from "../view/EditionView.js"
+import { getAt, pathOf } from "../lookup/paths.js"
 import { Edition } from "../model/Edition.js"
 import { AnySymbol } from "../model/Symbol.js"
 import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance, isCollationsOwn, unchecked } from "../collation/Collation.js"
@@ -12,11 +12,13 @@ import { trackerBarOf } from "../systems/index.js"
 import { ObjectAssumption, ReferenceAssumption, assignReference, idOf } from "../model/Assumption.js"
 import { EditionOp, noChange, onVersion, stateOf, insertion, deletion, asUnchecked, declaring, insertedIn, dropInsertions, reading } from "./draft.js"
 import { hypothesesBeside } from "./versions.js"
+import { placeOf, snapshotOf } from "../analysis/text.js"
+import { copyOfFeature, versionIn } from "../lookup/lookup.js"
 
 /** The carriers of each collated symbol pass to its counterpart. */
-const handOverCarriers = (view: EditionView, draft: Draft<Edition>, collations: readonly Collation[]) =>
+const handOverCarriers = (edition: Edition, draft: Draft<Edition>, collations: readonly Collation[]) =>
     collations.forEach(({ symbol, counterpart }) => {
-        const path = view.getPath(counterpart.id)
+        const path = pathOf(edition, counterpart.id)
         const target = path && getAt<Draft<AnySymbol>>(path, draft)
         target?.carriers.push(...symbol.carriers)
     })
@@ -76,14 +78,13 @@ const byExchange = (edits: readonly Readonly<Edit>[]): Map<string, Readonly<Edit
  * changes.
  */
 export const connectVersions = (
-    given: EditionView,
     childId: string,
     parentId: string,
     tolerance: ObjectAssumption<CollationTolerance> = defaultCollationTolerance
-): EditionOp => reading(given, view => {
-    if (childId === parentId || derivesFrom(view.edition.versions, parentId, childId)) return noChange
+): EditionOp => reading(edition => {
+    if (childId === parentId || derivesFrom(edition.versions, parentId, childId)) return noChange
 
-    const child = view.version(childId)
+    const child = versionIn(edition, childId)
     const stated = child ? editsOf(child) : []
     const established = stated.filter(edit => !isCollationsOwn(edit))
     const spokenFor = spokenForBy(established)
@@ -93,12 +94,12 @@ export const connectVersions = (
     // through: it is neither the child's own symbol nor one it lacks.
     // Without that, connecting a pair already connected would collate
     // the inherited symbols with themselves and double their carriers.
-    const handedDown = view.snapshot(parentId).filter(unspoken)
-    const shown = new Set(view.snapshot(childId).map(symbol => symbol.id))
+    const handedDown = snapshotOf(edition, parentId).filter(unspoken)
+    const shown = new Set(snapshotOf(edition, childId).map(symbol => symbol.id))
     const inheritedIds = new Set(handedDown.map(symbol => symbol.id))
     const inherited = handedDown.filter(symbol => !shown.has(symbol.id))
-    const own = view.snapshot(childId).filter(symbol => unspoken(symbol) && !inheritedIds.has(symbol.id))
-    const locate = (symbol: AnySymbol) => view.placeOf(symbol)
+    const own = snapshotOf(edition, childId).filter(symbol => unspoken(symbol) && !inheritedIds.has(symbol.id))
+    const locate = (symbol: AnySymbol) => placeOf(edition, symbol)
     const collations = collationsOf(own, inherited, locate, tolerance)
     const collated = new Set(collations.map(({ symbol }) => symbol.id))
     const matched = new Set(collations.map(({ counterpart }) => counterpart.id))
@@ -110,7 +111,7 @@ export const connectVersions = (
      * apart would make the apparatus a list of unexplained losses beside
      * a list of unexplained gains.
      */
-    const substituted = differ(child, view.version(parentId))
+    const substituted = differ(child, versionIn(edition, parentId))
         ? substitutionsBetween(
             own.filter(symbol => !collated.has(symbol.id)),
             inherited.filter(symbol => !matched.has(symbol.id)),
@@ -145,7 +146,7 @@ export const connectVersions = (
     ]
 
     return onVersion(childId, (child, draft) => {
-        handOverCarriers(view, draft, collations)
+        handOverCarriers(edition, draft, collations)
         child.edits = edits
         child.motivations = declaring(stateOf<Version>(child).motivations, edits)
         child.basedOn = [
@@ -161,12 +162,11 @@ export const connectVersions = (
  * tolerance of the derivation, where the caller names none.
  */
 export const collateSymbols = (
-    given: EditionView,
     versionId: string,
     symbolIds: readonly string[],
     tolerance?: CollationTolerance
-): EditionOp => reading(given, view => {
-    const version = view.version(versionId)
+): EditionOp => reading(edition => {
+    const version = versionIn(edition, versionId)
     const principal = version && principalDerivationOf(version)
     if (!version || !principal) return noChange
 
@@ -174,13 +174,13 @@ export const collateSymbols = (
     const own = insertedIn([version]).filter(symbol => chosen.has(symbol.id))
     const collations = collationsOf(
         own,
-        view.snapshot(idOf(principal)),
-        symbol => view.placeOf(symbol),
+        snapshotOf(edition, idOf(principal)),
+        symbol => placeOf(edition, symbol),
         tolerance ?? collationToleranceOf(principal))
     const collated = new Set(collations.map(({ symbol }) => symbol.id))
 
     return onVersion(versionId, (version, draft) => {
-        handOverCarriers(view, draft, collations)
+        handOverCarriers(edition, draft, collations)
         dropInsertions(version, collated)
     })
 })
@@ -215,9 +215,9 @@ interface Shared {
  * where the two versions do not disagree and there is nothing to take
  * apart.
  */
-const sharedWith = (view: EditionView, symbol: Readonly<AnySymbol>, copies: ReadonlySet<string>): Shared[] => {
+const sharedWith = (edition: Edition, symbol: Readonly<AnySymbol>, copies: ReadonlySet<string>): Shared[] => {
     const onNamedCopy = (carrier: ReferenceAssumption) => {
-        const copy = view.copyOf(idOf(carrier))
+        const copy = copyOfFeature(edition, idOf(carrier))
         return copy !== undefined && copies.has(copy.id)
     }
     const mine = symbol.carriers.filter(onNamedCopy)
@@ -250,18 +250,17 @@ const sharedWith = (view: EditionView, symbol: Readonly<AnySymbol>, copies: Read
  * narrow the act to those; naming none separates the whole reading.
  */
 export const separateReadings = (
-    given: EditionView,
     versionId: string,
     copies: ReadonlySet<string>,
     symbolIds?: readonly string[]
-): EditionOp => reading(given, view => {
-    const version = view.version(versionId)
+): EditionOp => reading(edition => {
+    const version = versionIn(edition, versionId)
     if (!version) return noChange
 
     const chosen = symbolIds && new Set(symbolIds)
-    const shared = view.snapshot(versionId)
+    const shared = snapshotOf(edition, versionId)
         .filter(symbol => chosen === undefined || chosen.has(symbol.id))
-        .flatMap(symbol => sharedWith(view, symbol, copies))
+        .flatMap(symbol => sharedWith(edition, symbol, copies))
     if (shared.length === 0) return noChange
 
     const inserted = new Set(insertedBy(version).map(symbol => symbol.id))
@@ -277,7 +276,7 @@ export const separateReadings = (
 
     return onVersion(versionId, (version, draft) => {
         shared.forEach(({ symbol, theirs }) => {
-            const path = view.getPath(symbol.id)
+            const path = pathOf(edition, symbol.id)
             const target = path && getAt<Draft<AnySymbol>>(path, draft)
             if (target) target.carriers = theirs
         })

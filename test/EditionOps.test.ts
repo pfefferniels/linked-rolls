@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { Edition } from '../src/model/Edition'
-import { EditionView, Path } from '../src/view/EditionView'
+import { snapshotOf } from '../src/analysis/text'
+import { symbolIn } from '../src/lookup/lookup'
+import { getAt, Path } from '../src/lookup/paths'
 import { Edit } from '../src/model/Edit'
 import { AnySymbol, isCommand, placementsOf } from '../src/model/Symbol'
 import { featuresOf } from '../src/model/RollCopy'
@@ -19,9 +21,8 @@ import { systemOf } from '../src/systems/TrackerBar'
 import { welteT98 } from '../src/systems/welteT98/bar'
 import { welteT100 } from '../src/systems/welteT100/bar'
 
-const viewOf = (edition: Edition) => new EditionView(edition)
 const commandIn = (edition: Edition, id: string) => {
-    const symbol = viewOf(edition).symbol(id)
+    const symbol = symbolIn(edition, id)
     if (!isCommand(symbol)) throw new Error(`no command ${id}`)
     return symbol
 }
@@ -105,7 +106,7 @@ describe('creating a version from a copy', () => {
 describe('connecting a version to another', () => {
     it('bases the child on the parent, collating what matches and spelling out the difference', () => {
         const before = twoRoots()
-        const next = produce(before, connectVersions(viewOf(before), 'B', 'A'))
+        const next = produce(before, connectVersions('B', 'A'))
         const child = next.versions[1]
 
         expect(idOf(child.basedOn![0])).toBe('A')
@@ -115,77 +116,77 @@ describe('connecting a version to another', () => {
             [[], ['forzando-on']],
             [[], ['other-note']]
         ])
-        expect(viewOf(next).snapshot('B').map(symbol => symbol.id)).toEqual(['note', 'extra'])
+        expect(snapshotOf(next, 'B').map(symbol => symbol.id)).toEqual(['note', 'extra'])
     })
 
     it('states the tolerance it collated at on the derivation', () => {
         const before = twoRoots()
-        const connected = produce(before, connectVersions(viewOf(before), 'B', 'A'))
+        const connected = produce(before, connectVersions('B', 'A'))
         expect(connected.versions[1].basedOn![0].collationTolerance).toEqual(defaultCollationTolerance)
 
         const tolerance = { toleranceStart: mm(1), toleranceEnd: mm(1) }
-        const tight = produce(before, connectVersions(viewOf(before), 'B', 'A', tolerance))
+        const tight = produce(before, connectVersions('B', 'A', tolerance))
         expect(tight.versions[1].basedOn![0].collationTolerance).toEqual(tolerance)
         expect(idsOf(noteIn(tight).carriers)).toEqual(['hole-note'])
     })
 
     it('leaves the edition as it is for a version it does not have', () => {
         const before = twoRoots()
-        expect(produce(before, connectVersions(viewOf(before), 'nothing', 'A'))).toBe(before)
+        expect(produce(before, connectVersions('nothing', 'A'))).toBe(before)
     })
 })
 
 describe('collating the symbols of a version into what it inherits', () => {
     it('hands the carriers over and drops the insertions that collated, with an edit left empty', () => {
         const before = derived()
-        const next = produce(before, collateSymbols(viewOf(before), 'B', ['note-b', 'extra']))
+        const next = produce(before, collateSymbols('B', ['note-b', 'extra']))
 
         expect(idsOf(noteIn(next).carriers)).toEqual(['hole-note', 'hole-note-second'])
         expect(editsOf(next, 'B').map(edit => edit.id)).toEqual(['edit-b2'])
-        expect(viewOf(next).snapshot('B').map(symbol => symbol.id)).toEqual(['forzando-on', 'note', 'other-note', 'extra'])
+        expect(snapshotOf(next, 'B').map(symbol => symbol.id)).toEqual(['forzando-on', 'note', 'other-note', 'extra'])
     })
 
     it('collates at the tolerance of the derivation, where the caller names none', () => {
         const tight = derivedWithin({ toleranceStart: mm(1), toleranceEnd: mm(1) })
-        expect(produce(tight, collateSymbols(viewOf(tight), 'B', ['note-b']))).toBe(tight)
+        expect(produce(tight, collateSymbols('B', ['note-b']))).toBe(tight)
 
         const wide = derivedWithin({ toleranceStart: mm(5), toleranceEnd: mm(5) })
-        const next = produce(wide, collateSymbols(viewOf(wide), 'B', ['note-b']))
+        const next = produce(wide, collateSymbols('B', ['note-b']))
         expect(idsOf(noteIn(next).carriers)).toEqual(['hole-note', 'hole-note-second'])
     })
 
     it('collates at the tolerance the caller names, in place of the one the derivation states', () => {
         const tight = derivedWithin({ toleranceStart: mm(1), toleranceEnd: mm(1) })
-        const next = produce(tight, collateSymbols(viewOf(tight), 'B', ['note-b'], defaultCollationTolerance))
+        const next = produce(tight, collateSymbols('B', ['note-b'], defaultCollationTolerance))
         expect(idsOf(noteIn(next).carriers)).toEqual(['hole-note', 'hole-note-second'])
     })
 
     it('leaves the edition as it is where nothing collates, or for a version standing on its own', () => {
         const alone = derived()
-        expect(produce(alone, collateSymbols(viewOf(alone), 'B', ['extra']))).toBe(alone)
+        expect(produce(alone, collateSymbols('B', ['extra']))).toBe(alone)
 
         const roots = twoRoots()
-        expect(produce(roots, collateSymbols(viewOf(roots), 'B', ['note-b']))).toBe(roots)
+        expect(produce(roots, collateSymbols('B', ['note-b']))).toBe(roots)
     })
 })
 
 describe('detaching a version', () => {
     it('spells out what it inherited as its own insertions and drops the link', () => {
         const before = edition()
-        const next = produce(before, detachVersion(viewOf(before), 'B'))
+        const next = produce(before, detachVersion('B'))
         const detached = next.versions[1]
 
         expect(detached.basedOn).toBeUndefined()
         expect(detached.motivations).toEqual([])
         expect(detached.edits.map(insertedIds)).toEqual([['label'], ['note'], ['forzando-off'], ['other-note']])
-        expect(viewOf(next).snapshot('B').map(symbol => symbol.id)).toEqual(['label', 'note', 'forzando-off', 'other-note'])
+        expect(snapshotOf(next, 'B').map(symbol => symbol.id)).toEqual(['label', 'note', 'forzando-off', 'other-note'])
     })
 })
 
 describe('removing a version', () => {
     it('takes it out and lets what was based on it stand on its own', () => {
         const before = edition()
-        const next = produce(before, removeVersion(viewOf(before), 'A'))
+        const next = produce(before, removeVersion('A'))
         const [remaining, ...rest] = next.versions
 
         expect(rest).toEqual([])
@@ -196,7 +197,7 @@ describe('removing a version', () => {
 
     it('leaves the edition as it is for an unknown id', () => {
         const before = edition()
-        expect(produce(before, removeVersion(viewOf(before), 'nothing'))).toBe(before)
+        expect(produce(before, removeVersion('nothing'))).toBe(before)
     })
 })
 
@@ -303,7 +304,7 @@ const deleting = (id: string, ...symbolIds: string[]): Edit => ({ type: 'edit', 
 describe('merging edits', () => {
     const mergedIn = (edits: Edit[]) => {
         const before = withC(edits)
-        return editsOf(produce(before, mergeEdits(viewOf(before), 'C', edits)), 'C')
+        return editsOf(produce(before, mergeEdits('C', edits)), 'C')
     }
 
     it('replaces the edits with one carrying all their insertions and deletions', () => {
@@ -328,7 +329,7 @@ describe('merging edits', () => {
 
     it('leaves the edition as it is with nothing to merge', () => {
         const before = withC([])
-        expect(produce(before, mergeEdits(viewOf(before), 'C', []))).toBe(before)
+        expect(produce(before, mergeEdits('C', []))).toBe(before)
     })
 
     /**
@@ -343,7 +344,7 @@ describe('merging edits', () => {
 
         const before = withC(edits)
         before.versions.find(version => version.id === 'C')!.system = systemOf(welteT98)
-        const merged = editsOf(produce(before, mergeEdits(viewOf(before), 'C', edits)), 'C').at(-1)!
+        const merged = editsOf(produce(before, mergeEdits('C', edits)), 'C').at(-1)!
 
         expect(merged.editType).toBe('recoding')
     })
@@ -353,7 +354,7 @@ describe('merging edits', () => {
         const edits = [deleting('e1', 'forzando-on')]
         const before = withC(edits)
         before.versions.find(version => version.id === 'C')!.system = systemOf(welteT98)
-        const merged = editsOf(produce(before, mergeEdits(viewOf(before), 'C', edits)), 'C').at(-1)!
+        const merged = editsOf(produce(before, mergeEdits('C', edits)), 'C').at(-1)!
 
         expect(merged.editType).toBe('recoding')
     })
@@ -371,7 +372,7 @@ describe('merging edits', () => {
 
         const before = withC(edits)
         before.versions.find(version => version.id === 'C')!.system = systemOf(welteT98)
-        const onGreen = editsOf(produce(before, mergeEdits(viewOf(before), 'C', edits)), 'C').at(-1)!
+        const onGreen = editsOf(produce(before, mergeEdits('C', edits)), 'C').at(-1)!
         expect(onGreen.editType).toBe('additional-accent')
 
         expect(mergedIn(edits).at(-1)!.editType).toBe('correct-error')
@@ -409,7 +410,7 @@ describe('deriving a version', () => {
 describe('placing and pairing commands', () => {
     it('states the placement on the follower where it was inserted', () => {
         const before = edition()
-        const next = produce(before, placeCommand(viewOf(before), 'forzando-off', 'note', 'alignedWith'))
+        const next = produce(before, placeCommand('forzando-off', 'note', 'alignedWith'))
 
         expect(next.versions[0].edits[0].insert?.find(symbol => symbol.id === 'forzando-off'))
             .toMatchObject({ alignedWith: { id: 'note' } })
@@ -418,9 +419,8 @@ describe('placing and pairing commands', () => {
 
     it('places one way at most, a new statement taking the place of the old', () => {
         const before = edition()
-        const view = viewOf(before)
-        const placed = produce(before, placeCommand(view, 'forzando-off', 'note', 'before'))
-        const next = produce(placed, placeCommand(view, 'forzando-off', 'other-note', 'after'))
+        const placed = produce(before, placeCommand('forzando-off', 'note', 'before'))
+        const next = produce(placed, placeCommand('forzando-off', 'other-note', 'after'))
 
         expect(placementsOf(forzandoOffIn(next))).toEqual([{ relation: 'after', reference: { id: 'other-note' } }])
         expect('before' in forzandoOffIn(next)).toBe(false)
@@ -428,9 +428,8 @@ describe('placing and pairing commands', () => {
 
     it('takes a placement back without leaving a key behind', () => {
         const before = edition()
-        const view = viewOf(before)
-        const placed = produce(before, placeCommand(view, 'forzando-off', 'note', 'before'))
-        const next = produce(placed, unplaceCommand(view, 'forzando-off'))
+        const placed = produce(before, placeCommand('forzando-off', 'note', 'before'))
+        const next = produce(placed, unplaceCommand('forzando-off'))
 
         expect(placementsOf(forzandoOffIn(next))).toEqual([])
         expect('before' in forzandoOffIn(next)).toBe(false)
@@ -438,36 +437,34 @@ describe('placing and pairing commands', () => {
 
     it('states a pair on one side only, and takes it back from that side', () => {
         const before = edition()
-        const view = viewOf(before)
-        const paired = produce(before, pairCommands(view, 'forzando-off', 'forzando-on'))
+        const paired = produce(before, pairCommands('forzando-off', 'forzando-on'))
 
         expect(forzandoOffIn(paired).pairedWith).toEqual({ id: 'forzando-on' })
         expect(commandIn(paired, 'forzando-on').pairedWith).toBeUndefined()
 
-        const next = produce(paired, unpairCommand(view, 'forzando-off'))
+        const next = produce(paired, unpairCommand('forzando-off'))
         expect('pairedWith' in forzandoOffIn(next)).toBe(false)
     })
 
     it('leaves the edition as it is for a text symbol or an unknown id', () => {
         const before = edition()
-        const view = viewOf(before)
 
-        expect(produce(before, placeCommand(view, 'label', 'note', 'alignedWith'))).toBe(before)
-        expect(produce(before, pairCommands(view, 'nothing', 'note'))).toBe(before)
+        expect(produce(before, placeCommand('label', 'note', 'alignedWith'))).toBe(before)
+        expect(produce(before, pairCommands('nothing', 'note'))).toBe(before)
     })
 
     it('binds every version carrying the command, which the checks tell apart', () => {
         const before = edition()
-        const next = produce(before, pairCommands(viewOf(before), 'forzando-off', 'forzando-on'))
+        const next = produce(before, pairCommands('forzando-off', 'forzando-on'))
 
-        expect(constraintProblems(viewOf(next)))
+        expect(constraintProblems(next))
             .toContainEqual({ version: 'B', symbol: 'forzando-off', problem: 'partner-missing' })
     })
 })
 
 describe('believing an assumption', () => {
     const carrier: Path = ['versions', 0, 'edits', 0, 'insert', 0, 'carriers', 0]
-    const beliefAt = (edition: Edition) => viewOf(edition).atPath<Assumption>(carrier)?.['@annotation']?.belief
+    const beliefAt = (edition: Edition) => getAt<Assumption>(carrier, edition)?.['@annotation']?.belief
     const reason = { type: 'simpleArgumentation' as const, note: 'seen on the roll', actor: { name: '', sameAs: [] } }
 
     it('annotates it with a belief held true, and clears it again', () => {
@@ -475,7 +472,7 @@ describe('believing an assumption', () => {
         expect(beliefAt(believed)).toMatchObject({ type: 'belief', certainty: 'true', reasons: [] })
 
         const cleared = produce(believed, clearBelief(carrier))
-        expect('@annotation' in viewOf(cleared).atPath<Assumption>(carrier)!).toBe(false)
+        expect('@annotation' in getAt<Assumption>(carrier, cleared)!).toBe(false)
     })
 
     it('changes the certainty and keeps the reasons', () => {
@@ -540,7 +537,7 @@ const twoIssues = () => editionOf(
 describe('attaching a version coded for another system', () => {
     const attached = () => {
         const before = twoIssues()
-        return produce(before, connectVersions(viewOf(before), 'B', 'A'))
+        return produce(before, connectVersions('B', 'A'))
     }
 
     it('says in one edit that a held command stands for a latched pair', () => {
@@ -567,7 +564,7 @@ describe('attaching a version coded for another system', () => {
     it('leaves the edits alone where the two versions share a system', () => {
         const before = twoIssues()
         before.versions[1].system = systemOf(welteT100)
-        const edits = editsOf(produce(before, connectVersions(viewOf(before), 'B', 'A')), 'B')
+        const edits = editsOf(produce(before, connectVersions('B', 'A')), 'B')
 
         expect(edits.every(edit => !edit.insert?.length || !edit.delete?.length)).toBe(true)
     })

@@ -1,12 +1,12 @@
 /** Operations on the stemma: deriving, detaching and removing versions, and the derivations they state. */
 import { Draft } from "immer"
 import { v4 } from "uuid"
-import { EditionView } from "../view/EditionView.js"
 import { Derivation, derivesFrom, editsOf, principalDerivationOf, Version } from "../model/Version.js"
 import { Belief, ReferenceAssumption, assignReference, idOf } from "../model/Assumption.js"
 import { EditionOp, onVersion, stateOf, insertion, dropInsertions, referenceHeld, withoutReferences, reading } from "./draft.js"
 import { without } from "./immutable.js"
 import { dropStatements } from "./copies.js"
+import { snapshotOf } from "../analysis/text.js"
 
 /** Whether the version's text is read against the parent, its principal derivation naming it. */
 const readsAgainst = (version: Readonly<Version>, parentId: string): boolean => {
@@ -34,8 +34,8 @@ const dropDerivations = (version: Draft<Version>, matches: (derivation: Readonly
  * own insertions, and its derivations go, the hypotheses among them,
  * with the motivations that belonged to them.
  */
-export const detachVersion = (given: EditionView, versionId: string): EditionOp => reading(given, view => {
-    const edits = view.snapshot(versionId).map(insertion)
+export const detachVersion = (versionId: string): EditionOp => reading(edition => {
+    const edits = snapshotOf(edition, versionId).map(insertion)
 
     return onVersion(versionId, version => {
         version.edits = edits
@@ -49,10 +49,10 @@ export const detachVersion = (given: EditionView, versionId: string): EditionOp 
  * stand on its own, a hypothesis that something derives from it goes,
  * and so does a copy's statement that it carries the version.
  */
-export const removeVersion = (given: EditionView, versionId: string): EditionOp => reading(given, view => {
-    const detachments = view.edition.versions
+export const removeVersion = (versionId: string): EditionOp => reading(edition => {
+    const detachments = edition.versions
         .filter(version => readsAgainst(version, versionId))
-        .map(version => detachVersion(view, version.id))
+        .map(version => detachVersion(version.id))
     const namesIt = (reference: Readonly<ReferenceAssumption>) => idOf(reference) === versionId
 
     return draft => {

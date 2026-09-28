@@ -4,7 +4,6 @@ import * as path from 'path'
 import { MIDIControlEvents } from 'midifile-ts'
 import { paperAt, paperSeconds, WELTE_SPOOL } from 'welte-mignon-emulator'
 import { importJsonLd } from '../src/io/importJsonLd'
-import { EditionView } from '../src/view/EditionView'
 import { Emulation } from '../src/emulation/Emulation'
 import { DynamicsCurve, PedalCurve, PerformedPedalEvent } from '../src/systems/ReproducingSystem'
 import { instrumentNameOf, instrumentNames, instruments, nuanceOf, pedalPresetOf, pedalPresets, secondsAt, welteT100System } from '../src/systems/welteT100/system'
@@ -12,10 +11,9 @@ import { mm } from '../src/model/Quantity'
 
 const file = readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')
 const edition = importJsonLd(JSON.parse(file))
-const view = new EditionView(edition)
 
 const emulation = new Emulation(welteT100System)
-emulation.emulateVersion(edition.versions[0], view)
+emulation.emulateVersion(edition.versions[0], edition)
 
 const dynamics = (name: string) =>
     emulation.curves.find((curve): curve is DynamicsCurve => curve.kind === 'dynamics' && curve.name === name)!
@@ -93,7 +91,7 @@ describe('the dynamics of a version', () => {
 
     it('shapes the dynamics differently on another instrument', () => {
         const other = new Emulation(welteT100System, { ...emulation.options, nuance: nuanceOf(instruments['3309']) })
-        other.emulateVersion(edition.versions[0], view)
+        other.emulateVersion(edition.versions[0], edition)
         const treble = other.curves.find((curve): curve is DynamicsCurve => curve.kind === 'dynamics' && curve.name === 'treble')!
         expect(treble.travel).not.toEqual(dynamics('treble').travel)
     })
@@ -154,7 +152,7 @@ describe('the pedals of a version', () => {
 
     it('lets the dampers fall more slowly under the brushing preset', () => {
         const brushing = new Emulation(welteT100System, { ...emulation.options, pedals: pedalPresets.brushing })
-        brushing.emulateVersion(edition.versions[0], view)
+        brushing.emulateVersion(edition.versions[0], edition)
         const inTransit = (of: Emulation<WelteT100Options>) => of.curves
             .find((curve): curve is PedalCurve => curve.kind === 'pedal' && curve.name === 'damper')!
             .travel.filter(value => value > 0.1 && value < 0.9).length
@@ -163,7 +161,7 @@ describe('the pedals of a version', () => {
 
     it('can be thresholded for a renderer that reads the pedal as a switch', () => {
         const switched = new Emulation(welteT100System, { ...emulation.options, pedalMode: 'switch' })
-        switched.emulateVersion(edition.versions[0], view)
+        switched.emulateVersion(edition.versions[0], edition)
         const values = new Set(switched.midiEvents
             .filter((event): event is PerformedPedalEvent => event.type === 'damper')
             .map(event => event.value))

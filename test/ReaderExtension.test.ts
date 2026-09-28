@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { Edition } from '../src/model/Edition'
-import { EditionView } from '../src/view/EditionView'
+import { featureIn } from '../src/lookup/lookup'
 import { AnyFeature, isPlaced } from '../src/model/Feature'
 import { applyAlignment, revertShortening, shortenChains, tooShortToShorten } from '../src/collation/alignment'
 import { asJsonLd } from '../src/io/asJsonLd'
@@ -29,7 +29,7 @@ const read = (): Edition => editionOf(
 )
 
 const holeIn = (edition: Edition, id: string) => {
-    const feature = new EditionView(edition).feature(id)
+    const feature = featureIn(edition, id)
     if (!feature || !isPlaced(feature)) throw new Error(`no placed feature ${id}`)
     return feature
 }

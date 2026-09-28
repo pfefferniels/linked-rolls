@@ -1,6 +1,5 @@
 import { idOf } from '../model/Assumption.js'
 import { Edition } from '../model/Edition.js'
-import { EditionView } from '../view/EditionView.js'
 import { systemIdOf } from '../systems/TrackerBar.js'
 import { trackerBarOf } from '../systems/index.js'
 import { principalDerivationOf, Version } from '../model/Version.js'
@@ -108,12 +107,12 @@ const alongTheStemma = (versions: readonly Version[]): ReadonlyMap<string, strin
 }
 
 /**
- * What the sigla are read off: the versions alone, or a view, which knows
- * the copies as well and so can tell which versions a witness shows.
+ * What the sigla are read off: the versions alone, or the edition, whose
+ * copies tell which versions a witness shows.
  */
-export type Stemma = Pick<Edition, 'versions'> | EditionView
+export type Stemma = Pick<Edition, 'versions'> | Edition
 
-const isView = (stemma: Stemma): stemma is EditionView => !('versions' in stemma)
+const holdsCopies = (stemma: Stemma): stemma is Edition => 'copies' in stemma
 
 /**
  * The sigla with the inferred versions in lowercase, as editions mark a
@@ -125,7 +124,7 @@ const marking = (sigla: ReadonlyMap<string, string>, attested: ReadonlySet<strin
 
 /**
  * The siglum of every version, as the stemma stands: where it sits
- * (`alongTheStemma`) and, given a view, whether any copy shows it.
+ * (`alongTheStemma`) and, given the edition, whether any copy shows it.
  *
  * A version no copy's features carry at first hand is inferred, whether
  * it is reached only through the versions derived from it or a copy does
@@ -138,8 +137,8 @@ const marking = (sigla: ReadonlyMap<string, string>, attested: ReadonlySet<strin
  * nothing should cite one without saying which state it belongs to.
  */
 export const siglaOf = (stemma: Stemma): ReadonlyMap<string, string> =>
-    isView(stemma)
-        ? marking(alongTheStemma(stemma.edition.versions), attestedVersions(stemma))
+    holdsCopies(stemma)
+        ? marking(alongTheStemma(stemma.versions), attestedVersions(stemma))
         : alongTheStemma(stemma.versions)
 
 /** The siglum of one version as the stemma stands, or nothing where the edition holds no such version. */
