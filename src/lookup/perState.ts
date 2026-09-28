@@ -32,12 +32,15 @@ export const settled = <T extends object>(edition: T): T => {
 export const perState = <E extends object, T>(work: (edition: E) => T): ((edition: E) => T) => {
     const known = new WeakMap<E, { readonly value: T }>()
     return edition => {
+        // A state known already was settled when it became known, and a
+        // draft never is, so only what is asked of for the first time
+        // needs settling.
+        const kept = known.get(edition)
+        if (kept) return kept.value
+
         const state = settled(edition)
-        let entry = known.get(state)
-        if (!entry) {
-            entry = { value: work(state) }
-            known.set(state, entry)
-        }
+        const entry = { value: work(state) }
+        known.set(state, entry)
         return entry.value
     }
 }
