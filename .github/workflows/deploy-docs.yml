@@ -50,9 +50,13 @@ jobs:
 
       # The ontology lives at /reo/, the type vocabulary at /reo/type/,
       # which is the layout the w3id.org redirects will point at.
+      #
+      # pyLODE is pinned together with kurra, which it asks for without an
+      # upper bound: kurra 3.0.7 took away get_missing_labels, which pyLODE
+      # 3.6.0 imports, and an unpinned install stopped the deploy.
       - name: Generate the ontology docs
         run: |
-          pip install pylode
+          pip install pylode==3.6.0 kurra==3.0.6
           mkdir -p docs/reo/type/welte-t100 docs/reo/welte-t100
           mkdir -p docs/reo/type/welte-green docs/reo/welte-green docs/reo/welte-licensee
           pylode ontology/reo.ttl -o docs/reo/index.html
