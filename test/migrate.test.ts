@@ -33,11 +33,10 @@ const twoCopiesApart = (): Edition => editionOf(
  * once, on the edition, and a version naming its one derivation on its own.
  */
 const writtenBefore = (tolerance: CollationTolerance) => {
-    const edition = twoCopiesApart()
-    edition.creation.collationTolerance = tolerance
-    const written = JSON.parse(JSON.stringify(asJsonLd(edition)))
+    const written = JSON.parse(JSON.stringify(asJsonLd(twoCopiesApart())))
     return {
         ...written,
+        creation: { ...written.creation, collationTolerance: tolerance },
         versions: written.versions.map(({ basedOn, ...version }: any) =>
             basedOn ? { ...version, basedOn: basedOn[0] } : version)
     }
@@ -355,6 +354,16 @@ describe('migrating an edition whose collation tolerance was the edition\'s', ()
         expect(migrated.versions[0]).not.toHaveProperty('basedOn')
         expect(migrated.versions[1].basedOn).toEqual([{ '@id': 'A', collationTolerance: { toleranceStart: 2, toleranceEnd: 2 } }])
         expect(migrated.versions[2].basedOn[0].collationTolerance).toEqual({ toleranceStart: 7, toleranceEnd: 7 })
+        expect(migrated.creation).not.toHaveProperty('collationTolerance')
+    })
+
+    it('drops it from the edition even where no derivation takes it', () => {
+        const migrated = migrate({
+            creation: { publisher: 'P', collationTolerance: { toleranceStart: 2, toleranceEnd: 2 } },
+            versions: [{ '@id': 'B', basedOn: [{ '@id': 'A' }] }]
+        })
+        expect(migrated.creation).not.toHaveProperty('collationTolerance')
+        expect(migrated.versions[0].basedOn).toEqual([{ '@id': 'A' }])
     })
 
     it('leaves the derivations of an edition that stated no tolerance as they are', () => {

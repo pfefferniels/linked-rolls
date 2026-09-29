@@ -656,18 +656,21 @@ const statesNoTolerance = (version: Json): boolean =>
  * The collation tolerance was the edition's before it was stated on
  * each derivation. An edition written then collated every version at
  * that one value, so it is written onto every derivation that gives
- * none of its own.
+ * none of its own, and the edition states it no longer.
  */
 const withDerivationTolerance = (edition: Json): Json => {
-    const collationTolerance = edition.creation?.collationTolerance
-    const versions: Json[] = Array.isArray(edition.versions) ? edition.versions : []
-    if (!collationTolerance || !versions.some(statesNoTolerance)) return edition
+    if (!edition.creation || !Object.hasOwn(edition.creation, 'collationTolerance')) return edition
 
+    const { collationTolerance, ...creation } = edition.creation
+    const versions = listAt(edition, 'versions')
     return {
         ...edition,
-        versions: versions.map(version => statesNoTolerance(version)
-            ? { ...version, basedOn: { ...version.basedOn, collationTolerance } }
-            : version)
+        creation,
+        ...(collationTolerance && versions && {
+            versions: versions.map(version => statesNoTolerance(version)
+                ? { ...version, basedOn: { ...version.basedOn, collationTolerance } }
+                : version)
+        })
     }
 }
 
