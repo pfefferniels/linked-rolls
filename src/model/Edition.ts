@@ -1,6 +1,5 @@
 import { featuresOf, RollCopy } from "./RollCopy.js";
 import { Version } from "./Version.js";
-import { CollationTolerance } from "../collation/Collation.js";
 import { DateAssignment, ObjectAssumption } from "./Assumption.js";
 import { Editor, Person, Place } from "./Agent.js";
 import { RollTempo } from "../systems/ReproducingSystem.js";
@@ -31,19 +30,6 @@ export interface EditionCreation {
      * @see dcterms:date
      */
     publicationDate: Date
-
-    /**
-     * The tolerance every version of the edition was collated at,
-     * before each derivation stated its own. How precisely two copies
-     * place a symbol depends on which two they are, so the tolerance
-     * belongs to the derivation, `Derivation.collationTolerance`, and
-     * migration writes this one onto every derivation that gives none.
-     * Nothing else reads it. A window's offset is the displacement
-     * between two particular copies and so can never be stated here.
-     * Not exported to RDF.
-     * @deprecated
-     */
-    collationTolerance?: CollationTolerance
 }
 
 /**

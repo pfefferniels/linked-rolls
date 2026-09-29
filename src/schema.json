@@ -272,32 +272,6 @@
       ],
       "type": "string"
     },
-    "CollationTolerance": {
-      "description": "The window two readings of one feature must fall in to be collated: how far apart they may lie at either end, and where that window is centred.\n\nThe centre is worth stating. Two copies of one roll differ by a systematic offset as well as by scatter, and a window centred on nothing has to be widened by the whole of that offset before it admits what the offset alone displaces. Naming the offset lets the tolerance stand for the scatter only. A window that names none is centred on nothing, which is what every window written before the offset was held here means.",
-      "properties": {
-        "offsetEnd": {
-          "$ref": "#/definitions/Millimeters",
-          "description": "The same at the end of a feature, in the same direction."
-        },
-        "offsetStart": {
-          "$ref": "#/definitions/Millimeters",
-          "description": "How much later the derived version puts the start of a feature than the version it is read against, where the two differ systematically. Nothing where they do not.\n\nThe direction is the one a collation measures in, the child less the parent, and it is not symmetric: stored the other way round the window sits on the wrong side of the readings and merges what it should separate. A measurement taken over the parent's copies gives the negative of this, which is what `toleranceAcross` asks the side for."
-        },
-        "toleranceEnd": {
-          "$ref": "#/definitions/Millimeters",
-          "description": "How far they may lie apart at the end, measured from `offsetEnd`."
-        },
-        "toleranceStart": {
-          "$ref": "#/definitions/Millimeters",
-          "description": "How far the two readings may lie apart at the start of a feature, measured from `offsetStart`."
-        }
-      },
-      "required": [
-        "toleranceStart",
-        "toleranceEnd"
-      ],
-      "type": "object"
-    },
     "Concept": {
       "anyOf": [
         {
@@ -671,11 +645,6 @@
     "EditionCreation": {
       "description": "This type describes the creation of an edition, i.e. the editor, publisher, and publication date.",
       "properties": {
-        "collationTolerance": {
-          "$ref": "#/definitions/CollationTolerance",
-          "deprecated": true,
-          "description": "The tolerance every version of the edition was collated at, before each derivation stated its own. How precisely two copies place a symbol depends on which two they are, so the tolerance belongs to the derivation, `Derivation.collationTolerance`, and migration writes this one onto every derivation that gives none. Nothing else reads it. A window's offset is the displacement between two particular copies and so can never be stated here. Not exported to RDF."
-        },
         "editors": {
           "description": "The persons who prepared the edition, each with the part they took in the editorial work. An edition written before this field existed carries none.",
           "items": {

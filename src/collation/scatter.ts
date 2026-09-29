@@ -111,7 +111,7 @@ export interface ScatterOptions {
     /** The width of the histogram's bins. */
     binWidth?: Millimeters
 
-    /** The tolerance the edition states at present, against which each departure is reported as still admitted or not. */
+    /** The tolerance the derivation states at present, against which each departure is reported as still admitted or not. */
     stated?: CollationTolerance
 }
 
@@ -140,7 +140,7 @@ export interface Departure {
     separatedBy: BothEnds<boolean>
 
     /**
-     * Whether the tolerance the edition states at present still admits
+     * Whether the tolerance the derivation states at present still admits
      * it. Absent where none was given to compare against.
      *
      * This sees one direction only. A departure is by definition a
