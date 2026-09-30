@@ -19,9 +19,20 @@ const scanned = (source: FeatureSource): RollCopy => ({
     ...holed('scanned'),
     readFrom: source,
     measurements: {
-        holeSeparation: { unit: 'px', value: px(37.7) },
-        margins: { unit: 'px', treble: px(10), bass: px(20) },
-        measuredBy: { software: 'SUPRA', version: '1.0', date: new Date('2020-01-01') }
+        holeSeparation: {
+            unit: 'px',
+            value: px(37.7),
+            '@annotation': {
+                id: 'separation-annotation',
+                belief: {
+                    type: 'belief',
+                    id: 'separation-belief',
+                    certainty: 'true',
+                    reasons: [{ type: 'measurement', software: [{ name: 'SUPRA', version: '1.0' }], date: assignDate(new Date(2020, 0, 1)) }]
+                }
+            }
+        },
+        margins: { unit: 'px', treble: px(10), bass: px(20) }
     }
 })
 

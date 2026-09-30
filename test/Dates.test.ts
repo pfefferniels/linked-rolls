@@ -6,6 +6,7 @@ import welteLicenseeContext from '../src/spec/welte-licensee.context.json'
 import welteT98Context from '../src/spec/welte-t98.context.json'
 import { assignDate, notAfter, notBefore } from '../src/model/Assumption'
 import { asJsonLd } from '../src/io/asJsonLd'
+import { px } from '../src/model/Quantity'
 import { edition as smallEdition } from './editionFixture'
 
 /**
@@ -85,22 +86,31 @@ describe('a date as a time-span', () => {
         expect(bounded.filter(subject => !spans.includes(subject))).toEqual([])
     })
 
-    /** A copy's measuring software is dated by the day it ran, which is no span. */
-    it('leaves the date of a measurement a plain one', async () => {
+    /** The day a program took a measurement is the span the measurement falls within, as any other date. */
+    it('dates a measurement by the span it falls within', () => {
         const edition = smallEdition()
         edition.base = 'https://example.org/edition/'
-        edition.copies[0].measurements.measuredBy = {
-            software: 'SUPRA',
-            version: '1.0',
-            date: new Date(2020, 0, 1)
+        edition.copies[0].measurements.holeSeparation = {
+            value: px(37.7),
+            unit: 'px',
+            '@annotation': {
+                id: 'separation-annotation',
+                belief: {
+                    type: 'belief',
+                    id: 'separation-belief',
+                    certainty: 'true',
+                    reasons: [{
+                        type: 'measurement',
+                        software: [{ name: 'SUPRA', version: '1.0' }],
+                        date: assignDate(new Date(2020, 0, 1))
+                    }]
+                }
+            }
         }
 
-        const quads = await jsonld.toRDF(asJsonLd(edition), {
-            format: 'application/n-quads',
-            documentLoader
-        }) as unknown as string
-
-        expect(quads).toContain(`<http://purl.org/dc/terms/date> ${date('2020-01-01')}`)
+        const exported = asJsonLd(edition) as any
+        const [reason] = exported.copies[0].measurements.holeSeparation['@annotation'].belief.reasons
+        expect(reason.date).toEqual({ within: '2020-01-01' })
     })
 })
 

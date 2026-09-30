@@ -99,3 +99,22 @@ export interface Place extends Named { }
 export type Concept =
     | (WithId & Partial<Named>)
     | (Named & Partial<WithId>)
+
+/**
+ * Software that captured a copy or measured it: the transcriber that
+ * read a recording into notes, the emulator that wrote a MIDI file, the
+ * program that found the holes on a scan or aligned two copies.
+ * @see crmdig:D14 Software
+ */
+export interface Software {
+    /**
+     * @see rdfs:label
+     */
+    name: string
+
+    /**
+     * The release, the commit, or the model checkpoint of a transcriber.
+     * @see owl:versionInfo
+     */
+    version?: string
+}

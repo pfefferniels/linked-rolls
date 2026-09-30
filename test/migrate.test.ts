@@ -505,3 +505,63 @@ describe('a copy whose features stood where its alignment had put them', () => {
         expect(migrate(migrate(written()))).toEqual(migrate(written()))
     })
 })
+
+/**
+ * A copy once named one program for all its measurements. The program,
+ * its version and the day now stand in the measurement each exported
+ * value rests on.
+ */
+describe('a copy that named one program for all its measurements', () => {
+    const measuredBy = { software: 'https://github.com/pianoroll/roll-image-parser', version: 'Aug 31 2026 08:11:03', date: '2026-09-03' }
+    const measurements = {
+        dimensions: { width: 328.27, height: 8800.03, unit: 'mm' },
+        holeSeparation: { value: 37.6685, unit: 'px' },
+        margins: { treble: 117, bass: 54, unit: 'px' },
+        scanResolution: { value: 127, unit: 'px/in' },
+        measuredBy
+    }
+    const document = () => ({ copies: [{ '@type': 'RollCopy', '@id': 'wi1', measurements, conditions: [] }] })
+    const reason = {
+        '@type': 'measurement',
+        software: [{ name: measuredBy.software, version: measuredBy.version }],
+        date: { within: '2026-09-03' }
+    }
+
+    it('names it in the measurement of the dimensions and of the hole separation', () => {
+        const migrated = migrate(document()).copies[0].measurements
+        expect(migrated.measuredBy).toBeUndefined()
+        expect(migrated.dimensions).toEqual({
+            ...measurements.dimensions,
+            '@annotation': {
+                '@id': 'wi1-dimensions-annotation',
+                belief: { '@type': 'belief', '@id': 'wi1-dimensions-belief', certainty: 'true', reasons: [reason] }
+            }
+        })
+        expect(migrated.holeSeparation['@annotation'].belief.reasons).toEqual([reason])
+    })
+
+    it('says nothing of the scan resolution, read off the file, nor of the margins, which are not exported', () => {
+        const migrated = migrate(document()).copies[0].measurements
+        expect(migrated.scanResolution).toEqual(measurements.scanResolution)
+        expect(migrated.margins).toEqual(measurements.margins)
+    })
+
+    it('writes the same document when a file is migrated twice', () => {
+        expect(migrate(migrate(document()))).toEqual(migrate(document()))
+    })
+
+    it('adds the measurement to a belief the value already carries', () => {
+        const adopted = { '@type': 'beliefAdoption', note: 'as the keeper measured it' }
+        const annotated = {
+            ...measurements,
+            holeSeparation: {
+                ...measurements.holeSeparation,
+                '@annotation': { '@id': 'a', belief: { '@type': 'belief', '@id': 'b', certainty: 'likely', reasons: [adopted] } }
+            }
+        }
+        const migrated = migrate({ copies: [{ '@type': 'RollCopy', '@id': 'wi1', measurements: annotated, conditions: [] }] })
+        expect(migrated.copies[0].measurements.holeSeparation['@annotation']).toEqual({
+            '@id': 'a', belief: { '@type': 'belief', '@id': 'b', certainty: 'likely', reasons: [adopted, reason] }
+        })
+    })
+})

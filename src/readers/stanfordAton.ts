@@ -2,6 +2,7 @@ import { v4 } from "uuid";
 import { AtonParser } from "./AtonParser.js";
 import { HoleChain } from "../model/Feature.js";
 import { RollCopy, Tear } from "../model/RollCopy.js";
+import { assignDate, Measurement, ObjectAssumption } from "../model/Assumption.js";
 import { TrackCalibration } from "../model/TrackCalibration.js";
 import { systemOf, TrackerBar } from "../systems/TrackerBar.js";
 import { welteT100 } from "../systems/welteT100/bar.js";
@@ -201,19 +202,26 @@ const tearsIn = (
 }
 
 /**
- * The software behind an analysis and when it was run, as the
- * analysis file states them.
+ * The software behind an analysis and the day it was run, as the
+ * analysis file states them: the measurement the dimensions and the
+ * hole separation it gives rest on.
  */
-const measuredByOf = (rollinfo: Record<string, string>) => {
+const measurementOf = (rollinfo: Record<string, string>): Measurement | undefined => {
     const date = new Date(rollinfo.ANALYSIS_DATE)
     if (!rollinfo.HOLE_SOFTWARE || isNaN(date.getTime())) return undefined
 
     return {
-        software: rollinfo.HOLE_SOFTWARE,
-        version: rollinfo.SOFTWARE_DATE ?? '',
-        date
+        type: 'measurement',
+        software: [{ name: rollinfo.HOLE_SOFTWARE, ...(rollinfo.SOFTWARE_DATE && { version: rollinfo.SOFTWARE_DATE }) }],
+        date: assignDate(new Date(date.getFullYear(), date.getMonth(), date.getDate()))
     }
 }
+
+/** The value held on the strength of the measurement, where the file names one, and plainly where it does not. */
+const takenBy = (measurement: Measurement | undefined) => <O extends object>(value: O): ObjectAssumption<O> =>
+    measurement
+        ? { ...value, '@annotation': { id: v4(), belief: { type: 'belief', id: v4(), certainty: 'true', reasons: [measurement] } } }
+        : value
 
 export function readFromStanfordAton(
     atonString: string,
@@ -227,7 +235,7 @@ export function readFromStanfordAton(
     const stanford = druid ? stanfordScan(druid) : undefined
     const separation = readPx(json.ROLLINFO.HOLE_SEPARATION)
     const dpi = parseFloat(json.ROLLINFO.LENGTH_DPI)
-    const measuredBy = measuredByOf(json.ROLLINFO)
+    const measured = takenBy(measurementOf(json.ROLLINFO))
 
     const shift = trackShift ?? calibrationShiftIn(holes, system)
 
@@ -290,15 +298,15 @@ export function readFromStanfordAton(
         modifications: [],
         ...((scan ?? stanford) && { scan: scan ?? stanford?.scan }),
         measurements: {
-            dimensions: {
+            dimensions: measured({
                 width: inMillimeters(readPx(json.ROLLINFO.ROLL_WIDTH), dpi),
                 height: inMillimeters(readPx(json.ROLLINFO.IMAGE_LENGTH), dpi),
-                unit: 'mm'
-            },
-            holeSeparation: {
+                unit: 'mm' as const
+            }),
+            holeSeparation: measured({
                 value: separation,
-                unit: 'px'
-            },
+                unit: 'px' as const
+            }),
             margins: {
                 treble: readPx(json.ROLLINFO.HARD_MARGIN_TREBLE),
                 bass: readPx(json.ROLLINFO.HARD_MARGIN_BASS),
@@ -307,8 +315,7 @@ export function readFromStanfordAton(
             ...(Number.isFinite(dpi) && {
                 scanResolution: { value: pixelsPerInch(dpi), unit: 'px/in' }
             }),
-            trackCalibration: calibration,
-            ...(measuredBy && { measuredBy })
+            trackCalibration: calibration
         }
     }
 }

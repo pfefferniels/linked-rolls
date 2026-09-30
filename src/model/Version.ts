@@ -39,6 +39,25 @@ export const collationToleranceOf = (derivation: Readonly<Derivation>): Collatio
     derivation.collationTolerance ?? defaultCollationTolerance
 
 /**
+ * How long a version's paper runs for a length of the paper of the
+ * version it derives from: about 0.77 for a Licensee or green re-cut of
+ * a red roll, cut for a slower paper speed.
+ * @see crm:E54 Dimension
+ */
+export interface LengthRatio {
+    /**
+     * @see crm:P90 has value
+     */
+    value: number
+
+    /**
+     * The standard uncertainty of the value, one standard deviation.
+     * @see reo:uncertainty
+     */
+    uncertainty?: number
+}
+
+/**
  * How a version was made, where that is known and worth stating.
  *
  * A roll issued for another system was re-punched by an editor of the
@@ -70,6 +89,20 @@ export interface VersionCreation {
      * @see crm:P33 used specific technique
      */
     procedure?: Concept
+
+    /**
+     * How long the act made the version's paper for a length of the
+     * paper of the version it derives from. A re-cut for a system whose
+     * paper runs slower comes out shorter by the ratio of the speeds,
+     * and the alignments of the copies measure that ratio more closely
+     * than any label states a speed (`lengthRatioOf`). It is stated
+     * where the edition holds to it, as a measurement naming the copies
+     * it used and the program that found it, so that it can serve as a
+     * premise. A speed follows from it only together with a premise
+     * about the speed of the other version.
+     * @see reo:lengthRatio
+     */
+    lengthRatio?: ObjectAssumption<LengthRatio>
 }
 
 /**

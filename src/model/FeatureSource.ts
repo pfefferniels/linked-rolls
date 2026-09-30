@@ -1,5 +1,5 @@
 import { ActorAssignment, DateAssignment, ObjectAssumption } from "./Assumption.js";
-import { Concept, Named } from "./Agent.js";
+import { Concept, Named, Software } from "./Agent.js";
 import { ConditionState } from "./ConditionState.js";
 import { WithNote } from "../shared/utils.js";
 
@@ -49,23 +49,7 @@ export const isMeasured = (kind: SourceKind): boolean => measured.includes(kind)
  */
 export const bearsPhysicalEvidence = (kind: SourceKind): boolean => physical.includes(kind)
 
-/**
- * Software a capture ran, such as the transcriber that read a recording
- * into notes or the emulator that wrote a MIDI file.
- * @see crmdig:D14 Software
- */
-export interface Software {
-    /**
-     * @see rdfs:label
-     */
-    name: string
-
-    /**
-     * The release, or the model checkpoint of a transcriber.
-     * @see owl:versionInfo
-     */
-    version?: string
-}
+export type { Software } from "./Agent.js";
 
 /**
  * An instrument a copy was played on to be recorded. How it was

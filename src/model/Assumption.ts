@@ -1,5 +1,5 @@
 import { WithNote, WithId } from "../shared/utils.js"
-import { Person, WithActor } from "./Agent.js"
+import { Concept, Person, Software, WithActor } from "./Agent.js"
 
 export const certainties = [
     'true',
@@ -121,6 +121,11 @@ export interface BeliefAdoption extends Argumentation<'beliefAdoption'> {
  * premises. CRMinf counts observations, and a measurement is one, among
  * the ways a belief comes about, so the value does not have to be
  * passed off as an inference.
+ *
+ * A measurement a program took names the program and its version, so
+ * that the value can be taken again and a value taken by a program
+ * later found wanting can be told from the rest. Naming software makes
+ * it a digital measurement event in the sense of CRMdig.
  * @see crmsci:S21 Measurement
  */
 export interface Measurement extends Argumentation<'measurement'> {
@@ -130,6 +135,27 @@ export interface Measurement extends Argumentation<'measurement'> {
      * @see crm:P16 used specific object
      */
     used?: string[]
+
+    /**
+     * The method followed, where it has a name apart from the program
+     * that carries it out, such as a line of Theil and Sen through the
+     * matched notes of two copies.
+     * @see crm:P33 used specific technique
+     */
+    procedure?: Concept
+
+    /**
+     * The programs that took the measurement, each with its version.
+     * @see crmdig:L23 used software or firmware
+     */
+    software?: Software[]
+
+    /**
+     * When the measurement was taken. It is part of the reason and
+     * carries no belief of its own.
+     * @see crm:P4 has time-span
+     */
+    date?: TimeSpan
 }
 
 /**
@@ -212,7 +238,7 @@ export type ObjectAssumption<O extends object> =  Assumption & O
  */
 export type ActorAssignment = ObjectAssumption<Person>
 
-/** The day an event falls within. */
+// The day an event falls within; a member of `TimeSpan`, which describes it.
 interface DateWithin {
     /**
      * The day the event falls within.
@@ -222,8 +248,8 @@ interface DateWithin {
     within: Date
 }
 
-/** The bounds an event lies between. */
-interface DateBounds {
+// The bounds an event lies between, the earlier one known; a member of `TimeSpan`.
+interface DateAfter {
     /**
      * The earliest day the event can have happened on: it did not
      * happen before it.
@@ -238,20 +264,44 @@ interface DateBounds {
      * @format date
      * @see crm:P82b end of the end
      */
+    before?: Date
+}
+
+// The bounds an event lies between, the later one known; a member of `TimeSpan`.
+interface DateBefore {
+    /**
+     * The earliest day the event can have happened on: it did not
+     * happen before it.
+     * @format date
+     * @see crm:P82a begin of the begin
+     */
+    after?: Date
+
+    /**
+     * The latest day the event can have happened on: it did not
+     * happen after it.
+     * @format date
+     * @see crm:P82b end of the end
+     */
     before: Date
 }
 
 /**
- * When something happened, as far as the edition can state it: the day
- * it falls `within`, or the bounds it lies between. A bound nobody can
- * give is left out, so `after` alone says "not before".
+ * When something happened: the day it falls `within`, or the bounds it
+ * lies between. A bound nobody can give is left out, so `after` alone
+ * says "not before".
  * @see crm:E52 Time-Span
  */
-export type DateAssignment = Assumption & (
-    | DateWithin
-    | Pick<DateBounds, 'after'> & Partial<Pick<DateBounds, 'before'>>
-    | Pick<DateBounds, 'before'> & Partial<Pick<DateBounds, 'after'>>
-)
+export type TimeSpan = DateWithin | DateAfter | DateBefore
+
+/**
+ * When something happened, as far as the edition can state it, and as
+ * an assumption, so that a dating can carry the belief it rests on: the
+ * day it falls `within`, or the bounds it lies between. A bound nobody
+ * can give is left out, so `after` alone says "not before".
+ * @see crm:E52 Time-Span
+ */
+export type DateAssignment = Assumption & TimeSpan
 
 export function valueOf<ValueT>(
     assumption: ValueAssumption<ValueT>
