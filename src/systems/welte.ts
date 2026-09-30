@@ -120,18 +120,22 @@ const isExpression = (event: NegotiatedEvent): event is NegotiatedEvent & Expres
  *
  * Rows are rows of the version's own paper, so the spool is asked in
  * `paperOfRow` and never in `placeOfRow`: one is the paper that passes the
- * tracker bar, the other is the coordinate the edition states.
+ * tracker bar, the other is the coordinate the edition states. A place is
+ * put to the spool through `paperOfPlace` for the same reason, so that a
+ * note sounds on the clock its pedal and bellows run on.
  */
 export type Paper = {
     readonly rowOf: (place: Millimeters) => number
     readonly placeOfRow: (row: number) => Millimeters
     readonly paperOfRow: (row: number) => Millimeters
+    readonly paperOfPlace: (place: Millimeters) => Millimeters
 }
 
 const paperOf = (toOwnPaper: number): Paper => ({
     rowOf: place => place * toOwnPaper * ROWS_PER_MM,
     placeOfRow: row => mm(row / (toOwnPaper * ROWS_PER_MM)),
-    paperOfRow: row => mm(row / ROWS_PER_MM)
+    paperOfRow: row => mm(row / ROWS_PER_MM),
+    paperOfPlace: place => mm(place * toOwnPaper)
 })
 
 /** When the spool brings a place on the roll to the tracker bar. */
@@ -225,9 +229,10 @@ const performNotes = (
         .flatMap((note): (PerformedNoteOnEvent | PerformedNoteOffEvent)[] => {
             const curve = nuance[halfOf(note, options.division)]
             const velocity = curve.velocity[grid.indexOfRow(paper.rowOf(note.horizontal.from))]
+            const at = (place: Millimeters) => secondsAt(options.spool, paper.paperOfPlace(place))
             return [
-                { type: 'noteOn', performs: note, pitch: note.pitch, velocity, at: secondsAt(options.spool, note.horizontal.from) },
-                { type: 'noteOff', performs: note, pitch: note.pitch, velocity: 127, at: secondsAt(options.spool, note.horizontal.to) }
+                { type: 'noteOn', performs: note, pitch: note.pitch, velocity, at: at(note.horizontal.from) },
+                { type: 'noteOff', performs: note, pitch: note.pitch, velocity: 127, at: at(note.horizontal.to) }
             ]
         })
 
