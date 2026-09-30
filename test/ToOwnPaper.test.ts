@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DynamicsCurve, NegotiatedEvent, RollProperties } from '../src/systems/ReproducingSystem'
+import { DynamicsCurve, EmulatedCurve, NegotiatedEvent, RollProperties } from '../src/systems/ReproducingSystem'
 import { defaultWelteT100Options, welteT100System } from '../src/systems/welteT100/system'
 import { defaultWelteT98Options, welteT98System } from '../src/systems/welteT98/system'
 import { mm, track } from '../src/model/Quantity'
@@ -9,6 +9,14 @@ const expression = (type: string, scope: 'bass' | 'treble', fromMm: number, leng
     type: 'expression',
     expressionType: type,
     scope,
+    id: `symbol-${nextId++}`,
+    horizontal: { from: mm(fromMm), to: mm(fromMm + lengthMm) },
+    vertical: { from: track(trackNumber), to: track(trackNumber) }
+})
+
+const note = (pitch: number, fromMm: number, lengthMm: number, trackNumber: number): NegotiatedEvent => ({
+    type: 'note',
+    pitch,
     id: `symbol-${nextId++}`,
     horizontal: { from: mm(fromMm), to: mm(fromMm + lengthMm) },
     vertical: { from: track(trackNumber), to: track(trackNumber) }
@@ -58,5 +66,33 @@ describe('toOwnPaper', () => {
     it('applies to the T-100 as well, since either system may be the derived one', () => {
         expect(secondsAtPlace(t100({ toOwnPaper: 0.775 }), 900) / secondsAtPlace(t100({}), 900))
             .toBeCloseTo(0.775, 2)
+    })
+
+    /** The seconds of the first sample of a curve at or past a place. */
+    const secondsOfCurveAt = (curve: EmulatedCurve, place: number): number =>
+        curve.seconds[curve.place.findIndex(value => value >= place)]!
+
+    it('sounds a note on the clock its pedal runs on', () => {
+        // A pedal caught at the same place as a note has to go down with it,
+        // whatever paper the version was cut on.
+        const pedalled: readonly NegotiatedEvent[] = [
+            expression('SustainPedalOn', 'treble', 2000, 3, 93),
+            note(60, 2000, 20, 47),
+            expression('SustainPedalOff', 'treble', 2400, 3, 94)
+        ]
+        const { events, curves } = welteT100System.perform(pedalled, defaultWelteT100Options, { toOwnPaper: 0.77 })
+        const damper = curves.find(curve => curve.name === 'damper')!
+        const noteOn = events.find(event => event.type === 'noteOn')!
+        const pedalDown = events.find(event => event.type === 'damper')!
+
+        expect(noteOn.at).toBeCloseTo(secondsOfCurveAt(damper, 2000), 2)
+        expect(Math.abs(pedalDown.at - noteOn.at)).toBeLessThan(0.5)
+    })
+
+    it('keeps the notes of a shorter paper up to its end', () => {
+        const notes = [note(60, 200, 20, 59), note(62, 5000, 20, 61)]
+        const played = welteT98System.perform(notes, defaultWelteT98Options, { toOwnPaper: 0.775 }).events
+            .filter(event => event.type === 'noteOn')
+        expect(played).toHaveLength(2)
     })
 })
