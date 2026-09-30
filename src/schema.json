@@ -449,7 +449,7 @@
           "type": "object"
         }
       ],
-      "description": "When something happened, as far as the edition can state it: the day it falls `within`, or the bounds it lies between. A bound nobody can give is left out, so `after` alone says \"not before\".",
+      "description": "When something happened, as far as the edition can state it, and as an assumption, so that a dating can carry the belief it rests on: the day it falls `within`, or the bounds it lies between. A bound nobody can give is left out, so `after` alone says \"not before\".",
       "ontology": "crm:E52 Time-Span"
     },
     "Derivation": {
@@ -1145,62 +1145,36 @@
       "type": "object",
       "ontology": "crm:E54 Dimension"
     },
-    "Measure<\"px\">": {
-      "description": "A value together with the unit it was measured in, as a record states it.",
-      "properties": {
-        "unit": {
-          "const": "px",
-          "description": "The unit of measurement.",
-          "type": "string",
-          "ontology": "crm:P91 has unit"
-        },
-        "value": {
-          "$ref": "#/definitions/Quantity%3C%22px%22%3E",
-          "description": "The measured value.",
-          "ontology": "crm:P90 has value"
-        }
-      },
-      "required": [
-        "value",
-        "unit"
-      ],
-      "type": "object",
-      "ontology": "crm:E54 Dimension"
-    },
-    "Measure<\"px/in\">": {
-      "description": "A value together with the unit it was measured in, as a record states it.",
-      "properties": {
-        "unit": {
-          "const": "px/in",
-          "description": "The unit of measurement.",
-          "type": "string",
-          "ontology": "crm:P91 has unit"
-        },
-        "value": {
-          "$ref": "#/definitions/Quantity%3C%22px%2Fin%22%3E",
-          "description": "The measured value.",
-          "ontology": "crm:P90 has value"
-        }
-      },
-      "required": [
-        "value",
-        "unit"
-      ],
-      "type": "object",
-      "ontology": "crm:E54 Dimension"
-    },
     "Measurement": {
-      "description": "A measurement takes a value off an object by a stated procedure: the period the slot lengths of a copy keep, the median pitch of its held notes. It concludes the belief in that value by itself, with no premises. CRMinf counts observations, and a measurement is one, among the ways a belief comes about, so the value does not have to be passed off as an inference.",
+      "description": "A measurement takes a value off an object by a stated procedure: the period the slot lengths of a copy keep, the median pitch of its held notes. It concludes the belief in that value by itself, with no premises. CRMinf counts observations, and a measurement is one, among the ways a belief comes about, so the value does not have to be passed off as an inference.\n\nA measurement a program took names the program and its version, so that the value can be taken again and a value taken by a program later found wanting can be told from the rest. Naming software makes it a digital measurement event in the sense of CRMdig.",
       "properties": {
         "actor": {
           "$ref": "#/definitions/Person",
           "description": "The person who carried out this activity.",
           "ontology": "crm:P14 carried out by"
         },
+        "date": {
+          "$ref": "#/definitions/TimeSpan",
+          "description": "When the measurement was taken. It is part of the reason and carries no belief of its own.",
+          "ontology": "crm:P4 has time-span"
+        },
         "note": {
           "description": "A free-text note providing additional context.",
           "type": "string",
           "ontology": "crm:P3 has note"
+        },
+        "procedure": {
+          "$ref": "#/definitions/Concept",
+          "description": "The method followed, where it has a name apart from the program that carries it out, such as a line of Theil and Sen through the matched notes of two copies.",
+          "ontology": "crm:P33 used specific technique"
+        },
+        "software": {
+          "description": "The programs that took the measurement, each with its version.",
+          "items": {
+            "$ref": "#/definitions/Software"
+          },
+          "type": "array",
+          "ontology": "crmdig:L23 used software or firmware"
         },
         "used": {
           "description": "References (by `@id` or URL) to what the measurement was taken on or with, such as the scan, the analysis output or the script.",
@@ -1872,6 +1846,89 @@
       ],
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain."
     },
+    "ObjectAssumption<(Measure<\"px\">|Measure<\"mm\">)>": {
+      "anyOf": [
+        {
+          "properties": {
+            "@annotation": {
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+              "properties": {
+                "belief": {
+                  "$ref": "#/definitions/Belief",
+                  "description": "The belief held about the annotated statement.",
+                  "ontology": "crminf:J4i is subject of"
+                },
+                "@id": {
+                  "description": "A unique identifier for this object.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "belief",
+                "@id"
+              ],
+              "type": "object"
+            },
+            "unit": {
+              "const": "px",
+              "description": "The unit of measurement.",
+              "type": "string",
+              "ontology": "crm:P91 has unit"
+            },
+            "value": {
+              "$ref": "#/definitions/Quantity%3C%22px%22%3E",
+              "description": "The measured value.",
+              "ontology": "crm:P90 has value"
+            }
+          },
+          "required": [
+            "unit",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "@annotation": {
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+              "properties": {
+                "belief": {
+                  "$ref": "#/definitions/Belief",
+                  "description": "The belief held about the annotated statement.",
+                  "ontology": "crminf:J4i is subject of"
+                },
+                "@id": {
+                  "description": "A unique identifier for this object.",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "belief",
+                "@id"
+              ],
+              "type": "object"
+            },
+            "unit": {
+              "const": "mm",
+              "description": "The unit of measurement.",
+              "type": "string",
+              "ontology": "crm:P91 has unit"
+            },
+            "value": {
+              "$ref": "#/definitions/Quantity%3C%22mm%22%3E",
+              "description": "The measured value.",
+              "ontology": "crm:P90 has value"
+            }
+          },
+          "required": [
+            "unit",
+            "value"
+          ],
+          "type": "object"
+        }
+      ],
+      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain."
+    },
     "ObjectAssumption<Advance>": {
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
@@ -2458,6 +2515,43 @@
       ],
       "type": "object"
     },
+    "ObjectAssumption<LengthRatio>": {
+      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
+      "properties": {
+        "@annotation": {
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement.",
+              "ontology": "crminf:J4i is subject of"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "uncertainty": {
+          "description": "The standard uncertainty of the value, one standard deviation.",
+          "type": "number",
+          "ontology": "reo:uncertainty"
+        },
+        "value": {
+          "type": "number",
+          "ontology": "crm:P90 has value"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "type": "object"
+    },
     "ObjectAssumption<Measure<\"mm\">>": {
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
@@ -2488,6 +2582,46 @@
         },
         "value": {
           "$ref": "#/definitions/Quantity%3C%22mm%22%3E",
+          "description": "The measured value.",
+          "ontology": "crm:P90 has value"
+        }
+      },
+      "required": [
+        "unit",
+        "value"
+      ],
+      "type": "object"
+    },
+    "ObjectAssumption<Measure<\"px/in\">>": {
+      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
+      "properties": {
+        "@annotation": {
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement.",
+              "ontology": "crminf:J4i is subject of"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "unit": {
+          "const": "px/in",
+          "description": "The unit of measurement.",
+          "type": "string",
+          "ontology": "crm:P91 has unit"
+        },
+        "value": {
+          "$ref": "#/definitions/Quantity%3C%22px%2Fin%22%3E",
           "description": "The measured value.",
           "ontology": "crm:P90 has value"
         }
@@ -2632,6 +2766,52 @@
       "required": [
         "name",
         "sameAs"
+      ],
+      "type": "object"
+    },
+    "ObjectAssumption<RollDimensions>": {
+      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
+      "properties": {
+        "@annotation": {
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
+          "properties": {
+            "belief": {
+              "$ref": "#/definitions/Belief",
+              "description": "The belief held about the annotated statement.",
+              "ontology": "crminf:J4i is subject of"
+            },
+            "@id": {
+              "description": "A unique identifier for this object.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "belief",
+            "@id"
+          ],
+          "type": "object"
+        },
+        "height": {
+          "$ref": "#/definitions/Millimeters",
+          "description": "The total height (length) of the roll.",
+          "ontology": "reo:height"
+        },
+        "unit": {
+          "const": "mm",
+          "description": "The unit of measurement.",
+          "type": "string",
+          "ontology": "crm:P91 has unit"
+        },
+        "width": {
+          "$ref": "#/definitions/Millimeters",
+          "description": "The width of the roll.",
+          "ontology": "reo:width"
+        }
+      },
+      "required": [
+        "height",
+        "unit",
+        "width"
       ],
       "type": "object"
     },
@@ -3153,49 +3333,19 @@
           "ontology": "crm:P50 has current keeper"
         },
         "measurements": {
-          "description": "Physical measurements of this roll copy, including dimensions, hole separation, margins, the alignment onto the edition's axis, and information about the measuring software. What the perforations tell about the machine that cut them is stated with the production.",
+          "description": "Physical measurements of this roll copy: its dimensions, hole separation and margins, the resolution of its scan, and how it lies on the edition's axis. What the perforations tell about the machine that cut them is stated with the production.\n\nA value the edition exports is an object assumption, so that it can say what took it: a measurement naming the program and its version, the scan or analysis it was taken on, and the day.",
           "properties": {
             "alignment": {
               "$ref": "#/definitions/Alignment",
               "description": "How the copy's places are carried onto the edition's axis. Left out for the reference copy, whose places are the axis, and for a copy not aligned yet. Not exported to RDF."
             },
             "dimensions": {
+              "$ref": "#/definitions/ObjectAssumption%3CRollDimensions%3E",
               "description": "The physical dimensions of the roll.",
-              "properties": {
-                "height": {
-                  "$ref": "#/definitions/Millimeters",
-                  "description": "The total height (length) of the roll.",
-                  "ontology": "reo:height"
-                },
-                "unit": {
-                  "const": "mm",
-                  "description": "The unit of measurement.",
-                  "type": "string",
-                  "ontology": "crm:P91 has unit"
-                },
-                "width": {
-                  "$ref": "#/definitions/Millimeters",
-                  "description": "The width of the roll.",
-                  "ontology": "reo:width"
-                }
-              },
-              "required": [
-                "width",
-                "height",
-                "unit"
-              ],
-              "type": "object",
               "ontology": "reo:dimensions"
             },
             "holeSeparation": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/Measure%3C%22px%22%3E"
-                },
-                {
-                  "$ref": "#/definitions/Measure%3C%22mm%22%3E"
-                }
-              ],
+              "$ref": "#/definitions/ObjectAssumption%3C(Measure%3C%22px%22%3E%7CMeasure%3C%22mm%22%3E)%3E",
               "description": "The distance across the roll from the centre of one track to the next, the track pitch or Teilung, in the unit the scan was measured in. It is fixed by the tracker bar the roll was cut for, and is another thing than the chain pitch, which runs along the roll.",
               "ontology": "reo:holeSeparation"
             },
@@ -3209,34 +3359,6 @@
                 }
               ],
               "description": "The margins on the treble and bass sides of the roll. Not exported to RDF."
-            },
-            "measuredBy": {
-              "description": "Information about the software used to take the measurements.",
-              "properties": {
-                "date": {
-                  "description": "The date on which the measurements were taken.",
-                  "format": "date",
-                  "type": "string",
-                  "ontology": "dcterms:date"
-                },
-                "software": {
-                  "description": "The name of the measurement software.",
-                  "type": "string",
-                  "ontology": "rdfs:label"
-                },
-                "version": {
-                  "description": "The version of the measurement software.",
-                  "type": "string",
-                  "ontology": "owl:versionInfo"
-                }
-              },
-              "required": [
-                "software",
-                "version",
-                "date"
-              ],
-              "type": "object",
-              "ontology": "crmdig:L23 used software or firmware"
             },
             "readerExtension": {
               "description": "What a pneumatic reader added to this copy's chains of holes, where it was taken off again. Such a reader reports how long a valve stayed open, which exceeds the perforation that opened it, so its chains are overlong by a constant while its onsets agree. Nothing for a copy read by other means, whose chains are the punched ones themselves. Not exported to RDF.",
@@ -3259,7 +3381,7 @@
               "type": "object"
             },
             "scanResolution": {
-              "$ref": "#/definitions/Measure%3C%22px%2Fin%22%3E",
+              "$ref": "#/definitions/ObjectAssumption%3CMeasure%3C%22px%2Fin%22%3E%3E",
               "description": "The resolution this copy's scan was read at, along the roll. It is what the measurements given in pixels are to be read against, and what every conversion between a place in the scan and one on the paper goes through. A scanner may read across the roll at another resolution, which the analysis files do not state.",
               "ontology": "reo:scanResolution"
             },
@@ -3346,14 +3468,14 @@
       "type": "object"
     },
     "Software": {
-      "description": "Software a capture ran, such as the transcriber that read a recording into notes or the emulator that wrote a MIDI file.",
+      "description": "Software that captured a copy or measured it: the transcriber that read a recording into notes, the emulator that wrote a MIDI file, the program that found the holes on a scan or aligned two copies.",
       "properties": {
         "name": {
           "type": "string",
           "ontology": "rdfs:label"
         },
         "version": {
-          "description": "The release, or the model checkpoint of a transcriber.",
+          "description": "The release, the commit, or the model checkpoint of a transcriber.",
           "type": "string",
           "ontology": "owl:versionInfo"
         }
@@ -3446,6 +3568,66 @@
       ],
       "type": "object",
       "ontology": "crm:E33 Linguistic Object"
+    },
+    "TimeSpan": {
+      "anyOf": [
+        {
+          "properties": {
+            "within": {
+              "description": "The day the event falls within.",
+              "format": "date",
+              "type": "string",
+              "ontology": "crm:P82 at some time within"
+            }
+          },
+          "required": [
+            "within"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "after": {
+              "description": "The earliest day the event can have happened on: it did not happen before it.",
+              "format": "date",
+              "type": "string",
+              "ontology": "crm:P82a begin of the begin"
+            },
+            "before": {
+              "description": "The latest day the event can have happened on: it did not happen after it.",
+              "format": "date",
+              "type": "string",
+              "ontology": "crm:P82b end of the end"
+            }
+          },
+          "required": [
+            "after"
+          ],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "after": {
+              "description": "The earliest day the event can have happened on: it did not happen before it.",
+              "format": "date",
+              "type": "string",
+              "ontology": "crm:P82a begin of the begin"
+            },
+            "before": {
+              "description": "The latest day the event can have happened on: it did not happen after it.",
+              "format": "date",
+              "type": "string",
+              "ontology": "crm:P82b end of the end"
+            }
+          },
+          "required": [
+            "before"
+          ],
+          "type": "object"
+        }
+      ],
+      "description": "When something happened: the day it falls `within`, or the bounds it lies between. A bound nobody can give is left out, so `after` alone says \"not before\".",
+      "ontology": "crm:E52 Time-Span"
     },
     "Track": {
       "$ref": "#/definitions/Quantity%3C%22track%22%3E",
@@ -3540,6 +3722,11 @@
           "$ref": "#/definitions/DateAssignment",
           "description": "When it took place.",
           "ontology": "crm:P4 has time-span"
+        },
+        "lengthRatio": {
+          "$ref": "#/definitions/ObjectAssumption%3CLengthRatio%3E",
+          "description": "How long the act made the version's paper for a length of the paper of the version it derives from. A re-cut for a system whose paper runs slower comes out shorter by the ratio of the speeds, and the alignments of the copies measure that ratio more closely than any label states a speed (`lengthRatioOf`). It is stated where the edition holds to it, as a measurement naming the copies it used and the program that found it, so that it can serve as a premise. A speed follows from it only together with a premise about the speed of the other version.",
+          "ontology": "reo:lengthRatio"
         },
         "procedure": {
           "$ref": "#/definitions/Concept",

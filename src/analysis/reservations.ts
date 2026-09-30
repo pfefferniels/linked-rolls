@@ -1,5 +1,5 @@
 import { bearsPhysicalEvidence, isMeasured, sourceLabels } from "../model/FeatureSource.js";
-import { calibrationOf, featuresOf, RollCopy } from "../model/RollCopy.js";
+import { calibrationOf, featuresOf, measuringSoftwareOf, RollCopy } from "../model/RollCopy.js";
 import { trackerBarOf } from "../systems/index.js";
 import { Version } from "../model/Version.js";
 import { witnessesOf } from "./witnesses.js";
@@ -83,7 +83,7 @@ const physicalEvidence: Check = copy =>
     } : undefined
 
 const measurementDocumented: Check = copy =>
-    !copy.measurements.measuredBy && copy.readFrom?.kind !== 'roll' ? {
+    measuringSoftwareOf(copy).length === 0 && copy.readFrom?.kind !== 'roll' ? {
         type: 'measurement-undocumented',
         note: 'No measuring software is recorded for this copy.'
     } : undefined

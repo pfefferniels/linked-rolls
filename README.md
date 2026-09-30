@@ -55,6 +55,14 @@ between the two. What the alignments say about the paper of the copies,
 how far each has stretched and how the papers of the systems relate, is
 worked out by `paperOf`.
 
+What is worked out is not stated. Where the edition holds to the ratio a
+re-cut gave the paper of its version, the creation of the version states
+it (`lengthRatio`, as `lengthRatioOf` gives it), so that others can take
+it as a premise. A measured value, such as that ratio, a copy's
+dimensions and hole separation, or the setting of its perforator, is
+held on the strength of a measurement, which names what it was taken
+on, the program and its version, and the day.
+
 Documents written by earlier releases are brought up to date on import.
 To check a document against the schema:
 

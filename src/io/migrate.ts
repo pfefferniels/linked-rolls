@@ -1,3 +1,4 @@
+import { v4 } from "uuid";
 import type { DriveId } from "../model/Perforator.js";
 import { systemIdIn, systemOf, TrackerBar, translationBetween } from "../systems/TrackerBar.js";
 import { trackerBars } from "../systems/index.js";
@@ -520,9 +521,66 @@ const withTimeSpanDates = (node: Json): Json => {
     return { ...rest, within }
 }
 
+/** The values a copy's one `measuredBy` stood for, of those the edition exports: what the analysis it named had given. */
+const measuredByCovered = ['dimensions', 'holeSeparation'] as const
+
+/** A day written as a date, of a date written with or without its time. */
+const dayOf = (date: unknown): string | undefined =>
+    typeof date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(date) ? date.slice(0, 10) : undefined
+
+/**
+ * A copy once named one program for all its measurements, beside values
+ * that could not say what took them. Each value the edition exports now
+ * carries the measurement it rests on, so the program, its version and
+ * the day go into the reasons of the dimensions and the hole separation,
+ * which the analysis it named had given. The scan resolution is read
+ * off the file rather than measured, and the margins are not exported;
+ * nothing is said of them. The ids are the copy's, so that migrating a
+ * file twice writes the same document.
+ */
+const withMeasuredByInReasons = (node: Json): Json => {
+    const measurements = node?.measurements
+    if (!measurements || typeof measurements !== 'object' || !Object.hasOwn(measurements, 'measuredBy')) return node
+
+    const { measuredBy, ...rest } = measurements
+    const day = dayOf(measuredBy?.date)
+    const reason = measuredBy?.software && {
+        '@type': 'measurement',
+        software: [{ name: measuredBy.software, ...(measuredBy.version && { version: measuredBy.version }) }],
+        ...(day && { date: { within: day } })
+    }
+    const owner = typeof node['@id'] === 'string' ? plainCopyId(node['@id']) : v4()
+
+    const withReason = (key: string, value: Json): Json => {
+        if (!reason || !value || typeof value !== 'object') return value
+        const annotation = value['@annotation']
+        if (annotation?.belief) {
+            return { ...value, '@annotation': { ...annotation, belief: { ...annotation.belief, reasons: [...(annotation.belief.reasons ?? []), reason] } } }
+        }
+        return {
+            ...value,
+            '@annotation': {
+                '@id': `${owner}-${key}-annotation`,
+                belief: { '@type': 'belief', '@id': `${owner}-${key}-belief`, certainty: 'true', reasons: [reason] }
+            }
+        }
+    }
+
+    return {
+        ...node,
+        measurements: {
+            ...rest,
+            ...Object.fromEntries(measuredByCovered
+                .filter(key => Object.hasOwn(rest, key))
+                .map(key => [key, withReason(key, rest[key])]))
+        }
+    }
+}
+
 const nodeSteps = [withRenamedKeys, withRenamedEditType, withTypology, withRenamedType, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
     withPerforator, withProductionNodes, withTypedPerforator, withScale, withoutOps, withDerivationList, withReadingKind, withTimeSpanDates,
-    withoutFeatureKind, withBorneFeaturesNamed, withFeaturesInActs, withOwnPlaces, withDriveOfStaggering, withoutPattern, withoutBearings, withoutEntailedType]
+    withoutFeatureKind, withBorneFeaturesNamed, withFeaturesInActs, withOwnPlaces, withDriveOfStaggering, withoutPattern, withoutBearings, withoutEntailedType,
+    withMeasuredByInReasons]
 
 const migrateNode = (node: Json): Json => nodeSteps.reduce((result, step) => step(result), node)
 

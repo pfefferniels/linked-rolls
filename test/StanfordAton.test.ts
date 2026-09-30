@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'fs'
 import * as path from 'path'
-import { asSymbols, calibrationOf, featuresOf, punchDiameterOf, unreadTracks } from '../src/model/RollCopy'
+import { asSymbols, calibrationOf, featuresOf, measuringSoftwareOf, punchDiameterOf, unreadTracks } from '../src/model/RollCopy'
 import { readFromStanfordAton } from '../src/readers/stanfordAton'
 import { welteT100 } from '../src/systems/welteT100/bar'
 import { welteLicensee } from '../src/systems/welteLicensee/bar'
@@ -167,17 +167,22 @@ describe('reading a Stanford analysis file', () => {
      * nothing is made up for them; later ones do.
      */
     it('records the software and the day of the analysis where stated', () => {
-        expect(copy.measurements.measuredBy).toBeUndefined()
+        expect(measuringSoftwareOf(copy)).toEqual([])
+        expect(copy.measurements.holeSeparation!['@annotation']).toBeUndefined()
 
         const stated = readFromStanfordAton(aton.replace(
             '@SOFTWARE_DATE:',
             '@HOLE_SOFTWARE:\thttps://github.com/pianoroll/roll-image-parser\n@SOFTWARE_DATE:'
         ))
-        expect(stated.measurements.measuredBy).toEqual({
-            software: 'https://github.com/pianoroll/roll-image-parser',
-            version: 'Mar 26 2019 16:32:26',
-            date: new Date(2019, 4, 24, 18, 13, 8)
-        })
+        const measurement = {
+            type: 'measurement',
+            software: [{ name: 'https://github.com/pianoroll/roll-image-parser', version: 'Mar 26 2019 16:32:26' }],
+            date: { within: new Date(2019, 4, 24) }
+        }
+        expect(stated.measurements.holeSeparation!['@annotation']!.belief.reasons).toEqual([measurement])
+        expect(stated.measurements.dimensions!['@annotation']!.belief.reasons).toEqual([measurement])
+        expect(stated.measurements.scanResolution!['@annotation']).toBeUndefined()
+        expect(measuringSoftwareOf(stated)).toEqual(measurement.software)
     })
 
     /**

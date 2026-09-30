@@ -387,7 +387,15 @@ reo:paperSpeed
     rdfs:domain lrmoo:F32_Item_Production_Event ;
     rdfs:range crm:E54_Dimension ;
     rdfs:label "paper speed"@en ;
-    rdfs:comment """This property associates the production of a copy with the paper speed the copy was cut for, as its label, its catalogue or its format states it: a value (P90 has value) in the unit given by P91 has unit, as feet or metres per minute. Rolls for the Green Welte and the Licensee were cut from the Welte-Mignon masters for slower paper speeds (Phillips 2016, pp. 121 and 123), so such a copy comes out shorter than the red roll of the same recording by the ratio of the speeds. An alignment of the two measures that ratio together with how far the paper of each has stretched, and measures it more closely than a label states a speed; this property states what the label or the catalogue says, which is held against the ratio rather than used to find it. CIDOC CRM gives an activity no dimension of its own, hence a property of this ontology."""@en ;
+    rdfs:comment """This property associates the production of a copy with the paper speed the copy was cut for, as its label, its catalogue or its format states it: a value (P90 has value) in the unit given by P91 has unit, as feet or metres per minute. Rolls for the Green Welte and the Licensee were cut from the Welte-Mignon masters for slower paper speeds (Phillips 2016, pp. 121 and 123), so such a copy comes out shorter than the red roll of the same recording by the ratio of the speeds. An alignment of the two measures that ratio together with how far the paper of each has stretched, and measures it more closely than a label states a speed; this property states what the label or the catalogue says, which is held against the ratio rather than used to find it. What the alignments give is stated of the re-cut by reo:lengthRatio. CIDOC CRM gives an activity no dimension of its own, hence a property of this ontology."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
+reo:lengthRatio
+    a owl:ObjectProperty ;
+    rdfs:domain lrmoo:F28_Expression_Creation ;
+    rdfs:range crm:E54_Dimension ;
+    rdfs:label "length ratio"@en ;
+    rdfs:comment """This property associates the creation of a version of a roll with how long it made the version's paper for a length of the paper of the version it derives from (R76 is derivative of): a ratio without a unit, stated with P90 has value and with reo:uncertainty where it is known how surely. A version re-cut for a system whose paper runs slower comes out shorter by the ratio of the paper speeds, as the Licensee and Green Welte re-cuts of the red Welte-Mignon rolls do, at about 0.77. The alignments of copies of the two versions measure that ratio, together with how far the paper of each copy has stretched, and more closely than a label states a speed; it is stated of the act that set it rather than of a copy, and the belief it is held with names the copies and the program that measured it. A paper speed follows from it only with a premise about the speed of the other version, which is why it is kept apart from reo:paperSpeed, the speed a label or catalogue states for a copy. CIDOC CRM gives an activity no dimension of its own, hence a property of this ontology."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:dimensions

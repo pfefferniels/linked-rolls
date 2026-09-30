@@ -90,6 +90,10 @@
         "used": {
           "@id": "crm:P16_used_specific_object",
           "@type": "@id"
+        },
+        "software": {
+          "@id": "crmdig:L23_used_software_or_firmware",
+          "@context": { "version": "owl:versionInfo" }
         }
       }
     },
@@ -101,6 +105,13 @@
     },
     "creation": "lrmoo:R17i_was_created_by",
     "procedure": "crm:P33_used_specific_technique",
+    "lengthRatio": {
+      "@id": "reo:lengthRatio",
+      "@context": {
+        "value": "crm:P90_has_value",
+        "uncertainty": "reo:uncertainty"
+      }
+    },
     "editors": "crm:P14_carried_out_by",
     "publisher": "crm:P14_carried_out_by",
     "publicationDate": {
@@ -180,14 +191,7 @@
         "height": "reo:height",
         "holeSeparation": "reo:holeSeparation",
         "scanResolution": "reo:scanResolution",
-        "value": "crm:P90_has_value",
-        "measuredBy": "crmdig:L23_used_software_or_firmware",
-        "software": "rdfs:label",
-        "version": "owl:versionInfo",
-        "date": {
-          "@id": "dcterms:date",
-          "@type": "xsd:date"
-        }
+        "value": "crm:P90_has_value"
       }
     },
     "production": {

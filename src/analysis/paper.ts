@@ -1,8 +1,12 @@
 import { Edition, referenceCopyOf } from "../model/Edition.js"
 import { barOf, featuresOf, paperStretchOf, RollCopy, Strain } from "../model/RollCopy.js"
-import { certaintyOf, isAsserted } from "../model/Assumption.js"
+import { certaintyOf, idOf, isAsserted } from "../model/Assumption.js"
+import { LengthRatio, principalDerivationOf, Version } from "../model/Version.js"
+import { versionIn } from "../lookup/lookup.js"
+import { witnessesOf } from "./witnesses.js"
 import { SourceKind } from "../model/FeatureSource.js"
 import { inMetersPerMinute, MetersPerMinute, Percent, percent, SpeedMeasure } from "../model/Quantity.js"
+import { trackerBarOf } from "../systems/index.js"
 
 /**
  * How far the paper of one copy is taken to have stretched or shrunk
@@ -369,4 +373,38 @@ export const alignmentProblems = (edition: Pick<Edition, 'copies' | 'referenceCo
     })
 
     return [...unaligned, ...elsewhere, ...beyond, ...speeds]
+}
+
+/**
+ * How long the version's paper runs for a length of the paper of the
+ * version it derives from, as the alignments give it: the ratio of the
+ * two versions' systems' papers, with its uncertainty. It is what the
+ * creation of the version states where the edition holds to it
+ * (`VersionCreation.lengthRatio`).
+ *
+ * The reading pools the copies of a system, so the ratio is only given
+ * for a version that one of those copies bears witness to: a second
+ * re-cut for the same system, whose copies measure no paper, is not
+ * credited with the first one's ratio. Where the reading has copies of
+ * two versions re-cut for one system, the ratio is theirs together.
+ * Nothing is given for a version that derives from none, or from one on
+ * its own system, whose paper it keeps.
+ */
+export const lengthRatioOf = (edition: Edition, versionId: string): LengthRatio | undefined => {
+    const version = versionIn(edition, versionId)
+    const derivation = version && principalDerivationOf(version)
+    const base = derivation && versionIn(edition, idOf(derivation))
+    const reading = paperOf(edition)
+    if (!version || !base || !reading) return undefined
+
+    const systemOf = (of: Readonly<Version>) => reading.systems.find(paper => paper.system === trackerBarOf(of.system)?.id)
+    const own = systemOf(version)
+    const theirs = systemOf(base)
+    if (!own || !theirs || own.system === theirs.system) return undefined
+
+    const witnesses = new Set(witnessesOf(edition, versionId).map(witness => witness.copy))
+    if (!own.copies.some(copy => witnesses.has(copy))) return undefined
+
+    const value = own.ratio / theirs.ratio
+    return { value, uncertainty: value * Math.hypot(own.ratioError / own.ratio, theirs.ratioError / theirs.ratio) }
 }

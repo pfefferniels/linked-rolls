@@ -102,3 +102,48 @@ describe('a value held on the strength of a measurement', () => {
         expect(node['http://www.cidoc-crm.org/cidoc-crm/P3_has_note']).toEqual([{ '@value': 'the strongest period the slot lengths keep' }])
     })
 })
+
+/** A measurement a program took, naming the program, the method it followed and the day. */
+const byProgram = (): Measurement => ({
+    type: 'measurement',
+    note: 'the median over the pitches of held notes',
+    used: ['https://example.org/scan'],
+    procedure: { name: 'median pitch of held notes', sameAs: [] },
+    software: [{ name: 'https://github.com/pfefferniels/condon-dates', version: '4f1c2e0' }],
+    date: assignDate(new Date(2026, 8, 26))
+})
+
+/** The small edition with its first copy's advance measured by a program. */
+const surveyedByProgram = () => {
+    const measuredEdition = surveyed()
+    const advance = measuredEdition.copies[0].production!.perforator!.condition!.advance!
+    advance['@annotation']!.belief.reasons = [byProgram()]
+    return measuredEdition
+}
+
+describe('a measurement a program took', () => {
+    it('is valid, and comes back from an export as it went in', () => {
+        expect(validate(asJsonLd(surveyedByProgram()))).toBe(true)
+        const back = importJsonLd(JSON.parse(JSON.stringify(asJsonLd(surveyedByProgram()))))
+        expect(back.copies[0].production).toEqual(surveyedByProgram().copies[0].production)
+    })
+
+    it('reads as a measurement that used the software, the technique and the time-span it names', async () => {
+        const [node] = await jsonld.expand({
+            '@context': context['@context'],
+            '@id': 'https://example.org/measurement',
+            '@type': 'measurement',
+            procedure: { name: 'median pitch of held notes', sameAs: [] },
+            software: [{ name: 'condon-dates', version: '4f1c2e0' }],
+            date: { within: '2026-09-26' }
+        }) as any[]
+        const [software] = node['http://www.cidoc-crm.org/extensions/crmdig/L23_used_software_or_firmware']
+        expect(software['http://www.w3.org/2000/01/rdf-schema#label']).toEqual([{ '@value': 'condon-dates' }])
+        expect(software['http://www.w3.org/2002/07/owl#versionInfo']).toEqual([{ '@value': '4f1c2e0' }])
+        const [procedure] = node['http://www.cidoc-crm.org/cidoc-crm/P33_used_specific_technique']
+        expect(procedure['http://www.w3.org/2000/01/rdf-schema#label']).toEqual([{ '@value': 'median pitch of held notes' }])
+        const [span] = node['http://www.cidoc-crm.org/cidoc-crm/P4_has_time-span']
+        expect(span['http://www.cidoc-crm.org/cidoc-crm/P82_at_some_time_within'])
+            .toEqual([{ '@value': '2026-09-26', '@type': 'http://www.w3.org/2001/XMLSchema#date' }])
+    })
+})

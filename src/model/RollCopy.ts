@@ -7,7 +7,7 @@ import { TrackCalibration } from "./TrackCalibration.js";
 import { AnyFeature, FeatureOrPatch, HorizontalSpan, Patch } from "./Feature.js";
 import { ActorAssignment, assignReference, certaintyOf, DateAssignment, isAsserted, ObjectAssumption, ReferenceAssumption } from "./Assumption.js";
 import { WithId, WithType } from "../shared/utils.js";
-import { Agent, Concept } from "./Agent.js";
+import { Agent, Concept, Software } from "./Agent.js";
 import { FeatureSource } from "./FeatureSource.js";
 import { Measure, Millimeters, Percent, Quantity, px, Track, track } from "./Quantity.js";
 import { Perforator } from "./Perforator.js";
@@ -187,6 +187,31 @@ export interface Alignment {
     }
 }
 
+/**
+ * The width and length of a roll copy's paper, as they were measured on
+ * it or on its scan.
+ * @see crm:E54 Dimension
+ */
+export interface RollDimensions {
+    /**
+     * The width of the roll.
+     * @see reo:width
+     */
+    width: Millimeters
+
+    /**
+     * The total height (length) of the roll.
+     * @see reo:height
+     */
+    height: Millimeters
+
+    /**
+     * The unit of measurement.
+     * @see crm:P91 has unit
+     */
+    unit: 'mm'
+}
+
 /** The margins on the treble and bass sides of the roll, in the unit the scan was measured in. */
 export interface Margins<U extends 'px' | 'mm'> {
     treble: Quantity<U>
@@ -361,11 +386,14 @@ export type Modification = Partial<{
  */
 export interface RollCopy extends WithType<'RollCopy'>, WithId {
     /**
-     * Physical measurements of this roll copy, including
-     * dimensions, hole separation, margins, the alignment onto the
-     * edition's axis, and information about the measuring software. What the
-     * perforations tell about the machine that cut them is stated
-     * with the production.
+     * Physical measurements of this roll copy: its dimensions, hole
+     * separation and margins, the resolution of its scan, and how it
+     * lies on the edition's axis. What the perforations tell about the
+     * machine that cut them is stated with the production.
+     *
+     * A value the edition exports is an object assumption, so that it
+     * can say what took it: a measurement naming the program and its
+     * version, the scan or analysis it was taken on, and the day.
      * @see crm:P39i was measured by
      */
     measurements: Partial<{
@@ -373,23 +401,7 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
          * The physical dimensions of the roll.
          * @see reo:dimensions
          */
-        dimensions: {
-            /**
-             * The width of the roll.
-             * @see reo:width
-             */
-            width: Millimeters,
-            /**
-             * The total height (length) of the roll.
-             * @see reo:height
-             */
-            height: Millimeters,
-            /**
-             * The unit of measurement.
-             * @see crm:P91 has unit
-             */
-            unit: 'mm'
-        }
+        dimensions: ObjectAssumption<RollDimensions>
 
         /**
          * The distance across the roll from the centre of one track to
@@ -399,7 +411,7 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
          * along the roll.
          * @see reo:holeSeparation
          */
-        holeSeparation: Measure<'px'> | Measure<'mm'>
+        holeSeparation: ObjectAssumption<Measure<'px'> | Measure<'mm'>>
 
         /**
          * The margins on the treble and bass sides of the roll.
@@ -449,7 +461,7 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
          * files do not state.
          * @see reo:scanResolution
          */
-        scanResolution: Measure<'px/in'>
+        scanResolution: ObjectAssumption<Measure<'px/in'>>
 
         /**
          * Relates this copy's scan to the tracker bar: how the scanning
@@ -457,29 +469,6 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
          * the track grid sits in the image. Not exported to RDF.
          */
         trackCalibration: TrackCalibration
-
-        /**
-         * Information about the software used to take the measurements.
-         * @see crmdig:L23 used software or firmware
-         */
-        measuredBy: {
-            /**
-             * The name of the measurement software.
-             * @see rdfs:label
-             */
-            software: string,
-            /**
-             * The version of the measurement software.
-             * @see owl:versionInfo
-             */
-            version: string
-            /**
-             * The date on which the measurements were taken.
-             * @format date
-             * @see dcterms:date
-             */
-            date: Date
-        }
     }>
 
     /**
@@ -578,6 +567,19 @@ export const featuresByAct = (copy: Pick<RollCopy, 'production' | 'modifications
 /** Every feature the copy states at a place of its own, whichever act made it. */
 export const featuresOf = (copy: Pick<RollCopy, 'production' | 'modifications'>): FeatureOrPatch[] =>
     featuresByAct(copy).flat()
+
+/** The measurements of a copy the edition exports, each of which can say what took it. */
+const exportedMeasurementsOf = (copy: Pick<RollCopy, 'measurements'>) =>
+    [copy.measurements.dimensions, copy.measurements.holeSeparation, copy.measurements.scanResolution]
+        .filter(value => value !== undefined)
+
+/** The programs the measurements of a copy name as having taken them, each once, as far as they name any. */
+export const measuringSoftwareOf = (copy: Pick<RollCopy, 'measurements'>): Software[] => {
+    const named = exportedMeasurementsOf(copy)
+        .flatMap(value => value['@annotation']?.belief.reasons ?? [])
+        .flatMap(reason => reason.type === 'measurement' ? reason.software ?? [] : [])
+    return [...new Map(named.map(software => [`${software.name}\u0000${software.version ?? ''}`, software])).values()]
+}
 
 /** Whether the condition is the stretch or shrinkage of the paper, as measured on the copy. */
 export const isPaperStretch = (condition: RollConditionAssignment): condition is ObjectAssumption<PaperStretch> =>
