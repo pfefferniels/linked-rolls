@@ -152,13 +152,6 @@
     "created": "lrmoo:R17_created",
     "copies": "reo:witness",
     "versions": "lrmoo:R75_incorporates",
-    "tempoAdjustment": {
-      "@id": "reo:tempo",
-      "@context": {
-        "startsWith": "reo:from",
-        "endsWith": "reo:to"
-      }
-    },
 
     "name": "rdfs:label",
     "sameAs": {

@@ -5,6 +5,7 @@ import {
     levelChanges,
     mezzoforteTravel,
     paperSeconds,
+    paperSpeed,
     pedalBrushing,
     pedalDefaults,
     ROWS_PER_MM,
@@ -30,7 +31,7 @@ import {
     PerformedPedalEvent,
     RollProperties
 } from "./ReproducingSystem.js";
-import { inCentimeters, Millimeters, mm, Seconds, seconds, Track } from "../model/Quantity.js";
+import { inCentimeters, MetersPerMinute, metersPerMinute, Millimeters, mm, Seconds, seconds, Track } from "../model/Quantity.js";
 import { partitionPoint } from "../shared/sorted.js";
 import { velocityOf, type VelocityMap } from "./velocity.js";
 
@@ -47,6 +48,9 @@ export type WelteOptions = {
     /**
      * The take-up spool, which sets the time axis: it is held at a constant
      * rate of revolution, so the paper runs faster as the spool fills.
+     * Where a speed is stated for the version's copies, or a re-cut is timed
+     * by the roll it was made from, the spool is started at that speed and
+     * only its geometry is taken from here; see `spoolFor`.
      */
     spool: Spool
 
@@ -142,6 +146,34 @@ const paperOf = (toOwnPaper: number): Paper => ({
 export const secondsAt = (spool: Spool, place: Millimeters): Seconds =>
     seconds(paperSeconds(spool, inCentimeters(place)))
 
+/** The speed the spool starts the paper at. */
+export const startingSpeedOf = (spool: Spool): MetersPerMinute =>
+    metersPerMinute(paperSpeed(spool, 0) * 60 / 100)
+
+/** The spool turned so that it starts the paper at the speed, its geometry and acceleration kept. */
+const startingAt = (spool: Spool, speed: MetersPerMinute): Spool =>
+    ({ ...spool, revolutionSeconds: spool.circumferenceCm / (speed * 100 / 60) })
+
+/**
+ * The spool a version runs on.
+ *
+ * A speed stated for the version's copies is where it starts, as a tempo
+ * marking is the speed at the beginning of the roll. Failing that, a system
+ * whose spool is a reading of its own instruments runs on it as it stands:
+ * the red and the green spool are both calibrated at Welte's Tempo 70. A
+ * system with no spool of its own, as the Licensee has none, times a re-cut
+ * by the roll it was re-cut from, at that roll's stated speed or else the
+ * spool's own, shortened by the length ratio, so that it sounds at the tempo
+ * of the original. Where none of this applies the spool stands as given.
+ */
+export const spoolFor = (spool: Spool, roll: RollProperties, ownSpool: boolean): Spool => {
+    if (roll.paperSpeed !== undefined) return startingAt(spool, roll.paperSpeed)
+    if (ownSpool || !roll.recutFrom) return spool
+
+    const { lengthRatio, paperSpeed: original = startingSpeedOf(spool) } = roll.recutFrom
+    return startingAt(spool, metersPerMinute(original * lengthRatio))
+}
+
 const halfOf = (note: NegotiatedEvent, division: Track): Half =>
     note.vertical.from >= division ? 'treble' : 'bass'
 
@@ -172,6 +204,12 @@ export type Mechanism<P extends WeltePunch> = {
     readonly portsOf: (grid: Grid, punches: readonly P[], geometry: PortGeometry) => Ports
     readonly model: Model
     readonly runPedals: (input: PedalInput, params: Parameters) => PedalTravel
+    /**
+     * Whether the spool in the options is a reading of this system's own
+     * instruments. Where it is not, a re-cut is timed by the roll it was
+     * re-cut from (`spoolFor`).
+     */
+    readonly ownSpool: boolean
     /** The name of the instrument the curves say they came from. */
     readonly instrument: string
 }
@@ -222,14 +260,15 @@ const performNotes = (
     grid: Grid,
     nuance: Record<Half, DynamicsCurve>,
     options: WelteOptions,
-    paper: Paper
+    paper: Paper,
+    spool: Spool
 ): (PerformedNoteOnEvent | PerformedNoteOffEvent)[] =>
     events
         .filter(isNote)
         .flatMap((note): (PerformedNoteOnEvent | PerformedNoteOffEvent)[] => {
             const curve = nuance[halfOf(note, options.division)]
             const velocity = curve.velocity[grid.indexOfRow(paper.rowOf(note.horizontal.from))]
-            const at = (place: Millimeters) => secondsAt(options.spool, paper.paperOfPlace(place))
+            const at = (place: Millimeters) => secondsAt(spool, paper.paperOfPlace(place))
             return [
                 { type: 'noteOn', performs: note, pitch: note.pitch, velocity, at: at(note.horizontal.from) },
                 { type: 'noteOff', performs: note, pitch: note.pitch, velocity: 127, at: at(note.horizontal.to) }
@@ -272,11 +311,8 @@ export type WeltePerformance = Performance & {
 
 /**
  * Plays the events on a Welte mechanism: notes at the velocity of their half's
- * bellows, and the two pedals as the travel of theirs.
- *
- * The edition's tempo adjustment is left aside: it is stated as a paper
- * speed, and what the spool holds constant is its rate of revolution, so
- * the two are not the same quantity. The spool in the options sets the speed.
+ * bellows, and the two pedals as the travel of theirs, on the spool
+ * `spoolFor` gives the version.
  */
 export const performWelte = <P extends WeltePunch>(
     events: readonly NegotiatedEvent[],
@@ -294,7 +330,8 @@ export const performWelte = <P extends WeltePunch>(
             })
             return punch ? [{ event, punch }] : []
         })
-    const grid = gridOver(events, options.spool, paper)
+    const spool = spoolFor(options.spool, roll, mechanism.ownSpool)
+    const grid = gridOver(events, spool, paper)
     const geometry = geometryInMm(roll.punchDiameter ?? options.punchDiameter, options.trackerBore)
     const ports = mechanism.portsOf(grid, readings.map(reading => reading.punch), geometry)
     const samples: Samples = {
@@ -312,7 +349,7 @@ export const performWelte = <P extends WeltePunch>(
         grid,
         ports,
         events: [
-            ...performNotes(events, grid, nuance, options, paper),
+            ...performNotes(events, grid, nuance, options, paper, spool),
             ...performPedal('damper', damper, grid, readingsOf('sustainPedal'), options.pedalMode),
             ...performPedal('hammerRail', hammerRail, grid, readingsOf('hammerRail'), options.pedalMode)
         ],

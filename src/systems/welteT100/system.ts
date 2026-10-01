@@ -95,12 +95,13 @@ const punchOf = (event: NegotiatedEvent & Expression, rows: { rowOn: number, row
 
 /**
  * The mechanism, given a way of naming the instrument on the curves it
- * produces. The Licensee reads the same commands and is played by the same
- * valves, so it shares this; what it may not share is the name, since a
- * Licensee playback runs on constants fitted to Freiburg instruments and the
- * curve has to say so.
+ * produces and whether the spool it is given is that instrument's own. The
+ * Licensee reads the same commands and is played by the same valves, so it
+ * shares this; what it may not share is the name, since a Licensee playback
+ * runs on constants fitted to Freiburg instruments and the curve has to say
+ * so, nor the spool, which is the red one it carries over.
  */
-export const performAs = (instrumentOf: (nuance: Record<Half, Parameters>) => string) => (
+export const performAs = (instrumentOf: (nuance: Record<Half, Parameters>) => string, ownSpool = true) => (
     events: readonly NegotiatedEvent[],
     options: WelteT100Options,
     roll: RollProperties
@@ -110,6 +111,7 @@ export const performAs = (instrumentOf: (nuance: Record<Half, Parameters>) => st
         portsOf: aperturePorts,
         model: pneumaticModel,
         runPedals,
+        ownSpool,
         instrument: instrumentOf(options.nuance)
     })
     return { events: performed, curves }

@@ -38,9 +38,13 @@ export const instrumentNames: readonly WelteLicenseeInstrumentName[] = [
  * Welte's own spool is carried over with the constants. Phillips (p. 181) says
  * Licensee rolls "play at a range of paper speeds", so there is no one figure
  * to put here and the red geometry is a placeholder rather than a reading.
- * Where an edition states a tempo of its own it is the better authority, and
- * the spool is better varied than trusted: it scales every conductance by k
- * and every time constant by 1/k, and touches nothing dimensionless.
+ * It is therefore never played as it stands where anything better is known:
+ * a speed stated for the version's copies, as a Licensee label states its
+ * tempo, sets where it starts, and failing that a re-cut runs at the speed of
+ * the roll it was re-cut from times the length ratio, so that it sounds at
+ * that roll's tempo (`spoolFor`). Either way only its geometry is used, and
+ * that is better varied than trusted: it scales every conductance by k and
+ * every time constant by 1/k, and touches nothing dimensionless.
  */
 export const defaultWelteLicenseeOptions: WelteLicenseeOptions = {
     ...defaultWelteT100Options,
@@ -69,11 +73,13 @@ const licenseeInstrument = (nuance: Record<Half, Parameters>): string =>
  * What it does not have is an instrument of its own. The constants are the
  * T-100's, the spool is the T-100's, and neither has ever been checked against
  * a Licensee. `instruments` therefore offers a single `unfitted` arm, and every
- * curve produced here names itself as such.
+ * curve produced here names itself as such. The spool sets no tempo of its
+ * own: a version runs at the speed stated for its copies, or at that of the
+ * roll it was re-cut from times the length ratio.
  */
 export const welteLicenseeSystem: ReproducingSystem<WelteLicenseeOptions> = {
     name: 'Welte-Mignon (Licensee)',
     trackerBar: welteLicensee,
     defaultOptions: defaultWelteLicenseeOptions,
-    perform: performAs(licenseeInstrument)
+    perform: performAs(licenseeInstrument, false)
 }
