@@ -1,35 +1,7 @@
 import { HoleChain } from "../model/Feature.js";
 import { Expression, Note } from "../model/Symbol.js";
 import { TrackerBar } from "./TrackerBar.js";
-import { Millimeters, Quantity, Seconds } from "../model/Quantity.js";
-
-export type SpeedUnit = 'ft/min' | 'm/min'
-
-/**
- * The playback tempo of the roll as a paper speed, stated at the
- * beginning and at the end, since the speed may change over the
- * course of the roll through acceleration.
- * @see crm:E54 Dimension
- */
-export interface RollTempoIn<U extends SpeedUnit> {
-    /**
-     * The tempo at the beginning of the roll.
-     * @see reo:from
-     */
-    startsWith: Quantity<U>;
-    /**
-     * The tempo at the end of the roll.
-     * @see reo:to
-     */
-    endsWith: Quantity<U>;
-    /**
-     * The unit of the tempo measurement.
-     * @see crm:P91 has unit
-     */
-    unit: U;
-}
-
-export type RollTempo = RollTempoIn<'ft/min'> | RollTempoIn<'m/min'>
+import { MetersPerMinute, Millimeters, Seconds } from "../model/Quantity.js";
 
 /**
  * A note or expression of a version with the dimensions of its carriers
@@ -121,8 +93,27 @@ export type RollProperties = {
     /** Diameter of the punches, where the copies record it. */
     punchDiameter?: Millimeters
 
-    /** The tempo the edition adjusts the roll to, where it states one. */
-    tempo?: RollTempo
+    /**
+     * The speed the version's paper starts at, where the copies that bear
+     * witness to it state the speed they were cut for (`paperSpeedOf`), or
+     * failing them those of the version it derives from on the same
+     * system, whose paper it keeps. A stated speed is the speed at the
+     * beginning of the roll, as a tempo marking gives it, and the spool
+     * accelerates from there.
+     */
+    paperSpeed?: MetersPerMinute
+
+    /**
+     * Where the version is a re-cut for another system: how long its paper
+     * runs for a length of the paper of the version it derives from, and
+     * the speed stated for that version, if any. A system with no spool of
+     * its own times such a version by these, so that it sounds at the
+     * tempo of the roll it was re-cut from.
+     */
+    recutFrom?: {
+        readonly lengthRatio: number
+        readonly paperSpeed?: MetersPerMinute
+    }
 
     /**
      * Place on the edition's shared axis × this = millimetres of the version's

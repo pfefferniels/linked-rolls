@@ -609,11 +609,6 @@
           "description": "The roll which is edited in this edition.",
           "ontology": "lrmoo:R3i realises"
         },
-        "tempoAdjustment": {
-          "$ref": "#/definitions/ObjectAssumption%3CRollTempo%3E",
-          "description": "An optional tempo adjustment for playback of the roll, annotatable with a belief about its correctness.",
-          "ontology": "reo:tempo"
-        },
         "title": {
           "description": "The title of the edition.",
           "examples": [
@@ -2815,101 +2810,6 @@
       ],
       "type": "object"
     },
-    "ObjectAssumption<RollTempo>": {
-      "anyOf": [
-        {
-          "properties": {
-            "@annotation": {
-              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
-              "properties": {
-                "belief": {
-                  "$ref": "#/definitions/Belief",
-                  "description": "The belief held about the annotated statement.",
-                  "ontology": "crminf:J4i is subject of"
-                },
-                "@id": {
-                  "description": "A unique identifier for this object.",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "belief",
-                "@id"
-              ],
-              "type": "object"
-            },
-            "endsWith": {
-              "$ref": "#/definitions/Quantity%3C%22ft%2Fmin%22%3E",
-              "description": "The tempo at the end of the roll.",
-              "ontology": "reo:to"
-            },
-            "startsWith": {
-              "$ref": "#/definitions/Quantity%3C%22ft%2Fmin%22%3E",
-              "description": "The tempo at the beginning of the roll.",
-              "ontology": "reo:from"
-            },
-            "unit": {
-              "const": "ft/min",
-              "description": "The unit of the tempo measurement.",
-              "type": "string",
-              "ontology": "crm:P91 has unit"
-            }
-          },
-          "required": [
-            "endsWith",
-            "startsWith",
-            "unit"
-          ],
-          "type": "object"
-        },
-        {
-          "properties": {
-            "@annotation": {
-              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.",
-              "properties": {
-                "belief": {
-                  "$ref": "#/definitions/Belief",
-                  "description": "The belief held about the annotated statement.",
-                  "ontology": "crminf:J4i is subject of"
-                },
-                "@id": {
-                  "description": "A unique identifier for this object.",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "belief",
-                "@id"
-              ],
-              "type": "object"
-            },
-            "endsWith": {
-              "$ref": "#/definitions/Quantity%3C%22m%2Fmin%22%3E",
-              "description": "The tempo at the end of the roll.",
-              "ontology": "reo:to"
-            },
-            "startsWith": {
-              "$ref": "#/definitions/Quantity%3C%22m%2Fmin%22%3E",
-              "description": "The tempo at the beginning of the roll.",
-              "ontology": "reo:from"
-            },
-            "unit": {
-              "const": "m/min",
-              "description": "The unit of the tempo measurement.",
-              "type": "string",
-              "ontology": "crm:P91 has unit"
-            }
-          },
-          "required": [
-            "endsWith",
-            "startsWith",
-            "unit"
-          ],
-          "type": "object"
-        }
-      ],
-      "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain."
-    },
     "ObjectAssumption<Transcription>": {
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
@@ -3165,7 +3065,7 @@
         },
         "speed": {
           "$ref": "#/definitions/ObjectAssumption%3CPaperSpeed%3E",
-          "description": "The paper speed the copy was cut for. A copy cut from the same master for another speed comes out longer or shorter than the roll it is aligned with by the ratio of the speeds. The alignment measures that ratio far more closely than a label states a speed, so the speed is held against what the alignments give (`alignmentProblems`) rather than used to find it.",
+          "description": "The paper speed the copy was cut for, as the speed at the beginning of the roll: a tempo marking states it so, and the take-up spool accelerates from there. A performance of a version the copy bears witness to starts at it (`paperSpeedOf`). A copy cut from the same master for another speed comes out longer or shorter than the roll it is aligned with by the ratio of the speeds. The alignment measures that ratio far more closely than a label states a speed, so the speed is held against what the alignments give (`alignmentProblems`) rather than used to find it.",
           "ontology": "reo:paperSpeed"
         },
         "system": {

@@ -420,6 +420,25 @@ describe('a revision of the format', () => {
 })
 
 /**
+ * An edition stated one tempo for the roll before each copy stated the speed
+ * it was cut for; a document that states one is read without it.
+ */
+describe('a tempo the edition stated for the roll', () => {
+    const tempo = {
+        startsWith: 7.0,
+        endsWith: 8.5,
+        unit: 'ft/min',
+        '@annotation': { id: 'belief-tempo', belief: { type: 'belief', id: 'b', certainty: 'likely', reasons: [] } }
+    }
+
+    it('is dropped', () => {
+        const written = { ...JSON.parse(JSON.stringify(asJsonLd(twoCopiesApart()))), tempoAdjustment: tempo }
+        expect(migrate(written)).not.toHaveProperty('tempoAdjustment')
+        expect(importJsonLd(written)).not.toHaveProperty('tempoAdjustment')
+    })
+})
+
+/**
  * A copy's alignment went by its `ops` list, so where the list and the
  * measurements disagreed the measurements are made to say what it said,
  * and a copy aligns and unaligns afterwards exactly as it did before.

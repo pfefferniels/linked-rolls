@@ -204,6 +204,7 @@ const perform = (
         portsOf: (grid, punches, geometry) => aperturePorts(grid, punches, geometry, gap),
         model: pneumaticT98Model,
         runPedals,
+        ownSpool: true,
         instrument: `Welte-Mignon T-98, ${labelOf(options.instrument)}`
     })
 

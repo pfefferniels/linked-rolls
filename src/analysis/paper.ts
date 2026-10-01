@@ -5,8 +5,8 @@ import { LengthRatio, principalDerivationOf, Version } from "../model/Version.js
 import { versionIn } from "../lookup/lookup.js"
 import { witnessesOf } from "./witnesses.js"
 import { SourceKind } from "../model/FeatureSource.js"
-import { inMetersPerMinute, MetersPerMinute, Percent, percent, SpeedMeasure } from "../model/Quantity.js"
-import { trackerBarOf } from "../systems/index.js"
+import { inMetersPerMinute, mean, MetersPerMinute, Percent, percent, SpeedMeasure } from "../model/Quantity.js"
+import { defaultTrackerBar, trackerBarOf } from "../systems/index.js"
 
 /**
  * How far the paper of one copy is taken to have stretched or shrunk
@@ -322,6 +322,28 @@ export type AlignmentProblem = {
 const statedSpeed = (copy: RollCopy): MetersPerMinute | undefined => {
     const speed = copy.production?.speed
     return speed && isAsserted(certaintyOf(speed)) ? inMetersPerMinute(speed as SpeedMeasure) : undefined
+}
+
+/**
+ * The speed the version's paper starts at, as the copies of its own system
+ * that bear witness to it at first hand state they were cut for: the mean
+ * of the speeds the edition holds true or likely. A stated speed is the
+ * speed at the beginning of the roll, as a tempo marking gives it. Nothing
+ * where no such copy states one; in particular, a copy that reaches the
+ * version only through a later one says nothing about it, since the later
+ * one may have been cut for another speed.
+ */
+export const paperSpeedOf = (edition: Edition, versionId: string): MetersPerMinute | undefined => {
+    const version = versionIn(edition, versionId)
+    if (!version) return undefined
+
+    const system = (trackerBarOf(version.system) ?? defaultTrackerBar).id
+    const speeds = witnessesOf(edition, versionId)
+        .filter(witness => witness.through === undefined)
+        .flatMap(witness => edition.copies.filter(copy => copy.id === witness.copy && barOf(copy).id === system))
+        .map(statedSpeed)
+        .filter(speed => speed !== undefined)
+    return speeds.length > 0 ? mean(speeds) : undefined
 }
 
 /** The speed the reference copy was cut at: as stated for it, or as its system runs. */

@@ -1,8 +1,7 @@
 import { featuresOf, RollCopy } from "./RollCopy.js";
 import { Version } from "./Version.js";
-import { DateAssignment, ObjectAssumption } from "./Assumption.js";
+import { DateAssignment } from "./Assumption.js";
 import { Editor, Person, Place } from "./Agent.js";
-import { RollTempo } from "../systems/ReproducingSystem.js";
 
 /**
  * This type describes the creation of an edition,
@@ -163,13 +162,6 @@ export interface Edition {
      * @see lrmoo:R75 incorporates
      */
     versions: Version[]
-
-    /**
-     * An optional tempo adjustment for playback of the roll,
-     * annotatable with a belief about its correctness.
-     * @see reo:tempo
-     */
-    tempoAdjustment?: ObjectAssumption<RollTempo>
 }
 
 export type EditionMetadata = Pick<Edition, 'base' | 'title' | 'license' | 'creation' | 'roll'>

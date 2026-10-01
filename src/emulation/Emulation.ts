@@ -1,8 +1,8 @@
 import { AnyEvent, MIDIControlEvents, MidiFile } from "midifile-ts";
-import { idOf } from "../model/Assumption.js";
+import { certaintyOf, idOf, isAsserted } from "../model/Assumption.js";
 import { isCommand, pairsAmong, placementsOf } from "../model/Symbol.js";
 import type { TrackerBar } from "../systems/TrackerBar.js";
-import { Version } from "../model/Version.js";
+import { principalDerivationOf, Version } from "../model/Version.js";
 import {
     AnyPerformedRollFeature,
     EmulatedCurve,
@@ -11,12 +11,14 @@ import {
     ReproducingSystem,
     RollProperties
 } from "../systems/ReproducingSystem.js";
-import { add, mean, Millimeters, mm, Seconds, seconds, subtract } from "../model/Quantity.js";
+import { add, mean, MetersPerMinute, Millimeters, mm, Seconds, seconds, subtract } from "../model/Quantity.js";
 import { punchDiameterOf } from "../model/RollCopy.js";
 import { toOwnPaperOf } from "../analysis/ownPaper.js";
+import { paperSpeedOf } from "../analysis/paper.js";
+import { defaultTrackerBar, trackerBarOf } from "../systems/index.js";
 import { negotiatedEventOf } from "./negotiation.js";
 import { placedCarriersOf, snapshotOf } from "../analysis/text.js";
-import { copyOfFeature, symbolIn } from "../lookup/lookup.js";
+import { copyOfFeature, symbolIn, versionIn } from "../lookup/lookup.js";
 import { Edition } from "../model/Edition.js";
 
 export type EmulationScope = {
@@ -35,10 +37,68 @@ const meanPunchDiameterOf = (edition: Edition): Millimeters | undefined => {
     return measured.length > 0 ? mean(measured) : undefined
 }
 
+/** The version this one derives from, where it names one the edition has. */
+const baseOf = (edition: Edition, version: Readonly<Version>): Readonly<Version> | undefined => {
+    const derivation = principalDerivationOf(version)
+    return derivation && versionIn(edition, idOf(derivation))
+}
+
+const onOneSystem = (one: Readonly<Version>, other: Readonly<Version>): boolean =>
+    (trackerBarOf(one.system) ?? defaultTrackerBar).id === (trackerBarOf(other.system) ?? defaultTrackerBar).id
+
+/**
+ * The speed the version starts at, as far as the edition states one: as
+ * its own copies state it (`paperSpeedOf`), or else as stated for the
+ * version it derives from on the same system, whose paper it keeps.
+ */
+const statedSpeedOf = (edition: Edition, version: Readonly<Version>, seen: ReadonlySet<string> = new Set()): MetersPerMinute | undefined => {
+    const own = paperSpeedOf(edition, version.id)
+    if (own !== undefined || seen.has(version.id)) return own
+
+    const base = baseOf(edition, version)
+    return base && onOneSystem(base, version)
+        ? statedSpeedOf(edition, base, new Set([...seen, version.id]))
+        : undefined
+}
+
+/**
+ * How long the version's paper runs for a length of the paper of the
+ * version it derives from: as its creation states it where the edition
+ * holds to that, else as the papers the two are performed on relate. That
+ * is what the alignments give for the two systems (`toOwnPaperOf`), which
+ * a performance credits every version of a system with, whether or not its
+ * own copies measure the paper (cf. `lengthRatioOf`).
+ */
+const lengthRatioIn = (edition: Edition, version: Readonly<Version>, base: Readonly<Version>): number | undefined => {
+    const stated = version.creation?.lengthRatio
+    if (stated && isAsserted(certaintyOf(stated))) return stated.value
+
+    const own = toOwnPaperOf(edition, version)
+    const theirs = toOwnPaperOf(edition, base)
+    return own !== undefined && theirs !== undefined ? own / theirs : undefined
+}
+
+/**
+ * The roll a re-cut was made from, as far as its timing goes: the length
+ * ratio, and the speed stated for the original. Nothing for a version that
+ * derives from none, or from one on its own system.
+ */
+const recutFromOf = (edition: Edition, version: Readonly<Version>): RollProperties['recutFrom'] => {
+    const base = baseOf(edition, version)
+    if (!base || onOneSystem(base, version)) return undefined
+
+    const lengthRatio = lengthRatioIn(edition, version, base)
+    if (lengthRatio === undefined) return undefined
+
+    const paperSpeed = statedSpeedOf(edition, base)
+    return { lengthRatio, ...(paperSpeed !== undefined && { paperSpeed }) }
+}
+
 const propertiesOf = (edition: Edition, version: Readonly<Version>): RollProperties => ({
     punchDiameter: meanPunchDiameterOf(edition),
-    tempo: edition.tempoAdjustment,
-    toOwnPaper: toOwnPaperOf(edition, version)
+    toOwnPaper: toOwnPaperOf(edition, version),
+    paperSpeed: statedSpeedOf(edition, version),
+    recutFrom: recutFromOf(edition, version)
 })
 
 /** The onset a symbol has on each copy carrying it, by the copy's id, as the mean of its chains there. */

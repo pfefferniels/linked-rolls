@@ -739,6 +739,18 @@ const withoutFormatVersion = (edition: Json): Json => {
     return rest
 }
 
+/**
+ * An edition once stated one tempo for the roll, which cannot hold where the
+ * roll was issued for systems whose papers run at different speeds. A copy
+ * states the speed it was cut for, and a re-cut's follows from its original's
+ * and the length ratio, so the edition's goes.
+ */
+const withoutTempoAdjustment = (edition: Json): Json => {
+    if (!Object.hasOwn(edition, 'tempoAdjustment')) return edition
+    const { tempoAdjustment: _stated, ...rest } = edition
+    return rest
+}
+
 /** Whether the copy states features, in either shape. */
 const hasFeatures = (copy: Json): boolean =>
     [copy?.features, copy?.production?.produced, copy?.productionEvent?.produced]
@@ -764,7 +776,7 @@ const withReferenceCopy = (edition: Json): Json => {
         : edition
 }
 
-const editionSteps = [withoutFormatVersion, withoutEditionType, withSystems, withEditors, withDerivationTolerance, withReferenceCopy]
+const editionSteps = [withoutFormatVersion, withoutTempoAdjustment, withoutEditionType, withSystems, withEditors, withDerivationTolerance, withReferenceCopy]
 
 export const migrate = (edition: Json): Json =>
     walk(editionSteps.reduce((result, step) => step(result), edition))

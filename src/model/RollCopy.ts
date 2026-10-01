@@ -266,11 +266,14 @@ export interface ProductionEvent {
     system?: Concept
 
     /**
-     * The paper speed the copy was cut for. A copy cut from the same
-     * master for another speed comes out longer or shorter than the
-     * roll it is aligned with by the ratio of the speeds. The alignment
-     * measures that ratio far more closely than a label states a speed,
-     * so the speed is held against what the alignments give
+     * The paper speed the copy was cut for, as the speed at the
+     * beginning of the roll: a tempo marking states it so, and the
+     * take-up spool accelerates from there. A performance of a version
+     * the copy bears witness to starts at it (`paperSpeedOf`). A copy cut
+     * from the same master for another speed comes out longer or shorter
+     * than the roll it is aligned with by the ratio of the speeds. The
+     * alignment measures that ratio far more closely than a label states
+     * a speed, so the speed is held against what the alignments give
      * (`alignmentProblems`) rather than used to find it.
      * @see reo:paperSpeed
      */

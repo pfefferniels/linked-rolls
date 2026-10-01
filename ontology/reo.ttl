@@ -379,15 +379,16 @@ reo:tempo
     rdfs:domain lrmoo:F2_Expression ;
     rdfs:range crm:E54_Dimension ;
     rdfs:label "tempo"@en ;
-    rdfs:comment """This property associates an edition with the speed at which it lets the roll run. Since the take-up spool accelerates as paper winds onto it, the speed is an interval from the beginning of the roll (from) to its end (to), in the unit given by P91 has unit, as feet or metres per minute."""@en ;
-    rdfs:isDefinedBy <https://w3id.org/reo/> .
+    rdfs:comment """This property associated an edition with the speed at which it let the roll run, as an interval from the beginning of the roll (from) to its end (to). It is no longer used: one speed for the whole edition cannot hold where the roll was issued for several systems, whose papers run at different speeds. The speed a copy was cut for is stated with reo:paperSpeed, and the speed of a re-cut follows from that of its original and reo:lengthRatio."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> ;
+    owl:deprecated true .
 
 reo:paperSpeed
     a owl:ObjectProperty ;
     rdfs:domain lrmoo:F32_Item_Production_Event ;
     rdfs:range crm:E54_Dimension ;
     rdfs:label "paper speed"@en ;
-    rdfs:comment """This property associates the production of a copy with the paper speed the copy was cut for, as its label, its catalogue or its format states it: a value (P90 has value) in the unit given by P91 has unit, as feet or metres per minute. Rolls for the Green Welte and the Licensee were cut from the Welte-Mignon masters for slower paper speeds (Phillips 2016, pp. 121 and 123), so such a copy comes out shorter than the red roll of the same recording by the ratio of the speeds. An alignment of the two measures that ratio together with how far the paper of each has stretched, and measures it more closely than a label states a speed; this property states what the label or the catalogue says, which is held against the ratio rather than used to find it. What the alignments give is stated of the re-cut by reo:lengthRatio. CIDOC CRM gives an activity no dimension of its own, hence a property of this ontology."""@en ;
+    rdfs:comment """This property associates the production of a copy with the paper speed the copy was cut for, as its label, its catalogue or its format states it: a value (P90 has value) in the unit given by P91 has unit, as feet or metres per minute. It is the speed at the beginning of the roll, as a tempo marking gives it, from which the take-up spool accelerates, and a performance of a version the copy bears witness to starts at it. Rolls for the Green Welte and the Licensee were cut from the Welte-Mignon masters for slower paper speeds (Phillips 2016, pp. 121 and 123), so such a copy comes out shorter than the red roll of the same recording by the ratio of the speeds. An alignment of the two measures that ratio together with how far the paper of each has stretched, and measures it more closely than a label states a speed; this property states what the label or the catalogue says, which is held against the ratio rather than used to find it. What the alignments give is stated of the re-cut by reo:lengthRatio. CIDOC CRM gives an activity no dimension of its own, hence a property of this ontology."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:lengthRatio
