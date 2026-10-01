@@ -93,7 +93,15 @@ and it starts after the start of the recording of the roll and of the
 creation of every version it derives from (P176, declared transitive
 for the purpose). The export states a creation for every
 version so that these have a node to reach, and the import drops those
-that state nothing.
+that state nothing. In October 2026 the three terms still marked
+deprecated were withdrawn rather than kept, nothing having been built
+on them: `reo:tempo`, the one speed an edition stated for the whole
+roll, which cannot hold where the roll was issued for systems whose
+papers run at different speeds (`reo:paperSpeed` and `reo:lengthRatio`
+state what it tried to), and `reot:edition` and `reot:unicum`, the
+kinds of version from before the copies that witness a version said
+on how many it stands. `migrate` drops the edition's tempo and reads
+the old version types as before.
 
 ## Publishing
 

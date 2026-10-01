@@ -1,6 +1,5 @@
 @prefix reot:    <https://w3id.org/reo/type/> .
 @prefix crm:     <http://www.cidoc-crm.org/cidoc-crm/> .
-@prefix owl:     <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
@@ -78,20 +77,6 @@ reot:treble a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/t
     skos:broader <https://w3id.org/reo/type/procedure/umstanzung> ;
     rdfs:label "Umstanzung vom T-100 ins grüne System"@de , "re-punching, T-100 to the green system"@en ;
     rdfs:comment "The rule by which a T-100 roll was re-punched for the Welte-Mignon T-98 (green). The notes stand at their pitch, on the middle 80 of the system's 88 positions, which is the T-100's compass. The expression has to be re-spelled: the T-98 holds a function for as long as one perforation lasts where the T-100 latches it on with one perforation and cancels it with a second (Hagmann, pp. 89 f. and 100–103), so each pair of the T-100 becomes a single perforation running from the one to the other. The motor tracks fall away, and the rewind is driven by a long perforation on the bass sforzando-piano line rather than by a valve of its own. Lawson (The Pianola Journal 20, 2009, p. 26) reports that the name Kähle stands on some of the second master rolls at USC as the man who 'corrected' them for this system, and that part of the work was to re-lay the pedal tracks so that no perforation grew long enough to weaken the paper."@en .
-
-
-# Kind of a version (P2 has type on a version, an F2 Expression). The
-# format no longer types versions: the copies that witness a version
-# say on how many it stands.
-
-reot:edition a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
-    rdfs:label "edition"@en ;
-    rdfs:comment "A version of the roll that served, or may have served, as the master for reproductions."@en ;
-    owl:deprecated true .
-reot:unicum a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
-    rdfs:label "unicum"@en ;
-    rdfs:comment "A version of the roll found on one copy only."@en ;
-    owl:deprecated true .
 
 
 # Kind of a condition state (P2 has type on an E3 Condition State)

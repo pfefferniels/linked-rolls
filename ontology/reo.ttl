@@ -361,7 +361,7 @@ reo:from
     rdfs:domain crm:E54_Dimension ;
     rdfs:range xsd:decimal ;
     rdfs:label "from"@en ;
-    rdfs:comment """This property states the lower bound of a dimension that is an interval, as the extent of a chain of holes along the roll (in millimetres from its beginning) or across it (in tracks of the tracker bar), or the speed at the beginning of a roll. The unit is given by P91 has unit."""@en ;
+    rdfs:comment """This property states the lower bound of a dimension that is an interval, as the extent of a chain of holes along the roll (in millimetres from its beginning) or across it (in tracks of the tracker bar). The unit is given by P91 has unit."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
 reo:to
@@ -372,16 +372,6 @@ reo:to
     rdfs:label "to"@en ;
     rdfs:comment """This property states the upper bound of a dimension that is an interval. A chain that occupies a single track has no upper bound across the roll."""@en ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
-
-reo:tempo
-    a owl:ObjectProperty ;
-    rdfs:subPropertyOf crm:P43_has_dimension ;
-    rdfs:domain lrmoo:F2_Expression ;
-    rdfs:range crm:E54_Dimension ;
-    rdfs:label "tempo"@en ;
-    rdfs:comment """This property associated an edition with the speed at which it let the roll run, as an interval from the beginning of the roll (from) to its end (to). It is no longer used: one speed for the whole edition cannot hold where the roll was issued for several systems, whose papers run at different speeds. The speed a copy was cut for is stated with reo:paperSpeed, and the speed of a re-cut follows from that of its original and reo:lengthRatio."""@en ;
-    rdfs:isDefinedBy <https://w3id.org/reo/> ;
-    owl:deprecated true .
 
 reo:paperSpeed
     a owl:ObjectProperty ;
