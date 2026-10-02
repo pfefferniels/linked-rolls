@@ -4,7 +4,8 @@ import { FeatureOrPatch, HorizontalSpan, isPlaced, NestedFeature } from "../mode
 import { AnySymbol } from "../model/Symbol.js";
 import { deletedBy, insertedBy } from "../model/Version.js";
 import { idsOf } from "../model/Assumption.js";
-import { mean, Millimeters } from "../model/Quantity.js";
+import { Millimeters } from "../model/Quantity.js";
+import { medianOf } from "../collation/statistics.js";
 import { featuresIn } from "../lookup/lookup.js";
 import { perState } from "../lookup/perState.js";
 import { lineageOf } from "./stemma.js";
@@ -20,6 +21,11 @@ export const placedCarriersOf = (edition: Pick<Edition, 'copies'>, symbol: AnySy
  * Where along the roll the symbol lies, as its carriers put it, or
  * nothing for a symbol no copy carries.
  *
+ * Either end is the median of the carriers' rather than their mean, so
+ * that a copy which puts the symbol well away from the rest, torn,
+ * stretched or badly aligned there, does not draw it away from where
+ * the others agree it lies. Two carriers have the two alike.
+ *
  * Only the place is measured. Which track the symbol sits on is not
  * a measurement but a question for a tracker bar, since a note of
  * one pitch sits on exactly one position of a given bar: ask
@@ -31,16 +37,14 @@ export const placedCarriersOf = (edition: Pick<Edition, 'copies'>, symbol: AnySy
  */
 export const placeOf = (edition: Pick<Edition, 'copies'>, symbol: AnySymbol): Readonly<HorizontalSpan> | undefined => {
     const carriers = placedCarriersOf(edition, symbol)
-    if (carriers.length === 0) return
+    const from = medianOf(carriers.map(carrier => carrier.horizontal.from))
+    const to = medianOf(carriers.map(carrier => carrier.horizontal.to))
+    if (from === undefined || to === undefined) return
 
-    return {
-        unit: 'mm',
-        from: mean(carriers.map(carrier => carrier.horizontal.from)),
-        to: mean(carriers.map(carrier => carrier.horizontal.to))
-    }
+    return { unit: 'mm', from, to }
 }
 
-/** Where the symbol begins, as the mean onset of its carriers, or nothing for a symbol without a place. */
+/** Where the symbol begins, as the median onset of its carriers, or nothing for a symbol without a place. */
 export const onsetOf = (edition: Pick<Edition, 'copies'>, symbol: AnySymbol): Millimeters | undefined =>
     placeOf(edition, symbol)?.from
 

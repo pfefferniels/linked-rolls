@@ -62,9 +62,26 @@ const carriedByBoth = () => editionOf(
 describe('where a symbol lies and which track it sits on', () => {
     const noteOf = (edition: Edition) => snapshotOf(edition, 'A')[0] as Note
 
-    it('averages the place its carriers measure', () => {
+    it('takes the middle of the places its carriers measure', () => {
         const seen = carriedByBoth()
         expect(placeOf(seen, noteOf(seen))).toEqual({ unit: 'mm', from: 1000.5, to: 1010.5 })
+    })
+
+    /** A mean would begin the note at 1004 mm, where no copy has it. */
+    it('is not drawn away by one copy that puts the note well off the others', () => {
+        const seen = editionOf(
+            [
+                copy('first', [hole('hole-first', 1000, 1010, 47)]),
+                copy('second', [hole('hole-second', 1001, 1011, 47)]),
+                copy('stretched', [hole('hole-stretched', 1011, 1018, 47)])
+            ],
+            [version('A', [{
+                type: 'edit',
+                id: 'edit-a',
+                insert: [note('note', 60, 'hole-first', 'hole-second', 'hole-stretched')]
+            }])]
+        )
+        expect(placeOf(seen, noteOf(seen))).toEqual({ unit: 'mm', from: 1001, to: 1011 })
     })
 
     /**
