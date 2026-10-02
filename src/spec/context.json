@@ -99,6 +99,7 @@
     },
 
     "title": "dcterms:title",
+    "version": "owl:versionInfo",
     "license": {
       "@id": "dcterms:license",
       "@type": "@id"

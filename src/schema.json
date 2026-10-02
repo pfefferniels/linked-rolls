@@ -617,6 +617,14 @@
           "type": "string",
           "ontology": "dcterms:title"
         },
+        "version": {
+          "description": "The version of the edition, which a citation names together with the publication date. The editor raises it for each release and sets the publication date with it, so that what a reader cited can be told from what has changed since. An edition published before this field existed states none.",
+          "examples": [
+            "1.0"
+          ],
+          "type": "string",
+          "ontology": "owl:versionInfo"
+        },
         "versions": {
           "description": "The different versions of the roll on which this edition is based.",
           "items": {
@@ -649,7 +657,7 @@
           "ontology": "crm:P14 carried out by"
         },
         "publicationDate": {
-          "description": "The date on which the edition was published.",
+          "description": "The date on which the edition was published: where it states a version, the date of that version.",
           "format": "date",
           "type": "string",
           "ontology": "dcterms:date"

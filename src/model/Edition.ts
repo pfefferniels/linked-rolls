@@ -24,7 +24,8 @@ export interface EditionCreation {
     publisher: Person
 
     /**
-     * The date on which the edition was published.
+     * The date on which the edition was published: where it states a
+     * version, the date of that version.
      * @format date
      * @see dcterms:date
      */
@@ -132,6 +133,17 @@ export interface Edition {
     license: string
 
     /**
+     * The version of the edition, which a citation names together with
+     * the publication date. The editor raises it for each release and
+     * sets the publication date with it, so that what a reader cited can
+     * be told from what has changed since. An edition published before
+     * this field existed states none.
+     * @see owl:versionInfo
+     * @example "1.0"
+     */
+    version?: string
+
+    /**
      * The roll which is edited in this edition.
      * @see lrmoo:R3i realises
      */
@@ -164,7 +176,7 @@ export interface Edition {
     versions: Version[]
 }
 
-export type EditionMetadata = Pick<Edition, 'base' | 'title' | 'license' | 'creation' | 'roll'>
+export type EditionMetadata = Pick<Edition, 'base' | 'title' | 'license' | 'version' | 'creation' | 'roll'>
 
 /**
  * The copy whose millimetres are the edition's axis: the one it names,
