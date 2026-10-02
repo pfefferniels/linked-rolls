@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { produce } from 'immer'
 import { copyIn, versionIn } from '../src/lookup/lookup'
-import { getAt, linksTo, pathIn } from '../src/lookup/paths'
+import { getAt, idsIn, linksTo, pathIn } from '../src/lookup/paths'
 import { predecessorOf } from '../src/analysis/stemma'
 import { placeOf, snapshotOf } from '../src/analysis/text'
 import { stateOf } from '../src/ops/draft'
@@ -38,6 +38,12 @@ describe('indexing an edition', () => {
         expect(predecessorOf(seen, 'B')?.id).toEqual('A')
         expect(snapshotOf(seen, 'B').map(symbol => symbol.id)).toEqual(['note'])
         expect(pathIn(seen, 'A')).toEqual(['versions', 1])
+    })
+
+    it('names every id an entity goes by, and none that is only referenced', () => {
+        const ids = [...idsIn(childFirst())]
+        expect(ids).toEqual(expect.arrayContaining(['first', 'hole-note', 'A', 'B', 'edit-a', 'note']))
+        expect(new Set(ids).size).toBe(ids.length)
     })
 })
 

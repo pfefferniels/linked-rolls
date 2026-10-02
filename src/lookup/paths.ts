@@ -103,6 +103,10 @@ export const pathIn = (edition: Edition, id: string): Path | undefined => {
     return trail === undefined ? undefined : laidOut(trail);
 }
 
+/** Every id the edition gives an entity of its own, references left out. */
+export const idsIn = (edition: Edition): Iterable<string> =>
+    placesIn(edition).paths.keys();
+
 /** Where the edition references the id. */
 export const linksTo = (edition: Edition, id: string): Path[] =>
     (placesIn(edition).links.get(id) ?? []).map(laidOut);
