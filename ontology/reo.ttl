@@ -338,6 +338,15 @@ reo:witness
     owl:propertyChainAxiom ( lrmoo:R17i_was_created_by crm:P16_used_specific_object ) ;
     rdfs:isDefinedBy <https://w3id.org/reo/> .
 
+reo:referenceCopy
+    a owl:ObjectProperty ;
+    rdfs:subPropertyOf reo:witness ;
+    rdfs:domain lrmoo:F2_Expression ;
+    rdfs:range lrmoo:F5_Item ;
+    rdfs:label "reference copy"@en ;
+    rdfs:comment """This property associates a digital edition with the copy whose paper it measures the roll by: the places the edition cites along the roll are places on this copy, counted from where its scan begins, and every other copy is aligned onto it. The places a copy's features state in the graph are its own, so none of them depends on which copy this is; the choice is an editorial one, and a copy scanned whole and without tears serves best. The reference copy is one of the copies the edition is based on, hence a subproperty of reo:witness."""@en ;
+    rdfs:isDefinedBy <https://w3id.org/reo/> .
+
 reo:siglum
     a owl:DatatypeProperty ;
     rdfs:domain [ a owl:Class ; owl:unionOf ( lrmoo:F2_Expression lrmoo:F5_Item ) ] ;

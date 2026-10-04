@@ -601,8 +601,9 @@
           "ontology": "dcterms:license"
         },
         "referenceCopy": {
-          "description": "The copy whose millimetres are the edition's axis, by id: every place the edition gives along the roll is a place on this copy's paper, counted from where its scan begins, and every other copy is aligned onto it. Choosing it is the one editorial decision the alignment leaves; a copy scanned whole and without tears serves best, since its places are what notes and readers cite. Left out, it is the first copy with features that is not aligned (`referenceCopyOf`). Not exported to RDF.",
-          "type": "string"
+          "description": "The copy whose millimetres are the edition's axis, by id: every place the edition gives along the roll is a place on this copy's paper, counted from where its scan begins, and every other copy is aligned onto it. Choosing it is the one editorial decision the alignment leaves; a copy scanned whole and without tears serves best, since its places are what notes and readers cite. Left out, it is the first copy with features that is not aligned (`referenceCopyOf`).",
+          "type": "string",
+          "ontology": "reo:referenceCopy"
         },
         "roll": {
           "$ref": "#/definitions/Roll",

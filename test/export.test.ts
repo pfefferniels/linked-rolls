@@ -1,4 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import jsonld from 'jsonld'
+import context from '../src/spec/context.json'
+import welteT100Context from '../src/spec/welte-t100.context.json'
+import welteLicenseeContext from '../src/spec/welte-licensee.context.json'
+import welteT98Context from '../src/spec/welte-t98.context.json'
 import { importJsonLd } from '../src/io/importJsonLd';
 import * as path from 'path'
 import { readFileSync } from 'fs';
@@ -14,6 +19,19 @@ import { feetPerMinute } from '../src/model/Quantity';
 
 const edition = () =>
     importJsonLd(JSON.parse(readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8')))
+
+const contexts: Record<string, unknown> = {
+    'https://w3id.org/reo/context.jsonld': context,
+    'https://w3id.org/reo/welte-t100/context.jsonld': welteT100Context,
+    'https://w3id.org/reo/welte-licensee/context.jsonld': welteLicenseeContext,
+    'https://w3id.org/reo/welte-green/context.jsonld': welteT98Context
+}
+
+const documentLoader = async (url: string) => {
+    const document = contexts[url]
+    if (!document) throw new Error(`no local copy of ${url}`)
+    return { contextUrl: undefined, documentUrl: url, document }
+}
 
 describe('Export', () => {
     it('serialises an edition', () => {
@@ -249,6 +267,15 @@ describe('Export', () => {
 
     it('names the reference copy, whose places are the axis', () => {
         expect(asJsonLd(edition()).referenceCopy).toBe(edition().copies[0].id)
+    })
+
+    it('states the reference copy in RDF as the very copy it lists among the witnesses', async () => {
+        const reo = 'https://w3id.org/reo/'
+        const exported = JSON.parse(JSON.stringify(asJsonLd({ ...edition(), base: 'https://example.org/edition/' })))
+        const [node] = await jsonld.expand(exported, { documentLoader }) as any[]
+        const [reference] = node[`${reo}referenceCopy`]
+        expect(reference['@id']).toBe(`https://example.org/edition/${edition().copies[0].id}`)
+        expect(node[`${reo}witness`].map((copy: any) => copy['@id'])).toContain(reference['@id'])
     })
 
     it('carries the siglum of a copy there and back, and none where a copy has none', () => {

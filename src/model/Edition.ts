@@ -164,7 +164,7 @@ export interface Edition {
      * best, since its places are what notes and readers cite. Left out,
      * it is the first copy with features that is not aligned
      * (`referenceCopyOf`).
-     * Not exported to RDF.
+     * @see reo:referenceCopy
      */
     referenceCopy?: string
 
