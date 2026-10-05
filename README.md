@@ -111,6 +111,7 @@ npm run build
 
 ## Releasing
 
-Raise the version in `package.json`, commit, and push a tag
-`v<version>`. The `publish.yml` workflow builds, tests and publishes to
-npm.
+Raise the version in `package.json` and in `CITATION.cff`, there with
+the day as `date-released`, commit, and push a tag `v<version>`. The
+`publish.yml` workflow builds, tests and publishes to npm; a test fails
+while the two versions differ.

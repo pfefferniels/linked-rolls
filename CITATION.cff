@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it as below.
+type: software
+title: linked-rolls
+abstract: >-
+  A TypeScript library for digital editions of piano rolls. It reads roll
+  copies from scans and analysis files, collates them into versions,
+  records editorial assumptions together with the beliefs behind them,
+  exports the edition as JSON-LD in the Roll Edition Format, and plays a
+  version through an emulated reproducing piano.
+authors:
+  - family-names: Pfeffer
+    given-names: Niels
+    orcid: https://orcid.org/0000-0002-6210-7255
+version: 0.70.0
+date-released: 2026-10-04
+license: MIT
+repository-code: https://github.com/pfefferniels/linked-rolls
+url: https://pfefferniels.github.io/linked-rolls/
+keywords:
+  - piano rolls
+  - reproducing piano
+  - Welte-Mignon
+  - digital scholarly edition
+  - JSON-LD
+  - CIDOC CRM
