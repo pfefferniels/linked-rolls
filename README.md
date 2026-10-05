@@ -94,8 +94,8 @@ The export uses the Roll Edition Ontology (REO), namespace
 `https://w3id.org/reo/`, together with CIDOC CRM, LRMoo and CRMinf. The
 ontology is in `ontology/`. It is published with its context and the
 documentation of the format at
-https://pfefferniels.github.io/linked-rolls/ (the w3id.org identifiers are
-not registered yet).
+https://pfefferniels.github.io/linked-rolls/, to which the w3id.org
+identifiers redirect.
 
 Beliefs are written as JSON-LD-star annotations (`@annotation`), so you
 need a processor that supports JSON-LD-star to read them.

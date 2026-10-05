@@ -60,10 +60,10 @@ The namespace IRI is unversioned. Each release also lives under a
 versioned IRI such as `https://w3id.org/reo/1.0/` and declares it as
 `owl:versionIRI`. From the first frozen release a term is never
 renamed: one that falls out of use is deprecated and kept. Until then
-the vocabulary may still be corrected in place. 1.0 is a draft, the
-w3id entry is not registered and nothing under it resolves, so no term
-can yet have been built on. On this ground the five capitalised terms
-of the writing methods and the patch materials (`reot:Print`,
+the vocabulary may still be corrected in place. 1.0 is a draft, and
+until its w3id entry was registered on 5 October 2026 nothing under it
+resolved, so no term could have been built on. On this ground the five
+capitalised terms of the writing methods and the patch materials (`reot:Print`,
 `reot:Handwriting`, `reot:Stamp`, `reot:Paper`, `reot:Tape`) were
 lower-cased in September 2026 to match the rest of the vocabulary, and
 `migrate` reads the old spellings. On the same ground the four types
@@ -109,8 +109,11 @@ publishes them, the Turtle files and the context on GitHub Pages:
 | Turtle | `…/reo/reo.ttl`, `…/reo/types.ttl`, `…/reo/type/welte-t100/welte-t100.ttl`, `…/reo/type/welte-green/welte-green.ttl` |
 | Contexts | `…/reo/context.jsonld`, and one per system under `…/reo/welte-t100/`, `…/reo/welte-green/` and `…/reo/welte-licensee/` |
 
-The w3id.org entry is not registered yet, so the namespace IRIs do not
-resolve at present. Once it is, it redirects to these locations.
+Since 5 October 2026 the namespace IRIs resolve through w3id.org,
+which redirects to these locations: Turtle to a client that asks for
+RDF, the pages to anything else, and the contexts and every other path
+to the same path here. The redirects are kept in `ids/reo/` of the
+registry, https://github.com/perma-id/w3id.org/tree/master/ids/reo.
 
 ## Status
 
