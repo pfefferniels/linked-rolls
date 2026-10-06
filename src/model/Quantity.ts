@@ -11,7 +11,7 @@ declare const unit: unique symbol
 /**
  * The units a record may state. A `Measure` is limited to these, since
  * they are what the `unit` field is allowed to say.
- * @category Model
+ * @category Format types
  */
 export type Unit = 'mm' | 'cm' | 'px' | 'track' | 's' | 'ms' | 'ft/min' | 'm/min' | 'px/in' | 'deg' | 'percent'
 
@@ -24,120 +24,120 @@ export type Quantity<U extends string> = number & { readonly [unit]: U }
 
 /**
  * A place along the roll, or any length on the paper.
- * @category Model
+ * @category Units
  */
 export type Millimeters = Quantity<'mm'>
 /**
  * A length in centimetres.
- * @category Model
+ * @category Units
  */
 export type Centimeters = Quantity<'cm'>
 /**
  * A place in a scan. Comparable within one scan only, since the resolution is the scan's.
- * @category Model
+ * @category Units
  */
 export type Pixels = Quantity<'px'>
 /**
  * A position across the roll, numbered as the tracker bar does.
- * @category Model
+ * @category Units
  */
 export type Track = Quantity<'track'>
 /**
  * A time in seconds, such as the moment a performed event falls at.
- * @category Model
+ * @category Units
  */
 export type Seconds = Quantity<'s'>
 /**
  * A time in milliseconds.
- * @category Model
+ * @category Units
  */
 export type Milliseconds = Quantity<'ms'>
 /**
  * A paper speed in feet per minute.
- * @category Model
+ * @category Units
  */
 export type FeetPerMinute = Quantity<'ft/min'>
 /**
  * A paper speed in metres per minute.
- * @category Model
+ * @category Units
  */
 export type MetersPerMinute = Quantity<'m/min'>
 /**
  * How finely a scan was read: pixels of the image per inch of paper.
- * @category Model
+ * @category Units
  */
 export type Resolution = Quantity<'px/in'>
 /**
  * An angle on the roll, turning from the line across the paper towards the end of the roll.
- * @category Model
+ * @category Units
  */
 export type Degrees = Quantity<'deg'>
 /**
  * A share of a length, such as how far the paper has stretched: dimensionless, in hundredths.
- * @category Model
+ * @category Units
  */
 export type Percent = Quantity<'percent'>
 
 /**
  * Names a number in a unit. Partially apply it to make a constructor.
- * @category Model
+ * @category Units
  */
 export const quantity = <U extends string>(value: number): Quantity<U> => value as Quantity<U>
 
 /**
  * Names a number in millimetres.
- * @category Model
+ * @category Units
  */
 export const mm = quantity<'mm'>
 /**
  * Names a number in centimetres.
- * @category Model
+ * @category Units
  */
 export const cm = quantity<'cm'>
 /**
  * Names a number in pixels of a scan.
- * @category Model
+ * @category Units
  */
 export const px = quantity<'px'>
 /**
  * Names a number as a position across the roll, as the tracker bar
  * numbers it.
- * @category Model
+ * @category Units
  */
 export const track = quantity<'track'>
 /**
  * Names a number in seconds.
- * @category Model
+ * @category Units
  */
 export const seconds = quantity<'s'>
 /**
  * Names a number in milliseconds.
- * @category Model
+ * @category Units
  */
 export const milliseconds = quantity<'ms'>
 /**
  * Names a number as a paper speed in feet per minute.
- * @category Model
+ * @category Units
  */
 export const feetPerMinute = quantity<'ft/min'>
 /**
  * Names a number as a paper speed in metres per minute.
- * @category Model
+ * @category Units
  */
 export const metersPerMinute = quantity<'m/min'>
 /**
  * Names a number as the resolution of a scan, in pixels per inch.
- * @category Model
+ * @category Units
  */
 export const pixelsPerInch = quantity<'px/in'>
 /**
  * Names a number as an angle in degrees.
- * @category Model
+ * @category Units
  */
 export const degrees = quantity<'deg'>
 /**
  * Names a number as a share in per cent.
- * @category Model
+ * @category Units
  */
 export const percent = quantity<'percent'>
 
@@ -145,7 +145,7 @@ export const percent = quantity<'percent'>
  * A value together with the unit it was measured in, as a record
  * states it.
  * @see crm:E54 Dimension
- * @category Model
+ * @category Format types
  */
 export interface Measure<U extends Unit> {
     /**
@@ -268,13 +268,13 @@ const METERS_PER_FOOT = 0.3048
 
 /**
  * A speed as a record states it, in feet or metres per minute.
- * @category Model
+ * @category Format types
  */
 export type SpeedMeasure = Measure<'ft/min'> | Measure<'m/min'>
 
 /**
  * A speed in metres per minute, whichever unit it was stated in.
- * @category Model
+ * @category Units
  */
 export const inMetersPerMinute = (speed: SpeedMeasure): MetersPerMinute =>
     speed.unit === 'm/min' ? speed.value : metersPerMinute(speed.value * METERS_PER_FOOT)

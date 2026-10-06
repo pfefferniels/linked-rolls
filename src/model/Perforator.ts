@@ -12,7 +12,7 @@ import { WithId, WithType } from "../shared/utils.js";
  * runs along the roll, and is another thing than the hole separation,
  * which is the distance across the roll from one track to the next.
  * @see crm:E54 Dimension
- * @category Model
+ * @category Format types
  */
 export interface ChainPitch extends Measure<'mm'> {
     /**
@@ -41,7 +41,7 @@ export interface ChainPitch extends Measure<'mm'> {
  * with a whole number of steps, so its lengths fall on a comb of this
  * spacing.
  * @see crm:E54 Dimension
- * @category Model
+ * @category Format types
  */
 export interface Advance extends Measure<'mm'> {
     /**
@@ -66,7 +66,7 @@ export interface Advance extends Measure<'mm'> {
  * perforations show it. No time is stated: how long a machine kept a
  * setting is for a comparison across rolls to find out.
  * @see crm:E3 Condition State
- * @category Model
+ * @category Format types
  */
 export interface PerforatorSetting extends ConditionState<'setting'> {
     /**
@@ -103,14 +103,14 @@ export const drives = [
 
 /**
  * The IRI of a drive the type vocabulary declares.
- * @category Model
+ * @category Format types
  */
 export type DriveId = typeof drives[number]['id']
 
 /**
  * A drive, named by its IRI alone.
  * @see crm:E55 Type
- * @category Model
+ * @category Format types
  */
 export interface Drive {
     /** The IRI the type vocabulary gives the drive. */
@@ -122,7 +122,7 @@ export interface Drive {
  * alone. Whether it is the one another copy was punched on is left to a
  * statement of identity made about it elsewhere, which its id allows.
  * @see crm:E22 Human-Made Object
- * @category Model
+ * @category Format types
  */
 export interface Perforator extends WithType<'Perforator'>, WithId {
     /**

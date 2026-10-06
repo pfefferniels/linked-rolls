@@ -14,6 +14,17 @@
  * which the API reference leaves out.
  *
  * @module linked-rolls
+ *
+ * @categoryDescription Format types
+ * The types of an edition. They are documented field by field, with the
+ * ontology terms each field maps to, in the
+ * [format reference](https://pfefferniels.github.io/linked-rolls/); they
+ * are listed here so that the signatures can link to them.
+ *
+ * @categoryDescription Units
+ * A quantity is a plain number at runtime; its unit lives in its type, so
+ * that a length in millimetres cannot be passed where one in pixels is
+ * wanted. The constructors make a number into a quantity.
  */
 export type { WithId, WithNote, WithType } from './shared/utils.js'
 export * from './model/Quantity.js'
@@ -24,7 +35,7 @@ export * from './model/Quantity.js'
  * is the plain number it was made from. A number becomes a quantity only
  * through a constructor such as `mm` or `track`, and a quantity in one
  * unit cannot stand in for one in another.
- * @category Model
+ * @category Units
  */
 export type { Quantity } from './model/Quantity.js'
 export * from './model/Agent.js'

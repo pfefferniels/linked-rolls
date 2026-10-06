@@ -9,7 +9,7 @@ import { Measure, Millimeters, Track } from "./Quantity.js";
  * measured in millimeters from the beginning of the roll.
  * The `from` value is the start position and `to` is the end position.
  * @see crm:E54 Dimension
- * @category Model
+ * @category Format types
  */
 export interface HorizontalSpan {
     /**
@@ -37,7 +37,7 @@ export interface HorizontalSpan {
  * measured in track numbers. Track numbers correspond to
  * positions on the tracker bar.
  * @see crm:E54 Dimension
- * @category Model
+ * @category Format types
  */
 export interface VerticalSpan {
     /**
@@ -67,13 +67,13 @@ export const featureTypes = ['HoleChain', 'Writing', 'Mark', 'Patch'] as const;
 
 /**
  * The type naming a kind of feature.
- * @category Model
+ * @category Format types
  */
 export type FeatureType = typeof featureTypes[number];
 
 /**
  * Whether the value names a kind of feature.
- * @category Model
+ * @category Lookups
  */
 export const isFeatureType = (value: unknown): value is FeatureType =>
     featureTypes.includes(value as FeatureType);
@@ -83,7 +83,7 @@ export const isFeatureType = (value: unknown): value is FeatureType =>
  * patch, defined by its horizontal and vertical position and
  * extent. Each kind of feature is a class of its own, which its type
  * names.
- * @category Model
+ * @category Format types
  */
 export interface RollFeature<T extends FeatureType, DamageT extends string> extends WithId, WithType<T> {
     /**
@@ -125,7 +125,7 @@ export const conditions = {
 
 /**
  * The kinds of condition a feature may be in, whichever kind of feature it is.
- * @category Model
+ * @category Format types
  */
 export type FeatureConditionType = typeof conditions[FeatureType][number];
 
@@ -133,7 +133,7 @@ export type FeatureConditionType = typeof conditions[FeatureType][number];
  * A condition assigned to a feature, annotatable with a belief about
  * its certainty. Which of the kinds a feature may be in depends on its
  * own kind, which `conditions` states.
- * @category Model
+ * @category Format types
  */
 export type FeatureConditionAssignment = ObjectAssumption<ConditionState<FeatureConditionType>>;
 
@@ -147,14 +147,14 @@ export type FeatureConditionAssignment = ObjectAssumption<ConditionState<Feature
  * features on mechanical or digital carriers" among the features
  * purposely created by human activity.
  * @see reo:HoleChain
- * @category Model
+ * @category Format types
  */
 export interface HoleChain extends RollFeature<'HoleChain', typeof conditions.HoleChain[number]> {}
 
 /**
  * Something that lies on a face of the paper rather than through it. A
  * chain of holes is not one: it goes through, and is on both faces at once.
- * @category Model
+ * @category Format types
  */
 export interface OnAFace {
     /**
@@ -173,7 +173,7 @@ export const techniques = ['print', 'handwriting', 'stamp'] as const;
 
 /**
  * How a trace was put on the paper.
- * @category Model
+ * @category Format types
  */
 export type Technique = typeof techniques[number];
 
@@ -185,14 +185,14 @@ export const media = ['ink', 'pencil', 'crayon'] as const;
 
 /**
  * What a trace was put on with.
- * @category Model
+ * @category Format types
  */
 export type Medium = typeof media[number];
 
 /**
  * A trace is a visible mark or writing on the roll surface.
  * Traces may fade over time.
- * @category Model
+ * @category Format types
  */
 export interface Trace<T extends FeatureType> extends RollFeature<T, typeof conditions[T][number]>, OnAFace {
     /**
@@ -213,7 +213,7 @@ export interface Trace<T extends FeatureType> extends RollFeature<T, typeof cond
 
 /**
  * The text a writing carries. It names no carriers of its own, the writing being its carrier.
- * @category Model
+ * @category Format types
  */
 export type Transcription = Omit<Text, 'carriers'>
 
@@ -222,7 +222,7 @@ export type Transcription = Omit<Text, 'carriers'>
  * catalogue number, or annotation. Writings state how they were made
  * and a transcription of their content.
  * @see reo:Writing
- * @category Model
+ * @category Format types
  */
 export interface Writing extends Trace<'Writing'> {
     /**
@@ -257,7 +257,7 @@ export interface Writing extends Trace<'Writing'> {
  * reading of it (crminf:I16 Meaning Comprehension) rather than a
  * property of the feature, so its shape is not stated here.
  * @see reo:Mark
- * @category Model
+ * @category Format types
  */
 export interface Mark extends Trace<'Mark'> { }
 
@@ -266,7 +266,7 @@ export interface Mark extends Trace<'Mark'> { }
  * strip covering perforations, or a patch reinforcing a tear. A patch
  * may itself carry other features, such as writings or holes.
  * @see reo:Patch
- * @category Model
+ * @category Format types
  */
 export interface Patch extends RollFeature<'Patch', typeof conditions.Patch[number]>, OnAFace {
     /**
@@ -295,7 +295,7 @@ export interface Patch extends RollFeature<'Patch', typeof conditions.Patch[numb
  * The features proper: a chain of holes, a writing and a mark are all
  * human-made features, and each of them is borne by whatever it sits on.
  * A patch is an object glued onto the paper and stands apart from them.
- * @category Model
+ * @category Format types
  */
 export type AnyFeature = HoleChain | Writing | Mark;
 
@@ -303,7 +303,7 @@ export type AnyFeature = HoleChain | Writing | Mark;
  * Anything found at a place of its own on the roll: a feature or a
  * patch. E24 Physical Human-Made Thing is the class both fall under,
  * E22 and E25 being its subclasses.
- * @category Model
+ * @category Format types
  */
 export type FeatureOrPatch = AnyFeature | Patch;
 
@@ -316,20 +316,20 @@ type Unplaced<T> = T extends FeatureOrPatch ? PartialBy<T, 'horizontal' | 'verti
 /**
  * A feature borne by another feature. It states no place of its own,
  * the feature bearing it standing in one.
- * @category Model
+ * @category Format types
  */
 export type NestedFeature = Unplaced<FeatureOrPatch>;
 
 /**
  * Whether the feature states a place of its own, which one a patch bears does not.
- * @category Model
+ * @category Lookups
  */
 export const isPlaced = (feature: NestedFeature): feature is FeatureOrPatch =>
     feature.horizontal !== undefined && feature.vertical !== undefined;
 
 /**
  * Whether the object is a feature or a patch, as its type says.
- * @category Model
+ * @category Lookups
  */
 export const isRollFeature = (obj: object): obj is FeatureOrPatch => {
     return 'type' in obj && isFeatureType(obj.type);
@@ -337,21 +337,21 @@ export const isRollFeature = (obj: object): obj is FeatureOrPatch => {
 
 /**
  * Whether the feature is a patch.
- * @category Model
+ * @category Lookups
  */
 export const isPatch = <T extends NestedFeature>(feature: T): feature is T & Patch =>
     feature.type === 'Patch';
 
 /**
  * The features a feature bears: a patch those stated as parts of it, any other feature none.
- * @category Model
+ * @category Lookups
  */
 export const featuresBorneBy = (feature: NestedFeature): NestedFeature[] =>
     isPatch(feature) ? feature.features ?? [] : [];
 
 /**
  * The feature together with everything it bears, as deep as a patch on a patch goes.
- * @category Model
+ * @category Lookups
  */
 export const withBorneFeatures = (feature: NestedFeature): NestedFeature[] =>
     [feature, ...featuresBorneBy(feature).flatMap(withBorneFeatures)];

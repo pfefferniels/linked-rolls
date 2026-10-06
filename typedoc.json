@@ -13,7 +13,9 @@
     "excludeInternal": true,
     "excludePrivate": true,
     "treatWarningsAsErrors": true,
-    "projectDocuments": ["guides/recipes.md"],
+    "projectDocuments": [
+        "guides/recipes.md"
+    ],
     "blockTags": [
         "@defaultValue",
         "@deprecated",
@@ -61,15 +63,17 @@
     ],
     "categoryOrder": [
         "Reading and writing",
-        "Model",
-        "Vocabulary",
         "Lookups",
         "Versions and stemma",
+        "Assumptions and beliefs",
         "Collation and alignment",
         "Analysis",
         "Operations",
         "Sources",
         "Systems and emulation",
+        "Vocabulary",
+        "Units",
+        "Format types",
         "*"
     ],
     "navigation": {

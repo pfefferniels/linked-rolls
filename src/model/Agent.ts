@@ -2,7 +2,7 @@ import { WithId } from "../shared/utils.js";
 
 /**
  * Something with a name and, where one exists, an authority record.
- * @category Model
+ * @category Format types
  */
 export interface Named {
     /**
@@ -35,7 +35,7 @@ export const editorialRoles = [
 
 /**
  * The part an editor took in the editorial work.
- * @category Model
+ * @category Format types
  */
 export type EditorialRole = typeof editorialRoles[number]
 
@@ -48,7 +48,7 @@ export const nonEditorialRoles = ['pianist', 'publisher'] as const
 
 /**
  * The role an agent plays in the context of the edition.
- * @category Model
+ * @category Format types
  */
 export type AgentRole = EditorialRole | typeof nonEditorialRoles[number]
 
@@ -63,7 +63,7 @@ export const agentRoles: readonly AgentRole[] = [...nonEditorialRoles, ...editor
  * A person or a group: a pianist, an editor, a publisher,
  * a manufacturer, a library.
  * @see crm:E39 Actor
- * @category Model
+ * @category Format types
  */
 export interface Agent extends Named, Partial<WithId> {
     /**
@@ -75,13 +75,13 @@ export interface Agent extends Named, Partial<WithId> {
 
 /**
  * An agent that is a person.
- * @category Model
+ * @category Format types
  */
 export type Person = Agent
 
 /**
  * A person who took part in preparing the edition.
- * @category Model
+ * @category Format types
  */
 export interface Editor extends Person {
     /**
@@ -93,7 +93,7 @@ export interface Editor extends Person {
 
 /**
  * An activity that may name the person who carried it out.
- * @category Model
+ * @category Format types
  */
 export type WithActor = {
     /**
@@ -106,7 +106,7 @@ export type WithActor = {
 /**
  * A place, e.g. a recording location, publishing location, etc.
  * @see crm:E53 Place
- * @category Model
+ * @category Format types
  */
 export interface Place extends Named { }
 
@@ -120,7 +120,7 @@ export interface Place extends Named { }
  * vocabulary does not have is given by name, which is then all there is
  * to go on.
  * @see crm:E55 Type
- * @category Model
+ * @category Format types
  */
 export type Concept =
     | (WithId & Partial<Named>)
@@ -131,7 +131,7 @@ export type Concept =
  * read a recording into notes, the emulator that wrote a MIDI file, the
  * program that found the holes on a scan or aligned two copies.
  * @see crmdig:D14 Software
- * @category Model
+ * @category Format types
  */
 export interface Software {
     /**

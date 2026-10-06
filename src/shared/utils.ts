@@ -2,7 +2,7 @@ export type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
 /**
  * An object that says by its type which kind of entity it is.
- * @category Model
+ * @category Format types
  */
 export type WithType<T extends string> = {
     /**
@@ -14,7 +14,7 @@ export type WithType<T extends string> = {
 
 /**
  * An object the edition identifies, so that others can refer to it.
- * @category Model
+ * @category Format types
  */
 export type WithId = {
     /**
@@ -39,7 +39,7 @@ export const groupBy = <T,>(items: readonly T[], keyOf: (item: T) => string): Ma
 
 /**
  * An object that may carry a note in free text.
- * @category Model
+ * @category Format types
  */
 export type WithNote = {
     /**

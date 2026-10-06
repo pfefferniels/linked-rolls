@@ -33,7 +33,7 @@ export type Displacement = BothEnds<Millimeters>
  * tolerance stand for the scatter only. A window that names none is
  * centred on nothing, which is what every window written before the
  * offset was held here means.
- * @category Model
+ * @category Format types
  */
 export interface CollationTolerance {
     /** How far the two readings may lie apart at the start of a feature, measured from `offsetStart`. */

@@ -7,7 +7,7 @@ import { Editor, Person, Place } from "./Agent.js";
  * This type describes the creation of an edition,
  * i.e. the editor, publisher, and publication date.
  * @see lrmoo:F28 Expression Creation
- * @category Model
+ * @category Format types
  */
 export interface EditionCreation {
     /**
@@ -38,7 +38,7 @@ export interface EditionCreation {
  * the persons involved in the process (e.g. pianist),
  * the place, and the date of the recording.
  * @see lrmoo:F28 Expression Creation
- * @category Model
+ * @category Format types
  */
 export interface RecordingEvent {
     /**
@@ -87,7 +87,7 @@ export interface RecordingEvent {
  * The abstract concept of a roll, identified
  * by its catalogue number.
  * @see lrmoo:F1 Work
- * @category Model
+ * @category Format types
  */
 export interface Roll {
     /**
@@ -106,7 +106,7 @@ export interface Roll {
 /**
  * Describes the specific digital edition of a piano roll.
  * @see lrmoo:F2 Expression
- * @category Model
+ * @category Format types
  */
 export interface Edition {
     /**
@@ -184,7 +184,7 @@ export interface Edition {
  * What an edition states about itself rather than about the copies and
  * versions of the roll: `base`, `title`, `license`, `version`,
  * `creation` and the `roll` it edits.
- * @category Model
+ * @category Format types
  */
 export type EditionMetadata = Pick<Edition, 'base' | 'title' | 'license' | 'version' | 'creation' | 'roll'>
 

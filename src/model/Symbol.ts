@@ -6,7 +6,7 @@ import { WithId } from "../shared/utils.js";
  * physical features on the roll. Symbols are the result of interpreting
  * the physical features (chains of holes, writings, etc.) on the roll copies.
  * @see crm:E90 Symbolic Object
- * @category Model
+ * @category Format types
  */
 export interface Symbol<T extends string> extends WithId {
     type: T
@@ -24,7 +24,7 @@ export interface Symbol<T extends string> extends WithId {
 
 /**
  * Whether the object is a symbol: a note, an expression or a text.
- * @category Model
+ * @category Lookups
  */
 export const isSymbol = (object: any): object is AnySymbol => {
     return (
@@ -36,7 +36,7 @@ export const isSymbol = (object: any): object is AnySymbol => {
 /**
  * Whether the symbol is a command, a note or an expression, rather than
  * a text.
- * @category Model
+ * @category Lookups
  */
 export const isCommand = (symbol: object | undefined): symbol is AnyCommand =>
     symbol !== undefined && 'type' in symbol && (symbol.type === 'note' || symbol.type === 'expression')
@@ -47,7 +47,7 @@ export const isCommand = (symbol: object | undefined): symbol is AnyCommand =>
  * by such a chain, but it might also have different physical
  * appearances.
  * @see reo:Command
- * @category Model
+ * @category Format types
  */
 export interface Command<T extends string> extends Symbol<T> {
     /**
@@ -98,7 +98,7 @@ export const placementRelations = ['alignedWith', 'before', 'after'] as const
 
 /**
  * The ways a command may be placed relative to another.
- * @category Model
+ * @category Format types
  */
 export type PlacementRelation = typeof placementRelations[number]
 
@@ -108,7 +108,7 @@ type Placeable = Partial<Record<PlacementRelation, ReferenceAssumption>>
 /**
  * A statement placing a command relative to another: how, and relative
  * to which.
- * @category Model
+ * @category Format types
  */
 export type Placement = { relation: PlacementRelation; reference: ReferenceAssumption }
 
@@ -116,7 +116,7 @@ export type Placement = { relation: PlacementRelation; reference: ReferenceAssum
  * The statements placing a command relative to others, alignment first.
  * A command is meant to make one at most; the first is the one a
  * performance applies.
- * @category Model
+ * @category Lookups
  */
 export const placementsOf = (command: Placeable): Placement[] =>
     placementRelations.flatMap(relation => {
@@ -130,7 +130,7 @@ type Pairable = WithId & { pairedWith?: ReferenceAssumption }
 /**
  * The pairs among the given commands, each once and in the order the
  * pairing is stated. A pair whose partner is absent is left out.
- * @category Model
+ * @category Lookups
  */
 export const pairsAmong = <S extends Pairable>(commands: readonly S[]): [S, S][] => {
     const byId = new Map(commands.map(p => [p.id, p]))
@@ -144,7 +144,7 @@ export const pairsAmong = <S extends Pairable>(commands: readonly S[]): [S, S][]
  * A note symbol, representing a single pitched musical event on the roll.
  * The pitch is encoded via the tracker bar position (track number).
  * @see reo:Note
- * @category Model
+ * @category Format types
  */
 export interface Note extends Command<'note'> {
     /**
@@ -158,7 +158,7 @@ export interface Note extends Command<'note'> {
  * The scope of an expression command, indicating whether it applies to
  * the bass or treble register of the piano.
  * @see reo:scope
- * @category Model
+ * @category Format types
  */
 export type ExpressionScope = 'bass' | 'treble';
 
@@ -168,7 +168,7 @@ export type ExpressionScope = 'bass' | 'treble';
  * than sounding a note. Each expression has a scope (bass or treble)
  * and a specific expression type.
  * @see reo:Expression
- * @category Model
+ * @category Format types
  */
 export interface Expression extends Command<'expression'> {
     /**
@@ -190,7 +190,7 @@ export interface Expression extends Command<'expression'> {
 /**
  * A textual symbol, e.g. a label or annotation found on the roll.
  * @see crm:E33 Linguistic Object
- * @category Model
+ * @category Format types
  */
 export interface Text extends Symbol<'text'> {
     // Restated so that Omit<Text, …> keeps the literal in the schema.
@@ -206,7 +206,7 @@ export interface Text extends Symbol<'text'> {
 /**
  * A symbol can be either a note, an expression, or a text.
  * Notes and expressions are commands; texts are carried by writings.
- * @category Model
+ * @category Format types
  */
 export type AnySymbol =
     | Note
@@ -215,7 +215,7 @@ export type AnySymbol =
 
 /**
  * A command: a note or an expression.
- * @category Model
+ * @category Format types
  */
 export type AnyCommand = Note | Expression
 

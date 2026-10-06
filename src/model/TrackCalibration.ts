@@ -10,7 +10,7 @@ import { Pixels, px, subtract, Track, track } from "./Quantity.js"
  *
  *     column      = offset + scannerTrack * separation
  *     trackerBar  = scannerTrack + shift
- * @category Model
+ * @category Format types
  */
 export interface TrackCalibration {
     unit: 'px'

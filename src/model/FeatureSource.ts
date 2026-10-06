@@ -21,7 +21,7 @@ export const sourceKinds = [
 /**
  * A kind of source a copy's features can be read from, from the paper
  * itself to a sound recording of the copy being played.
- * @category Model
+ * @category Format types
  */
 export type SourceKind = typeof sourceKinds[number]
 
@@ -48,7 +48,7 @@ const physical: readonly SourceKind[] = ['roll', 'scan']
  * emulation and a recording give the reading somebody else made: the
  * roll has been turned into notes and commands already, and turning
  * those back into chains of holes reconstructs them.
- * @category Model
+ * @category Lookups
  */
 export const isMeasured = (kind: SourceKind): boolean => measured.includes(kind)
 
@@ -56,7 +56,7 @@ export const isMeasured = (kind: SourceKind): boolean => measured.includes(kind)
  * Whether a source of this kind bears witness to the paper. Punch
  * diameter, hole separation, punching pattern, marks and writings can
  * be observed on the roll and on an image of it, and on nothing else.
- * @category Model
+ * @category Lookups
  */
 export const bearsPhysicalEvidence = (kind: SourceKind): boolean => physical.includes(kind)
 
@@ -66,7 +66,7 @@ export type { Software } from "./Agent.js";
  * An instrument a copy was played on to be recorded. How it was
  * regulated, where that is known, is its condition.
  * @see crm:E22 Human-Made Object
- * @category Model
+ * @category Format types
  */
 export interface Instrument extends Named {
     /**
@@ -85,7 +85,7 @@ export interface Instrument extends Named {
  * `reservationsAbout`, which works out what a copy cannot vouch for
  * from what it states here.
  * @see crm:E7 Activity
- * @category Model
+ * @category Format types
  */
 export interface FeatureSource extends WithNote {
     /**

@@ -20,7 +20,7 @@ import { Perforator } from "./Perforator.js";
  * tenths of one. It is taken in one direction, along the roll or across
  * it, since machine-made paper does not stretch the same way in both.
  * @see crm:E54 Dimension
- * @category Model
+ * @category Format types
  */
 export interface Strain extends Measure<'percent'> {
     /**
@@ -40,7 +40,7 @@ export interface Strain extends Measure<'percent'> {
  * stated here, so that a condition stands only where something was
  * measured. A strain along the roll goes into that working out.
  * @see crm:E3 Condition State
- * @category Model
+ * @category Format types
  */
 export interface PaperStretch extends ConditionState<'paper-stretch'> {
     /**
@@ -61,7 +61,7 @@ export interface PaperStretch extends ConditionState<'paper-stretch'> {
  * A general condition description for a roll copy, e.g.
  * overall wear, discoloration, or other observations.
  * @see crm:E3 Condition State
- * @category Model
+ * @category Format types
  */
 export interface GeneralRollCondition extends ConditionState<'general'> { }
 
@@ -72,7 +72,7 @@ export interface GeneralRollCondition extends ConditionState<'general'> { }
  * that runs into a chain of holes damages the chain as well, which is
  * then stated of the chain as `partially-torn`.
  * @see crm:E3 Condition State
- * @category Model
+ * @category Format types
  */
 export interface Tear extends ConditionState<'torn'> {
     /**
@@ -106,14 +106,14 @@ export interface Tear extends ConditionState<'torn'> {
 /**
  * An assignment of a condition (general, paper-stretch or a tear)
  * to a roll copy, annotatable with a belief about its certainty.
- * @category Model
+ * @category Format types
  */
 export type RollConditionAssignment = ObjectAssumption<GeneralRollCondition | PaperStretch | Tear>
 
 /**
  * The keeper a copy is held by, as an object assumption, so that the
  * statement can carry the belief it rests on and the reasons for it.
- * @category Model
+ * @category Format types
  */
 export type KeeperAssignment = ObjectAssumption<Agent>
 
@@ -131,7 +131,7 @@ export const rollConditions = [
  * How far an alignment moves a copy's places before it scales them:
  * along the roll, in the copy's own millimetres, and across it, in
  * tracks.
- * @category Model
+ * @category Format types
  */
 export interface Shift {
     /** Along the roll. */
@@ -158,7 +158,7 @@ export interface Shift {
  * What the scale is put down to, the paper or the speed the copy was
  * cut for, is worked out from all the alignments together (`paperOf`).
  * Not exported to RDF.
- * @category Model
+ * @category Format types
  */
 export interface Alignment {
     /**
@@ -203,7 +203,7 @@ export interface Alignment {
  * The width and length of a roll copy's paper, as they were measured on
  * it or on its scan.
  * @see crm:E54 Dimension
- * @category Model
+ * @category Format types
  */
 export interface RollDimensions {
     /**
@@ -227,7 +227,7 @@ export interface RollDimensions {
 
 /**
  * The margins on the treble and bass sides of the roll, in the unit the scan was measured in.
- * @category Model
+ * @category Format types
  */
 export interface Margins<U extends 'px' | 'mm'> {
     treble: Quantity<U>
@@ -239,7 +239,7 @@ export interface Margins<U extends 'px' | 'mm'> {
  * A paper speed, as a roll's label, its catalogue or its format
  * states it.
  * @see crm:E54 Dimension
- * @category Model
+ * @category Format types
  */
 export type PaperSpeed = Measure<'ft/min'> | Measure<'m/min'>
 
@@ -248,7 +248,7 @@ export type PaperSpeed = Measure<'ft/min'> | Measure<'m/min'>
  * the paper used, the date, and the system and paper speed the
  * copy was cut for.
  * @see lrmoo:F32 Item Production Event
- * @category Model
+ * @category Format types
  */
 export interface ProductionEvent {
     /**
@@ -332,7 +332,7 @@ export const modificationPurposes = [
 
 /**
  * What a modification of a copy was for, as far as it can be told.
- * @category Model
+ * @category Format types
  */
 export type ModificationPurpose = typeof modificationPurposes[number]
 
@@ -344,7 +344,7 @@ export type ModificationPurpose = typeof modificationPurposes[number]
  * is not: drawing, writing and punching bring a feature into being and
  * are productions.
  * @see crm:E79 Part Addition, crm:E80 Part Removal, crm:E12 Production
- * @category Model
+ * @category Format types
  */
 export type Modification = Partial<{
     /**
@@ -412,7 +412,7 @@ export type Modification = Partial<{
  * Multiple copies of the same roll may exist across different archives
  * or collections.
  * @see reo:RollCopy
- * @category Model
+ * @category Format types
  */
 export interface RollCopy extends WithType<'RollCopy'>, WithId {
     /**
@@ -574,7 +574,7 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
 
 /**
  * What an act brought onto the copy: what it produced or glued on, a removal nothing.
- * @category Model
+ * @category Lookups
  */
 export const featuresMadeBy = (modification: Modification): FeatureOrPatch[] => {
     if (modification.type === 'Alteration') return modification.produced
@@ -583,13 +583,13 @@ export const featuresMadeBy = (modification: Modification): FeatureOrPatch[] => 
 
 /**
  * Whether the act is one that modified the copy, rather than the production that punched it.
- * @category Model
+ * @category Lookups
  */
 export const isModification = (act: ProductionEvent | Modification): act is Modification => 'type' in act
 
 /**
  * Whether the act is left stating nothing: it produced, added or removed nothing.
- * @category Model
+ * @category Lookups
  */
 export const statesNothing = (modification: Modification): boolean =>
     modification.type === 'Removal' ? modification.removed.length === 0 : featuresMadeBy(modification).length === 0
@@ -599,14 +599,14 @@ export const statesNothing = (modification: Modification): boolean =>
  * first, then what each modification produced or glued on. A feature a
  * patch bears states no place of its own and is not among them;
  * `withBorneFeatures` reaches those.
- * @category Model
+ * @category Lookups
  */
 export const featuresByAct = (copy: Pick<RollCopy, 'production' | 'modifications'>): FeatureOrPatch[][] =>
     [copy.production?.produced ?? [], ...copy.modifications.map(featuresMadeBy)]
 
 /**
  * Every feature the copy states at a place of its own, whichever act made it.
- * @category Model
+ * @category Lookups
  */
 export const featuresOf = (copy: Pick<RollCopy, 'production' | 'modifications'>): FeatureOrPatch[] =>
     featuresByAct(copy).flat()
@@ -618,7 +618,7 @@ const exportedMeasurementsOf = (copy: Pick<RollCopy, 'measurements'>) =>
 
 /**
  * The programs the measurements of a copy name as having taken them, each once, as far as they name any.
- * @category Model
+ * @category Lookups
  */
 export const measuringSoftwareOf = (copy: Pick<RollCopy, 'measurements'>): Software[] => {
     const named = exportedMeasurementsOf(copy)
@@ -629,28 +629,28 @@ export const measuringSoftwareOf = (copy: Pick<RollCopy, 'measurements'>): Softw
 
 /**
  * Whether the condition is the stretch or shrinkage of the paper, as measured on the copy.
- * @category Model
+ * @category Lookups
  */
 export const isPaperStretch = (condition: RollConditionAssignment): condition is ObjectAssumption<PaperStretch> =>
     condition.conditionType === 'paper-stretch'
 
 /**
  * What the copy's paper was measured to have done, where anything was measured.
- * @category Model
+ * @category Lookups
  */
 export const paperStretchOf = (copy: Pick<RollCopy, 'conditions'>): ObjectAssumption<PaperStretch> | undefined =>
     copy.conditions.find(isPaperStretch)
 
 /**
  * Whether the condition is a tear in the paper.
- * @category Model
+ * @category Lookups
  */
 export const isTear = (condition: RollConditionAssignment): condition is ObjectAssumption<Tear> =>
     condition.conditionType === 'torn'
 
 /**
  * The tears the copy is stated to have.
- * @category Model
+ * @category Lookups
  */
 export const tearsOf = (copy: Pick<RollCopy, 'conditions'>): ObjectAssumption<Tear>[] =>
     copy.conditions.filter(isTear)
@@ -665,7 +665,7 @@ export const barOf = (copy: Pick<RollCopy, 'production'>): TrackerBar =>
 
 /**
  * The diameter of the punch the copy was cut with, where the edition holds it true or likely.
- * @category Model
+ * @category Lookups
  */
 export const punchDiameterOf = (copy: Pick<RollCopy, 'production'>): Millimeters | undefined => {
     const diameter = copy.production?.perforator?.condition?.punchDiameter

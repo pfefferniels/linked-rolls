@@ -27,7 +27,7 @@ export const editTypes = [
  * The type of editorial change applied to a symbol or set of symbols.
  * Classifies the nature of the edit, e.g. whether it corrects an error,
  * adds an accent, shifts a note, or shortens/prolongs a perforation.
- * @category Model
+ * @category Format types
  */
 export type EditType = typeof editTypes[number];
 
@@ -44,7 +44,7 @@ export type EditType = typeof editTypes[number];
  * the axioms of reo.ttl; which of those dates bounds it closest is for
  * a query to pick.
  * @see reo:Edit
- * @category Model
+ * @category Format types
  */
 export interface Edit extends WithId, Assumption {
     type: 'edit';
@@ -73,7 +73,7 @@ export interface Edit extends WithId, Assumption {
 
 /**
  * Whether the object is an edit.
- * @category Model
+ * @category Lookups
  */
 export const isEdit = (object: any): object is Edit => {
     return 'type' in object && object.type === 'edit';

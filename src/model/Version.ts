@@ -9,7 +9,7 @@ import { WithId, WithNote, WithType } from "../shared/utils.js";
  * A motivation provides a reason or rationale for an editorial change.
  * Motivations are defined at the version level and referenced by edits.
  * @see crm:E33 Linguistic Object
- * @category Model
+ * @category Format types
  */
 export type Motivation = WithType<'motivation'> & WithId & WithNote
 
@@ -19,7 +19,7 @@ export type Motivation = WithType<'motivation'> & WithId & WithNote
  * put a symbol depends on what they are and on how their features were
  * obtained, so the tolerance can differ from derivation to derivation.
  * @see lrmoo:R76 is derivative of
- * @category Model
+ * @category Format types
  */
 export type Derivation = ReferenceAssumption & {
     /**
@@ -48,7 +48,7 @@ export const collationToleranceOf = (derivation: Readonly<Derivation>): Collatio
  * version it derives from: about 0.77 for a Licensee or green re-cut of
  * a red roll, cut for a slower paper speed.
  * @see crm:E54 Dimension
- * @category Model
+ * @category Format types
  */
 export interface LengthRatio {
     /**
@@ -73,7 +73,7 @@ export interface LengthRatio {
  * the version's edits carry it out, so the mechanical part of a
  * transfer is stated once instead of being spelled out per note.
  * @see lrmoo:F28 Expression Creation
- * @category Model
+ * @category Format types
  */
 export interface VersionCreation {
     /**
@@ -118,7 +118,7 @@ export interface VersionCreation {
  * sigla off the stemma, so that a label never outlives the arrangement
  * it describes.
  * @see lrmoo:F2 Expression
- * @category Model
+ * @category Format types
  */
 export interface Version extends WithId {
     /**
