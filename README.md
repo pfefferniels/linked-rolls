@@ -39,6 +39,13 @@ const symbols = snapshotOf(edition, childId)
 const document = asJsonLd(edition)
 ```
 
+The [API reference](https://pfefferniels.github.io/linked-rolls/api/)
+documents the public interface, and the
+[recipes](https://pfefferniels.github.io/linked-rolls/api/documents/Recipes.html)
+show how to read an edition, get the text of a version, see what a
+version changed, play it and write a change back. Exports marked
+internal there may change in any release.
+
 What is read off an edition, such as `snapshotOf`, `placeOf`,
 `versionIn` or `pathIn`, is worked out once for each state of it and
 kept for as long as the state is. Every change through `produce` yields
@@ -107,7 +114,11 @@ npm ci
 npm test
 npm run lint
 npm run build
+npm run build:api   # the API reference, into docs/api
 ```
+
+TypeDoc runs from `tools/typedoc` with a TypeScript 5 of its own, as
+TypeScript 7 no longer has the compiler API it reads the source with.
 
 ## Releasing
 

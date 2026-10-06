@@ -1,0 +1,16 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "name": "linked-rolls",
+    "entryPoints": [
+        "src/index.ts",
+        "src/validate.ts",
+        "src/systems/welteT100/system.ts",
+        "src/systems/welteT98/system.ts",
+        "src/systems/welteLicensee/system.ts"
+    ],
+    "tsconfig": "tsconfig.json",
+    "out": "docs/api",
+    "excludeInternal": true,
+    "excludePrivate": true,
+    "treatWarningsAsErrors": false
+}

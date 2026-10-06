@@ -46,6 +46,7 @@
     "lint": "oxlint -c .oxlintrc.json src test scripts schema",
     "build:schema": "npx ts-json-schema-generator --additional-properties --validation-keywords see --path 'src/**/*.ts' --type 'Edition' > schema_.json && node schema/postprocess.js && rm schema_.json && mv schema.json src/schema.json",
     "build:docs": "node schema/docs/generate.ts src/schema.json docs/index.html",
+    "build:api": "npm ci --prefix tools/typedoc --silent --no-audit --no-fund && tools/typedoc/node_modules/.bin/typedoc",
     "smoke": "node scripts/smoke.mjs"
   },
   "devDependencies": {

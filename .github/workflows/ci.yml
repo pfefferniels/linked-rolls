@@ -48,3 +48,8 @@ jobs:
 
       - name: Smoke test of the built package
         run: npm run smoke
+
+      # Fails on any TypeDoc warning, among them a broken link or a recipe
+      # whose code region the tests no longer hold.
+      - name: API reference
+        run: npm run build:api

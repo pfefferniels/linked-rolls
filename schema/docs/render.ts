@@ -190,7 +190,9 @@ const pageHeader =
     '<header><h1>Roll Edition Format</h1><p>Schema documentation for the '
     + '<a href="https://github.com/pfefferniels/linked-rolls">linked-rolls</a> piano roll edition format. '
     + 'The vocabulary behind it is the <a href="reo/">Roll Edition Ontology</a> '
-    + 'with its <a href="reo/type/">type vocabulary</a>.</p></header>'
+    + 'with its <a href="reo/type/">type vocabulary</a>. '
+    + 'The library that reads and writes the format has an <a href="api/">API reference</a> '
+    + 'and <a href="api/documents/Recipes.html">recipes</a>.</p></header>'
 
 export function renderPage(doc: SchemaDoc, stylesheet: string): string {
     const anchorOf = anchorLookup(doc.definitions)

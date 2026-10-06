@@ -1,0 +1,9 @@
+{
+  "name": "linked-rolls-api-docs",
+  "private": true,
+  "description": "TypeDoc for the API reference, apart from the library: TypeDoc needs the compiler API that TypeScript 7 no longer has, so it brings a TypeScript 5 of its own.",
+  "devDependencies": {
+    "typedoc": "0.28.20",
+    "typescript": "5.9.3"
+  }
+}

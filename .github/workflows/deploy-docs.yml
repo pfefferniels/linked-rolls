@@ -44,6 +44,11 @@ jobs:
       - name: Generate the format docs
         run: npm run build:docs
 
+      # TypeDoc runs on a TypeScript 5 of its own (tools/typedoc), since
+      # TypeScript 7 no longer has the compiler API it reads the source with.
+      - name: Generate the API reference
+        run: npm run build:api
+
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
