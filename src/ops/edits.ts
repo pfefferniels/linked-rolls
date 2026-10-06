@@ -77,6 +77,7 @@ const guessEditType = (edition: Edition, versionId: string, edit: Edit): EditTyp
 /**
  * Replaces the edits with a single one carrying all their insertions
  * and deletions, classified by a guess at what the exchange does.
+ * @category Operations
  */
 export const mergeEdits = (versionId: string, toMerge: readonly Edit[]): EditionOp => reading(edition => {
     if (toMerge.length === 0) return noChange
@@ -95,7 +96,10 @@ export const mergeEdits = (versionId: string, toMerge: readonly Edit[]): Edition
     })
 })
 
-/** Replaces the edit with one edit per inserted and one per deleted symbol. */
+/**
+ * Replaces the edit with one edit per inserted and one per deleted symbol.
+ * @category Operations
+ */
 export const splitEdit = (versionId: string, toSplit: Edit): EditionOp => {
     const parts = [
         ...(toSplit.insert ?? []).map(insertion),

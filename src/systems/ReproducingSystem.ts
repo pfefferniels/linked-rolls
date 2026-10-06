@@ -7,6 +7,7 @@ import { MetersPerMinute, Millimeters, Seconds } from "../model/Quantity.js";
  * A note or expression of a version with the dimensions of its carriers
  * averaged in and the editorial assumptions applied, which is all a
  * performance needs to know of a symbol.
+ * @category Systems and emulation
  */
 export type NegotiatedEvent =
     Omit<Note | Expression, 'carriers'>
@@ -24,25 +25,45 @@ interface PerformedNoteEvent<T> extends PerformedRollFeature<T> {
     velocity: number;
 }
 
+/**
+ * A note struck, at the velocity the performance gives it.
+ * @category Systems and emulation
+ */
 export interface PerformedNoteOnEvent extends PerformedNoteEvent<'noteOn'> { }
+/**
+ * A note released.
+ * @category Systems and emulation
+ */
 export interface PerformedNoteOffEvent extends PerformedNoteEvent<'noteOff'> { }
 
 /**
  * One step of a pedal. A pedal driven by a bellows takes time to travel,
  * so a single command results in a run of these; `performs` is the
  * command whose reading the step follows from.
+ * @category Systems and emulation
  */
 export interface PerformedPedalEvent extends PerformedRollFeature<'damper' | 'hammerRail'> {
     /** 0 with the pedal up and 127 with it fully down. */
     value: number
 }
 
+/**
+ * What a performance does at a moment: a note struck or released, or a
+ * step of a pedal.
+ * @category Systems and emulation
+ */
 export type AnyPerformedRollFeature =
     PerformedNoteOnEvent |
     PerformedNoteOffEvent |
     PerformedPedalEvent
 
-interface CurveSamples {
+/**
+ * A curve sampled along the roll: where each sample lies on the paper,
+ * when it passes the tracker bar, and how far the bellows or the pedal
+ * has travelled there.
+ * @category Systems and emulation
+ */
+export interface CurveSamples {
     readonly name: string
 
     /** Paper position of each sample, in mm from the beginning of the roll. */
@@ -67,7 +88,10 @@ interface CurveSamples {
     readonly travel: Float64Array
 }
 
-/** The dynamics of one part of the keyboard, with the velocity the travel maps onto. */
+/**
+ * The dynamics of one part of the keyboard, with the velocity the travel maps onto.
+ * @category Systems and emulation
+ */
 export type DynamicsCurve = CurveSamples & {
     readonly kind: 'dynamics'
     readonly velocity: Float64Array
@@ -82,13 +106,26 @@ export type DynamicsCurve = CurveSamples & {
     readonly instrument: string
 }
 
+/**
+ * How far one pedal has travelled along the roll, 0 with it up and 1
+ * with it down.
+ * @category Systems and emulation
+ */
 export type PedalCurve = CurveSamples & {
     readonly kind: 'pedal'
 }
 
+/**
+ * A curve a performance yields: the dynamics of one half of the
+ * keyboard, or the travel of a pedal.
+ * @category Systems and emulation
+ */
 export type EmulatedCurve = DynamicsCurve | PedalCurve
 
-/** What the edition records about the roll that a mechanism may want to know. */
+/**
+ * What the edition records about the roll that a mechanism may want to know.
+ * @category Systems and emulation
+ */
 export type RollProperties = {
     /** Diameter of the punches, where the copies record it. */
     punchDiameter?: Millimeters
@@ -136,6 +173,11 @@ export type RollProperties = {
     toOwnPaper?: number
 }
 
+/**
+ * What a reproducing system made of the events of a version: the events
+ * it performed, and the curves of its dynamics and pedals.
+ * @category Systems and emulation
+ */
 export type Performance = {
     readonly events: readonly AnyPerformedRollFeature[]
     readonly curves: readonly EmulatedCurve[]
@@ -147,6 +189,7 @@ export type Performance = {
  * Implementations live outside the core of this library, so that it does
  * not depend on any one instrument's model; `linked-rolls/welte-t100` is
  * the first.
+ * @category Systems and emulation
  */
 export interface ReproducingSystem<Options extends object> {
     readonly name: string

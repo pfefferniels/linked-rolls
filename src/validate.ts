@@ -1,3 +1,10 @@
+/**
+ * Checks an edition's JSON-LD document, as `asJsonLd` writes one, against
+ * the schema of the format. The same `validate` is exported from the root
+ * module; this entry point offers it alone.
+ *
+ * @module linked-rolls/validate
+ */
 import Ajv, { type ErrorObject, type ValidateFunction } from "ajv"
 // A default import, not a namespace one: Node's ESM gives a JSON module
 // only a default export, so `import * as` hands ajv the namespace object
@@ -8,6 +15,7 @@ import { Edition } from "./model/Edition.js"
 /**
  * Holds a document against the edition schema. `errors` says what the
  * last call found wrong, and is empty where it found nothing.
+ * @category Reading and writing
  */
 export interface ValidateEdition {
     (document: unknown): document is Edition
@@ -23,6 +31,14 @@ const compileEditionSchema = (): ValidateFunction<Edition> =>
  */
 let compiled: ValidateFunction<Edition> | undefined
 
+/**
+ * Whether the document is an edition as the schema of the format
+ * describes it, such as `asJsonLd` writes. What a call found wrong is in
+ * `validate.errors` until the next call. A document written by an earlier
+ * release may fail where `importJsonLd` would still read it, since the
+ * import migrates it first (`migrate`).
+ * @category Reading and writing
+ */
 const validate: ValidateEdition = (document): document is Edition => {
     compiled ??= compileEditionSchema()
     const valid = compiled(document)

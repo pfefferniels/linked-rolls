@@ -5,12 +5,14 @@ import { Millimeters, mm, SpeedMeasure, Track, track } from "../model/Quantity.j
 /**
  * What a tracker bar position does: sound a note, or operate one of
  * the expression valves on the bass or the treble side.
+ * @category Systems and emulation
  */
 export type TrackRole = 'bass-expression' | 'note' | 'treble-expression'
 
 /**
  * A contiguous block of tracker bar positions serving one role.
  * Both bounds are inclusive.
+ * @category Systems and emulation
  */
 export interface TrackArea {
     readonly role: TrackRole
@@ -21,12 +23,14 @@ export interface TrackArea {
 /**
  * How a scale words a function: as a command that turns it on, one that
  * cancels it, or one that holds it for as long as it lasts.
+ * @category Systems and emulation
  */
 export type Spelling = 'on' | 'off' | 'held'
 
 /**
  * What a word of a scale operates, rather than the word itself, so that
  * two scales can be compared at all.
+ * @category Systems and emulation
  */
 export interface Operation {
     /** The function operated, named the same wherever a scale has it. */
@@ -43,8 +47,21 @@ export interface Operation {
     sided: boolean
 }
 
+/**
+ * What a position in the note block reads: a note of one pitch.
+ * @category Systems and emulation
+ */
 export type NoteMeaning = Pick<Note, 'type' | 'pitch'>
+/**
+ * What an expression position reads: an expression type, on the side of
+ * the keyboard the position serves.
+ * @category Systems and emulation
+ */
 export type ExpressionMeaning = Pick<Expression, 'type' | 'expressionType' | 'scope'>
+/**
+ * What a position of the bar reads: a note or an expression.
+ * @category Systems and emulation
+ */
 export type TrackMeaning = NoteMeaning | ExpressionMeaning
 
 /**
@@ -56,6 +73,7 @@ export type TrackMeaning = NoteMeaning | ExpressionMeaning
  * Anything that needs to know where the note block ends, which side
  * an expression belongs to, or how a track maps to a pitch, should
  * ask the tracker bar rather than repeat the boundaries.
+ * @category Systems and emulation
  */
 export interface TrackerBar {
     /**
@@ -153,6 +171,7 @@ export interface TrackerBar {
  * What a position says, as a key. Two bars read the same thing exactly
  * where their keys agree, which is what lets a symbol cross from one
  * system to another and what decides whether two symbols collate.
+ * @category Systems and emulation
  */
 export const keyOf = (meaning: TrackMeaning): string =>
     meaning.type === 'note'
@@ -161,15 +180,24 @@ export const keyOf = (meaning: TrackMeaning): string =>
 
 const SYSTEM_IRI = 'https://w3id.org/reo/type/system/'
 
-/** The roll system a tracker bar belongs to, as the roll metadata states it. */
+/**
+ * The roll system a tracker bar belongs to, as the roll metadata states it.
+ * @category Vocabulary
+ */
 export const systemOf = (bar: TrackerBar): Concept =>
     ({ id: SYSTEM_IRI + bar.id, name: bar.name, sameAs: [] })
 
-/** The identifier of a system the type vocabulary knows, from the IRI naming it. */
+/**
+ * The identifier of a system the type vocabulary knows, from the IRI naming it.
+ * @category Vocabulary
+ */
 export const systemIdIn = (id: string | undefined): string | undefined =>
     id?.startsWith(SYSTEM_IRI) ? id.slice(SYSTEM_IRI.length) : undefined
 
-/** The identifier of a system the type vocabulary knows, from its concept. */
+/**
+ * The identifier of a system the type vocabulary knows, from its concept.
+ * @category Vocabulary
+ */
 export const systemIdOf = (system: Concept | undefined): string | undefined =>
     systemIdIn(system?.id)
 
@@ -180,13 +208,17 @@ export const systemIdOf = (system: Concept | undefined): string | undefined =>
  * the rewind is *punched*, not when the rewind pneumatic takes hold. The second
  * is a matter of valve lift and belongs to whatever performs the roll. Keeping
  * them apart is what lets collation and counting ask this without an emulator.
+ * @category Systems and emulation
  */
 export type RollEnd = {
     readonly at: Millimeters
     readonly because: 'rewind'
 }
 
-/** Anything carrying a place on the roll and a position on the bar. */
+/**
+ * Anything carrying a place on the roll and a position on the bar.
+ * @category Systems and emulation
+ */
 export type PlacedOnBar = {
     readonly horizontal: { readonly from: Millimeters, readonly to: Millimeters }
     readonly vertical: { readonly from: Track }
@@ -196,6 +228,7 @@ export type PlacedOnBar = {
  * Where a feature lies across the bar: one place, or a run of them where
  * `to` is given. Structural, so a feature's `vertical` passes as it is and
  * this module need know nothing about features.
+ * @category Systems and emulation
  */
 export type OnBar = {
     readonly from: Track
@@ -206,6 +239,7 @@ export type OnBar = {
  * A tracker bar as written down, with its positions as plain numbers
  * in the bar's own 1-based numbering; `describeTrackerBar` gives them
  * their type.
+ * @category Systems and emulation
  */
 export interface TrackerBarSpec {
     id: string
@@ -265,6 +299,12 @@ const positionsBetween = (span: OnBar): Track[] => {
     return Array.from({ length: last - first + 1 }, (_, step) => track(first + step))
 }
 
+/**
+ * The tracker bar a description gives, its positions typed and its
+ * readings worked out. Throws where the description names no rewind
+ * position, or names expression types its bar does not read.
+ * @category Systems and emulation
+ */
 export const describeTrackerBar = (spec: TrackerBarSpec): TrackerBar => {
     const areas = areasOf(spec)
 
@@ -357,6 +397,7 @@ export const describeTrackerBar = (spec: TrackerBarSpec): TrackerBar => {
  * the same thing, or nowhere when the other bar does not read it. This
  * is how a copy read in one system's numbering is put into another's,
  * as the migration does for a Licensee copy stored on T-100 tracks.
+ * @category Systems and emulation
  */
 export const translationBetween = (from: TrackerBar, to: TrackerBar) =>
     (position: Track): Track | undefined => {

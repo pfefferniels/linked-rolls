@@ -26,9 +26,15 @@ const END_OF_EVENTS = 0xFF
  * 640 Hz), and the tempo counts tenths of a foot per minute, which puts
  * 400 rows on an inch. This is the file's own calibration; whether the
  * scanner kept it is for an alignment with other copies to tell.
+ * @category Sources
  */
 export const SPENCER_ROWS_PER_INCH = 400
 
+/**
+ * How `readFromSpencerBar` reads a file: the rows of its image on an
+ * inch of paper, and the bar it numbers its positions by.
+ * @category Sources
+ */
 export interface SpencerBarOptions {
     /** Rows of the image on an inch of paper. */
     rowsPerInch?: number
@@ -109,6 +115,7 @@ const holesOf = (events: Iterable<BarEvent>): BarHole[] => {
  * Reads the copy on the bar it was cut for, whose numbering it keeps.
  * A chain on a position that bar does not read is left out, as the bar
  * would leave it.
+ * @category Sources
  */
 export function readFromSpencerBar(
     buffer: ArrayBuffer,
@@ -156,6 +163,7 @@ export function readFromSpencerBar(
  * The `.ann` file beside a `.bar` holds the player's settings for the
  * roll as lines of "/key:   value": title, composer, pianist, roll
  * number and class, and the tempo the roll is played at.
+ * @category Sources
  */
 export const readSpencerAnn = (text: string): ReadonlyMap<string, string> =>
     new Map(
@@ -168,7 +176,10 @@ export const readSpencerAnn = (text: string): ReadonlyMap<string, string> =>
 /** A roll tempo counts tenths of a foot per minute: tempo 83 runs the roll at 8.3 feet a minute. */
 const TEMPO_PER_FOOT_PER_MINUTE = 10
 
-/** The paper speed a `.ann` states through its roll tempo, where it states one. */
+/**
+ * The paper speed a `.ann` states through its roll tempo, where it states one.
+ * @category Sources
+ */
 export const paperSpeedOfSpencerAnn = (ann: ReadonlyMap<string, string>): PaperSpeed | undefined => {
     const tempo = parseFloat(ann.get('roll_tempo') ?? '')
     if (isNaN(tempo) || tempo <= 0) return undefined

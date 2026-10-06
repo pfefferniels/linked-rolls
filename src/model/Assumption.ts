@@ -1,6 +1,11 @@
 import { WithNote, WithId } from "../shared/utils.js"
 import { Concept, Person, Software, WithActor } from "./Agent.js"
 
+/**
+ * The certainties a belief may be held with, from the most certain to
+ * the least.
+ * @category Vocabulary
+ */
 export const certainties = [
     'true',
     'likely',
@@ -12,6 +17,7 @@ export const certainties = [
 /**
  * Certainty levels for beliefs, ranging from 'true' to 'false'
  * and some values in between.
+ * @category Model
  */
 export type Certainty = typeof certainties[number];
 
@@ -20,11 +26,15 @@ export type Certainty = typeof certainties[number];
  * the edition is read as RDF. One held possible, unlikely or false is
  * only quoted, so that a reader who leaves the beliefs aside does not
  * take a doubted statement for the edition's own.
+ * @category Model
  */
 export const isAsserted = (certainty: Certainty): boolean =>
     certainty === 'true' || certainty === 'likely'
 
-/** The certainty a statement is held with. One that carries no belief is stated plainly, and so held true. */
+/**
+ * The certainty a statement is held with. One that carries no belief is stated plainly, and so held true.
+ * @category Model
+ */
 export const certaintyOf = (assumption: Readonly<Assumption>): Certainty =>
     assumption['@annotation']?.belief.certainty ?? 'true'
 
@@ -32,6 +42,7 @@ export const certaintyOf = (assumption: Readonly<Assumption>): Certainty =>
  * An argumentation provides reasons for a belief and
  * may be associated with a person carrying out that argumentation.
  * @see crminf:I1 Argumentation
+ * @category Model
  */
 export interface Argumentation<T extends string = 'simpleArgumentation'> extends WithActor, WithNote {
     type: T
@@ -43,6 +54,7 @@ export interface Argumentation<T extends string = 'simpleArgumentation'> extends
  * as an instruction to add or remove a perforation or as the dating
  * of the roll.
  * @see crminf:I16 Meaning Comprehension
+ * @category Model
  */
 export interface MeaningComprehension extends Argumentation<'meaningComprehension'> {
     /**
@@ -56,6 +68,7 @@ export interface MeaningComprehension extends Argumentation<'meaningComprehensio
 /**
  * An inference draws a conclusion from given premises.
  * @see crminf:I5 Inference Making
+ * @category Model
  */
 export interface Inference extends Argumentation<'inference'> {
     /**
@@ -93,6 +106,7 @@ export interface Inference extends Argumentation<'inference'> {
  * The editor's own beliefs need no adoption, wherever they are
  * published: an inference names them directly (see `Inference`).
  * @see crminf:I7 Belief Adoption
+ * @category Model
  */
 export interface BeliefAdoption extends Argumentation<'beliefAdoption'> {
     /**
@@ -127,6 +141,7 @@ export interface BeliefAdoption extends Argumentation<'beliefAdoption'> {
  * later found wanting can be told from the rest. Naming software makes
  * it a digital measurement event in the sense of CRMdig.
  * @see crmsci:S21 Measurement
+ * @category Model
  */
 export interface Measurement extends Argumentation<'measurement'> {
     /**
@@ -162,6 +177,7 @@ export interface Measurement extends Argumentation<'measurement'> {
  * An argumentation can be either a plain argumentation, a
  * meaning comprehension, an inference, a belief adoption or a
  * measurement.
+ * @category Model
  */
 export type AnyArgumentation = MeaningComprehension | Inference | BeliefAdoption | Measurement | Argumentation
 
@@ -170,6 +186,7 @@ export type AnyArgumentation = MeaningComprehension | Inference | BeliefAdoption
  * a statement) with a certainty. It comes into existence through
  * argumentations (reasons).
  * @see crminf:I2 Belief
+ * @category Model
  */
 export interface Belief extends WithId {
     type: 'belief';
@@ -190,6 +207,7 @@ export interface Belief extends WithId {
  * `@annotation` element from JSON-LD-star. Any property in the edition
  * can be annotated with a belief to express uncertainty or provide
  * justification for the stated value.
+ * @category Model
  */
 export interface Assumption {
     /**
@@ -210,6 +228,7 @@ export interface Assumption {
  * A value assumption wraps a literal value, e.g. a string, a number, a date, with an optional annotation.
  * Used for properties where the value itself may be uncertain,
  * e.g. dates.
+ * @category Model
  */
 export interface ValueAssumption<ValueT> extends Assumption {
     /**
@@ -221,6 +240,7 @@ export interface ValueAssumption<ValueT> extends Assumption {
 /**
  * A reference assumption wraps a reference (by `@id`) with an optional annotation.
  * Used when pointing to another entity whose association may be uncertain.
+ * @category Model
  */
 export type ReferenceAssumption = Assumption & WithId
 
@@ -228,6 +248,7 @@ export type ReferenceAssumption = Assumption & WithId
  * An object assumption wraps a complex object with an optional annotation.
  * Used for structured values (e.g. persons, conditions) whose properties
  * may be uncertain.
+ * @category Model
  */
 export type ObjectAssumption<O extends object> =  Assumption & O
 
@@ -235,10 +256,12 @@ export type ObjectAssumption<O extends object> =  Assumption & O
  * An actor assignment associates a person with an action.
  * It is an object assumption so that the attribution can be
  * annotated with a belief about its certainty.
+ * @category Model
  */
 export type ActorAssignment = ObjectAssumption<Person>
 
 // The day an event falls within; a member of `TimeSpan`, which describes it.
+/** @inline */
 interface DateWithin {
     /**
      * The day the event falls within.
@@ -249,6 +272,7 @@ interface DateWithin {
 }
 
 // The bounds an event lies between, the earlier one known; a member of `TimeSpan`.
+/** @inline */
 interface DateAfter {
     /**
      * The earliest day the event can have happened on: it did not
@@ -268,6 +292,7 @@ interface DateAfter {
 }
 
 // The bounds an event lies between, the later one known; a member of `TimeSpan`.
+/** @inline */
 interface DateBefore {
     /**
      * The earliest day the event can have happened on: it did not
@@ -291,6 +316,7 @@ interface DateBefore {
  * lies between. A bound nobody can give is left out, so `after` alone
  * says "not before".
  * @see crm:E52 Time-Span
+ * @category Model
  */
 export type TimeSpan = DateWithin | DateAfter | DateBefore
 
@@ -300,33 +326,55 @@ export type TimeSpan = DateWithin | DateAfter | DateBefore
  * day it falls `within`, or the bounds it lies between. A bound nobody
  * can give is left out, so `after` alone says "not before".
  * @see crm:E52 Time-Span
+ * @category Model
  */
 export type DateAssignment = Assumption & TimeSpan
 
+/**
+ * The value the assumption holds, without the belief about it.
+ * @category Model
+ */
 export function valueOf<ValueT>(
     assumption: ValueAssumption<ValueT>
 ): ValueT {
     return assumption['@value']
 }
 
+/**
+ * The values the assumptions hold, in their order.
+ * @category Model
+ */
 export function valuesOf<ValueT>(
     assumptions: ValueAssumption<ValueT>[]
 ): ValueT[] {
     return assumptions.map(a => a['@value'])
 }
 
+/**
+ * The id of the entity the reference points to.
+ * @category Model
+ */
 export function idOf(
     assumption: ReferenceAssumption
 ): string {
     return assumption.id
 }
 
+/**
+ * The ids of the entities the references point to, in their order.
+ * @category Model
+ */
 export function idsOf(
     assumptions: ReferenceAssumption[]
 ): string[] {
     return assumptions.map(a => a.id)
 }
 
+/**
+ * The value stated plainly: an assumption that carries no belief, and
+ * so is held true.
+ * @category Model
+ */
 export function assignValue<ValueT>(
     value: ValueT
 ): ValueAssumption<ValueT> {
@@ -335,6 +383,11 @@ export function assignValue<ValueT>(
     }
 }
 
+/**
+ * A reference to the entity with the id, stated plainly: an assumption
+ * that carries no belief, and so is held true.
+ * @category Model
+ */
 export function assignReference(
     id: string
 ): ReferenceAssumption {
@@ -343,6 +396,11 @@ export function assignReference(
     }
 }
 
+/**
+ * The object stated plainly: an assumption that carries no belief, and
+ * so is held true. The object given is copied rather than changed.
+ * @category Model
+ */
 export function assignObject<O extends object>(
     obj: O
 ): ObjectAssumption<O> {
@@ -351,24 +409,42 @@ export function assignObject<O extends object>(
     }
 }
 
-/** A date the edition states: the day the event falls within. */
+/**
+ * A date the edition states: the day the event falls within.
+ * @category Model
+ */
 export const assignDate = (within: Date): DateAssignment => ({ within })
 
-/** A date the edition can only bound from below, as in "not before 1924". */
+/**
+ * A date the edition can only bound from below, as in "not before 1924".
+ * @category Model
+ */
 export const notBefore = (after: Date): DateAssignment => ({ after })
 
-/** A date the edition can only bound from above. */
+/**
+ * A date the edition can only bound from above.
+ * @category Model
+ */
 export const notAfter = (before: Date): DateAssignment => ({ before })
 
-/** The day the event falls within, where the edition states one. */
+/**
+ * The day the event falls within, where the edition states one.
+ * @category Model
+ */
 export const dateOf = (assignment: DateAssignment): Date | undefined =>
     'within' in assignment ? assignment.within : undefined
 
-/** The earliest the event can have happened, as far as the edition states it. */
+/**
+ * The earliest the event can have happened, as far as the edition states it.
+ * @category Model
+ */
 export const earliestOf = (assignment: DateAssignment): Date | undefined =>
     'within' in assignment ? assignment.within : assignment.after
 
-/** The latest the event can have happened, as far as the edition states it. */
+/**
+ * The latest the event can have happened, as far as the edition states it.
+ * @category Model
+ */
 export const latestOf = (assignment: DateAssignment): Date | undefined =>
     'within' in assignment ? assignment.within : assignment.before
 

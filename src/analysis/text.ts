@@ -10,10 +10,19 @@ import { featuresIn } from "../lookup/lookup.js";
 import { perState } from "../lookup/perState.js";
 import { lineageOf } from "./stemma.js";
 
+/**
+ * The features carrying the symbol, on whichever copy they sit, those a
+ * patch bears included. A carrier the edition holds no feature for is
+ * left out.
+ * @category Lookups
+ */
 export const carriersOf = (edition: Pick<Edition, 'copies'>, symbol: AnySymbol): Readonly<NestedFeature>[] =>
     featuresIn(edition, idsOf(symbol.carriers))
 
-/** The carriers that state a place of their own, which a feature on a patch does not. */
+/**
+ * The carriers that state a place of their own, which a feature on a patch does not.
+ * @category Lookups
+ */
 export const placedCarriersOf = (edition: Pick<Edition, 'copies'>, symbol: AnySymbol): Readonly<FeatureOrPatch>[] =>
     carriersOf(edition, symbol).filter(isPlaced)
 
@@ -34,6 +43,7 @@ export const placedCarriersOf = (edition: Pick<Edition, 'copies'>, symbol: AnySy
  * symbol may be carried by copies of both — averaging a red carrier
  * on track 47 with a green one on 45 would give 46, a legal
  * position a semitone away on either bar.
+ * @category Lookups
  */
 export const placeOf = (edition: Pick<Edition, 'copies'>, symbol: AnySymbol): Readonly<HorizontalSpan> | undefined => {
     const carriers = placedCarriersOf(edition, symbol)
@@ -44,7 +54,10 @@ export const placeOf = (edition: Pick<Edition, 'copies'>, symbol: AnySymbol): Re
     return { unit: 'mm', from, to }
 }
 
-/** Where the symbol begins, as the median onset of its carriers, or nothing for a symbol without a place. */
+/**
+ * Where the symbol begins, as the median onset of its carriers, or nothing for a symbol without a place.
+ * @category Lookups
+ */
 export const onsetOf = (edition: Pick<Edition, 'copies'>, symbol: AnySymbol): Millimeters | undefined =>
     placeOf(edition, symbol)?.from
 
@@ -63,6 +76,7 @@ const snapshotsIn = perState((_: Edition) => new Map<string, readonly Readonly<A
  * each version's deletions striking what it or its ancestors inserted.
  * They are worked out once for each state of the edition, and the list
  * is frozen, since everyone who asks is handed the same one.
+ * @category Lookups
  */
 export const snapshotOf = (edition: Edition, versionId: string): readonly Readonly<AnySymbol>[] => {
     const known = snapshotsIn(edition)

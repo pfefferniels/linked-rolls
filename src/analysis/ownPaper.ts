@@ -3,7 +3,10 @@ import { defaultTrackerBar, trackerBarOf } from "../systems/index.js";
 import { paperOf, PaperOfSystem } from "./paper.js";
 import { Edition } from "../model/Edition.js";
 
-/** What the alignments say about the paper of the version's own system, where they say anything. */
+/**
+ * What the alignments say about the paper of the version's own system, where they say anything.
+ * @category Analysis
+ */
 export const paperOfVersion = (edition: Edition, version: Readonly<Version>): PaperOfSystem | undefined => {
     const system = (trackerBarOf(version.system) ?? defaultTrackerBar).id
     return paperOf(edition)?.systems.find(paper => paper.system === system)
@@ -23,6 +26,7 @@ export const paperOfVersion = (edition: Edition, version: Readonly<Version>): Pa
  *
  * Nothing where no copy of the version's system measures its paper,
  * which leaves the performance on the axis.
+ * @category Analysis
  */
 export const toOwnPaperOf = (edition: Edition, version: Readonly<Version>): number | undefined =>
     paperOfVersion(edition, version)?.toOwnPaper

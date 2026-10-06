@@ -134,6 +134,12 @@ const punchDiameterOf = (holes: AtonHole[], dpi: number): Millimeters | undefine
     return circular.length > 0 ? mean(circular) : undefined
 }
 
+/**
+ * How `readFromStanfordAton` reads an analysis file: how its hole
+ * numbering is shifted onto the tracker bar, which bar the roll was cut
+ * for, and where its scan can be seen.
+ * @category Sources
+ */
 export interface StanfordAtonOptions {
     /**
      * Added to the scanning software's hole numbering to reach the
@@ -223,6 +229,15 @@ const takenBy = (measurement: Measurement | undefined) => <O extends object>(val
         ? { ...value, '@annotation': { id: v4(), belief: { type: 'belief', id: v4(), certainty: 'true', reasons: [measurement] } } }
         : value
 
+/**
+ * Reads a hole analysis of a scan, in the ATON format of Stanford's
+ * SUPRA collection, as a copy of the roll: its chains of holes in
+ * millimetres of paper on the bar it was cut for, its edge tears, its
+ * dimensions and hole separation as the analysis measured them, and how
+ * the scan relates to the bar. A position the bar does not read is left
+ * out, as the bar would leave it.
+ * @category Sources
+ */
 export function readFromStanfordAton(
     atonString: string,
     { trackShift, system = welteT100, scan }: StanfordAtonOptions = {}

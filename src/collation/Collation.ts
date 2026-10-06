@@ -6,13 +6,19 @@ import { distance, Millimeters, mm } from "../model/Quantity.js"
 import { partitionPoint } from "../shared/sorted.js"
 import { groupBy } from "../shared/utils.js"
 
-/** A value taken at each end of a feature: where it begins and where it stops. */
+/**
+ * A value taken at each end of a feature: where it begins and where it stops.
+ * @category Collation and alignment
+ */
 export interface BothEnds<T> {
     from: T
     to: T
 }
 
-/** How far one text puts a feature from where another puts it, at either end. */
+/**
+ * How far one text puts a feature from where another puts it, at either end.
+ * @category Collation and alignment
+ */
 export type Displacement = BothEnds<Millimeters>
 
 /**
@@ -27,6 +33,7 @@ export type Displacement = BothEnds<Millimeters>
  * tolerance stand for the scatter only. A window that names none is
  * centred on nothing, which is what every window written before the
  * offset was held here means.
+ * @category Model
  */
 export interface CollationTolerance {
     /** How far the two readings may lie apart at the start of a feature, measured from `offsetStart`. */
@@ -53,12 +60,23 @@ export interface CollationTolerance {
     offsetEnd?: Millimeters
 }
 
+/**
+ * The window a derivation that states none is collated at: five
+ * millimetres at either end, centred on nothing.
+ * @category Collation and alignment
+ */
 export const defaultCollationTolerance: CollationTolerance = { toleranceStart: mm(5), toleranceEnd: mm(5) }
 
-/** Where the window is centred at the start of a feature, on nothing where it names no offset. */
+/**
+ * Where the window is centred at the start of a feature, on nothing where it names no offset.
+ * @category Collation and alignment
+ */
 export const offsetStartOf = (tolerance: CollationTolerance): Millimeters => tolerance.offsetStart ?? mm(0)
 
-/** Where the window is centred at the end of a feature. */
+/**
+ * Where the window is centred at the end of a feature.
+ * @category Collation and alignment
+ */
 export const offsetEndOf = (tolerance: CollationTolerance): Millimeters => tolerance.offsetEnd ?? mm(0)
 
 /**
@@ -80,19 +98,26 @@ export const offsetEndOf = (tolerance: CollationTolerance): Millimeters => toler
  * report something other than the punched slot, as a pneumatic reader
  * reports how long a valve stayed open. Long held notes are where the
  * second is likeliest, since that is where the chains are.
+ * @category Collation and alignment
  */
 export const admittedAtEnds = (tolerance: CollationTolerance, displacement: Displacement): BothEnds<boolean> => ({
     from: distance(displacement.from, offsetStartOf(tolerance)) <= tolerance.toleranceStart,
     to: distance(displacement.to, offsetEndOf(tolerance)) <= tolerance.toleranceEnd
 })
 
-/** Whether the window admits the displacement: within the tolerance of the offset, at both ends. */
+/**
+ * Whether the window admits the displacement: within the tolerance of the offset, at both ends.
+ * @category Collation and alignment
+ */
 export const admits = (tolerance: CollationTolerance, displacement: Displacement): boolean => {
     const ends = admittedAtEnds(tolerance, displacement)
     return ends.from && ends.to
 }
 
-/** Where a symbol lies along the roll, as its carriers put it, or nothing for a symbol without a place. */
+/**
+ * Where a symbol lies along the roll, as its carriers put it, or nothing for a symbol without a place.
+ * @category Collation and alignment
+ */
 export type Locate = (symbol: AnySymbol) => Readonly<HorizontalSpan> | undefined
 
 /**
@@ -115,6 +140,7 @@ const nearby = (here: HorizontalSpan, there: HorizontalSpan, tolerance: Collatio
  * Two symbols collate when they are of one kind, say the same thing
  * (pitch, or expression type and scope), and lie at about the same
  * place along the roll.
+ * @category Collation and alignment
  */
 export const isCollatable = (
     a: AnySymbol,
@@ -129,6 +155,11 @@ export const isCollatable = (
     return here !== undefined && there !== undefined && nearby(here, there, tolerance)
 }
 
+/**
+ * One of a version's own symbols together with an inherited symbol it
+ * collates with, as `collationsOf` pairs them.
+ * @category Collation and alignment
+ */
 export type Collation = { symbol: Readonly<AnySymbol>, counterpart: Readonly<AnySymbol> }
 
 /** A symbol that has a place, with its place and its position in the list it came from. */
@@ -160,7 +191,10 @@ const nearOnsetOf = (kind: readonly Placed[], span: HorizontalSpan, tolerance: C
     return kind.slice(first, end)
 }
 
-/** Each of the own symbols with every inherited symbol it collates with, both in the order given. */
+/**
+ * Each of the own symbols with every inherited symbol it collates with, both in the order given.
+ * @category Collation and alignment
+ */
 export const collationsOf = (
     own: readonly Readonly<AnySymbol>[],
     inherited: readonly Readonly<AnySymbol>[],
@@ -192,10 +226,14 @@ const drawnByCollation: EditType = 'recoding'
  * It does not make an edit the editor's. `isCollationsOwn` passes over
  * this motivation exactly, so a collation rewrites what it marked
  * before, and only what somebody has actually written stays.
+ * @category Collation and alignment
  */
 export const unchecked = 'unchecked'
 
-/** The version's statement of what the unchecked motivation means, to stand in its `motivations`. */
+/**
+ * The version's statement of what the unchecked motivation means, to stand in its `motivations`.
+ * @category Collation and alignment
+ */
 export const uncheckedMotivation = {
     type: 'motivation',
     id: unchecked,
@@ -222,6 +260,7 @@ export const uncheckedMotivation = {
  * A recoding that only inserts or only deletes is the editor's: a
  * collation types no one-sided edit, so one typed so is a reading of
  * the transfer that collating again must not undo.
+ * @category Collation and alignment
  */
 export const isCollationsOwn = (edit: Readonly<Edit>): boolean =>
     (edit.editType === drawnByCollation && !!edit.insert?.length && !!edit.delete?.length)

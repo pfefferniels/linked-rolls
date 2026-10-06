@@ -33,6 +33,7 @@ const dropDerivations = (version: Draft<Version>, matches: (derivation: Readonly
  * Makes the version stand on its own: what it inherited becomes its
  * own insertions, and its derivations go, the hypotheses among them,
  * with the motivations that belonged to them.
+ * @category Operations
  */
 export const detachVersion = (versionId: string): EditionOp => reading(edition => {
     const edits = snapshotOf(edition, versionId).map(insertion)
@@ -48,6 +49,7 @@ export const detachVersion = (versionId: string): EditionOp => reading(edition =
  * Takes the version out. Whatever read its text against it comes to
  * stand on its own, a hypothesis that something derives from it goes,
  * and so does a copy's statement that it carries the version.
+ * @category Operations
  */
 export const removeVersion = (versionId: string): EditionOp => reading(edition => {
     const detachments = edition.versions
@@ -63,11 +65,17 @@ export const removeVersion = (versionId: string): EditionOp => reading(edition =
     }
 })
 
-/** Takes the symbols out of the version's own insertions, and the edits that had nothing else. */
+/**
+ * Takes the symbols out of the version's own insertions, and the edits that had nothing else.
+ * @category Operations
+ */
 export const removeSymbols = (versionId: string, symbolIds: readonly string[]): EditionOp =>
     onVersion(versionId, version => dropInsertions(version, new Set(symbolIds)))
 
-/** Moves the edits into a new version based on this one. */
+/**
+ * Moves the edits into a new version based on this one.
+ * @category Operations
+ */
 export const deriveVersion = (versionId: string, editIds: readonly string[]): EditionOp =>
     onVersion(versionId, (version, draft) => {
         const chosen = new Set(editIds)
@@ -89,6 +97,7 @@ export const deriveVersion = (versionId: string, editIds: readonly string[]): Ed
  * unless the belief holds this one more certain. A version derives from
  * itself, twice from one parent, or from one of its own descendants in
  * no statement.
+ * @category Operations
  */
 export const stateDerivation = (versionId: string, parentId: string, belief?: Belief): EditionOp =>
     onVersion(versionId, (version, draft) => {
@@ -98,7 +107,10 @@ export const stateDerivation = (versionId: string, parentId: string, belief?: Be
         version.basedOn = [...derivations, referenceHeld(parentId, belief)]
     })
 
-/** Takes back the hypothesis that the version derives from the parent; the principal derivation goes with `detachVersion`. */
+/**
+ * Takes back the hypothesis that the version derives from the parent; the principal derivation goes with `detachVersion`.
+ * @category Operations
+ */
 export const clearDerivation = (versionId: string, parentId: string): EditionOp =>
     onVersion(versionId, version => {
         if (readsAgainst(stateOf<Version>(version), parentId)) return

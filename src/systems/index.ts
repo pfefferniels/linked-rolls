@@ -4,10 +4,16 @@ import { welteT100 } from "./welteT100/bar.js"
 import { welteLicensee } from "./welteLicensee/bar.js"
 import { welteT98 } from "./welteT98/bar.js"
 
-/** The tracker bars the library knows, the T-100 first as the usual one. */
+/**
+ * The tracker bars the library knows, the T-100 first as the usual one.
+ * @category Systems and emulation
+ */
 export const trackerBars: readonly TrackerBar[] = [welteT100, welteLicensee, welteT98]
 
-/** The bar of a system the type vocabulary knows, from its concept. */
+/**
+ * The bar of a system the type vocabulary knows, from its concept.
+ * @category Systems and emulation
+ */
 export const trackerBarOf = (system: Concept | undefined): TrackerBar | undefined => {
     const id = systemIdOf(system)
     return trackerBars.find(bar => bar.id === id)
@@ -17,5 +23,6 @@ export const trackerBarOf = (system: Concept | undefined): TrackerBar | undefine
  * The bar a copy is read by where it names no system of its own: every
  * copy was read by the T-100's before the systems were told apart, and
  * `reservationsAbout` reports a copy that still relies on this.
+ * @category Systems and emulation
  */
 export const defaultTrackerBar: TrackerBar = welteT100

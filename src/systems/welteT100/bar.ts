@@ -3,6 +3,7 @@ import { metersPerMinute, mm } from "../../model/Quantity.js"
 
 /**
  * The commands of the Welte-Mignon T-100, as its tracker bar reads them.
+ * @category Systems and emulation
  */
 export const welteT100ExpressionTypes = [
     'SustainPedalOn',
@@ -21,6 +22,10 @@ export const welteT100ExpressionTypes = [
     'ElectricCutOff'
 ] as const
 
+/**
+ * A command of the Welte-Mignon T-100.
+ * @category Systems and emulation
+ */
 export type WelteT100ExpressionType = typeof welteT100ExpressionTypes[number]
 
 /**
@@ -42,6 +47,7 @@ export type WelteT100ExpressionType = typeof welteT100ExpressionTypes[number]
  * being an automatic mercury contact (Skala-Rolle 98 §12) and its rewind
  * riding on the bass sforzando-piano line. A red command of those kinds
  * has no counterpart and stays a plain deletion.
+ * @category Systems and emulation
  */
 export const welteT100Operations: Readonly<Partial<Record<WelteT100ExpressionType, Operation>>> = {
     MezzoforteOn: { operates: 'mezzoforte', spelling: 'on', sided: true },
@@ -59,6 +65,7 @@ export const welteT100Operations: Readonly<Partial<Record<WelteT100ExpressionTyp
 /**
  * A single added accent on the T-100: a valve latched on and off again
  * straight away.
+ * @category Systems and emulation
  */
 export const welteT100Accents: readonly (readonly WelteT100ExpressionType[])[] = [
     ['SlowCrescendoOn', 'SlowCrescendoOff'],
@@ -72,6 +79,7 @@ export const welteT100Accents: readonly (readonly WelteT100ExpressionType[])[] =
  * The expression valves are duplicated, bass below the note block and
  * treble above it, in mirrored order. The rolls run at three metres a
  * minute (Phillips 2016, p. 113; Bärtsch 2020 gives 3 or 2.9).
+ * @category Systems and emulation
  */
 export const welteT100: TrackerBar = describeTrackerBar({
     id: 'welte-t100',

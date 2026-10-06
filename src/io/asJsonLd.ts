@@ -185,6 +185,16 @@ const atOwnPlacesAll = (edition: Edition): Edition =>
         ? { ...edition, copies: edition.copies.map(atOwnPlaces) }
         : edition
 
+/**
+ * Writes the edition as a JSON-LD document in the terms of the Roll
+ * Edition Ontology. Each copy's features and tears go back to the
+ * copy's own places, as they were read, with the alignment beside them,
+ * and every version carries the context of its own reproducing system.
+ * A reference the edition holds possible, unlikely or false is quoted
+ * rather than stated, so that a reader of the RDF does not take it for
+ * a fact. The edition given is not changed.
+ * @category Reading and writing
+ */
 export const asJsonLd = (edition: Edition) => {
     const quoted: Json[] = []
     const node = withDoubtedReferencesQuoted(withSystemContexts(withCreations(withChanges(asJsonLdEntity(atOwnPlacesAll(edition))))), quoted)

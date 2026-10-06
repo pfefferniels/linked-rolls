@@ -1,3 +1,11 @@
+/**
+ * The Welte-Mignon T-98, the green Welte, as a reproducing system: the
+ * system that plays a version (`welteT98System`), the options it takes,
+ * and the green instruments its emulator offers, genuine, derived and
+ * unfitted. It needs the optional peer dependency welte-mignon-emulator.
+ *
+ * @module linked-rolls/welte-t98
+ */
 import {
     ROWS_PER_MM,
     WELTE_T98_SPOOL,
@@ -12,7 +20,7 @@ import {
     GENUINE,
     instrumentT98Of,
     labelOf,
-    nuanceOf,
+    nuanceOf as emulatorNuanceOf,
     PUNCH_T98_MM,
     pneumaticT98Model,
     rewindAt,
@@ -38,9 +46,26 @@ import { Millimeters, mm, Seconds, seconds, track } from "../../model/Quantity.j
 import { defaultVelocityMap } from "../velocity.js";
 import { pedalPresets, performWelte, Ports, sameParameters, type WelteOptions } from "../welte.js";
 
+// The T-100 module documents these; the tags sort this module's references to them.
+/** @category Systems and emulation */
 export type { VelocityMap } from "../velocity.js";
-export { pedalPresetOf, pedalPresets, secondsAt, type PedalPreset } from "../welte.js";
-export type { WelteT98Instrument, WelteT98InstrumentName } from "welte-mignon-emulator/t98";
+/** @category Systems and emulation */
+export { pedalPresetOf, pedalPresets, secondsAt, type PedalPreset, type WelteOptions } from "../welte.js";
+
+/**
+ * A set of nuancing constants for the green Welte, with what it was
+ * fitted to: a genuine, a derived or an unfitted instrument.
+ * @category Systems and emulation
+ */
+export type { WelteT98Instrument } from "welte-mignon-emulator/t98";
+
+/**
+ * A green instrument by name: a genuine one by the Welte number of its
+ * roll or as their consensus, a derived one by the recording it was
+ * fitted on, or the unfitted starting values.
+ * @category Systems and emulation
+ */
+export type { WelteT98InstrumentName } from "welte-mignon-emulator/t98";
 
 /**
  * The instruments the emulator offers for the green Welte, in three groups that
@@ -68,16 +93,25 @@ export type { WelteT98Instrument, WelteT98InstrumentName } from "welte-mignon-em
  * are 0.029 to 0.066, because a shared mechanism describes none of them well.
  * That spread is a property of the instruments rather than of the fit, and
  * Gottschewski's finding that they were out of regulation is visible in it.
+ * @category Systems and emulation
  */
 export const instruments = { genuine: GENUINE, derived: DERIVED, unfitted: { 'starting-values': STARTING_VALUES } }
 
+/**
+ * The names of the green instruments, the genuine ones first, then the
+ * derived ones and the unfitted starting values.
+ * @category Systems and emulation
+ */
 export const instrumentNames: readonly WelteT98InstrumentName[] = [
     ...Object.keys(GENUINE).map(genuine => ({ genuine }) as WelteT98InstrumentName),
     ...Object.keys(DERIVED).map(derived => ({ derived }) as WelteT98InstrumentName),
     { unfitted: 'starting-values' }
 ]
 
-/** The instrument a pair of nuancing constants belongs to, if it is one. */
+/**
+ * The instrument a pair of nuancing constants belongs to, if it is one.
+ * @category Systems and emulation
+ */
 export const instrumentNameOf = (nuance: Record<Half, Parameters>): WelteT98InstrumentName | undefined =>
     instrumentNames.find(name => {
         const instrument = instrumentT98Of(name)
@@ -86,7 +120,21 @@ export const instrumentNameOf = (nuance: Record<Half, Parameters>): WelteT98Inst
             && sameParameters(instrument.treble, nuance.treble)
     })
 
-export { instrumentT98Of, labelOf, nuanceOf }
+/**
+ * The green instrument of that name, where the emulator has one.
+ * @category Systems and emulation
+ */
+export { instrumentT98Of }
+
+/** @category Systems and emulation */
+export { labelOf }
+
+/**
+ * The nuancing constants of a green instrument, one set for each half of
+ * the keyboard.
+ * @category Systems and emulation
+ */
+export const nuanceOf = emulatorNuanceOf
 
 /**
  * The options every Welte system takes (see `WelteOptions`), with what the
@@ -100,6 +148,7 @@ export { instrumentT98Of, labelOf, nuanceOf }
  * configuration independently gives the last bass note as MIDI 66. A green
  * roll re-cut from a Mignon master uses only the middle 80 of the 88 note
  * positions, so the division falls inside the used compass either way.
+ * @category Systems and emulation
  */
 export type WelteT98Options = WelteOptions & {
     /** Which instrument the nuancing constants are, so that a curve can say so. */
@@ -127,6 +176,14 @@ export type WelteT98Options = WelteOptions & {
     rewind: 'stop' | 'ignore'
 }
 
+/**
+ * The options the T-98 plays a version with unless others are given:
+ * the green spool, the consensus of the genuine instruments, the
+ * damping pedals as a continuous controller, the keyboard divided at
+ * track 52, and the performance ending where a long perforation sends
+ * the roll back.
+ * @category Systems and emulation
+ */
 export const defaultWelteT98Options: WelteT98Options = {
     spool: WELTE_T98_SPOOL,
     nuance: nuanceOf(GENUINE.consensus!),
@@ -232,6 +289,7 @@ const perform = (
  * playback runs on the consensus across them unless the caller names another
  * instrument. Where the roll being played is one of the five, its own instrument
  * is the better choice and `instruments.genuine` carries it.
+ * @category Systems and emulation
  */
 export const welteT98System: ReproducingSystem<WelteT98Options> = {
     name: 'Welte-Mignon T98',

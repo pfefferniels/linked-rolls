@@ -26,7 +26,10 @@ import { Edition } from "../model/Edition.js"
  * does not account for, and an editor says which of those are acts.
  */
 
-/** Where one copy puts a symbol, against where the copies read with it put it. */
+/**
+ * Where one copy puts a symbol, against where the copies read with it put it.
+ * @category Collation and alignment
+ */
 export interface Reading {
     symbol: Readonly<AnySymbol>
 
@@ -65,6 +68,7 @@ const sitsOn = (edition: Edition, copies: ReadonlySet<string>) => (feature: Read
  *
  * A symbol only one side carries measures nothing and is passed over,
  * which leaves out exactly the insertions and the deletions.
+ * @category Collation and alignment
  */
 export const readingsOf = (
     edition: Edition,
@@ -99,11 +103,17 @@ export const readingsOf = (
  * notes. Once the alignment carries a skew term, one sample will do,
  * which is why this is a parameter of the estimator and not a field
  * anywhere.
+ * @category Collation and alignment
  */
 export type Grouping = (symbol: Readonly<AnySymbol>) => string
 
 const byWhatItIs: Grouping = symbol => symbol.type
 
+/**
+ * How `scatterOf` takes the readings apart into samples, counts them,
+ * and reports on them.
+ * @category Collation and alignment
+ */
 export interface ScatterOptions {
     /** What sample a reading belongs to. By default what the symbol is: a note, an expression, a text. */
     groupOf?: Grouping
@@ -115,7 +125,10 @@ export interface ScatterOptions {
     stated?: CollationTolerance
 }
 
-/** A reading the calculated tolerance does not admit. */
+/**
+ * A reading the calculated tolerance does not admit.
+ * @category Collation and alignment
+ */
 export interface Departure {
     /** The symbol read. */
     symbol: string
@@ -154,7 +167,10 @@ export interface Departure {
     admittedAsStated?: boolean
 }
 
-/** How far a sample departs from the normal shape the tolerance assumes of it. */
+/**
+ * How far a sample departs from the normal shape the tolerance assumes of it.
+ * @category Collation and alignment
+ */
 export interface Normality {
     /** How much heavier its tails are than a normal sample's. Nothing for a normal shape. */
     excessKurtosis: number
@@ -163,7 +179,10 @@ export interface Normality {
     tails: Tail[]
 }
 
-/** A histogram with the curve its counts are held to follow. */
+/**
+ * A histogram with the curve its counts are held to follow.
+ * @category Collation and alignment
+ */
 export interface FittedHistogram extends Histogram<'mm'> {
     /**
      * The normal curve, in the counts' own units, so that an overlay is
@@ -173,7 +192,10 @@ export interface FittedHistogram extends Histogram<'mm'> {
     curve: { centre: Millimeters, sigma: Millimeters, area: number }
 }
 
-/** How far one sample of readings scatters, and the tolerance that follows from it. */
+/**
+ * How far one sample of readings scatters, and the tolerance that follows from it.
+ * @category Collation and alignment
+ */
 export interface Scatter {
     /** The sample, as the grouping named it. */
     group: string
@@ -219,6 +241,7 @@ const DEFAULT_BIN_WIDTH = mm(0.25)
  * point beyond which fewer than one reading of a sample of this size is
  * expected to fall by chance. For the samples an edge of the stemma
  * yields, some hundreds of readings, this lands between 3.0 and 3.2.
+ * @category Collation and alignment
  */
 export const departureThreshold = (n: number): number => normalQuantile(1 - 1 / (2 * n))
 
@@ -301,12 +324,16 @@ const scatterIn = (
  * How the readings scatter, one sample per group. A group whose
  * readings all sit at one place yields nothing, since no scatter can be
  * read off such a sample.
+ * @category Collation and alignment
  */
 export const scatterOf = (readings: readonly Reading[], options: ScatterOptions = {}): Scatter[] =>
     [...groupBy(readings, reading => (options.groupOf ?? byWhatItIs)(reading.symbol))]
         .flatMap(([group, sample]) => scatterIn(group, sample, options))
 
-/** How one copy's readings of a version's text scatter against the readings of the copies it is collated with. */
+/**
+ * How one copy's readings of a version's text scatter against the readings of the copies it is collated with.
+ * @category Collation and alignment
+ */
 export const scatterOfCopy = (
     edition: Edition,
     versionId: string,
@@ -329,6 +356,7 @@ const covering = (windows: readonly Window[]): Window => {
 /**
  * Which side of a derivation a measurement was taken over: the version
  * derived, or the version it is read against.
+ * @category Collation and alignment
  */
 export type Side = 'child' | 'parent'
 
@@ -361,6 +389,7 @@ export type Side = 'child' | 'parent'
  * expressions show. `changesBetween` makes that visible as readings the
  * window moves; it is the price of one tolerance per derivation, and it
  * is the same skew the grouping stands in for.
+ * @category Collation and alignment
  */
 export const toleranceAcross = (
     scatters: readonly Scatter[],
@@ -382,7 +411,10 @@ export const toleranceAcross = (
     }
 }
 
-/** What putting one window in force in place of another would do to a collation. */
+/**
+ * What putting one window in force in place of another would do to a collation.
+ * @category Collation and alignment
+ */
 export interface Changes {
     /** Readings the window in force joins and the proposed one would take apart. */
     separated: Reading[]
@@ -406,6 +438,7 @@ export interface Changes {
  * reading `admittedAsStated` off the departures, which sees separations
  * only. An edge both windows agree about throughout needs no
  * re-collation at all, and its tolerance may simply be stated.
+ * @category Collation and alignment
  */
 export const changesBetween = (
     readings: readonly Reading[],
@@ -418,13 +451,19 @@ export const changesBetween = (
         !admits(inForce, displacement) && admits(proposed, displacement))
 })
 
-/** How many of a side's symbols a copy bears. */
+/**
+ * How many of a side's symbols a copy bears.
+ * @category Collation and alignment
+ */
 export interface Attestation {
     copy: string
     symbols: number
 }
 
-/** The copies attesting each side of a derivation, each side in order of how much it bears. */
+/**
+ * The copies attesting each side of a derivation, each side in order of how much it bears.
+ * @category Collation and alignment
+ */
 export interface Sides {
     /** The copies bearing what the child inserts: the reading the derivation moves to. */
     child: Attestation[]
@@ -464,6 +503,7 @@ const copiesBearing = (edition: Edition, symbols: readonly Readonly<AnySymbol>[]
  * A fully collated edge inserts and deletes nothing and so attests
  * neither side, which is the case where the edition has genuinely
  * stopped saying and an editor has to.
+ * @category Collation and alignment
  */
 export const sidesOf = (edition: Edition, versionId: string): Sides | undefined => {
     const version = versionIn(edition, versionId)
@@ -501,6 +541,7 @@ const warrantFor = (scatters: readonly Scatter[]): string =>
  * sample only as far as the sample is normal, and a sample far from
  * that shape makes the number unreliable rather than wrong, which is
  * what `normality` is reported for.
+ * @category Collation and alignment
  */
 export const inferredTolerance = (scatters: readonly Scatter[], used: readonly string[] = []): Belief => ({
     type: 'belief',

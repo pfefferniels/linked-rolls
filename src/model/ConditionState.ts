@@ -4,6 +4,7 @@
  * of a feature on the roll (e.g. a damaged
  * or unsuccessful perforation).
  * @see crm:E3 Condition State
+ * @category Model
  */
 export interface ConditionState<T extends string> {
     /**

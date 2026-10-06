@@ -11,6 +11,7 @@ export type { Operation, Spelling } from "../systems/TrackerBar.js"
  * nothing for a word no bar here knows or one without a counterpart in
  * another scale. The bars share their words where they share a scale,
  * as the Licensee does the T-100's, so the first that reads it answers.
+ * @category Systems and emulation
  */
 export const operationOf = (expressionType: string): Operation | undefined => {
     for (const bar of trackerBars) {
@@ -23,6 +24,7 @@ export const operationOf = (expressionType: string): Operation | undefined => {
 /**
  * A latched function of the older version and the held command of the
  * newer one that stands for it.
+ * @category Collation and alignment
  */
 export interface Substitution {
     /** The command that turned the function on, and the one that cancelled it. */
@@ -42,6 +44,7 @@ export interface Substitution {
  * command. The T-98 punches a hold as a chain of round holes on a
  * 2.66 mm grid with bridges of about a millimetre, so a scan read hole
  * by hole shows a run where the paper shows one command.
+ * @category Collation and alignment
  */
 export const defaultChainGap = mm(3)
 
@@ -61,6 +64,7 @@ const functionKey = (symbol: Pick<Expression, 'scope'>, operation: Operation): s
  * the green bar, so drawing it as a perforation is out of the question,
  * but an edit still has to be shown somewhere, and the lane the green
  * scale gives the same function is where it belongs.
+ * @internal
  */
 export const positionOfSameFunction = (bar: TrackerBar, symbol: Expression): Track | undefined => {
     const wanted = operationOf(symbol.expressionType)
@@ -179,6 +183,7 @@ const theOnly = <T,>(items: readonly T[]): T | undefined =>
  * reported and the editor is left to say what happened. Nothing is
  * invented either: both sides are perforations somebody punched, and all
  * this asserts is which stands for which.
+ * @category Collation and alignment
  */
 export const substitutionsBetween = (
     own: readonly AnySymbol[],

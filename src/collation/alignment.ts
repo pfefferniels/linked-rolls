@@ -7,11 +7,17 @@ import { partitionPoint } from "../shared/sorted.js";
 
 type Ends<U extends Unit> = { from: Quantity<U>, to?: Quantity<U> }
 
-/** A place on the copy's own paper, on the edition's axis. */
+/**
+ * A place on the copy's own paper, on the edition's axis.
+ * @category Collation and alignment
+ */
 export const toAxis = (alignment: Alignment | undefined) => (place: Millimeters): Millimeters =>
     alignment ? mm((place + alignment.shift.horizontal) * alignment.scale) : place
 
-/** A place on the edition's axis, on the copy's own paper. */
+/**
+ * A place on the edition's axis, on the copy's own paper.
+ * @category Collation and alignment
+ */
 export const fromAxis = (alignment: Alignment | undefined) => (place: Millimeters): Millimeters =>
     alignment ? mm(place / alignment.scale - alignment.shift.horizontal) : place
 
@@ -126,7 +132,10 @@ export const putOnAxis = (copy: RollCopy) => {
     if (alignment) moveOnto(alignment, copy)
 }
 
-/** The copy's features at its own places, as it was read, whatever alignment it has. */
+/**
+ * The copy's features at its own places, as it was read, whatever alignment it has.
+ * @category Collation and alignment
+ */
 export const ownFeaturesOf = (copy: RollCopy): FeatureOrPatch[] => {
     const alignment = copy.measurements.alignment
     if (!alignment) return featuresOf(copy)
@@ -182,6 +191,7 @@ const extensionOnAxis = (extension: Millimeters, copy: RollCopy): Millimeters =>
  * the port. What to do with them is an editorial question — a condition
  * on the feature, a reading of the chain, a smaller extension — and
  * `shortenChains` throws rather than answer it.
+ * @category Sources
  */
 export const tooShortToShorten = (
     extension: Millimeters,
@@ -247,12 +257,14 @@ export const revertShortening = (copy: RollCopy) => {
  * revision changes when the method does and at no other release, so
  * that an alignment found by an earlier method can be told from one
  * that would be found again as it stands.
+ * @category Collation and alignment
  */
 export const ALIGNMENT_METHOD = { software: 'linked-rolls alignFeatures', version: '1' } as const
 
 /**
  * How a copy's places are carried onto another copy's:
  * `x_other = (x + shift) · scale`.
+ * @category Collation and alignment
  */
 export interface AlignmentResult {
     /** Applied before the scale. */
@@ -477,6 +489,7 @@ const resultOf = ({ line, matches }: Fit): AlignmentResult | undefined => {
  * positions on different tracks, but they agree on the pitch each track
  * sounds, and it is the pitches that are matched. Where a copy's holes
  * have already been put onto the edition's bar, that bar reads it.
+ * @category Collation and alignment
  */
 export function alignFeatures(
     rollA: readonly FeatureOrPatch[],

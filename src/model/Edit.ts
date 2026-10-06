@@ -2,6 +2,10 @@ import { Assumption } from "./Assumption.js";
 import { AnySymbol } from "./Symbol.js";
 import { WithId } from "../shared/utils.js";
 
+/**
+ * The types of editorial change an edit may state.
+ * @category Vocabulary
+ */
 export const editTypes = [
     'additional-accent',
     'add-redundancy',
@@ -23,6 +27,7 @@ export const editTypes = [
  * The type of editorial change applied to a symbol or set of symbols.
  * Classifies the nature of the edit, e.g. whether it corrects an error,
  * adds an accent, shifts a note, or shortens/prolongs a perforation.
+ * @category Model
  */
 export type EditType = typeof editTypes[number];
 
@@ -39,6 +44,7 @@ export type EditType = typeof editTypes[number];
  * the axioms of reo.ttl; which of those dates bounds it closest is for
  * a query to pick.
  * @see reo:Edit
+ * @category Model
  */
 export interface Edit extends WithId, Assumption {
     type: 'edit';
@@ -65,6 +71,10 @@ export interface Edit extends WithId, Assumption {
     delete?: string[];
 }
 
+/**
+ * Whether the object is an edit.
+ * @category Model
+ */
 export const isEdit = (object: any): object is Edit => {
     return 'type' in object && object.type === 'edit';
 };

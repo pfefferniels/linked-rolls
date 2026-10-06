@@ -1,5 +1,9 @@
 export type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
+/**
+ * An object that says by its type which kind of entity it is.
+ * @category Model
+ */
 export type WithType<T extends string> = {
     /**
      * The type discriminator for this object.
@@ -8,6 +12,10 @@ export type WithType<T extends string> = {
     readonly type: T
 }
 
+/**
+ * An object the edition identifies, so that others can refer to it.
+ * @category Model
+ */
 export type WithId = {
     /**
      * A unique identifier for this object.
@@ -29,6 +37,10 @@ export const groupBy = <T,>(items: readonly T[], keyOf: (item: T) => string): Ma
         return groups
     }, new Map<string, T[]>())
 
+/**
+ * An object that may carry a note in free text.
+ * @category Model
+ */
 export type WithNote = {
     /**
      * A free-text note providing additional context.

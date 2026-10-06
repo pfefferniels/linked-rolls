@@ -21,6 +21,10 @@ import { placedCarriersOf, snapshotOf } from "../analysis/text.js";
 import { copyOfFeature, symbolIn, versionIn } from "../lookup/lookup.js";
 import { Edition } from "../model/Edition.js";
 
+/**
+ * Which part of a version `emulate` plays, and where its clock starts.
+ * @category Systems and emulation
+ */
 export type EmulationScope = {
     /** Only notes whose onset lies within this span of the roll are played. */
     range?: [Millimeters, Millimeters]
@@ -198,6 +202,7 @@ const earliestOf = (times: readonly Seconds[]): Seconds =>
  * left as they were. The edition supplies the copies, whose measurements
  * decide how far before or after its reference a command goes, and a
  * punch diameter, or a millimetre, where no copy agrees with a statement.
+ * @category Systems and emulation
  */
 export const withPlacementsApplied = (edition: Edition, events: readonly NegotiatedEvent[]): NegotiatedEvent[] => {
     const gap = meanPunchDiameterOf(edition) ?? mm(1)
@@ -216,6 +221,7 @@ export const withPlacementsApplied = (edition: Edition, events: readonly Negotia
  * The commands of a version as the bar performs them, in order of place,
  * within the scope and with the placements applied. A note plays only
  * where its onset falls in the range; expressions play throughout.
+ * @category Systems and emulation
  */
 export const negotiatedEventsOf = (
     edition: Edition,
@@ -233,7 +239,10 @@ export const negotiatedEventsOf = (
         .filter(inScope))
 }
 
-/** A version performed: what was negotiated, and what the system made of it. */
+/**
+ * A version performed: what was negotiated, and what the system made of it.
+ * @category Systems and emulation
+ */
 export interface Emulated {
     /** The id of the version performed. */
     readonly source: string
@@ -246,6 +255,7 @@ export interface Emulated {
 /**
  * Performs a version on a reproducing system: the symbols are negotiated
  * into placed events and the system plays them. Nothing given is changed.
+ * @category Systems and emulation
  */
 export const emulate = <Options extends object>(
     system: ReproducingSystem<Options>,
@@ -276,6 +286,7 @@ export const emulate = <Options extends object>(
  * The performed events as a MIDI file, in which every note and pedal step
  * is labelled with the symbol it performs. The file names the system, the
  * version and the options it was played with.
+ * @category Systems and emulation
  */
 export const midiOf = (
     events: readonly AnyPerformedRollFeature[],
@@ -365,6 +376,7 @@ export const midiOf = (
  * A version of the edition, performed and kept: `emulate` and `midiOf`
  * with the result held on the object between the two calls. Prefer the
  * functions where nothing needs holding.
+ * @category Systems and emulation
  */
 export class Emulation<Options extends object> {
     readonly system: ReproducingSystem<Options>
@@ -389,6 +401,7 @@ export class Emulation<Options extends object> {
         this.negotiatedEvents = withPlacementsApplied(edition, this.negotiatedEvents)
     }
 
+    /** Performs the version, keeps what came of it, and returns the performed events; see `emulate`. */
     emulateVersion(version: Version, edition: Edition, scope: EmulationScope = {}) {
         const emulated = emulate(this.system, version, edition, this.options, scope)
         this.source = emulated.source
@@ -398,10 +411,12 @@ export class Emulation<Options extends object> {
         return this.midiEvents
     }
 
+    /** The performed events that sound or follow from the symbol with the id. */
     findEventsPerforming(id: string) {
         return this.midiEvents.filter(event => event.performs.id === id)
     }
 
+    /** The performed events as a MIDI file; see `midiOf`. */
     asMIDI(): MidiFile {
         return midiOf(this.midiEvents, this.system.name, this.options, this.source)
     }

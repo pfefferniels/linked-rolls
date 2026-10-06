@@ -5,6 +5,11 @@ import { Version } from "../model/Version.js";
 import { witnessesOf } from "./witnesses.js";
 import { Edition } from "../model/Edition.js";
 
+/**
+ * The kinds of reservation the edition can have about a copy, in the
+ * order `reservationsAbout` checks for them.
+ * @category Analysis
+ */
 export const reservationTypes = [
     'source-not-stated',
     'source-undocumented',
@@ -18,6 +23,10 @@ export const reservationTypes = [
     'keeper-unknown'
 ] as const
 
+/**
+ * A kind of reservation about a copy.
+ * @category Analysis
+ */
 export type ReservationType = typeof reservationTypes[number]
 
 /**
@@ -29,6 +38,7 @@ export type ReservationType = typeof reservationTypes[number]
  * knowledge of it is incomplete, so filling in what is missing makes it
  * go away. Nothing here describes the state of the paper, which is a
  * condition of the copy.
+ * @category Analysis
  */
 export interface Reservation<T extends string = ReservationType> {
     type: T
@@ -141,16 +151,26 @@ const checks: readonly Check[] = [
  * What the edition cannot vouch for in a copy, in the order the
  * checks are listed: where its features came from first, then what
  * the measurement leaves open, then who holds it.
+ * @category Analysis
  */
 export const reservationsAbout = (copy: RollCopy): Reservation[] =>
     checks.flatMap(check => check(copy) ?? [])
 
+/**
+ * The kinds of reservation the edition can have about a version, in the
+ * order `reservationsAboutVersion` checks for them.
+ * @category Analysis
+ */
 export const versionReservationTypes = [
     'text-not-stated',
     'witnessed-by-statement-only',
     'no-direct-witness'
 ] as const
 
+/**
+ * A kind of reservation about a version.
+ * @category Analysis
+ */
 export type VersionReservationType = typeof versionReservationTypes[number]
 
 type VersionCheck = (edition: Edition, version: Readonly<Version>) => Reservation<VersionReservationType> | undefined
@@ -184,6 +204,9 @@ const witnessedAtFirstHand: VersionCheck = (edition, version) => {
 
 const versionChecks: readonly VersionCheck[] = [textStated, witnessedByFeatures, witnessedAtFirstHand]
 
-/** What the edition cannot vouch for in a version, in the order the checks are listed. */
+/**
+ * What the edition cannot vouch for in a version, in the order the checks are listed.
+ * @category Analysis
+ */
 export const reservationsAboutVersion = (edition: Edition, version: Readonly<Version>): Reservation<VersionReservationType>[] =>
     versionChecks.flatMap(check => check(edition, version) ?? [])

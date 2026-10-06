@@ -7,6 +7,7 @@ import { Editor, Person, Place } from "./Agent.js";
  * This type describes the creation of an edition,
  * i.e. the editor, publisher, and publication date.
  * @see lrmoo:F28 Expression Creation
+ * @category Model
  */
 export interface EditionCreation {
     /**
@@ -37,6 +38,7 @@ export interface EditionCreation {
  * the persons involved in the process (e.g. pianist),
  * the place, and the date of the recording.
  * @see lrmoo:F28 Expression Creation
+ * @category Model
  */
 export interface RecordingEvent {
     /**
@@ -85,6 +87,7 @@ export interface RecordingEvent {
  * The abstract concept of a roll, identified
  * by its catalogue number.
  * @see lrmoo:F1 Work
+ * @category Model
  */
 export interface Roll {
     /**
@@ -103,6 +106,7 @@ export interface Roll {
 /**
  * Describes the specific digital edition of a piano roll.
  * @see lrmoo:F2 Expression
+ * @category Model
  */
 export interface Edition {
     /**
@@ -176,6 +180,12 @@ export interface Edition {
     versions: Version[]
 }
 
+/**
+ * What an edition states about itself rather than about the copies and
+ * versions of the roll: `base`, `title`, `license`, `version`,
+ * `creation` and the `roll` it edits.
+ * @category Model
+ */
 export type EditionMetadata = Pick<Edition, 'base' | 'title' | 'license' | 'version' | 'creation' | 'roll'>
 
 /**
@@ -183,6 +193,7 @@ export type EditionMetadata = Pick<Edition, 'base' | 'title' | 'license' | 'vers
  * or where it names none or one it no longer has, the first copy with
  * features that is not aligned, which is how an edition stood before it
  * named one.
+ * @category Lookups
  */
 export const referenceCopyOf = (edition: Pick<Edition, 'copies' | 'referenceCopy'>): RollCopy | undefined =>
     edition.copies.find(copy => copy.id === edition.referenceCopy)

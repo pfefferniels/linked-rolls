@@ -490,6 +490,7 @@
       "ontology": "lrmoo:R76 is derivative of"
     },
     "DriveId": {
+      "description": "The IRI of a drive the type vocabulary declares.",
       "enum": [
         "https://w3id.org/reo/type/drive/ram-head",
         "https://w3id.org/reo/type/drive/asynchronous"
@@ -3396,6 +3397,7 @@
       "ontology": "crmdig:D14 Software"
     },
     "SourceKind": {
+      "description": "A kind of source a copy's features can be read from, from the paper itself to a sound recording of the copy being played.",
       "enum": [
         "roll",
         "scan",

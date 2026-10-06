@@ -9,6 +9,7 @@ import { WithId, WithNote, WithType } from "../shared/utils.js";
  * A motivation provides a reason or rationale for an editorial change.
  * Motivations are defined at the version level and referenced by edits.
  * @see crm:E33 Linguistic Object
+ * @category Model
  */
 export type Motivation = WithType<'motivation'> & WithId & WithNote
 
@@ -18,6 +19,7 @@ export type Motivation = WithType<'motivation'> & WithId & WithNote
  * put a symbol depends on what they are and on how their features were
  * obtained, so the tolerance can differ from derivation to derivation.
  * @see lrmoo:R76 is derivative of
+ * @category Model
  */
 export type Derivation = ReferenceAssumption & {
     /**
@@ -34,7 +36,10 @@ export type Derivation = ReferenceAssumption & {
     collationTolerance?: ObjectAssumption<CollationTolerance>
 }
 
-/** The tolerance the derivation was collated at, or the default where it states none. */
+/**
+ * The tolerance the derivation was collated at, or the default where it states none.
+ * @category Collation and alignment
+ */
 export const collationToleranceOf = (derivation: Readonly<Derivation>): CollationTolerance =>
     derivation.collationTolerance ?? defaultCollationTolerance
 
@@ -43,6 +48,7 @@ export const collationToleranceOf = (derivation: Readonly<Derivation>): Collatio
  * version it derives from: about 0.77 for a Licensee or green re-cut of
  * a red roll, cut for a slower paper speed.
  * @see crm:E54 Dimension
+ * @category Model
  */
 export interface LengthRatio {
     /**
@@ -67,6 +73,7 @@ export interface LengthRatio {
  * the version's edits carry it out, so the mechanical part of a
  * transfer is stated once instead of being spelled out per note.
  * @see lrmoo:F28 Expression Creation
+ * @category Model
  */
 export interface VersionCreation {
     /**
@@ -111,6 +118,7 @@ export interface VersionCreation {
  * sigla off the stemma, so that a label never outlives the arrangement
  * it describes.
  * @see lrmoo:F2 Expression
+ * @category Model
  */
 export interface Version extends WithId {
     /**
@@ -161,20 +169,30 @@ export interface Version extends WithId {
     motivations: Motivation[]
 }
 
-/** The edits the version states, none where it leaves its text unstated. */
+/**
+ * The edits the version states, none where it leaves its text unstated.
+ * @category Versions and stemma
+ */
 export const editsOf = (version: Readonly<Version>): Edit[] => version.edits ?? []
 
-/** The symbols the version's edits insert. */
+/**
+ * The symbols the version's edits insert.
+ * @category Versions and stemma
+ */
 export const insertedBy = (version: Readonly<Version>): AnySymbol[] =>
     editsOf(version).flatMap(edit => edit.insert ?? [])
 
-/** The ids of the symbols the version's edits delete. */
+/**
+ * The ids of the symbols the version's edits delete.
+ * @category Versions and stemma
+ */
 export const deletedBy = (version: Readonly<Version>): string[] =>
     editsOf(version).flatMap(edit => edit.delete ?? [])
 
 /**
  * The parents the version names, in the order of `basedOn`, each with the
  * certainty its derivation is held with and the belief it rests on.
+ * @category Versions and stemma
  */
 export const derivationsOf = (version: Readonly<Version>): { parent: string, certainty: Certainty, belief?: Belief }[] =>
     (version.basedOn ?? []).map(derivation => {
@@ -189,6 +207,7 @@ const rankOf = (derivation: Readonly<Derivation>): number => certainties.indexOf
  * held most certain. One held unlikely or false is a rejected hypothesis
  * and gives no text. Lowering the certainty of the principal derivation
  * below another's reads the version's edits against another parent.
+ * @category Versions and stemma
  */
 export const principalDerivationOf = (version: Readonly<Version>): Readonly<Derivation> | undefined =>
     (version.basedOn ?? [])
@@ -204,6 +223,7 @@ export const principalDerivationOf = (version: Readonly<Version>): Readonly<Deri
  * among them: a hypothesis held more certain becomes the principal one.
  * A version derives from itself in no statement, and a stemma that
  * loops is walked once round.
+ * @category Versions and stemma
  */
 export const derivesFrom = (versions: readonly Readonly<Version>[], versionId: string, ancestorId: string): boolean => {
     const byId = new Map(versions.map(version => [version.id, version]))

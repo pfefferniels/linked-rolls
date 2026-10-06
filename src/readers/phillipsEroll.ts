@@ -58,12 +58,19 @@ import { inMetersPerMinute, Millimeters, mm, Seconds, seconds, Track, track } fr
  * The two rules collide on one number, the lowest note of the T-100
  * sharing 24 with the tenth position. Notes win there, the note block
  * being the larger claim; none of his samples uses the number at all.
+ * @category Sources
  */
 export const CONTROL_OFFSET: Readonly<Record<string, number>> = {
     'welte-t100': 14,
     'welte-licensee': 15
 }
 
+/**
+ * How `readFromPhillipsEroll` reads a file: the bar it numbers its
+ * positions by, where its expression numbers sit, how time is put back
+ * onto the paper, and what the reader added to the chains.
+ * @category Sources
+ */
 export interface PhillipsErollOptions {
     /**
      * The bar the file numbers its positions by, which is the bar of
@@ -203,6 +210,7 @@ const controlOffsetOf = (system: TrackerBar, given: number | undefined): number 
  * Reads one of his e-roll files as a copy of the roll, in millimetres
  * of paper, on the bar it was cut for and in that bar's numbering. A
  * position the bar does not read is left out, as the bar would leave it.
+ * @category Sources
  */
 export function readFromPhillipsEroll(
     buffer: ArrayBuffer,
@@ -255,5 +263,8 @@ export function readFromPhillipsEroll(
     return copy
 }
 
-/** The bars his files are known to be numbered by. */
+/**
+ * The bars his files are known to be numbered by.
+ * @category Sources
+ */
 export const phillipsSystems: readonly TrackerBar[] = [welteT100, welteLicensee]

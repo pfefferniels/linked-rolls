@@ -29,6 +29,7 @@ const allows = (feature: FeatureOrPatch, condition: FeatureConditionAssignment):
  * States the condition of the feature, in place of any earlier
  * statement. Throws where the kind of feature is in no such condition;
  * `conditions` says which conditions each kind of feature may be in.
+ * @category Operations
  */
 export const stateFeatureCondition = (
     copyId: string,
@@ -92,6 +93,7 @@ const rewriteFeatures = (copy: Draft<RollCopy>, rewrite: Rewrite) => {
  * copy, the act that brought another feature about, or, where neither
  * is said, an act of its own for the purpose given. A patch is never
  * punched, being glued on, so `punched` says nothing of one.
+ * @category Operations
  */
 export interface FeatureAct {
     /** The copy came from its punching with it, which is where a reading of a scan puts every chain of holes. */
@@ -150,6 +152,7 @@ const actFor = (copy: Draft<RollCopy>, patch: boolean, act: FeatureAct): Draft<F
  * produced, by the punching or by a later act. Which act, `FeatureAct`
  * says; a `beside` that names nothing the copy bears is passed over and
  * the feature goes into an act of its own.
+ * @category Operations
  */
 export const addFeature = (copyId: string, feature: FeatureOrPatch, act: FeatureAct = {}): EditionOp =>
     onCopy(copyId, copy => {
@@ -160,6 +163,7 @@ export const addFeature = (copyId: string, feature: FeatureOrPatch, act: Feature
  * States that the patch bears the feature. What a patch bears came onto
  * the copy with the patch, so it belongs to no act of its own and
  * states no place: it stands where the patch stands.
+ * @category Operations
  */
 export const addBorneFeature = (copyId: string, patchId: string, feature: NestedFeature): EditionOp =>
     onCopy(copyId, copy => {
@@ -175,6 +179,7 @@ export const addBorneFeature = (copyId: string, patchId: string, feature: Nested
  * a patch goes with everything glued onto it, and a feature of a patch
  * may be taken back on its own, the patch staying where it is. An act
  * left having produced or added nothing goes as well.
+ * @category Operations
  */
 export const removeFeatures = (copyId: string, featureIds: readonly string[]): EditionOp =>
     onCopy(copyId, (copy, draft) => {
@@ -214,7 +219,10 @@ const nature = (feature: FeatureOrPatch): object => {
 const conditionsOf = (features: readonly FeatureOrPatch[]) =>
     features.flatMap(feature => feature.condition ? [feature.condition] : [])
 
-/** Why several features cannot be replaced by one. */
+/**
+ * Why several features cannot be replaced by one.
+ * @category Operations
+ */
 export type MergeObstacle =
     | 'fewer-than-two'
     | 'different-types'
@@ -230,6 +238,7 @@ export type MergeObstacle =
  * condition at most one of them states. How far apart they lie is not
  * asked: whether a gap is a bridge of the perforator, a tear or two
  * perforations of their own is the editor's reading.
+ * @category Operations
  */
 export const mergeObstacle = (features: readonly FeatureOrPatch[]): MergeObstacle | undefined => {
     if (features.length < 2) return 'fewer-than-two'
@@ -269,6 +278,7 @@ const obstacleIn = (copy: RollCopy, featureIds: readonly string[]): MergeObstacl
  * features themselves say, which cannot reach `different-acts`: one
  * feature is the work of one act, and where the features stand is the
  * edition's business rather than theirs.
+ * @category Operations
  */
 export const mergeObstacleIn = (edition: Edition, featureIds: readonly string[]): MergeObstacle | undefined => {
     const copy = featureIds.map(id => copyOfFeature(edition, id)).find(copy => copy !== undefined)
@@ -343,6 +353,7 @@ const carryOver = (draft: Draft<Edition>, replaced: Ids, mergedId: string) => {
  *
  * Throws where the features cannot stand for one; `mergeObstacle`
  * says beforehand whether they can.
+ * @category Operations
  */
 export const mergeFeatures = (copyId: string, featureIds: readonly string[]): EditionOp =>
     onCopy(copyId, (copy, draft) => {

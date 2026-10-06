@@ -43,7 +43,10 @@ import { velocityOf, type VelocityMap } from "./velocity.js";
  * and each system says that in the `Mechanism` it hands to `performWelte`.
  */
 
-/** The options every Welte system takes. */
+/**
+ * The options every Welte system takes.
+ * @category Systems and emulation
+ */
 export type WelteOptions = {
     /**
      * The take-up spool, which sets the time axis: it is held at a constant
@@ -98,15 +101,24 @@ export const sameParameters = (a: Parameters, b: Parameters): boolean =>
  * `brushing` their fall is slowed until the quick runs of latch changes
  * in the SUPRA corpus dip without damping, at the price that lifts
  * shorter than about 265 ms brush as well.
+ * @category Systems and emulation
  */
 export const pedalPresets = {
     damping: pedalDefaults,
     brushing: pedalBrushing
 } satisfies Record<string, Parameters>
 
+/**
+ * The name of one of the readings of the pedal mechanism, `damping` or
+ * `brushing`.
+ * @category Systems and emulation
+ */
 export type PedalPreset = keyof typeof pedalPresets
 
-/** The preset a set of pedal constants is, if it is one. */
+/**
+ * The preset a set of pedal constants is, if it is one.
+ * @category Systems and emulation
+ */
 export const pedalPresetOf = (pedals: Parameters): PedalPreset | undefined =>
     (Object.keys(pedalPresets) as PedalPreset[]).find(name => sameParameters(pedalPresets[name], pedals))
 
@@ -142,7 +154,10 @@ const paperOf = (toOwnPaper: number): Paper => ({
     paperOfPlace: place => mm(place * toOwnPaper)
 })
 
-/** When the spool brings a place on the roll to the tracker bar. */
+/**
+ * When the spool brings a place on the roll to the tracker bar.
+ * @category Systems and emulation
+ */
 export const secondsAt = (spool: Spool, place: Millimeters): Seconds =>
     seconds(paperSeconds(spool, inCentimeters(place)))
 

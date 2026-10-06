@@ -10,6 +10,7 @@ import { WelteT100ExpressionType, welteT100Accents, welteT100Operations } from "
  * tracks, so the note block and the treble valves sit two positions
  * lower. The layout is the one Stanford's midi2exp reads, checked
  * valve by valve on roll 225 against the T-100 copies.
+ * @category Systems and emulation
  */
 export const welteLicensee: TrackerBar = describeTrackerBar({
     id: 'welte-licensee',

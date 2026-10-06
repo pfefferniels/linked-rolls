@@ -778,5 +778,13 @@ const withReferenceCopy = (edition: Json): Json => {
 
 const editionSteps = [withoutFormatVersion, withoutTempoAdjustment, withoutEditionType, withSystems, withEditors, withDerivationTolerance, withReferenceCopy]
 
+/**
+ * Brings the JSON of an edition written by an earlier release of the
+ * format up to the current shape. A document that is current already
+ * passes through unchanged, and one may be migrated any number of
+ * times. `importJsonLd` migrates what it reads, so this is needed only
+ * to look at an old document as JSON.
+ * @category Reading and writing
+ */
 export const migrate = (edition: Json): Json =>
     walk(editionSteps.reduce((result, step) => step(result), edition))

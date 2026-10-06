@@ -11,11 +11,20 @@
  */
 const reference = /\{\{\s*([^{}|\s]+)\s*(?:\|([^{}]*))?\}\}/g
 
+/**
+ * A piece of a note as it is shown: a stretch of text, or a reference
+ * to an entity by its id, with the words the note puts in its place
+ * where it gives any.
+ * @category Model
+ */
 export type NotePart =
     | { type: 'text', text: string }
     | { type: 'reference', id: string, label?: string }
 
-/** The note in the pieces it is shown in: stretches of text and what they refer to. */
+/**
+ * The note in the pieces it is shown in: stretches of text and what they refer to.
+ * @category Model
+ */
 export const partsOfNote = (note: string): NotePart[] => {
     const parts: NotePart[] = []
     let read = 0
@@ -32,7 +41,10 @@ export const partsOfNote = (note: string): NotePart[] => {
     return parts
 }
 
-/** The ids a note refers to, in the order it names them. */
+/**
+ * The ids a note refers to, in the order it names them.
+ * @category Model
+ */
 export const referencesInNote = (note: string): string[] =>
     partsOfNote(note).flatMap(part => part.type === 'reference' ? [part.id] : [])
 
@@ -41,6 +53,7 @@ export const referencesInNote = (note: string): string[] =>
  * edition gives that entity, or to the words the note puts in its place.
  * A reference nothing answers to keeps its id, so that the gap is visible
  * rather than silent.
+ * @category Model
  */
 export const resolveNote = (note: string, nameOf: (id: string) => string | undefined): string =>
     partsOfNote(note)

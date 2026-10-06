@@ -20,6 +20,7 @@ import { Perforator } from "./Perforator.js";
  * tenths of one. It is taken in one direction, along the roll or across
  * it, since machine-made paper does not stretch the same way in both.
  * @see crm:E54 Dimension
+ * @category Model
  */
 export interface Strain extends Measure<'percent'> {
     /**
@@ -39,6 +40,7 @@ export interface Strain extends Measure<'percent'> {
  * stated here, so that a condition stands only where something was
  * measured. A strain along the roll goes into that working out.
  * @see crm:E3 Condition State
+ * @category Model
  */
 export interface PaperStretch extends ConditionState<'paper-stretch'> {
     /**
@@ -59,6 +61,7 @@ export interface PaperStretch extends ConditionState<'paper-stretch'> {
  * A general condition description for a roll copy, e.g.
  * overall wear, discoloration, or other observations.
  * @see crm:E3 Condition State
+ * @category Model
  */
 export interface GeneralRollCondition extends ConditionState<'general'> { }
 
@@ -69,6 +72,7 @@ export interface GeneralRollCondition extends ConditionState<'general'> { }
  * that runs into a chain of holes damages the chain as well, which is
  * then stated of the chain as `partially-torn`.
  * @see crm:E3 Condition State
+ * @category Model
  */
 export interface Tear extends ConditionState<'torn'> {
     /**
@@ -102,15 +106,21 @@ export interface Tear extends ConditionState<'torn'> {
 /**
  * An assignment of a condition (general, paper-stretch or a tear)
  * to a roll copy, annotatable with a belief about its certainty.
+ * @category Model
  */
 export type RollConditionAssignment = ObjectAssumption<GeneralRollCondition | PaperStretch | Tear>
 
 /**
  * The keeper a copy is held by, as an object assumption, so that the
  * statement can carry the belief it rests on and the reasons for it.
+ * @category Model
  */
 export type KeeperAssignment = ObjectAssumption<Agent>
 
+/**
+ * The kinds of condition a copy may be stated to be in.
+ * @category Vocabulary
+ */
 export const rollConditions = [
     'general',
     'paper-stretch',
@@ -121,6 +131,7 @@ export const rollConditions = [
  * How far an alignment moves a copy's places before it scales them:
  * along the roll, in the copy's own millimetres, and across it, in
  * tracks.
+ * @category Model
  */
 export interface Shift {
     /** Along the roll. */
@@ -147,6 +158,7 @@ export interface Shift {
  * What the scale is put down to, the paper or the speed the copy was
  * cut for, is worked out from all the alignments together (`paperOf`).
  * Not exported to RDF.
+ * @category Model
  */
 export interface Alignment {
     /**
@@ -191,6 +203,7 @@ export interface Alignment {
  * The width and length of a roll copy's paper, as they were measured on
  * it or on its scan.
  * @see crm:E54 Dimension
+ * @category Model
  */
 export interface RollDimensions {
     /**
@@ -212,7 +225,10 @@ export interface RollDimensions {
     unit: 'mm'
 }
 
-/** The margins on the treble and bass sides of the roll, in the unit the scan was measured in. */
+/**
+ * The margins on the treble and bass sides of the roll, in the unit the scan was measured in.
+ * @category Model
+ */
 export interface Margins<U extends 'px' | 'mm'> {
     treble: Quantity<U>
     bass: Quantity<U>
@@ -223,6 +239,7 @@ export interface Margins<U extends 'px' | 'mm'> {
  * A paper speed, as a roll's label, its catalogue or its format
  * states it.
  * @see crm:E54 Dimension
+ * @category Model
  */
 export type PaperSpeed = Measure<'ft/min'> | Measure<'m/min'>
 
@@ -231,6 +248,7 @@ export type PaperSpeed = Measure<'ft/min'> | Measure<'m/min'>
  * the paper used, the date, and the system and paper speed the
  * copy was cut for.
  * @see lrmoo:F32 Item Production Event
+ * @category Model
  */
 export interface ProductionEvent {
     /**
@@ -298,6 +316,10 @@ export interface ProductionEvent {
     produced?: AnyFeature[]
 }
 
+/**
+ * What a modification of a copy may have been for.
+ * @category Vocabulary
+ */
 export const modificationPurposes = [
     'musical-improvement',
     'technical-improvement',
@@ -308,7 +330,10 @@ export const modificationPurposes = [
     'glossing'
 ] as const
 
-/** What a modification of a copy was for, as far as it can be told. */
+/**
+ * What a modification of a copy was for, as far as it can be told.
+ * @category Model
+ */
 export type ModificationPurpose = typeof modificationPurposes[number]
 
 /**
@@ -319,6 +344,7 @@ export type ModificationPurpose = typeof modificationPurposes[number]
  * is not: drawing, writing and punching bring a feature into being and
  * are productions.
  * @see crm:E79 Part Addition, crm:E80 Part Removal, crm:E12 Production
+ * @category Model
  */
 export type Modification = Partial<{
     /**
@@ -386,6 +412,7 @@ export type Modification = Partial<{
  * Multiple copies of the same roll may exist across different archives
  * or collections.
  * @see reo:RollCopy
+ * @category Model
  */
 export interface RollCopy extends WithType<'RollCopy'>, WithId {
     /**
@@ -545,16 +572,25 @@ export interface RollCopy extends WithType<'RollCopy'>, WithId {
     carries?: ReferenceAssumption[]
 }
 
-/** What an act brought onto the copy: what it produced or glued on, a removal nothing. */
+/**
+ * What an act brought onto the copy: what it produced or glued on, a removal nothing.
+ * @category Model
+ */
 export const featuresMadeBy = (modification: Modification): FeatureOrPatch[] => {
     if (modification.type === 'Alteration') return modification.produced
     return modification.type === 'Attachment' ? modification.added : []
 }
 
-/** Whether the act is one that modified the copy, rather than the production that punched it. */
+/**
+ * Whether the act is one that modified the copy, rather than the production that punched it.
+ * @category Model
+ */
 export const isModification = (act: ProductionEvent | Modification): act is Modification => 'type' in act
 
-/** Whether the act is left stating nothing: it produced, added or removed nothing. */
+/**
+ * Whether the act is left stating nothing: it produced, added or removed nothing.
+ * @category Model
+ */
 export const statesNothing = (modification: Modification): boolean =>
     modification.type === 'Removal' ? modification.removed.length === 0 : featuresMadeBy(modification).length === 0
 
@@ -563,11 +599,15 @@ export const statesNothing = (modification: Modification): boolean =>
  * first, then what each modification produced or glued on. A feature a
  * patch bears states no place of its own and is not among them;
  * `withBorneFeatures` reaches those.
+ * @category Model
  */
 export const featuresByAct = (copy: Pick<RollCopy, 'production' | 'modifications'>): FeatureOrPatch[][] =>
     [copy.production?.produced ?? [], ...copy.modifications.map(featuresMadeBy)]
 
-/** Every feature the copy states at a place of its own, whichever act made it. */
+/**
+ * Every feature the copy states at a place of its own, whichever act made it.
+ * @category Model
+ */
 export const featuresOf = (copy: Pick<RollCopy, 'production' | 'modifications'>): FeatureOrPatch[] =>
     featuresByAct(copy).flat()
 
@@ -576,7 +616,10 @@ const exportedMeasurementsOf = (copy: Pick<RollCopy, 'measurements'>) =>
     [copy.measurements.dimensions, copy.measurements.holeSeparation, copy.measurements.scanResolution]
         .filter(value => value !== undefined)
 
-/** The programs the measurements of a copy name as having taken them, each once, as far as they name any. */
+/**
+ * The programs the measurements of a copy name as having taken them, each once, as far as they name any.
+ * @category Model
+ */
 export const measuringSoftwareOf = (copy: Pick<RollCopy, 'measurements'>): Software[] => {
     const named = exportedMeasurementsOf(copy)
         .flatMap(value => value['@annotation']?.belief.reasons ?? [])
@@ -584,30 +627,46 @@ export const measuringSoftwareOf = (copy: Pick<RollCopy, 'measurements'>): Softw
     return [...new Map(named.map(software => [`${software.name}\u0000${software.version ?? ''}`, software])).values()]
 }
 
-/** Whether the condition is the stretch or shrinkage of the paper, as measured on the copy. */
+/**
+ * Whether the condition is the stretch or shrinkage of the paper, as measured on the copy.
+ * @category Model
+ */
 export const isPaperStretch = (condition: RollConditionAssignment): condition is ObjectAssumption<PaperStretch> =>
     condition.conditionType === 'paper-stretch'
 
-/** What the copy's paper was measured to have done, where anything was measured. */
+/**
+ * What the copy's paper was measured to have done, where anything was measured.
+ * @category Model
+ */
 export const paperStretchOf = (copy: Pick<RollCopy, 'conditions'>): ObjectAssumption<PaperStretch> | undefined =>
     copy.conditions.find(isPaperStretch)
 
-/** Whether the condition is a tear in the paper. */
+/**
+ * Whether the condition is a tear in the paper.
+ * @category Model
+ */
 export const isTear = (condition: RollConditionAssignment): condition is ObjectAssumption<Tear> =>
     condition.conditionType === 'torn'
 
-/** The tears the copy is stated to have. */
+/**
+ * The tears the copy is stated to have.
+ * @category Model
+ */
 export const tearsOf = (copy: Pick<RollCopy, 'conditions'>): ObjectAssumption<Tear>[] =>
     copy.conditions.filter(isTear)
 
 /**
  * The bar a copy is read by, which is the one it was cut for. A copy
  * that names no system falls back to `defaultTrackerBar`.
+ * @category Systems and emulation
  */
 export const barOf = (copy: Pick<RollCopy, 'production'>): TrackerBar =>
     trackerBarOf(copy.production?.system) ?? defaultTrackerBar
 
-/** The diameter of the punch the copy was cut with, where the edition holds it true or likely. */
+/**
+ * The diameter of the punch the copy was cut with, where the edition holds it true or likely.
+ * @category Model
+ */
 export const punchDiameterOf = (copy: Pick<RollCopy, 'production'>): Millimeters | undefined => {
     const diameter = copy.production?.perforator?.condition?.punchDiameter
     return diameter && isAsserted(certaintyOf(diameter)) ? diameter.value : undefined
@@ -628,6 +687,7 @@ export const punchDiameterOf = (copy: Pick<RollCopy, 'production'>): Millimeters
  * would be 318 notes nobody played. The features stay on the copy,
  * since they are really on the paper and are his calibration of his own
  * scan; it is the reading that stops.
+ * @category Sources
  */
 export function asSymbols(
     features: readonly FeatureOrPatch[],
@@ -653,6 +713,7 @@ export function asSymbols(
  * A non-empty result usually means the scan is calibrated wrongly. A chain
  * lying across several positions is counted against each one the bar
  * cannot read, and not at all where it reads them all.
+ * @category Sources
  */
 export function unreadTracks(
     features: readonly FeatureOrPatch[],
@@ -676,6 +737,7 @@ export function unreadTracks(
  * were laid out with, and on the rolls measured so far it comes within
  * about a quarter of a track. It is kept for copies imported before the
  * calibration was written down; anything read since carries its own.
+ * @internal
  */
 export const calibrationOf = (copy: RollCopy): TrackCalibration | undefined => {
     if (copy.measurements.trackCalibration) {

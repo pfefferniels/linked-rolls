@@ -10,6 +10,7 @@ import { Pixels, px, subtract, Track, track } from "./Quantity.js"
  *
  *     column      = offset + scannerTrack * separation
  *     trackerBar  = scannerTrack + shift
+ * @category Model
  */
 export interface TrackCalibration {
     unit: 'px'
@@ -24,17 +25,24 @@ export interface TrackCalibration {
     shift: Track
 }
 
-/** Image column at the centre of a tracker bar track. */
+/**
+ * Image column at the centre of a tracker bar track.
+ * @internal
+ */
 export const columnOf = (position: Track, calibration: TrackCalibration): Pixels =>
     px(calibration.offset + (position - calibration.shift) * calibration.separation)
 
-/** Tracker bar track covering an image column, unrounded. */
+/**
+ * Tracker bar track covering an image column, unrounded.
+ * @internal
+ */
 export const trackAt = (column: Pixels, calibration: TrackCalibration): Track =>
     track((column - calibration.offset) / calibration.separation + calibration.shift)
 
 /**
  * The columns covered by a run of tracks, from the outer edge of the
  * first to the outer edge of the last.
+ * @internal
  */
 export const columnsOf = (
     from: Track,

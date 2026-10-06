@@ -9,6 +9,7 @@ import { versionIn } from "../lookup/lookup.js";
  * version up to the root. A stemma that loops back on itself is walked
  * once round, so that an edition in that state can still be read and
  * repaired.
+ * @category Versions and stemma
  */
 export const lineageOf = (edition: Pick<Edition, 'versions'>, versionId: string): Readonly<Version>[] => {
     const lineage: Readonly<Version>[] = []
@@ -23,7 +24,10 @@ export const lineageOf = (edition: Pick<Edition, 'versions'>, versionId: string)
     return lineage
 }
 
-/** The version the given one's text is read against, by its principal derivation. */
+/**
+ * The version the given one's text is read against, by its principal derivation.
+ * @category Versions and stemma
+ */
 export const predecessorOf = (edition: Pick<Edition, 'versions'>, versionId: string): Readonly<Version> | undefined => {
     const v = versionIn(edition, versionId)
     const principal = v && principalDerivationOf(v)
@@ -36,6 +40,7 @@ export const predecessorOf = (edition: Pick<Edition, 'versions'>, versionId: str
  * not hold counts as a root. In a stemma that loops, the loop is walked
  * once round, as `lineageOf` walks it, so that the stemma of an edition
  * in that state can still be drawn and repaired.
+ * @category Versions and stemma
  */
 export const withGenerations = (edition: Pick<Edition, 'versions'>): Array<Version & { generation: number }> =>
     edition.versions.map(version => ({

@@ -12,6 +12,7 @@ import { Edition } from "../model/Edition.js";
  * transfer between systems leaves behind: a red `ForzandoOn` a
  * green version still inherits cannot be performed on a green
  * machine, and an edit has yet to say what took its place.
+ * @category Systems and emulation
  */
 export const negotiatedEventOf = (edition: Edition, symbol: Note | Expression, bar: TrackerBar): NegotiatedEvent | null => {
     const horizontal = placeOf(edition, symbol)

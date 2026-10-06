@@ -11,6 +11,7 @@ const PROCEDURE_IRI = 'https://w3id.org/reo/type/procedure/'
  * `ontology/types.ttl` is the place a procedure is defined. A test holds
  * this list against it.
  * @see crm:E29 Design or Procedure
+ * @category Vocabulary
  */
 export const procedures: readonly Concept[] = [
     {
@@ -30,6 +31,9 @@ export const procedures: readonly Concept[] = [
     }
 ]
 
-/** The procedure of that IRI, where the vocabulary declares one. */
+/**
+ * The procedure of that IRI, where the vocabulary declares one.
+ * @category Vocabulary
+ */
 export const procedureOf = (id: string | undefined): Concept | undefined =>
     procedures.find(procedure => procedure.id === id)

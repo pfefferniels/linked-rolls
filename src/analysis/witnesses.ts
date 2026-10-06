@@ -6,9 +6,18 @@ import { copyOfFeature, versionIn } from "../lookup/lookup.js";
 import { Edition } from "../model/Edition.js";
 import { perState } from "../lookup/perState.js";
 
+/**
+ * How a copy bears witness to a version: its features carry what the
+ * version inserts (`carriers`), or it states that it carries the
+ * version (`statement`).
+ * @category Analysis
+ */
 export type WitnessBy = 'carriers' | 'statement'
 
-/** A copy that bears witness to a version, and how. */
+/**
+ * A copy that bears witness to a version, and how.
+ * @category Analysis
+ */
 export interface Witness {
     /** The copy, by id. */
     copy: string
@@ -87,6 +96,7 @@ const carriersIn = perState((edition: Edition): Carriers => {
  * the latest state it bears. A version left out is reached only through
  * the versions derived from it, or is attested by statement alone, and
  * its text is a reconstruction rather than a reading.
+ * @category Analysis
  */
 export const attestedVersions = (edition: Edition): ReadonlySet<string> =>
     new Set(carriersIn(edition).latestOf.values())
@@ -127,6 +137,7 @@ const witnessesIn = (carriers: Carriers, edition: Edition, versionId: string): W
  * A statement is the editor's own about the version it names and is
  * reported as it stands. A version whose edits are not stated inserts
  * nothing and is witnessed by statement alone.
+ * @category Analysis
  */
 export const witnessesOf = (edition: Edition, versionId: string): Witness[] =>
     versionIn(edition, versionId) ? witnessesIn(carriersIn(edition), edition, versionId) : []
@@ -134,6 +145,7 @@ export const witnessesOf = (edition: Edition, versionId: string): Witness[] =>
 /**
  * The versions the copy bears witness to, each with how, in the order the
  * edition lists its versions.
+ * @category Analysis
  */
 export const versionsWitnessedBy = (edition: Edition, copyId: string): (Witness & { version: string })[] => {
     const carriers = carriersIn(edition)
@@ -142,6 +154,12 @@ export const versionsWitnessedBy = (edition: Edition, copyId: string): (Witness 
         .map(witness => ({ ...witness, version: version.id })))
 }
 
+/**
+ * A copy's statement that it carries a version, where the statement
+ * cannot stand (`carriageProblems`): it is made beside features that
+ * carry symbols, or it names a version the edition lacks.
+ * @category Analysis
+ */
 export type CarriageProblem = {
     copy: string
     version: string
@@ -152,6 +170,7 @@ export type CarriageProblem = {
  * Where a copy's statement that it carries a version cannot stand: one
  * made although the copy's features carry symbols, which say by
  * themselves what it carries, and one naming a version the edition lacks.
+ * @category Analysis
  */
 export const carriageProblems = (edition: Edition): CarriageProblem[] => {
     const carrying = copiesCarrying(edition, edition.versions.flatMap(insertedBy))

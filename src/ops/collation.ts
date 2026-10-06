@@ -76,6 +76,7 @@ const byExchange = (edits: readonly Readonly<Edit>[]): Map<string, Readonly<Edit
  * A version is based on itself or on one of its own descendants in no
  * statement, since the stemma would loop; asked for that, nothing
  * changes.
+ * @category Operations
  */
 export const connectVersions = (
     childId: string,
@@ -165,6 +166,7 @@ export const connectVersions = (
  * Folds the version's own symbols into those it inherits and collates
  * with: the carriers pass over, and the insertions go. Collates at the
  * tolerance of the derivation, where the caller names none.
+ * @category Operations
  */
 export const collateSymbols = (
     versionId: string,
@@ -253,6 +255,7 @@ const sharedWith = (edition: Edition, symbol: Readonly<AnySymbol>, copies: Reado
  * and are passed over, so a reading somebody has separated by hand
  * keeps its identifier and the edit that speaks for it. Named symbols
  * narrow the act to those; naming none separates the whole reading.
+ * @category Operations
  */
 export const separateReadings = (
     versionId: string,

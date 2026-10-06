@@ -14,6 +14,7 @@ import { defaultTrackerBar, trackerBarOf } from "../systems/index.js"
  * copies of one system to say: the three red copies of Welte 225 spread
  * by 0.19 %. It includes the scanner's error along the roll, which the
  * alignment cannot tell from the paper's.
+ * @category Analysis
  */
 export const PAPER_SPREAD: Percent = percent(0.2)
 
@@ -21,13 +22,17 @@ export const PAPER_SPREAD: Percent = percent(0.2)
  * How far a paper speed a label or the literature states is taken to be
  * from the speed a copy was cut at: the literature gives the red roll's
  * three metres a minute as 2.9 as well (Bärtsch 2020), which is 3.4 %.
+ * @category Analysis
  */
 export const SPEED_TOLERANCE = 0.035
 
 /** The kinds of source that give places on the paper, so that the length between two of them is the paper's. */
 const measuringLength: ReadonlySet<SourceKind> = new Set(['roll', 'scan', 'analysis'])
 
-/** What the alignments say about one copy's paper. */
+/**
+ * What the alignments say about one copy's paper.
+ * @category Analysis
+ */
 export interface PaperOfCopy {
     copy: string
     /** The system the copy was cut for, by the id of its bar. */
@@ -38,7 +43,10 @@ export interface PaperOfCopy {
     measured: boolean
 }
 
-/** What the alignments say about the paper the copies of one system were cut on. */
+/**
+ * What the alignments say about the paper the copies of one system were cut on.
+ * @category Analysis
+ */
 export interface PaperOfSystem {
     /** The system, by the id of its bar. */
     system: string
@@ -63,7 +71,10 @@ export interface PaperOfSystem {
     copies: string[]
 }
 
-/** What the alignments of an edition say about the paper of its copies, and how surely. */
+/**
+ * What the alignments of an edition say about the paper of its copies, and how surely.
+ * @category Analysis
+ */
 export interface PaperReading {
     /** The copy whose millimetres are the axis. */
     reference: string
@@ -185,6 +196,7 @@ interface Equation {
  * Copies whose places are not places on the paper, such as a roll
  * reader's, say nothing about the paper and are left out. Nothing is
  * said where the edition has no reference copy.
+ * @category Analysis
  */
 export const paperOf = (edition: Pick<Edition, 'copies' | 'referenceCopy'>): PaperReading | undefined => {
     const reference = referenceCopyOf(edition)
@@ -291,7 +303,10 @@ export const paperOf = (edition: Pick<Edition, 'copies' | 'referenceCopy'>): Pap
     }
 }
 
-/** Where the alignments of the copies, or what they say about the paper, want looking into. */
+/**
+ * Where the alignments of the copies, or what they say about the paper, want looking into.
+ * @category Analysis
+ */
 export type AlignmentProblem = {
     copy: string
     problem:
@@ -332,6 +347,7 @@ const statedSpeed = (copy: RollCopy): MetersPerMinute | undefined => {
  * where no such copy states one; in particular, a copy that reaches the
  * version only through a later one says nothing about it, since the later
  * one may have been cut for another speed.
+ * @category Analysis
  */
 export const paperSpeedOf = (edition: Edition, versionId: string): MetersPerMinute | undefined => {
     const version = versionIn(edition, versionId)
@@ -357,6 +373,7 @@ const referenceSpeed = (reference: RollCopy): MetersPerMinute | undefined => {
  * the paper, want looking into. None of it is recomputed, so it is cheap
  * to ask; whether an alignment would come out otherwise if found again
  * is `alignmentFor`'s to say.
+ * @category Analysis
  */
 export const alignmentProblems = (edition: Pick<Edition, 'copies' | 'referenceCopy'>): AlignmentProblem[] => {
     const reference = referenceCopyOf(edition)
@@ -411,6 +428,7 @@ export const alignmentProblems = (edition: Pick<Edition, 'copies' | 'referenceCo
  * two versions re-cut for one system, the ratio is theirs together.
  * Nothing is given for a version that derives from none, or from one on
  * its own system, whose paper it keeps.
+ * @category Analysis
  */
 export const lengthRatioOf = (edition: Edition, versionId: string): LengthRatio | undefined => {
     const version = versionIn(edition, versionId)

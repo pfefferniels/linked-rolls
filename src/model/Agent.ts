@@ -2,6 +2,7 @@ import { WithId } from "../shared/utils.js";
 
 /**
  * Something with a name and, where one exists, an authority record.
+ * @category Model
  */
 export interface Named {
     /**
@@ -19,6 +20,10 @@ export interface Named {
     sameAs: string[]
 }
 
+/**
+ * The parts an editor may take in the editorial work.
+ * @category Vocabulary
+ */
 export const editorialRoles = [
     'editor',
     'transcription',
@@ -30,22 +35,35 @@ export const editorialRoles = [
 
 /**
  * The part an editor took in the editorial work.
+ * @category Model
  */
 export type EditorialRole = typeof editorialRoles[number]
 
-const nonEditorialRoles = ['pianist', 'publisher'] as const
+/**
+ * The roles an agent may play in the context of the edition besides the
+ * editorial ones.
+ * @category Vocabulary
+ */
+export const nonEditorialRoles = ['pianist', 'publisher'] as const
 
 /**
  * The role an agent plays in the context of the edition.
+ * @category Model
  */
 export type AgentRole = EditorialRole | typeof nonEditorialRoles[number]
 
+/**
+ * Every role an agent may play in the context of the edition, those
+ * that are not editorial first.
+ * @category Vocabulary
+ */
 export const agentRoles: readonly AgentRole[] = [...nonEditorialRoles, ...editorialRoles]
 
 /**
  * A person or a group: a pianist, an editor, a publisher,
  * a manufacturer, a library.
  * @see crm:E39 Actor
+ * @category Model
  */
 export interface Agent extends Named, Partial<WithId> {
     /**
@@ -57,11 +75,13 @@ export interface Agent extends Named, Partial<WithId> {
 
 /**
  * An agent that is a person.
+ * @category Model
  */
 export type Person = Agent
 
 /**
  * A person who took part in preparing the edition.
+ * @category Model
  */
 export interface Editor extends Person {
     /**
@@ -71,6 +91,10 @@ export interface Editor extends Person {
     role: EditorialRole
 }
 
+/**
+ * An activity that may name the person who carried it out.
+ * @category Model
+ */
 export type WithActor = {
     /**
      * The person who carried out this activity.
@@ -82,6 +106,7 @@ export type WithActor = {
 /**
  * A place, e.g. a recording location, publishing location, etc.
  * @see crm:E53 Place
+ * @category Model
  */
 export interface Place extends Named { }
 
@@ -95,6 +120,7 @@ export interface Place extends Named { }
  * vocabulary does not have is given by name, which is then all there is
  * to go on.
  * @see crm:E55 Type
+ * @category Model
  */
 export type Concept =
     | (WithId & Partial<Named>)
@@ -105,6 +131,7 @@ export type Concept =
  * read a recording into notes, the emulator that wrote a MIDI file, the
  * program that found the holes on a scan or aligned two copies.
  * @see crmdig:D14 Software
+ * @category Model
  */
 export interface Software {
     /**

@@ -1,3 +1,12 @@
+/**
+ * The Welte-Mignon (Licensee), the American re-cut of the T-100 rolls, as
+ * a reproducing system (`welteLicenseeSystem`). It is played by the
+ * T-100's mechanism on the T-100's constants, since no Licensee
+ * instrument has been fitted, and every curve it produces says so. It
+ * needs the optional peer dependency welte-mignon-emulator.
+ *
+ * @module linked-rolls/welte-licensee
+ */
 import { CONSENSUS } from "welte-mignon-emulator/t100";
 import { Half, Parameters } from "welte-mignon-emulator";
 import { track } from "../../model/Quantity.js";
@@ -11,6 +20,11 @@ import {
     type WelteT100Options
 } from "../welteT100/system.js";
 
+/**
+ * The Licensee takes the options of the T-100, whose mechanism it
+ * shares; see `WelteOptions`.
+ * @category Systems and emulation
+ */
 export type WelteLicenseeOptions = WelteT100Options
 
 /**
@@ -25,11 +39,22 @@ export type WelteLicenseeOptions = WelteT100Options
  *
  * So a Licensee playback is a Freiburg reading of American paper, and the
  * union has one arm to keep that visible. Nothing should be published from it.
+ * @category Systems and emulation
  */
 export const instruments = { unfitted: { 'welte-t100-consensus': CONSENSUS } }
 
+/**
+ * The one instrument on offer for the Licensee by name: the T-100
+ * consensus, named as unfitted.
+ * @category Systems and emulation
+ */
 export type WelteLicenseeInstrumentName = { unfitted: 'welte-t100-consensus' }
 
+/**
+ * The names of the instruments on offer for the Licensee, of which
+ * there is one.
+ * @category Systems and emulation
+ */
 export const instrumentNames: readonly WelteLicenseeInstrumentName[] = [
     { unfitted: 'welte-t100-consensus' }
 ]
@@ -45,6 +70,7 @@ export const instrumentNames: readonly WelteLicenseeInstrumentName[] = [
  * that roll's tempo (`spoolFor`). Either way only its geometry is used, and
  * that is better varied than trusted: it scales every conductance by k and
  * every time constant by 1/k, and touches nothing dimensionless.
+ * @category Systems and emulation
  */
 export const defaultWelteLicenseeOptions: WelteLicenseeOptions = {
     ...defaultWelteT100Options,
@@ -76,6 +102,7 @@ const licenseeInstrument = (nuance: Record<Half, Parameters>): string =>
  * curve produced here names itself as such. The spool sets no tempo of its
  * own: a version runs at the speed stated for its copies, or at that of the
  * roll it was re-cut from times the length ratio.
+ * @category Systems and emulation
  */
 export const welteLicenseeSystem: ReproducingSystem<WelteLicenseeOptions> = {
     name: 'Welte-Mignon (Licensee)',

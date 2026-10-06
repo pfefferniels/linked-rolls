@@ -5,8 +5,19 @@
 import { Edition } from "../model/Edition.js";
 import { perState } from "./perState.js";
 
+/**
+ * Where something stands in an edition: the keys and indices that lead
+ * to it, as `pathIn` gives them and the operations on beliefs take
+ * them.
+ * @category Lookups
+ */
 export type Path = (string | number)[];
 
+/**
+ * What stands at the path in an edition or a draft of one, or nothing
+ * where the path leads nowhere.
+ * @category Lookups
+ */
 export const getAt = <T,>(path: Path, obj: unknown): T | undefined => {
     let node: any = obj
     for (const key of path) {
@@ -97,16 +108,25 @@ const placesIn = perState((edition: Edition): Places => {
     return { paths, links }
 })
 
-/** Where the entity with the id stands in the edition, or nothing where it holds none. */
+/**
+ * Where the entity with the id stands in the edition, or nothing where it holds none.
+ * @category Lookups
+ */
 export const pathIn = (edition: Edition, id: string): Path | undefined => {
     const trail = placesIn(edition).paths.get(id);
     return trail === undefined ? undefined : laidOut(trail);
 }
 
-/** Every id the edition gives an entity of its own, references left out. */
+/**
+ * Every id the edition gives an entity of its own, references left out.
+ * @category Lookups
+ */
 export const idsIn = (edition: Edition): Iterable<string> =>
     placesIn(edition).paths.keys();
 
-/** Where the edition references the id. */
+/**
+ * Where the edition references the id.
+ * @category Lookups
+ */
 export const linksTo = (edition: Edition, id: string): Path[] =>
     (placesIn(edition).links.get(id) ?? []).map(laidOut);

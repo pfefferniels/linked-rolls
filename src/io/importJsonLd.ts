@@ -154,6 +154,7 @@ const withQuotedStatementsInPlace = (edition: Json): Json => {
  * Reads an edition. A document holds each copy's features and tears at
  * the copy's own places, as they were read; the edition holds them on
  * its axis, which is where the copy's alignment carries them.
+ * @category Reading and writing
  */
 export const importJsonLd = (json: Json): Edition => {
     const { '@context': context, ...document } = withoutEmptyCreations(withPlainCopyIds(migrate(withQuotedStatementsInPlace(json))))

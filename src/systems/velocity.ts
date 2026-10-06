@@ -19,6 +19,7 @@
  * suction-to-velocity relation "essentially logarithmic" (pp. 215 f.). The
  * default should change only once a red/green comparison has been run both ways
  * and the difference measured, and then for both systems at once.
+ * @category Systems and emulation
  */
 
 export type VelocityMap = {

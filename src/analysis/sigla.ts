@@ -109,6 +109,7 @@ const alongTheStemma = (versions: readonly Version[]): ReadonlyMap<string, strin
 /**
  * What the sigla are read off: the versions alone, or the edition, whose
  * copies tell which versions a witness shows.
+ * @category Versions and stemma
  */
 export type Stemma = Pick<Edition, 'versions'> | Edition
 
@@ -135,12 +136,16 @@ const marking = (sigla: ReadonlyMap<string, string>, attested: ReadonlySet<strin
  *
  * A siglum is computed anew when the stemma or the copies change, so
  * nothing should cite one without saying which state it belongs to.
+ * @category Versions and stemma
  */
 export const siglaOf = (stemma: Stemma): ReadonlyMap<string, string> =>
     holdsCopies(stemma)
         ? marking(alongTheStemma(stemma.versions), attestedVersions(stemma))
         : alongTheStemma(stemma.versions)
 
-/** The siglum of one version as the stemma stands, or nothing where the edition holds no such version. */
+/**
+ * The siglum of one version as the stemma stands, or nothing where the edition holds no such version.
+ * @category Versions and stemma
+ */
 export const siglumOf = (stemma: Stemma, versionId: string): string | undefined =>
     siglaOf(stemma).get(versionId)

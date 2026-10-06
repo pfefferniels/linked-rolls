@@ -20,7 +20,10 @@ const onCommand = (id: string, op: (command: Draft<AnyCommand>) => void): Editio
 const clearPlacement = (command: Draft<AnyCommand>) =>
     placementRelations.forEach(relation => { delete command[relation] })
 
-/** States how the follower is placed relative to the reference, in place of any earlier statement. */
+/**
+ * States how the follower is placed relative to the reference, in place of any earlier statement.
+ * @category Operations
+ */
 export const placeCommand = (
     followerId: string,
     referenceId: string,
@@ -31,15 +34,27 @@ export const placeCommand = (
         command[relation] = assignReference(referenceId)
     })
 
+/**
+ * Withdraws the statement placing the command relative to another,
+ * whichever relation it states.
+ * @category Operations
+ */
 export const unplaceCommand = (followerId: string): EditionOp =>
     onCommand(followerId, clearPlacement)
 
-/** The pair is stated on `statingId` only, as the format asks. */
+/**
+ * The pair is stated on `statingId` only, as the format asks.
+ * @category Operations
+ */
 export const pairCommands = (statingId: string, partnerId: string): EditionOp =>
     onCommand(statingId, command => {
         command.pairedWith = assignReference(partnerId)
     })
 
+/**
+ * Withdraws the pairing the command states.
+ * @category Operations
+ */
 export const unpairCommand = (statingId: string): EditionOp =>
     onCommand(statingId, command => {
         delete command.pairedWith

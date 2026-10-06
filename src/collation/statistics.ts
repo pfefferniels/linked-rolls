@@ -11,7 +11,10 @@ import { Quantity, quantity } from "../model/Quantity.js"
  * account.
  */
 
-/** The middle of a sample, the mean of the two middle values where it has an even number of them. */
+/**
+ * The middle of a sample, the mean of the two middle values where it has an even number of them.
+ * @internal
+ */
 export const medianOf = <U extends string>(values: readonly Quantity<U>[]): Quantity<U> | undefined => {
     if (values.length === 0) return undefined
 
@@ -25,7 +28,10 @@ export const medianOf = <U extends string>(values: readonly Quantity<U>[]): Quan
 /** What the median absolute deviation must be multiplied by to estimate the standard deviation of a normal sample. */
 const MAD_TO_SIGMA = 1.4826
 
-/** Where a sample sits and how far it scatters. */
+/**
+ * Where a sample sits and how far it scatters.
+ * @category Collation and alignment
+ */
 export interface Spread<U extends string> {
     /** How many measurements it was taken over. */
     n: number
@@ -42,7 +48,10 @@ export interface Spread<U extends string> {
     sigma: Quantity<U>
 }
 
-/** Where the sample sits and how far it scatters, or nothing for an empty sample. */
+/**
+ * Where the sample sits and how far it scatters, or nothing for an empty sample.
+ * @internal
+ */
 export const spreadOf = <U extends string>(values: readonly Quantity<U>[]): Spread<U> | undefined => {
     const median = medianOf(values)
     if (median === undefined) return undefined
@@ -55,7 +64,10 @@ export const spreadOf = <U extends string>(values: readonly Quantity<U>[]): Spre
     }
 }
 
-/** How far the value lies from the centre of the spread, in units of its scatter. */
+/**
+ * How far the value lies from the centre of the spread, in units of its scatter.
+ * @internal
+ */
 export const standardise = <U extends string>(value: Quantity<U>, spread: Spread<U>): number =>
     (value - spread.median) / spread.sigma
 
@@ -69,10 +81,16 @@ const erfc = (x: number): number => {
     return x >= 0 ? tail : 2 - tail
 }
 
-/** The share of a normal sample lying below `z` standard deviations. */
+/**
+ * The share of a normal sample lying below `z` standard deviations.
+ * @internal
+ */
 export const normalBelow = (z: number): number => erfc(-z / Math.SQRT2) / 2
 
-/** The share of a normal sample lying further than `z` standard deviations from its centre, on either side. */
+/**
+ * The share of a normal sample lying further than `z` standard deviations from its centre, on either side.
+ * @internal
+ */
 export const normalBeyond = (z: number): number => erfc(z / Math.SQRT2)
 
 const horner = (coefficients: readonly number[], x: number): number =>
@@ -106,6 +124,7 @@ const tailQuantile = (share: number): number => {
  * How many standard deviations out the given share of a normal sample
  * lies below, after Acklam's rational approximation, whose relative
  * error stays below 1.15e-9. The inverse of `normalBelow`.
+ * @internal
  */
 export const normalQuantile = (share: number): number => {
     if (share <= 0) return -Infinity
@@ -122,11 +141,15 @@ export const normalQuantile = (share: number): number => {
  * How much heavier the tails of a standardised sample are than a normal
  * sample's. Zero for a normal shape, positive where more of the sample
  * lies far out than the curve allows.
+ * @internal
  */
 export const excessKurtosisOf = (standardised: readonly number[]): number =>
     standardised.reduce((total, z) => total + z ** 4, 0) / standardised.length - 3
 
-/** How much of a sample lies beyond a given distance from its centre, against how much would under a normal curve. */
+/**
+ * How much of a sample lies beyond a given distance from its centre, against how much would under a normal curve.
+ * @category Collation and alignment
+ */
 export interface Tail {
     /** The distance from the centre, in standard deviations. */
     beyond: number
@@ -138,14 +161,20 @@ export interface Tail {
     expected: number
 }
 
-/** What the sample puts beyond the given distance, against what a normal sample would. */
+/**
+ * What the sample puts beyond the given distance, against what a normal sample would.
+ * @internal
+ */
 export const tailOf = (standardised: readonly number[], beyond: number): Tail => ({
     beyond,
     observed: standardised.filter(z => Math.abs(z) > beyond).length,
     expected: standardised.length * normalBeyond(beyond)
 })
 
-/** A sample counted into bins of one width. */
+/**
+ * A sample counted into bins of one width.
+ * @category Collation and alignment
+ */
 export interface Histogram<U extends string> {
     /** The bounds of the bins, in order, one more of them than there are counts. */
     edges: Quantity<U>[]
@@ -158,6 +187,7 @@ export interface Histogram<U extends string> {
  * The sample counted into bins of the given width, laid out on
  * multiples of that width so that two histograms of one width share
  * their bounds. Nothing for an empty sample or a width of nothing.
+ * @internal
  */
 export const histogramOf = <U extends string>(
     values: readonly Quantity<U>[],

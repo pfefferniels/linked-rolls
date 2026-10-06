@@ -18,6 +18,7 @@ import { featureIdsOf, carriedOnlyOn, forgetFeatures } from "./forget.js"
  * inserts every symbol the copy's own tracker bar reads on it. The
  * version is a reading in that system's words, so it is coded for the
  * system the copy was cut for.
+ * @category Operations
  */
 export const createVersion = (copy: RollCopy): EditionOp =>
     draft => {
@@ -35,6 +36,7 @@ export const createVersion = (copy: RollCopy): EditionOp =>
  * Puts the copy into the edition without a version of its own, as for a
  * copy whose features are not read into symbols: one known only from a
  * recording states instead which versions it carries.
+ * @category Operations
  */
 export const addCopy = (copy: RollCopy): EditionOp =>
     draft => {
@@ -47,6 +49,7 @@ export const addCopy = (copy: RollCopy): EditionOp =>
  * copy, or where the copy is the reference itself. The copy is read at
  * its own places whatever alignment it has, and through its own bar,
  * which is what lets a copy cut for another system be aligned at all.
+ * @category Operations
  */
 export const alignmentFor = (edition: Edition, copy: RollCopy, date: Date = new Date()): Alignment | undefined => {
     const reference = referenceCopyOf(edition)
@@ -72,6 +75,7 @@ export const alignmentFor = (edition: Edition, copy: RollCopy, date: Date = new 
  * its features and tears onto the axis by them, in place of any
  * alignment it had. A copy that shares no run of notes with the
  * reference copy is left as it was.
+ * @category Operations
  */
 export const alignCopy = (copyId: string, date: Date = new Date()): EditionOp =>
     draft => {
@@ -86,6 +90,7 @@ export const alignCopy = (copyId: string, date: Date = new Date()): EditionOp =>
  * Aligns every copy that has features with the reference copy, as
  * `alignCopy` does one. The reference copy itself is taken off any
  * alignment it had, its places being the axis.
+ * @category Operations
  */
 export const alignCopies = (date: Date = new Date()): EditionOp =>
     draft => {
@@ -111,6 +116,7 @@ export const alignCopies = (date: Date = new Date()): EditionOp =>
  * aligns every other copy onto it. Every place the edition gives along
  * the roll moves with this, which is why it is a choice and not
  * something worked out.
+ * @category Operations
  */
 export const chooseReferenceCopy = (copyId: string, date: Date = new Date()): EditionOp =>
     draft => {
@@ -123,6 +129,7 @@ export const chooseReferenceCopy = (copyId: string, date: Date = new Date()): Ed
  * Puts the copy's features back where they were measured, off the
  * axis. What the alignments say about the paper goes with it, since
  * that is worked out from them.
+ * @category Operations
  */
 export const unalignCopy = (copyId: string): EditionOp =>
     onCopy(copyId, copy => {
@@ -133,27 +140,40 @@ export const unalignCopy = (copyId: string): EditionOp =>
  * Takes the extension a pneumatic reader adds off the ends of the
  * copy's chains of holes, and records how much was taken, so that their lengths
  * can be compared with a scanned copy's at all.
+ * @category Operations
  */
 export const shortenCopy = (copyId: string, extension: Millimeters, leaving?: ReadonlySet<string>): EditionOp =>
     onCopy(copyId, copy => shortenChains(extension, copy, leaving))
 
-/** Puts the reader's extension back on the copy's chains of holes. */
+/**
+ * Puts the reader's extension back on the copy's chains of holes.
+ * @category Operations
+ */
 export const unshortenCopy = (copyId: string): EditionOp =>
     onCopy(copyId, copy => revertShortening(copy))
 
-/** States what the copy's features were read from, in place of any earlier statement. */
+/**
+ * States what the copy's features were read from, in place of any earlier statement.
+ * @category Operations
+ */
 export const stateSource = (copyId: string, source: FeatureSource): EditionOp =>
     onCopy(copyId, copy => {
         copy.readFrom = source
     })
 
-/** Takes back the statement, leaving the copy silent about its source again. */
+/**
+ * Takes back the statement, leaving the copy silent about its source again.
+ * @category Operations
+ */
 export const clearSource = (copyId: string): EditionOp =>
     onCopy(copyId, copy => {
         copy.readFrom = undefined
     })
 
-/** Gives the copy the siglum it is referred to by, or takes it away where the siglum given is blank. */
+/**
+ * Gives the copy the siglum it is referred to by, or takes it away where the siglum given is blank.
+ * @category Operations
+ */
 export const nameCopy = (copyId: string, siglum: string): EditionOp =>
     onCopy(copyId, copy => {
         const trimmed = siglum.trim()
@@ -176,6 +196,7 @@ export const dropStatements = (copy: Draft<RollCopy>, matches: (statement: Reado
  * one known only from a recording, and `carriageProblems` reports it
  * where features carry symbols already. A second statement about one
  * version is none.
+ * @category Operations
  */
 export const stateCarriage = (copyId: string, versionId: string, belief?: Belief): EditionOp =>
     onCopy(copyId, copy => {
@@ -184,7 +205,10 @@ export const stateCarriage = (copyId: string, versionId: string, belief?: Belief
         copy.carries = [...statements, referenceHeld(versionId, belief)]
     })
 
-/** Takes back the copy's statement that it carries the version. */
+/**
+ * Takes back the copy's statement that it carries the version.
+ * @category Operations
+ */
 export const clearCarriage = (copyId: string, versionId: string): EditionOp =>
     onCopy(copyId, copy => dropStatements(copy, statement => idOf(statement) === versionId))
 
@@ -193,6 +217,7 @@ export const clearCarriage = (copyId: string, versionId: string): EditionOp =>
  * already. A paper stretch is added the same way, where one was
  * measured; what the alignments say of the paper is worked out from
  * them and stated nowhere.
+ * @category Operations
  */
 export const addGeneralCondition = (copyId: string, condition: ObjectAssumption<GeneralRollCondition>): EditionOp =>
     onCopy(copyId, copy => {
@@ -204,6 +229,7 @@ export const addGeneralCondition = (copyId: string, condition: ObjectAssumption<
  * what was stated before; given nothing, it takes the statement away. A
  * copy has one paper, so it has one such condition, which may give a
  * strain in either direction.
+ * @category Operations
  */
 export const statePaperStretch = (copyId: string, stretch?: ObjectAssumption<PaperStretch>): EditionOp =>
     onCopy(copyId, copy => {
@@ -214,13 +240,17 @@ export const statePaperStretch = (copyId: string, stretch?: ObjectAssumption<Pap
  * Adds a tear to the copy, beside whatever is stated of it already. The
  * tear is given on the axis, where the copy's features stand, and moves
  * with them from then on.
+ * @category Operations
  */
 export const addTear = (copyId: string, tear: ObjectAssumption<Tear>): EditionOp =>
     onCopy(copyId, copy => {
         copy.conditions.push(tear)
     })
 
-/** The symbols of the versions that no other copy carries. */
+/**
+ * The symbols of the versions that no other copy carries.
+ * @category Operations
+ */
 export const symbolsCarriedOnlyBy = (edition: Edition, copyId: string): AnySymbol[] => {
     const copy = edition.copies.find(c => c.id === copyId)
     return copy ? insertedIn(edition.versions).filter(carriedOnlyOn(featureIdsOf(copy))) : []
@@ -230,6 +260,7 @@ export const symbolsCarriedOnlyBy = (edition: Edition, copyId: string): AnySymbo
  * Takes the copy out of the edition together with the symbols only it
  * carries, and with every reference the versions and the argumentations
  * made to those symbols.
+ * @category Operations
  */
 export const removeCopy = (copyId: string): EditionOp =>
     onCopy(copyId, (copy, draft) => {

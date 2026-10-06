@@ -20,6 +20,7 @@ import { takenOf } from "../lookup/perState.js"
  * (`reading`) and does all its writing in the one function it builds
  * from that. Where operations run one after another on one draft, each
  * reads what the ones before it wrote.
+ * @category Operations
  */
 export type EditionOp = (draft: Draft<Edition>) => void
 
@@ -57,6 +58,7 @@ export const reading = (build: (edition: Edition) => EditionOp): EditionOp =>
  * The state a draft stands at, as plain data. Reading a draft proxies
  * everything it touches, so what is only read is read from this, and
  * what is looked up in an edition is looked up in this (`takenOf`).
+ * @category Lookups
  */
 export const stateOf = <T,>(draft: Draft<T>): T => isDraft(draft) ? takenOf(draft as Draft<T & object>) : draft as T
 

@@ -11,6 +11,12 @@ import { placedCarriersOf, snapshotOf } from "./text.js"
 import { copyOfFeature } from "../lookup/lookup.js"
 import { Edition } from "../model/Edition.js"
 
+/**
+ * Where the edition cannot hold as stated, as `constraintProblems`
+ * reports it: the version and the symbol concerned, and what is wrong
+ * with it.
+ * @category Analysis
+ */
 export type ConstraintProblem = {
     version: string
     symbol: string
@@ -178,6 +184,7 @@ const strikesBitingNothing = (edition: Edition, version: Version): ConstraintPro
  * expression the version's own bar cannot read, a carrier sitting on a
  * track that does not say what its symbol says, and a strike that takes
  * nothing out.
+ * @category Analysis
  */
 export const constraintProblems = (edition: Edition): ConstraintProblem[] => {
     // What a symbol's carriers and the copies' paper say holds whichever

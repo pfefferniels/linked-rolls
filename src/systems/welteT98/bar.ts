@@ -9,6 +9,7 @@ import { metersPerMinute, mm } from "../../model/Quantity.js"
  * as long as one continuous perforation lasts (Hagmann, pp. 89 f. and
  * 100–103; Phillips, p. 121), so none of these is an On or an Off. The
  * two sforzando valves name the end of the range they pull towards.
+ * @category Systems and emulation
  */
 export const welteT98ExpressionTypes = [
     'SforzandoPiano',
@@ -19,6 +20,10 @@ export const welteT98ExpressionTypes = [
     'SoftPedal'
 ] as const
 
+/**
+ * A command of the Welte-Mignon T-98.
+ * @category Systems and emulation
+ */
 export type WelteT98ExpressionType = typeof welteT98ExpressionTypes[number]
 
 /**
@@ -65,6 +70,7 @@ const welteT98Operations: Readonly<Record<WelteT98ExpressionType, Operation>> = 
  * scale to the cross-line bearing the dial number in half a minute
  * (Skala-Rolle 98 §1b). This is documentation; what sets the emulator's
  * time axis is the spool.
+ * @category Systems and emulation
  */
 export const welteT98: TrackerBar = describeTrackerBar({
     id: 'welte-green',

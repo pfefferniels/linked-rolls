@@ -29,29 +29,52 @@ const featuresById = perState((edition: Pick<Edition, 'copies'>) =>
 const copiesByFeature = perState((edition: Pick<Edition, 'copies'>) =>
     new Map(featuresOnCopies(edition).map(({ feature, copy }) => [feature.id, copy])) as ReadonlyMap<string, RollCopy>)
 
+/**
+ * The version with the id, where the edition holds one.
+ * @category Lookups
+ */
 export const versionIn = (edition: Pick<Edition, 'versions'>, id: string): Readonly<Version> | undefined =>
     versionsById(edition).get(id)
 
+/**
+ * The copy with the id, where the edition holds one.
+ * @category Lookups
+ */
 export const copyIn = (edition: Pick<Edition, 'copies'>, id: string): Readonly<RollCopy> | undefined =>
     copiesById(edition).get(id)
 
-/** A symbol any version inserts. */
+/**
+ * A symbol any version inserts.
+ * @category Lookups
+ */
 export const symbolIn = (edition: Pick<Edition, 'versions'>, id: string): Readonly<AnySymbol> | undefined =>
     symbolsById(edition).get(id)
 
-/** The symbols under the ids, leaving out an id that names none. */
+/**
+ * The symbols under the ids, leaving out an id that names none.
+ * @category Lookups
+ */
 export const symbolsIn = (edition: Pick<Edition, 'versions'>, ids: readonly string[]): Readonly<AnySymbol>[] =>
     ids.flatMap(id => symbolIn(edition, id) ?? [])
 
-/** A feature or a patch on any copy, one a patch bears included. */
+/**
+ * A feature or a patch on any copy, one a patch bears included.
+ * @category Lookups
+ */
 export const featureIn = (edition: Pick<Edition, 'copies'>, id: string): Readonly<NestedFeature> | undefined =>
     featuresById(edition).get(id)
 
-/** The features and patches under the ids, leaving out an id that names none. */
+/**
+ * The features and patches under the ids, leaving out an id that names none.
+ * @category Lookups
+ */
 export const featuresIn = (edition: Pick<Edition, 'copies'>, ids: readonly string[]): Readonly<NestedFeature>[] =>
     ids.flatMap(id => featureIn(edition, id) ?? [])
 
-/** The copy a feature sits on, a patch and everything it bears included. */
+/**
+ * The copy a feature sits on, a patch and everything it bears included.
+ * @category Lookups
+ */
 export const copyOfFeature = (edition: Pick<Edition, 'copies'>, featureId: string): Readonly<RollCopy> | undefined =>
     copiesByFeature(edition).get(featureId)
 
@@ -61,6 +84,7 @@ export const copyOfFeature = (edition: Pick<Edition, 'copies'>, featureId: strin
  * a patch bears came onto the copy with the patch, so the act is
  * the one that glued the patch on. Two features stand in one act
  * where this returns the very same object.
+ * @category Lookups
  */
 export const actOf = (edition: Pick<Edition, 'copies'>, featureId: string): Readonly<ProductionEvent | Modification> | undefined => {
     const copy = copyOfFeature(edition, featureId)
