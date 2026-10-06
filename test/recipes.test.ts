@@ -195,8 +195,6 @@ describe('play a version as MIDI', () => {
         // #region midi
         const { events, source } = emulate(welteT100System, version, edition)
         const midi = midiOf(events, welteT100System.name, welteT100System.defaultOptions, source)
-
-        midi.tracks[0].push({ type: 'meta', subtype: 'endOfTrack', deltaTime: 0 })
         writeFileSync(out, write(midi.tracks, midi.header.ticksPerBeat))
         // #endregion midi
 

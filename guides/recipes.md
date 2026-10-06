@@ -110,9 +110,8 @@ Welte-Mignon systems have entry points of their own,
 the one the version is coded for (`version.system`).
 {@linkcode linked-rolls!midiOf | midiOf} gives the performance as a MIDI file in
 the form midifile-ts reads and writes, each note labelled with the id of
-the symbol it performs. It leaves the track without the end-of-track event
-a standard MIDI file requires, so the recipe adds one before `write` turns
-the file into bytes. `out` is the path of the MIDI file.
+the symbol it performs; `write` turns it into the bytes of a standard
+MIDI file. `out` is the path of the MIDI file.
 
 ```ts
 import { writeFileSync } from 'node:fs'

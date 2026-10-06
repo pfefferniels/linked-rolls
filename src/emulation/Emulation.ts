@@ -362,6 +362,9 @@ export const midiOf = (
         }
     }
 
+    // a standard MIDI file ends every track with this event
+    midi.push({ type: 'meta', subtype: 'endOfTrack', deltaTime: 0 })
+
     return {
         header: {
             ticksPerBeat: TICKS_PER_SECOND,

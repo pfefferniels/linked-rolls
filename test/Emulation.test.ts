@@ -69,6 +69,12 @@ describe('emulating a version through a reproducing system', () => {
             .filter(event => event.type === 'note')
             .forEach(note => expect(labels.has(note.id)).toBe(true))
     })
+
+    it('ends the track as a standard MIDI file requires, once', () => {
+        const track = emulation.asMIDI().tracks[0]
+        expect(track.at(-1)).toEqual({ type: 'meta', subtype: 'endOfTrack', deltaTime: 0 })
+        expect(track.filter(event => event.type === 'meta' && event.subtype === 'endOfTrack')).toHaveLength(1)
+    })
 })
 
 /** The functions the class is built on hold nothing and change nothing they are given. */
