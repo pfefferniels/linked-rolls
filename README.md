@@ -43,8 +43,8 @@ The [API reference](https://pfefferniels.github.io/linked-rolls/api/)
 documents the public interface, and the
 [recipes](https://pfefferniels.github.io/linked-rolls/api/documents/Recipes.html)
 show how to read an edition, get the text of a version, see what a
-version changed, play it and write a change back. Exports marked
-internal there may change in any release.
+version changed, play it and write a change back. What the reference
+leaves out is internal and may change in any release.
 
 What is read off an edition, such as `snapshotOf`, `placeOf`,
 `versionIn` or `pathIn`, is worked out once for each state of it and
