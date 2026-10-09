@@ -7,6 +7,10 @@
 # One thing is set up outside this file: on npm, linked-rolls has
 # pfefferniels/linked-rolls, workflow publish.yml, as a trusted publisher,
 # so no token is stored anywhere and every release carries provenance.
+#
+# Every version published also gets a GitHub release, which Zenodo archives
+# with a DOI of its own through its GitHub integration (switched on for this
+# repository at zenodo.org, under GitHub in the account settings).
 
 name: Publish to npm
 
@@ -67,4 +71,26 @@ jobs:
           else
             git tag "$tag"
             git push origin "$tag"
+          fi
+
+  # A GitHub release for the tag, for Zenodo to archive. Its webhook fires
+  # also for a release made with this token.
+  release:
+    needs: [publish, tag]
+    if: ${{ !cancelled() && needs.publish.result == 'success' && needs.tag.result != 'failure' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Release the tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v$(node -p "require('./package.json').version")"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "$tag is released already"
+          else
+            gh release create "$tag" --verify-tag --generate-notes --title "$tag"
           fi

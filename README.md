@@ -124,5 +124,6 @@ TypeScript 7 no longer has the compiler API it reads the source with.
 
 Raise the version in `package.json` and in `CITATION.cff`, there with
 the day as `date-released`, commit, and push a tag `v<version>`. The
-`publish.yml` workflow builds, tests and publishes to npm; a test fails
+`publish.yml` workflow builds, tests and publishes to npm, then makes a
+GitHub release of the tag, which Zenodo archives with a DOI. A test fails
 while the two versions differ.
