@@ -1,5 +1,7 @@
 # linked-rolls
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23270944.svg)](https://doi.org/10.5281/zenodo.23270944)
+
 A TypeScript library for digital editions of piano rolls. It reads roll
 copies from scans and analysis files, collates them into versions,
 records editorial assumptions together with the beliefs behind them,
