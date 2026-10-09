@@ -8,6 +8,11 @@ reproducing piano.
 
 It is the foundation of the [Roll Desk](https://github.com/pfefferniels/roll-desk).
 
+Every release is archived on Zenodo under the DOI
+[10.5281/zenodo.23270944](https://doi.org/10.5281/zenodo.23270944), which
+always resolves to the latest version. To cite the library, see
+`CITATION.cff`.
+
 ## Install
 
 ```
