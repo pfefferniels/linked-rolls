@@ -129,3 +129,53 @@ the day as `date-released`, commit, and push a tag `v<version>`. The
 `publish.yml` workflow builds, tests and publishes to npm, then makes a
 GitHub release of the tag, which Zenodo archives with a DOI. A test fails
 while the two versions differ.
+
+## About
+
+linked-rolls grew out of the dissertation *Grünfelds Geist.
+Rekonstruktion einer Welte-Mignon-Klavierrollenaufnahme* (Niels
+Pfeffer, Eberhard Karls Universität Tübingen, Musikwissenschaftliches
+Institut, 2026), which edits Alfred Grünfeld's 1905 recording of
+Schumann's *Träumerei*, Welte-Mignon roll 225, from its surviving
+copies. That edition is published at https://welte225.org/ and can be
+read in the [Roll Desk](https://rolldesk.welte225.org/).
+
+Its aim is a scholarly edition of a piano roll that treats the roll the
+way a critical edition treats a text: every copy is a witness, the
+differences between copies are collated into versions, and every
+editorial decision is recorded together with the evidence and the
+beliefs behind it, so that a reader can retrace and contest it. The
+data are meant to be reused outside the library, which is why the
+format is linked data built on CIDOC CRM rather than a file format of
+its own.
+
+### Related formats
+
+Several formats have been developed or used to represent piano rolls at
+different stages of processing:
+
+- **Scan images:** CIS and MRS, often accompanied by ANN metadata.
+- **Event lists:** Wayne Stahnke's RAW, WEB and BAR, PRF, SCN, ROL, and
+  the e-roll MIDI files of pneumatic readers.
+- **Symbolic descriptions:** the Roll Analysis files of the Stanford
+  University Piano Roll Archive, serialised as ATON.
+
+None of them is concerned with what a critical edition needs: an
+apparatus of the variants between copies, the traces a copy carries
+(handwritten notes, patches, perforations added later), a record of how
+and on what assumptions each reading came about, and identifiers by
+which all of this can be referred to and annotated. The dissertation
+surveys these formats in its chapter on variants.
+
+Editions of texts and of notated music are mostly encoded in TEI and
+MEI. A roll edition, however, is less a nested text document than a
+flat structure of roll events described in numbers, and its data should
+link to other domains, which is why the Roll Edition Format is JSON-LD
+built on CIDOC CRM and LRMoo.
+
+### Maintenance
+
+The library is maintained by Niels Pfeffer
+([ORCID 0000-0002-6210-7255](https://orcid.org/0000-0002-6210-7255)). It
+is released under the MIT licence, the ontology and its documentation
+under CC BY 4.0.
