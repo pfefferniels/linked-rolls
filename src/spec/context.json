@@ -66,6 +66,10 @@
         "used": {
           "@id": "crm:P16_used_specific_object",
           "@type": "@id"
+        },
+        "applies": {
+          "@id": "crminf:J3_applied",
+          "@type": "@id"
         }
       }
     },

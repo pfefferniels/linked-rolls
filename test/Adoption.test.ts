@@ -27,6 +27,7 @@ import { edition } from './editionFixture'
 const PREMISE = 'https://example.org/premises#advance-1mm-belief'
 const PREMISES_AT = 'https://example.org/premises/blob/6063ac6/premises.jsonld'
 const OTHERS = 'https://example.org/another-edition#date-belief'
+const RULE = 'rules#latest-setting'
 
 const CRMINF = 'http://www.cidoc-crm.org/extensions/crminf/'
 const CRM = 'http://www.cidoc-crm.org/cidoc-crm/'
@@ -70,6 +71,7 @@ const inferred = () => {
                         type: 'inference',
                         premises: ['advance-belief', PREMISE],
                         used: [PREMISES_AT],
+                        applies: [RULE],
                         note: 'the early advance, not used after the day the premise gives'
                     }]
                 }
@@ -178,6 +180,11 @@ describe('a premise of the editor\'s own, named by its IRI', () => {
         expect(inference[CRMINF + 'J1_used_as_premise']).toEqual([{ '@id': BASE + 'advance-belief' }, { '@id': PREMISE }])
         expect(inference[CRM + 'P16_used_specific_object']).toEqual([{ '@id': PREMISES_AT }])
         expect((await expanded(inferred()))(CRMINF + 'I7_Belief_Adoption')).toEqual([])
+    })
+
+    it('names the rule it reasons by, published beside the edition', async () => {
+        const [inference] = (await expanded(inferred()))(CRMINF + 'I5_Inference_Making')
+        expect(inference[CRMINF + 'J3_applied']).toEqual([{ '@id': BASE + RULE }])
     })
 })
 

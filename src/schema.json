@@ -928,6 +928,14 @@
           "description": "The person who carried out this activity.",
           "ontology": "crm:P14 carried out by"
         },
+        "applies": {
+          "description": "The rules the inference draws its conclusion by, by IRI: a regularity of how the rolls were edited, such as that the same addition at the same place is not made twice independently, a default, such as that copies were not made from two exemplars, or a method, such as how the tolerance of a collation is found. The rules are stated once where they are published, and each inference names those it follows, so that a reader can see what a conclusion rests on besides its premises, and which conclusions rest on a rule.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "ontology": "crminf:J3 applied"
+        },
         "note": {
           "description": "A free-text note providing additional context.",
           "type": "string",

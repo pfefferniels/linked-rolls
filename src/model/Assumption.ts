@@ -93,6 +93,20 @@ export interface Inference extends Argumentation<'inference'> {
      * @see crm:P16 used specific object
      */
     used?: string[]
+
+    /**
+     * The rules the inference draws its conclusion by, by IRI: a
+     * regularity of how the rolls were edited, such as that the same
+     * addition at the same place is not made twice independently, a
+     * default, such as that copies were not made from two exemplars, or
+     * a method, such as how the tolerance of a collation is found. The
+     * rules are stated once where they are published, and each
+     * inference names those it follows, so that a reader can see what
+     * a conclusion rests on besides its premises, and which conclusions
+     * rest on a rule.
+     * @see crminf:J3 applied
+     */
+    applies?: string[]
 }
 
 /**
