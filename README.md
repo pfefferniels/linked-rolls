@@ -97,6 +97,42 @@ const midi = midiOf(events, welteT100System.name, welteT100System.defaultOptions
 The systems are `linked-rolls/welte-t100` (red Welte),
 `linked-rolls/welte-t98` (green Welte) and `linked-rolls/welte-licensee`.
 
+## Proposing a stemma
+
+Which versions there are, lost ones included, how they derive from each
+other and which edits belong to which can be proposed from the copies
+alone. `proposeStemma` collates the transcribed copies all at once,
+notes which copies have, lack or cannot show each reading, and scores
+every stemma the copies admit, up to seven copies. A reading arising
+costs ten times a reading lost. Losses count for less where the
+editorial principles of an edition say they are weak evidence: a
+redundancy cleaned up, or what a re-cut for another system lacks. On
+the best stemma, each reading arises in the latest version all copies
+carrying it descend from.
+
+```ts
+import { produce } from 'immer'
+import { adoptStemma, proposeStemma, stemmaChanges } from 'linked-rolls'
+
+const proposal = proposeStemma(edition)
+proposal.notation   // '*(St1(*(Ne1,St2(Bo1,Ch1))),Wi1)' for WM 225
+proposal.supports   // by how much the copies decide each grouping
+
+const adopted = produce(edition, adoptStemma(proposal))
+const changes = stemmaChanges(edition, adopted)
+```
+
+Adopting keeps what the edition holds wherever the proposal stands for
+it: the ids of versions and symbols, a derivation's belief, and the
+edits the editor wrote, which hold their versions to what they insert
+and delete. Motivations, beliefs and versions known only from a
+recording remain the editor's to state.
+
+The costs are those with which the stemma of WM 225 comes out of its
+six copies. They were found by searching for such values, so they show
+that the stemma is consistent with these principles, not that the
+principles confirm it.
+
 ## Format
 
 The export uses the Roll Edition Ontology (REO), namespace
