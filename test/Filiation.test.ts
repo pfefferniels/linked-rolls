@@ -195,15 +195,18 @@ describe('adopting a proposed stemma', () => {
 const welte225 = process.env.WELTE225_EDITION ?? new URL('../../welte225.org/edition.jsonld', import.meta.url).pathname
 
 describe.skipIf(!existsSync(welte225))('the stemma of WM 225, proposed from its six transcribed copies', () => {
-    const edition = importJsonLd(JSON.parse(readFileSync(welte225, 'utf8')))
+    // Read in the tests, since a skipped suite still runs its body.
+    let read: Edition | undefined
+    const published = () => read ??= importJsonLd(JSON.parse(readFileSync(welte225, 'utf8')))
 
     it('is the editor’s, every version standing for one of the edition', () => {
-        const proposal = proposeStemma(edition)
+        const proposal = proposeStemma(published())
         expect(proposal.notation).toBe('*(St1(*(Ne1,St2(Bo1,Ch1))),Wi1)')
         expect(proposal.versions.every(version => version.version !== undefined)).toBe(true)
     })
 
     it('keeps the sigla when adopted, and nearly every reading in its version', () => {
+        const edition = published()
         const adopted = produce(edition, adoptStemma(proposeStemma(edition)))
         expect([...siglaOf(adopted).values()].sort()).toEqual([...siglaOf(edition).values()].sort())
         const changes = stemmaChanges(edition, adopted)
