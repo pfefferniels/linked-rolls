@@ -19,6 +19,16 @@ import { barNamed, transfersOf } from "./systems.js"
 import { MAX_COPIES } from "./trees.js"
 
 /**
+ * How near a reading of the same kind on the other side of the root
+ * makes a reading on the less refined side a moved one, where nothing
+ * else is said. Hits up to about this distance are more than chance; a
+ * wider window agrees with the edition of WM 225 more often, but largely
+ * by convention.
+ * @category Filiation
+ */
+export const defaultMovedWithin = mm(25)
+
+/**
  * What a proposal is computed with. Every value has a default, the one
  * the edition of WM 225 is reproduced with.
  * @category Filiation
@@ -32,7 +42,7 @@ export interface FiliationOptions {
 
     /**
      * How near a reading of the same kind on the other side of the root
-     * makes a reading on the less refined side a moved one (25 mm).
+     * makes a reading on the less refined side a moved one (`defaultMovedWithin`).
      */
     movedWithin?: Millimeters
 
@@ -307,7 +317,7 @@ export const proposeStemma = (edition: Edition, options: FiliationOptions = {}):
     if (copies.length > MAX_COPIES) throw new Error(`The exhaustive search covers at most ${MAX_COPIES} copies`)
 
     const costs: Costs = { ...defaultCosts, ...options.costs }
-    const movedWithin = options.movedWithin ?? mm(25)
+    const movedWithin = options.movedWithin ?? defaultMovedWithin
     const margin = options.margin ?? defaultMargin
     const copyOf = new Map(edition.copies.map(copy => [copy.id, copy]))
     const names = copies.map(id => copyOf.get(id)!.siglum ?? id)

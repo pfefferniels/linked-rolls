@@ -7,6 +7,6 @@ export { collateCopies, readingsOfCopy, type CopyCollation, type CollatedReading
 export { presenceIn, ineffectiveAmong, defaultMargin, type Presence, type PresenceMatrix } from "./presence.js"
 export { defaultCosts, type Costs, type Scored, type Support } from "./search.js"
 export { transfersOf, systemAbove } from "./systems.js"
-export { proposeStemma, type FiliationOptions, type ProposedVersion, type StemmaProposal, type Unpinned } from "./proposal.js"
+export { proposeStemma, defaultMovedWithin, type FiliationOptions, type ProposedVersion, type StemmaProposal, type Unpinned } from "./proposal.js"
 export { adoptionOf, adoptStemma, type Adoption } from "./adoption.js"
 export { stemmaChanges, type VersionChange } from "./changes.js"

@@ -26,6 +26,9 @@ const ADOPTED = '6f1d2c8e-93a4-4f0b-b8a1-2f4c5d7e9a31'
 export interface Adoption {
     versions: Version[]
 
+    /** By version of the proposal, the id of the version it becomes. */
+    ids: Record<string, string>
+
     /** The versions of the edition the adoption leaves out. */
     removed: string[]
 
@@ -206,7 +209,7 @@ export const adoptionOf = (edition: Edition, proposal: StemmaProposal): Adoption
     const ordered = [...pruned, ...statedOnly].sort((a, b) =>
         (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity))
 
-    return { versions: ordered, removed, dropped: proposal.unpinned }
+    return { versions: ordered, ids: Object.fromEntries(ids), removed, dropped: proposal.unpinned }
 }
 
 /**
