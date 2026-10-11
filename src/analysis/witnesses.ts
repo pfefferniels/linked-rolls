@@ -101,6 +101,15 @@ const carriersIn = perState((edition: Edition): Carriers => {
 export const attestedVersions = (edition: Edition): ReadonlySet<string> =>
     new Set(carriersIn(edition).latestOf.values())
 
+/**
+ * The version the copy bears at first hand: the latest whose insertions
+ * its features carry. A copy whose features carry no insertion, such as
+ * one known only from a recording, bears none.
+ * @category Analysis
+ */
+export const firstHandVersionOf = (edition: Edition, copyId: string): string | undefined =>
+    carriersIn(edition).latestOf.get(copyId)
+
 const witnessesIn = (carriers: Carriers, edition: Edition, versionId: string): Witness[] => {
     const carrying = carriers.copiesOf.get(versionId) ?? []
     const byCarriers = carrying.map((copy): Witness => {
