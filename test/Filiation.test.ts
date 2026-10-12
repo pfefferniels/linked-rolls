@@ -18,7 +18,9 @@ import { PresenceMatrix } from '../src/filiation/presence'
 import { siglaOf } from '../src/analysis/sigla'
 import { snapshotOf } from '../src/analysis/text'
 import { versionsWitnessedBy } from '../src/analysis/witnesses'
-import { insertedBy } from '../src/model/Version'
+import { editsOf, insertedBy } from '../src/model/Version'
+import { isCollationsOwn } from '../src/collation/Collation'
+import { adoptEdits, proposeEdits } from '../src/filiation/edits'
 import { importJsonLd } from '../src/io/importJsonLd'
 
 /** A reading of the text: what it says and where it begins. */
@@ -193,6 +195,24 @@ describe('adopting a proposed stemma', () => {
     })
 })
 
+describe('the edits of an adopted stemma', () => {
+    it('are an edit for each accent a version adds, and one for each On it strikes', () => {
+        const edition = editionOfTradition()
+        const adopted = produce(edition, draft => {
+            adoptStemma(proposeStemma(edition))(draft)
+            adoptEdits()(draft)
+        })
+        const of = (copy: string) => adopted.versions.find(version =>
+            version.id === versionsWitnessedBy(adopted, copy).find(witness => !witness.through)!.version)!
+        expect(editsOf(of('b')).map(edit => edit.editType)).toEqual(Array(10).fill('additional-accent'))
+        const e = editsOf(of('e'))
+        expect(e.filter(edit => edit.editType === 'additional-accent')).toHaveLength(5)
+        expect(e.filter(edit => edit.insert === undefined && edit.delete?.length === 1)).toHaveLength(3)
+    })
+})
+
+const exchangeOf = (inserted: readonly string[], deleted: readonly string[]) => [...inserted, ...deleted].sort().join()
+
 /** The published edition of WM 225 in a checkout beside this one, where there is one. */
 const welte225 = process.env.WELTE225_EDITION ?? new URL('../../welte225.org/edition.jsonld', import.meta.url).pathname
 
@@ -215,6 +235,64 @@ describe.skipIf(!existsSync(welte225))('the stemma of WM 225, proposed from its 
         const kept = changes.reduce((sum, change) => sum + change.inserted.kept, 0)
         const before = edition.versions.reduce((sum, version) => sum + insertedBy(version).length, 0)
         expect(kept / before).toBeGreaterThan(0.95)
+    })
+
+    it('takes the stemma and its edits in as one operation', () => {
+        const edition = published()
+        const proposal = proposeStemma(edition)
+        const adopted = produce(edition, draft => {
+            adoptStemma(proposal)(draft)
+            adoptEdits()(draft)
+        })
+        expect([...siglaOf(adopted).values()].sort()).toEqual([...siglaOf(edition).values()].sort())
+        expect(adopted).toEqual(produce(produce(edition, adoptStemma(proposal)), adoptEdits()))
+    })
+
+    it('has nearly every edit the editor wrote proposed from what its version changes', () => {
+        const edition = published()
+        let written = 0
+        let proposed = 0
+        for (const version of edition.versions) {
+            const exchanges = new Set(proposeEdits(edition, version.id).map(edit => exchangeOf(edit.insert, edit.delete)))
+            for (const edit of editsOf(version).filter(edit => !isCollationsOwn(edit))) {
+                written++
+                if (exchanges.has(exchangeOf((edit.insert ?? []).map(symbol => symbol.id), edit.delete ?? []))) proposed++
+            }
+        }
+        expect(written).toBe(414)
+        expect(proposed / written).toBeGreaterThan(0.89)
+    })
+
+    it('types an edit as the editor did, but where the editor took a shift for a corrected error', () => {
+        const edition = published()
+        const disagreements = edition.versions.flatMap(version => {
+            const proposed = new Map(proposeEdits(edition, version.id).map(edit => [exchangeOf(edit.insert, edit.delete), edit]))
+            return editsOf(version).flatMap(edit => {
+                const same = proposed.get(exchangeOf((edit.insert ?? []).map(symbol => symbol.id), edit.delete ?? []))
+                return same && edit.editType && same.editType !== edit.editType ? [edit.editType] : []
+            })
+        })
+        expect(new Set(disagreements)).toEqual(new Set(['correct-error']))
+    })
+
+    it('has most of the editor\'s edits proposed from the copies alone', () => {
+        const edition = published()
+        const proposal = proposeStemma(edition, { pin: false })
+        // As a collation leaves them: every change an edit of its own that nobody has read.
+        const unread = produce(produce(edition, adoptStemma(proposal)), draft => {
+            for (const version of draft.versions) {
+                version.edits = [
+                    ...insertedBy(version).map(symbol => ({ type: 'edit' as const, id: `i-${symbol.id}`, insert: [symbol] })),
+                    ...editsOf(version).flatMap(edit => edit.delete ?? []).map(id => ({ type: 'edit' as const, id: `d-${id}`, delete: [id] }))
+                ]
+            }
+        })
+        const adopted = produce(unread, adoptEdits())
+        const exchanges = new Set(adopted.versions.flatMap(version =>
+            editsOf(version).map(edit => `${version.id}|${exchangeOf((edit.insert ?? []).map(symbol => symbol.id), edit.delete ?? [])}`)))
+        const written = edition.versions.flatMap(version => editsOf(version).filter(edit => !isCollationsOwn(edit))
+            .map(edit => `${version.id}|${exchangeOf((edit.insert ?? []).map(symbol => symbol.id), edit.delete ?? [])}`))
+        expect(written.filter(edit => exchanges.has(edit)).length / written.length).toBeGreaterThan(0.75)
     })
 })
 

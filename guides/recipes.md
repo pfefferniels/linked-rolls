@@ -92,6 +92,12 @@ annotation that holds the statement with a certainty from `true` to
 `false` for the reasons it lists. {@linkcode linked-rolls!certaintyOf | certaintyOf}
 reads the certainty; a statement without a belief is held true.
 
+{@linkcode linked-rolls!proposeEdits | proposeEdits} groups what a version
+changes into edits and types each by its shape, an accent added, a command
+put elsewhere, a note struck again, and
+{@linkcode linked-rolls!adoptEdits | adoptEdits} puts them in place of the
+edits a collation wrote, keeping those somebody motivated.
+
 ```ts
 import { certaintyOf, editsOf, symbolsIn } from 'linked-rolls'
 ```

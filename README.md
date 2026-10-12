@@ -137,6 +137,41 @@ six copies. They were found by searching for such values, so they show
 that the stemma is consistent with these principles, not that the
 principles confirm it.
 
+## Proposing the edits
+
+What a version inserts and deletes can be grouped into edits and typed
+by their shape alone. `proposeEdits` reads a version's changes line by
+line, a latched function, a held one or a pitch, and never across a
+command both texts keep, so that an edit stays at one place. A function
+turned on and off again is one edit, typed an additional accent where
+the bar spells an accent so; a perforation put elsewhere is one move
+with the one it replaces, typed a shift, or shortened or prolonged
+where it begins about where the other did; overlapping notes are one
+edit, a note struck again or two tied; a held command standing for a
+latched pair is one recoding; a command the text makes no use of is a
+redundancy added or removed; cancels punched across lines at one place
+are one row. `adoptEdits` puts the proposal in place of the edits a
+collation wrote and nobody has motivated, and keeps the rest.
+
+```ts
+import { adoptEdits, adoptStemma, proposeEdits, proposeStemma } from 'linked-rolls'
+
+proposeEdits(edition, versionId)  // [{ insert, delete, editType, grouping }, …]
+
+// The stemma and the edits of its versions, as one undo step
+const adopted = produce(edition, draft => {
+    adoptStemma(proposeStemma(edition))(draft)
+    adoptEdits()(draft)
+})
+```
+
+Why an edit was made is not read off its shape, and neither is whether
+a shift corrects an error: what is left to the editor is the
+motivation. On WM 225 the proposal reproduces 370 of the 414 edits the
+editor wrote, from what each version changes, and all of their types
+but the shifts the editor took for corrected errors. From the copies
+alone, through the proposed stemma, it reproduces 326.
+
 ## Format
 
 The export uses the Roll Edition Ontology (REO), namespace
