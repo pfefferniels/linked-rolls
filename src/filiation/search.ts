@@ -229,8 +229,12 @@ export interface Scored {
 export interface Support {
     /** The copies the grouping holds, as the copies of a node and those below it. */
     copies: string[]
-    /** Whether it is the grouping of a copy carrying a version above others, rather than of the copies below a node. */
-    ancestor?: string
+    /**
+     * Where it is the grouping of a version carried by copies and lying
+     * above others, rather than of the copies below a node: the copies
+     * carrying that version.
+     */
+    ancestor?: string[]
     margin: number
 }
 
@@ -247,13 +251,14 @@ const before = (a: Scored, b: Scored): boolean =>
     a.cost < b.cost - 1e-9 || (Math.abs(a.cost - b.cost) <= 1e-9 && (a.lost < b.lost || (a.lost === b.lost && a.notation < b.notation)))
 
 /**
- * Scores every stemma of the copies and keeps the best, the runners-up
- * and, for each grouping of the best, the best stemma without it. Ties
- * go to fewer lost states, then to the notation, so that the outcome
- * depends on nothing but the copies and the costs.
+ * Scores every stemma of the texts, each carried by one copy or by
+ * several, and keeps the best, the runners-up and, for each grouping of
+ * the best, the best stemma without it. Ties go to fewer lost states,
+ * then to the notation, so that the outcome depends on nothing but the
+ * copies and the costs.
  */
 export const searchStemmata = (
-    copies: readonly string[],
+    texts: readonly (readonly string[])[],
     names: readonly string[],
     systems: readonly string[],
     rows: readonly { presence: readonly Presence[], redundant: boolean }[],
@@ -261,7 +266,7 @@ export const searchStemmata = (
     transfers: ReadonlyMap<string, ReadonlySet<string>>,
     keep: number
 ): Search => {
-    const n = copies.length
+    const n = texts.length
     const classes = classesOf(rows, n, costs)
     const pool = 2 * n
     const absent = Array.from({ length: pool }, () => new Float64Array(classes.weight.length))
@@ -304,7 +309,7 @@ export const searchStemmata = (
     if (top.length === 0) throw new Error('No stemma of these copies is admissible')
     const best = top[0]
     const supports: Support[] = []
-    const named = (mask: number) => copies.filter((_, c) => mask & (1 << c))
+    const named = (mask: number) => texts.filter((_, c) => mask & (1 << c)).flat()
     const seen = new Set<number>()
     for (let v = 0; v < best.tree.copy.length; v++) {
         const mask = best.tree.below[v]
@@ -315,7 +320,7 @@ export const searchStemmata = (
             seen.add(mask)
             supports.push({ copies: named(mask), margin: without[mask] - best.cost })
         }
-        if (copy >= 0) supports.push({ copies: named(mask), ancestor: copies[copy], margin: notAncestor[copy] - best.cost })
+        if (copy >= 0) supports.push({ copies: named(mask), ancestor: [...texts[copy]], margin: notAncestor[copy] - best.cost })
     }
 
     return {

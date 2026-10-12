@@ -103,7 +103,11 @@ Which versions there are, lost ones included, how they derive from each
 other and which edits belong to which can be proposed from the copies
 alone. `proposeStemma` collates the transcribed copies all at once,
 notes which copies have, lack or cannot show each reading, and scores
-every stemma the copies admit, up to seven copies. A reading arising
+every stemma the copies admit. Copies of one system that differ in no
+more than a few readings, or that the edition gives one version, are
+taken to carry one text, and so one version, as pressings of one master
+do; what one of them lacks is a deviation of that copy. The search
+covers up to seven such texts, however many copies carry them. A reading arising
 costs ten times a reading lost. Losses count for less where the
 editorial principles of an edition say they are weak evidence: a
 redundancy cleaned up, or what a re-cut for another system lacks. On

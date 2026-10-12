@@ -13,6 +13,8 @@ import { stemmaChanges } from '../src/filiation/changes'
 import { collateCopies } from '../src/filiation/readings'
 import { ineffectiveAmong } from '../src/filiation/presence'
 import { stemmataOf } from '../src/filiation/trees'
+import { sharedTexts } from '../src/filiation/texts'
+import { PresenceMatrix } from '../src/filiation/presence'
 import { siglaOf } from '../src/analysis/sigla'
 import { snapshotOf } from '../src/analysis/text'
 import { versionsWitnessedBy } from '../src/analysis/witnesses'
@@ -52,9 +54,9 @@ const tradition = () => {
     return { b, d, e, f }
 }
 
-const punched = (id: string, items: readonly Item[], seed: number) => {
+const punched = (id: string, items: readonly Item[], seed: number, missing: readonly number[] = []) => {
     const random = generator(seed)
-    const features: AnyFeature[] = items.map((item, index) => {
+    const features: AnyFeature[] = items.filter((_, index) => !missing.includes(index)).map((item, index) => {
         const jitter = (random() - 0.5) * 0.6
         return hole(`${id}-${index}`, item.at + jitter, item.at + item.length + jitter, welteT100.positionOf(item.meaning)!)
     })
@@ -113,14 +115,14 @@ describe('a stemma proposed from the copies', () => {
     it('finds the descent the copies were punched from, lost states included', () => {
         const proposal = proposeStemma(editionOfTradition())
         expect(proposal.notation).toBe('*(b(*(d,e)),f)')
-        const lost = proposal.versions.filter(version => version.copy === undefined)
+        const lost = proposal.versions.filter(version => version.copies.length === 0)
         expect(lost).toHaveLength(2)
     })
 
     it('puts each reading where it arose, and its deletion where a branch struck it', () => {
         const proposal = proposeStemma(editionOfTradition())
-        const byCopy = (copy: string) => proposal.versions.find(version => version.copy === copy)!
-        const c = proposal.versions.find(version => version.copy === undefined && version.parent !== undefined)!
+        const byCopy = (copy: string) => proposal.versions.find(version => version.copies.includes(copy))!
+        const c = proposal.versions.find(version => version.copies.length === 0 && version.parent !== undefined)!
         expect(byCopy('b').inserts).toHaveLength(20)
         expect(c.inserts).toHaveLength(16)
         expect(byCopy('d').inserts).toHaveLength(12)
@@ -213,5 +215,66 @@ describe.skipIf(!existsSync(welte225))('the stemma of WM 225, proposed from its 
         const kept = changes.reduce((sum, change) => sum + change.inserted.kept, 0)
         const before = edition.versions.reduce((sum, version) => sum + insertedBy(version).length, 0)
         expect(kept / before).toBeGreaterThan(0.95)
+    })
+})
+
+describe('copies carrying the same text', () => {
+    /** The tradition with further copies punched from the masters of d and f, one of them missing a hole. */
+    const withPressings = (more: readonly [string, 'b' | 'd' | 'e' | 'f', number[]][]): Edition => {
+        const texts = tradition()
+        const seeds: Record<string, number> = { b: 1, d: 2, e: 3, f: 4 }
+        const copies = (['b', 'd', 'e', 'f'] as const).map(id => punched(id, texts[id], seeds[id]))
+        more.forEach(([id, of, missing], index) => copies.push(punched(id, texts[of], 10 + index, missing)))
+        return editionOf(copies, [])
+    }
+
+    it('are one version, and what a copy lacks of it is a deviation of that copy', () => {
+        const proposal = proposeStemma(withPressings([['d2', 'd', [7]], ['f2', 'f', []]]))
+        expect(proposal.texts.map(text => text.copies)).toEqual([['b'], ['d', 'd2'], ['e'], ['f', 'f2']])
+        expect(proposal.notation).toBe('*(b(*(d+d2,e)),f+f2)')
+        const d = proposal.versions.find(version => version.copies.includes('d'))!
+        expect(d.copies).toEqual(['d', 'd2'])
+        expect(d.deviations.map(deviation => deviation.copy)).toEqual(['d2'])
+    })
+
+    it('let more than seven copies be searched, as long as they carry seven texts or fewer', () => {
+        const proposal = proposeStemma(withPressings([
+            ['b2', 'b', []], ['d2', 'd', []], ['d3', 'd', [3]], ['e2', 'e', []], ['f2', 'f', []]
+        ]))
+        expect(proposal.copies).toHaveLength(9)
+        expect(proposal.texts).toHaveLength(4)
+        expect(proposal.notation).toBe('*(b+b2(*(d+d2+d3,e+e2)),f+f2)')
+    })
+
+    it('stay apart where they differ in more readings than allowed', () => {
+        const proposal = proposeStemma(withPressings([['d2', 'd', [7]]]), { sameText: 0 })
+        expect(proposal.texts.map(text => text.copies)).toEqual([['b'], ['d'], ['e'], ['f'], ['d2']])
+        expect(proposal.apart[0]).toEqual({ copies: ['d', 'd2'], differences: 1 })
+    })
+
+    it('stay together where the edition gives them one version', () => {
+        const edition = withPressings([['d2', 'd', [7]]])
+        const adopted = produce(edition, adoptStemma(proposeStemma(edition)))
+        const one = (copy: string) => versionsWitnessedBy(adopted, copy).find(witness => witness.by === 'carriers' && !witness.through)?.version
+        expect(one('d2')).toBe(one('d'))
+        const again = proposeStemma(adopted, { sameText: -1 })
+        expect(again.texts.find(text => text.copies.includes('d'))).toEqual({ copies: ['d', 'd2'], differences: 1, stated: true })
+    })
+
+    it('are of one system, and never chain copies far apart', () => {
+        const matrix = (rows: string[]): PresenceMatrix => ({
+            copies: ['a', 'b', 'c'],
+            redundant: [],
+            presence: Object.fromEntries(rows.map((row, index) => [`r${index}`, {
+                a: row[0] === '1' ? 'present' : 'absent',
+                b: row[1] === '1' ? 'present' : 'absent',
+                c: row[2] === '1' ? 'present' : 'absent'
+            }]))
+        })
+        // a and b differ in two readings, b and c in two, a and c in four
+        const chain = matrix(['110', '110', '011', '011', '111'])
+        expect(sharedTexts(chain, ['red', 'red', 'red'], 3).texts.map(text => text.copies)).toEqual([['a', 'b'], ['c']])
+        const same = matrix(['111', '111'])
+        expect(sharedTexts(same, ['red', 'red', 'green'], 3).texts.map(text => text.copies)).toEqual([['a', 'b'], ['c']])
     })
 })

@@ -77,7 +77,7 @@ export const adoptionOf = (edition: Edition, proposal: StemmaProposal): Adoption
     const copiesBelow = new Map(proposal.versions.map(proposed => [proposed.id, new Set<string>()]))
     for (const proposed of proposal.versions) {
         for (let at: string | undefined = proposed.id; at !== undefined; at = parentOf.get(at)) {
-            if (proposed.copy) copiesBelow.get(at)!.add(proposed.copy)
+            proposed.copies.forEach(copy => copiesBelow.get(at)!.add(copy))
         }
     }
     const arising = new Map<string, string[]>()
@@ -120,7 +120,7 @@ export const adoptionOf = (edition: Edition, proposal: StemmaProposal): Adoption
     }
 
     const idFor = (proposed: ProposedVersion): string =>
-        proposed.version ?? v5(`version|${proposed.copy ?? ''}|${[...proposed.inserts].sort().join(',')}`, ADOPTED)
+        proposed.version ?? v5(`version|${proposed.copies.join(',')}|${[...proposed.inserts].sort().join(',')}`, ADOPTED)
     const ids = new Map(proposal.versions.map(proposed => [proposed.id, idFor(proposed)]))
     const staying = new Set(ids.values())
 
@@ -174,7 +174,7 @@ export const adoptionOf = (edition: Edition, proposal: StemmaProposal): Adoption
             .filter(other => other !== principal && staying.has(idOf(other)) && idOf(other) !== parent)
         const basedOn = [...(derivation ? [derivation] : []), ...hypotheses]
 
-        const copy = proposed.copy ? edition.copies.find(copy => copy.id === proposed.copy) : undefined
+        const copy = edition.copies.find(copy => copy.id === proposed.copies[0])
         const bar = barNamed(proposed.system)
         const system = copy?.production?.system ?? before?.system ?? (bar ? systemOf(bar) : { id: proposed.system, name: proposed.system, sameAs: [] })
 

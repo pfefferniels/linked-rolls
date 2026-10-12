@@ -13,10 +13,11 @@ import { keyOf } from "../systems/TrackerBar.js"
 import { isCollationsOwn } from "../collation/Collation.js"
 import { versionsWitnessedBy } from "../analysis/witnesses.js"
 import { collateCopies, CopyCollation, CollatedReading, Recoding, reads } from "./readings.js"
-import { defaultMargin, presenceIn, PresenceMatrix } from "./presence.js"
+import { defaultMargin, Presence, presenceIn, PresenceMatrix } from "./presence.js"
 import { Costs, defaultCosts, LaidOut, Scored, searchStemmata, statesOf, Support } from "./search.js"
 import { barNamed, transfersOf } from "./systems.js"
 import { MAX_COPIES } from "./trees.js"
+import { defaultSameText, KeptApart, SharedText, sharedTexts } from "./texts.js"
 
 /**
  * How near a reading of the same kind on the other side of the root
@@ -49,8 +50,19 @@ export interface FiliationOptions {
     /** How far beyond its text, or the edge of a tear, a copy cannot say what it lacks (3 mm). */
     margin?: Millimeters
 
-    /** Whether the edits the editor wrote hold their versions to what they insert and delete (yes). */
+    /**
+     * Whether the editor's decisions hold (yes): the edits the editor
+     * wrote hold their versions to what they insert and delete, and
+     * copies the edition gives one version carry one text.
+     */
     pin?: boolean
+
+    /**
+     * How many readings two copies of one system may differ in and still
+     * be taken to carry the same text (`defaultSameText`). Below zero,
+     * only what the edition states is taken for one text.
+     */
+    sameText?: number
 
     /** How many runners-up to report (5). */
     alternatives?: number
@@ -64,8 +76,8 @@ export interface ProposedVersion {
     /** A name within the proposal: the versions are numbered from the root down. */
     id: string
 
-    /** The copy carrying the version at first hand; none for a lost state. */
-    copy?: string
+    /** The copies carrying the version at first hand; none for a lost state. */
+    copies: string[]
 
     /** The system the version is coded for, by its identifier. */
     system: string
@@ -85,8 +97,8 @@ export interface ProposedVersion {
     /** The held commands that stand for a latched pair, among what the version inserts and deletes. */
     recodings: Recoding[]
 
-    /** The readings the version holds that the copy carrying it lacks. */
-    deviations: string[]
+    /** The readings the version holds that a copy carrying it lacks. */
+    deviations: { copy: string, reading: string }[]
 
     /** The edits the editor wrote on `version` that the proposal keeps as they are. */
     pinned: string[]
@@ -111,6 +123,11 @@ export type Unpinned = {
  */
 export interface StemmaProposal {
     copies: string[]
+    /** The copies grouped by the text they carry, each group one version of the stemma. */
+    texts: SharedText[]
+    /** The closest copies of one system that were kept apart, closest first. */
+    apart: KeptApart[]
+    sameText: number
     costs: Costs
     movedWithin: Millimeters
     margin: Millimeters
@@ -232,17 +249,18 @@ const baseTextOf = (
     placement: Placement,
     held: ReadonlySet<string>,
     within: Millimeters,
+    texts: readonly (readonly string[])[],
     systems: readonly string[]
 ): string[] => {
     const root = tree.copy.length - 1
     const children = childrenOf(tree)[root]
     if (tree.copy[root] >= 0 || children.length !== 2) return []
 
-    const copiesBelow = (v: number) => matrix.copies.filter((_, c) => tree.below[v] & (1 << c))
+    const copiesBelow = (v: number) => texts.filter((_, t) => tree.below[v] & (1 << t)).flat()
     const rootSystem = tree.system[root]
-    /** How many dynamic perforations the copies of the root's system below the node carry, on average. */
+    /** How many expression perforations the copies of the root's system below the node carry, on average. */
     const densityOf = (v: number): number => {
-        const copies = matrix.copies.filter((_, c) => (tree.below[v] & (1 << c)) && systems[c] === rootSystem)
+        const copies = texts.filter((_, t) => (tree.below[v] & (1 << t)) && systems[t] === rootSystem).flat()
         if (copies.length === 0) return Infinity
         const counts = copies.map(copy => readings.filter(reading =>
             reading.meaning.type === 'expression' && matrix.presence[reading.id][copy] === 'present').length)
@@ -314,24 +332,42 @@ const recode = (tree: LaidOut, readings: readonly CollatedReading[], placement: 
 export const proposeStemma = (edition: Edition, options: FiliationOptions = {}): StemmaProposal => {
     const copies = transcribed(edition).filter(id => !options.copies || options.copies.includes(id))
     if (copies.length < 2) throw new Error('A stemma needs at least two copies with features')
-    if (copies.length > MAX_COPIES) throw new Error(`The exhaustive search covers at most ${MAX_COPIES} copies`)
 
     const costs: Costs = { ...defaultCosts, ...options.costs }
     const movedWithin = options.movedWithin ?? defaultMovedWithin
     const margin = options.margin ?? defaultMargin
+    const sameText = options.sameText ?? defaultSameText
     const copyOf = new Map(edition.copies.map(copy => [copy.id, copy]))
-    const names = copies.map(id => copyOf.get(id)!.siglum ?? id)
-    const systems = copies.map(id => barOf(copyOf.get(id) as RollCopy).id)
+    const systemOfCopy = new Map(copies.map(id => [id, barOf(copyOf.get(id) as RollCopy).id]))
     const transfers = transfersOf()
+    const firstHandOf = (copy: string) => versionsWitnessedBy(edition, copy)
+        .find(witness => witness.by === 'carriers' && witness.through === undefined)?.version
 
     const collation = collateCopies(edition, copies)
     const matrix = presenceIn(edition, collation, margin)
+
+    // Copies carrying one text are one version, and the search is over texts.
+    const stated = options.pin === false ? [] : [...Map.groupBy(
+        copies.flatMap(copy => { const version = firstHandOf(copy); return version ? [{ copy, version }] : [] }),
+        ({ version }) => version).values()].map(group => group.map(({ copy }) => copy))
+    const shared = sharedTexts(matrix, copies.map(copy => systemOfCopy.get(copy)!), sameText, stated)
+    const texts = shared.texts.map(text => text.copies)
+    if (texts.length > MAX_COPIES) {
+        throw new Error(`The exhaustive search covers at most ${MAX_COPIES} different texts, and these copies carry ${texts.length}`)
+    }
+    const names = texts.map(text => text.map(id => copyOf.get(id)!.siglum ?? id).join('+'))
+    const systems = texts.map(text => systemOfCopy.get(text[0])!)
+
     const redundant = new Set(matrix.redundant)
+    const textPresence = (reading: string, text: readonly string[]): Presence => {
+        const each = text.map(copy => matrix.presence[reading][copy])
+        return each.includes('present') ? 'present' : each.includes('absent') ? 'absent' : 'unknown'
+    }
     const rows = collation.readings.map(reading => ({
-        presence: copies.map(copy => matrix.presence[reading.id][copy]),
+        presence: texts.map(text => textPresence(reading.id, text)),
         redundant: redundant.has(reading.id)
     }))
-    const search = searchStemmata(copies, names, systems, rows, costs, transfers, options.alternatives ?? 5)
+    const search = searchStemmata(texts, names, systems, rows, costs, transfers, options.alternatives ?? 5)
     const tree = search.best
     const size = tree.copy.length
 
@@ -359,13 +395,12 @@ export const proposeStemma = (edition: Edition, options: FiliationOptions = {}):
     const standsFor = new Map<number, string>()
     const claimed = new Set<string>()
     for (let v = 0; v < size; v++) {
-        const copy = tree.copy[v]
-        if (copy < 0) continue
-        const firstHand = versionsWitnessedBy(edition, copies[copy])
-            .find(witness => witness.by === 'carriers' && witness.through === undefined)
-        if (firstHand && !claimed.has(firstHand.version)) {
-            standsFor.set(v, firstHand.version)
-            claimed.add(firstHand.version)
+        const text = tree.copy[v]
+        if (text < 0) continue
+        const firstHand = texts[text].map(firstHandOf).find(version => version !== undefined && !claimed.has(version))
+        if (firstHand) {
+            standsFor.set(v, firstHand)
+            claimed.add(firstHand)
         }
     }
     const insertsAt = (placement: Placement, v: number) =>
@@ -433,7 +468,7 @@ export const proposeStemma = (edition: Edition, options: FiliationOptions = {}):
 
     const { placement, failed } = place(fixed)
     const held = new Set([...fixed.keys()].filter(reading => !failed.has(reading)))
-    const baseText = baseTextOf(tree, collation.readings, matrix, placement, held, movedWithin, systems)
+    const baseText = baseTextOf(tree, collation.readings, matrix, placement, held, movedWithin, texts, systems)
     recode(tree, collation.readings, placement)
 
     for (const [v, edits] of pins) {
@@ -462,14 +497,13 @@ export const proposeStemma = (edition: Edition, options: FiliationOptions = {}):
                 return fits
             })
             : []
-        const copy = tree.copy[v]
-        const inner = copy >= 0 && tree.below[v] !== 1 << copy
-        const deviations = inner
-            ? collation.readings.filter(reading => placement.get(reading.id)![v] && matrix.presence[reading.id][copies[copy]] === 'absent').map(reading => reading.id)
-            : []
+        const carrying = tree.copy[v] >= 0 ? texts[tree.copy[v]] : []
+        const deviations = carrying.flatMap(copy => collation.readings
+            .filter(reading => placement.get(reading.id)![v] && matrix.presence[reading.id][copy] === 'absent')
+            .map(reading => ({ copy, reading: reading.id })))
         return {
             id: nameOf.get(v)!,
-            ...(copy >= 0 && { copy: copies[copy] }),
+            copies: [...carrying],
             system: tree.system[v],
             ...(tree.parent[v] >= 0 && { parent: nameOf.get(tree.parent[v]) }),
             ...(standsFor.has(v) && { version: standsFor.get(v) }),
@@ -487,6 +521,9 @@ export const proposeStemma = (edition: Edition, options: FiliationOptions = {}):
 
     return {
         copies,
+        texts: shared.texts,
+        apart: shared.apart,
+        sameText,
         costs,
         movedWithin,
         margin,
