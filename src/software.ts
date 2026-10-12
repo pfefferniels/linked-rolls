@@ -9,4 +9,4 @@ import { Software } from "./model/Agent.js"
  * release that can run again what it records.
  * @category Reading and writing
  */
-export const linkedRolls: Software = { name: 'linked-rolls', version: '0.74.0' }
+export const linkedRolls: Software = { name: 'linked-rolls', version: '0.75.0' }
