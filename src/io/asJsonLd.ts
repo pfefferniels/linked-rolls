@@ -120,38 +120,67 @@ const silentTerms = new Set(
         .map(([term]) => term))
 
 /**
- * A reference its belief does not hold to be so: it names a node, states
- * nothing RDF would read besides, and its belief is below likely.
+ * The beliefs of the proposition sets the edition holds below likely, by
+ * the id of the set. A statement that belongs to one is doubted as the
+ * set is.
  */
-const isDoubtedReference = (value: unknown): value is Record<string, Json> =>
+type DoubtedSets = ReadonlyMap<string, string>
+
+const doubtedSetsOf = (edition: Edition): DoubtedSets =>
+    new Map((edition.propositionSets ?? [])
+        .filter(set => !isAsserted(set.belief.certainty))
+        .map(set => [set.id, set.belief.id]))
+
+/** The set a value's annotation names instead of carrying a belief, where the edition doubts it. */
+const doubtedSetOf = (value: Record<string, Json>, doubted: DoubtedSets): string | undefined => {
+    const annotation = value['@annotation']
+    return isRecord(annotation) && annotation.belief === undefined && typeof annotation['@id'] === 'string'
+        ? doubted.get(annotation['@id']) && annotation['@id']
+        : undefined
+}
+
+/**
+ * A reference its belief does not hold to be so: it names a node, states
+ * nothing RDF would read besides, and its belief is below likely, or the
+ * belief of the proposition set it belongs to is.
+ */
+const isDoubtedReference = (value: unknown, doubted: DoubtedSets): value is Record<string, Json> =>
     isRecord(value)
     && typeof value['@id'] === 'string'
     && isRecord(value['@annotation'])
-    && !isAsserted(certaintyOf(value))
+    && (!isAsserted(certaintyOf(value)) || doubtedSetOf(value, doubted) !== undefined)
     && Object.keys(value).every(key => key === '@id' || key === '@annotation' || silentTerms.has(key))
 
 /**
  * The statement a doubted reference makes, as a JSON-LD-star embedded
  * node: the triple is named without being stated, and the belief is
  * about it. The annotation's own id goes along under a key RDF does not
- * read, so that an import can put it back.
+ * read, so that an import can put it back. A statement that belongs to
+ * a proposition set names the set's belief by its id, which is stated
+ * with the set.
  */
-const quote = (subject: string, key: string, reference: Record<string, Json>, listed: boolean): Json => {
+const quote = (subject: string, key: string, reference: Record<string, Json>, listed: boolean, doubted: DoubtedSets): Json => {
     const { '@annotation': { '@id': annotation, ...about }, ...object } = reference
-    return { '@id': { '@id': subject, [key]: listed ? [object] : object }, annotation, ...about }
+    const set = doubtedSetOf(reference, doubted)
+    return {
+        '@id': { '@id': subject, [key]: listed ? [object] : object },
+        annotation,
+        ...about,
+        ...(set !== undefined && { belief: { '@id': doubted.get(set) } })
+    }
 }
 
 /** The value a node states under a key, less the doubted references, which go to the quoted. */
-const unquoted = (subject: string, key: string, value: Json, quoted: Json[]): Json => {
+const unquoted = (subject: string, key: string, value: Json, quoted: Json[], doubted: DoubtedSets): Json => {
     if (Array.isArray(value)) {
         return value.filter(item => {
-            if (!isDoubtedReference(item)) return true
-            quoted.push(quote(subject, key, item, true))
+            if (!isDoubtedReference(item, doubted)) return true
+            quoted.push(quote(subject, key, item, true, doubted))
             return false
         })
     }
-    if (!isDoubtedReference(value)) return value
-    quoted.push(quote(subject, key, value, false))
+    if (!isDoubtedReference(value, doubted)) return value
+    quoted.push(quote(subject, key, value, false, doubted))
     return undefined
 }
 
@@ -165,15 +194,15 @@ const unquoted = (subject: string, key: string, value: Json, quoted: Json[]): Js
  * between nodes are quoted, since only they can be put back where they
  * stood; a doubted date or attribution stays annotated in place.
  */
-const withDoubtedReferencesQuoted = (value: Json, quoted: Json[]): Json => {
-    if (Array.isArray(value)) return value.map(item => withDoubtedReferencesQuoted(item, quoted))
+const withDoubtedReferencesQuoted = (value: Json, quoted: Json[], doubted: DoubtedSets): Json => {
+    if (Array.isArray(value)) return value.map(item => withDoubtedReferencesQuoted(item, quoted, doubted))
     if (!isRecord(value)) return value
 
     const subject = value['@id']
     const node: Record<string, Json> = {}
     Object.entries(value).forEach(([key, child]) => {
-        const stated = typeof subject === 'string' && !key.startsWith('@') ? unquoted(subject, key, child, quoted) : child
-        const below = withDoubtedReferencesQuoted(stated, quoted)
+        const stated = typeof subject === 'string' && !key.startsWith('@') ? unquoted(subject, key, child, quoted, doubted) : child
+        const below = withDoubtedReferencesQuoted(stated, quoted, doubted)
         if (below !== undefined) node[key] = below
     })
     return node
@@ -192,12 +221,16 @@ const atOwnPlacesAll = (edition: Edition): Edition =>
  * and every version carries the context of its own reproducing system.
  * A reference the edition holds possible, unlikely or false is quoted
  * rather than stated, so that a reader of the RDF does not take it for
- * a fact. The edition given is not changed.
+ * a fact, and so is one that belongs to a proposition set held so. A
+ * statement that belongs to a set names the set in its annotation,
+ * which in RDF makes the set its reifier, and the set, stated once
+ * beside the document, carries the belief. The edition given is not
+ * changed.
  * @category Reading and writing
  */
 export const asJsonLd = (edition: Edition) => {
     const quoted: Json[] = []
-    const node = withDoubtedReferencesQuoted(withSystemContexts(withCreations(withChanges(asJsonLdEntity(atOwnPlacesAll(edition))))), quoted)
+    const node = withDoubtedReferencesQuoted(withSystemContexts(withCreations(withChanges(asJsonLdEntity(atOwnPlacesAll(edition))))), quoted, doubtedSetsOf(edition))
     // The context is the export's own; one carried in from an import must not override it.
     const { base, '@context': carried, ...rest } = node
 

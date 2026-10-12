@@ -321,10 +321,26 @@ describe('merging edits', () => {
 
         expect(typeOf([inserting('e1', noteShort), deleting('e2', 'note')])).toBe('shorten')
         expect(typeOf([inserting('e1', noteLong), deleting('e2', 'note')])).toBe('prolong')
-        expect(typeOf([inserting('e1', noteFar), deleting('e2', 'note')])).toBe('correct-error')
+        expect(typeOf([inserting('e1', noteFar), deleting('e2', 'note')])).toBe('shift')
         expect(typeOf([inserting('e1', on2), inserting('e2', off2)])).toBe('additional-accent')
         expect(typeOf([inserting('e1', on2, off2), deleting('e2', 'forzando-on', 'forzando-off')])).toBe('shift')
         expect(typeOf([deleting('e1', 'forzando-on')])).toBe('remove-redundancy')
+    })
+
+    /** Whether a change corrects an error is a reason for it, not its shape, and so no guess of the merge's. */
+    it('states no type where the shape of the exchange does not say', () => {
+        const typeOf = (edits: Edit[]) => mergedIn(edits).at(-1)!.editType
+
+        expect(typeOf([inserting('e1', note('other-far', 64, 'hole-far')), deleting('e2', 'note')])).toBeUndefined()
+        expect(typeOf([inserting('e1', noteShort, noteFar), deleting('e2', 'note')])).toBeUndefined()
+    })
+
+    it('makes the edit the editor\'s, though the first merged was one of a program\'s set', () => {
+        const member: Edit = { ...inserting('e1', noteShort), '@annotation': { id: 'propositions_run' } }
+        const merged = mergedIn([member, deleting('e2', 'note')]).at(-1)!
+
+        expect(merged['@annotation']).toBeUndefined()
+        expect(merged.editType).toBe('shorten')
     })
 
     it('leaves the edition as it is with nothing to merge', () => {
@@ -363,7 +379,7 @@ describe('merging edits', () => {
         const green = expression('sforzando', 'SforzandoForte', 'hole-on-2')
         const edits = [inserting('e1', green), deleting('e2', 'forzando-on', 'forzando-off')]
 
-        expect(mergedIn(edits).at(-1)!.editType).toBe('correct-error')
+        expect(mergedIn(edits).at(-1)!.editType).toBeUndefined()
     })
 
     it('offers each bar only the accents it can spell', () => {
@@ -375,7 +391,7 @@ describe('merging edits', () => {
         const onGreen = editsOf(produce(before, mergeEdits('C', edits)), 'C').at(-1)!
         expect(onGreen.editType).toBe('additional-accent')
 
-        expect(mergedIn(edits).at(-1)!.editType).toBe('correct-error')
+        expect(mergedIn(edits).at(-1)!.editType).toBeUndefined()
     })
 })
 

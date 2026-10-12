@@ -471,6 +471,39 @@ describe('an edit typed as a replacement with an equivalent', () => {
     })
 })
 
+describe('an edit typed as the correction of an error', () => {
+    const written = (edits: object[], motivations: object[] = []) =>
+        migrate({ versions: [{ '@type': 'Version', motivations, edits }] }).versions[0]
+
+    it('states the correction as its motivation, and no type, since its shape is read again', () => {
+        const version = written([{ '@type': 'edit', '@id': 'e', editType: 'correct-error' }])
+        expect(version.edits[0]).toEqual({ '@type': 'edit', '@id': 'e', motivation: 'corrected-error' })
+        expect(version.motivations).toEqual([{ '@type': 'motivation', '@id': 'corrected-error', note: 'Puts right an error of the version it derives from.' }])
+    })
+
+    it('takes the place of the motivation that says nobody has read the edit', () => {
+        const version = written([{ '@type': 'edit', '@id': 'e', editType: 'correct-error', motivation: 'unchecked' }])
+        expect(version.edits[0].motivation).toBe('corrected-error')
+    })
+
+    it('keeps a motivation of its own, and states the motivation of a correction only where an edit takes it', () => {
+        const own = { '@type': 'motivation', '@id': 'm', note: 'An accent on the melody.' }
+        const version = written([{ '@type': 'edit', '@id': 'e', editType: 'correct-error', motivation: 'm' }], [own])
+        expect(version.edits[0]).toEqual({ '@type': 'edit', '@id': 'e', motivation: 'm' })
+        expect(version.motivations).toEqual([own])
+    })
+
+    it('is read so under the name the type once had', () => {
+        const version = written([{ '@type': 'edit', '@id': 'e', classification: 'correct-error' }])
+        expect(version.edits[0]).toEqual({ '@type': 'edit', '@id': 'e', motivation: 'corrected-error' })
+    })
+
+    it('is migrated once, however often it is migrated', () => {
+        const once = migrate({ versions: [{ '@type': 'Version', motivations: [], edits: [{ '@type': 'edit', '@id': 'e', editType: 'correct-error' }] }] })
+        expect(migrate(once)).toEqual(once)
+    })
+})
+
 describe('a copy whose features stood where its alignment had put them', () => {
     /** A copy as a release before this one wrote it: its features and a tear on the axis, the shift and scale that put them there beside. */
     const written = () => ({

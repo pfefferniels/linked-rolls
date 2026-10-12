@@ -1,4 +1,5 @@
 import { Edit, EditType } from "../model/Edit.js"
+import { isHeldForItself, propositionSetOf } from "../model/Assumption.js"
 import { HorizontalSpan } from "../model/Feature.js"
 import { AnySymbol } from "../model/Symbol.js"
 import { keyOf } from "../systems/TrackerBar.js"
@@ -260,10 +261,14 @@ export const uncheckedMotivation = {
  * A recoding that only inserts or only deletes is the editor's: a
  * collation types no one-sided edit, so one typed so is a reading of
  * the transfer that collating again must not undo.
+ *
+ * An edit a program proposed and typed is no reading of the editor's
+ * either, as long as nobody has motivated it: it says so by belonging
+ * to the proposition set the program's run concluded (`adoptEdits`).
  * @category Collation and alignment
  */
 export const isCollationsOwn = (edit: Readonly<Edit>): boolean =>
     (edit.editType === drawnByCollation && !!edit.insert?.length && !!edit.delete?.length)
-    || (edit.editType === undefined
+    || ((edit.editType === undefined || propositionSetOf(edit) !== undefined)
         && (edit.motivation === undefined || edit.motivation === unchecked)
-        && edit['@annotation'] === undefined)
+        && !isHeldForItself(edit))

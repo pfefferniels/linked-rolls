@@ -21,7 +21,11 @@ import { versionsWitnessedBy } from '../src/analysis/witnesses'
 import { editsOf, insertedBy } from '../src/model/Version'
 import { isCollationsOwn } from '../src/collation/Collation'
 import { adoptEdits, proposeEdits } from '../src/filiation/edits'
+import { stemmaRules } from '../src/filiation/record'
 import { importJsonLd } from '../src/io/importJsonLd'
+import { mm } from '../src/model/Quantity'
+import { beliefIn, Inference, propositionSetOf } from '../src/model/Assumption'
+import { linkedRolls } from '../src/software'
 
 /** A reading of the text: what it says and where it begins. */
 type Item = { meaning: TrackMeaning, at: number, length: number }
@@ -195,6 +199,94 @@ describe('adopting a proposed stemma', () => {
     })
 })
 
+describe('the record of an adopted stemma', () => {
+    const run = { actor: { name: 'Editor', sameAs: [] }, date: { within: new Date(2026, 9, 12) } }
+    const adoptedOf = (edition: Edition) => produce(edition, adoptStemma(proposeStemma(edition), run))
+
+    it('is one proposition set every derivation the program states belongs to', () => {
+        const adopted = adoptedOf(editionOfTradition())
+        expect(adopted.propositionSets).toHaveLength(1)
+        const [set] = adopted.propositionSets!
+        const derivations = adopted.versions.flatMap(version => version.basedOn ?? [])
+        expect(derivations).toHaveLength(5)
+        expect(derivations.every(derivation => propositionSetOf(derivation) === set.id)).toBe(true)
+        expect(derivations.every(derivation => beliefIn(adopted, derivation)?.certainty === 'likely')).toBe(true)
+    })
+
+    it('holds the edits the program made too, but none the editor wrote', () => {
+        const edition = editionOfTradition()
+        const adopted = adoptedOf(edition)
+        const [set] = adopted.propositionSets!
+        expect(adopted.versions.flatMap(editsOf).every(edit => propositionSetOf(edit) === set.id)).toBe(true)
+
+        const d = versionsWitnessedBy(adopted, 'd').find(witness => !witness.through)!.version
+        const motivated = produce(adopted, draft => {
+            const version = draft.versions.find(version => version.id === d)!
+            version.edits![0].motivation = 'accent'
+            delete version.edits![0]['@annotation']
+            version.motivations.push({ type: 'motivation', id: 'accent', note: 'An accent on the melody.' })
+        })
+        const again = produce(motivated, adoptStemma(proposeStemma(motivated), run))
+        const kept = again.versions.find(version => version.id === d)!.edits![0]
+        expect(kept.motivation).toBe('accent')
+        expect(propositionSetOf(kept)).toBeUndefined()
+    })
+
+    it('rests on an inference this library drew, on the copies, by the rules its costs carry out', () => {
+        const edition = editionOfTradition()
+        const proposal = proposeStemma(edition)
+        const [set] = produce(edition, adoptStemma(proposal, run)).propositionSets!
+        const [reason] = set.belief.reasons as Inference[]
+        expect(reason.type).toBe('inference')
+        expect(reason.software).toEqual([linkedRolls])
+        expect(reason.actor).toEqual(run.actor)
+        expect(reason.date).toEqual(run.date)
+        expect(reason.used).toEqual(proposal.copies)
+        expect(reason.applies).toEqual(Object.values(stemmaRules))
+        expect(reason.note).toContain(`The stemma ${proposal.notation}`)
+        expect(reason.note).toContain('A reading arising costs 10')
+    })
+
+    it('names a rule only where a cost carries it out', () => {
+        const edition = editionOfTradition()
+        const proposal = proposeStemma(edition, { costs: { transferLoss: 1 } })
+        const [reason] = produce(edition, adoptStemma(proposal)).propositionSets![0].belief.reasons as Inference[]
+        expect(reason.applies).not.toContain(stemmaRules.recutLoss)
+        expect(reason.applies).toContain(stemmaRules.sharedAddition)
+        expect(reason.date).toBeUndefined()
+        expect(reason.actor).toBeUndefined()
+    })
+
+    it('leaves a derivation the editor holds for reasons of their own outside the set', () => {
+        const adopted = adoptedOf(editionOfTradition())
+        const held = produce(adopted, draft => {
+            const version = draft.versions.find(version => version.basedOn?.length)!
+            version.basedOn![0]['@annotation'] = {
+                id: 'own',
+                belief: { type: 'belief', id: 'own-belief', certainty: 'true', reasons: [{ type: 'simpleArgumentation', note: 'Seen.' }] }
+            }
+        })
+        const again = produce(held, adoptStemma(proposeStemma(held), run))
+        const derivation = again.versions.find(version => version.basedOn?.[0]['@annotation']?.id === 'own')!.basedOn![0]
+        expect(beliefIn(again, derivation)?.id).toBe('own-belief')
+        expect(propositionSetOf(derivation)).toBeUndefined()
+    })
+
+    it('stays as it was first recorded when the very same run is adopted again', () => {
+        const adopted = adoptedOf(editionOfTradition())
+        const later = produce(adopted, adoptStemma(proposeStemma(adopted), { date: { within: new Date(2026, 10, 1) } }))
+        expect(later.propositionSets).toEqual(adopted.propositionSets)
+        expect(later).toEqual(adopted)
+    })
+
+    it('gives way to the record of another run, once nothing belongs to it any longer', () => {
+        const adopted = adoptedOf(editionOfTradition())
+        const otherwise = produce(adopted, adoptStemma(proposeStemma(adopted, { costs: { lostState: 5 } }), run))
+        expect(otherwise.propositionSets).toHaveLength(1)
+        expect(otherwise.propositionSets![0].id).not.toBe(adopted.propositionSets![0].id)
+    })
+})
+
 describe('the edits of an adopted stemma', () => {
     it('are an edit for each accent a version adds, and one for each On it strikes', () => {
         const edition = editionOfTradition()
@@ -208,6 +300,42 @@ describe('the edits of an adopted stemma', () => {
         const e = editsOf(of('e'))
         expect(e.filter(edit => edit.editType === 'additional-accent')).toHaveLength(5)
         expect(e.filter(edit => edit.insert === undefined && edit.delete?.length === 1)).toHaveLength(3)
+    })
+
+    it('are recorded as a set of their own, which rests on the belief the stemma is held with', () => {
+        const edition = editionOfTradition()
+        const adopted = produce(edition, draft => {
+            adoptStemma(proposeStemma(edition))(draft)
+            adoptEdits()(draft)
+        })
+        const [stemma, edits] = adopted.propositionSets!
+        expect(adopted.versions.flatMap(version => version.basedOn ?? []).every(derivation => propositionSetOf(derivation) === stemma.id)).toBe(true)
+        const regrouped = adopted.versions.filter(version => version.basedOn).flatMap(editsOf)
+        expect(regrouped.every(edit => propositionSetOf(edit) === edits.id)).toBe(true)
+        const [reason] = edits.belief.reasons as Inference[]
+        expect(reason.premises).toEqual([stemma.belief.id])
+        expect(reason.software).toEqual([linkedRolls])
+        expect(reason.applies).toEqual(['https://welte225.org/rules#one-place'])
+    })
+
+    it('are grouped again by a later proposal, typed as they are, as long as nobody has motivated them', () => {
+        const edition = editionOfTradition()
+        const adopted = produce(edition, draft => {
+            adoptStemma(proposeStemma(edition))(draft)
+            adoptEdits()(draft)
+        })
+        const b = adopted.versions.find(version => version.id === versionsWitnessedBy(adopted, 'b').find(witness => !witness.through)!.version)!
+        // An accent's On and Off apart, as a proposal with a shorter reach for a pair leaves them.
+        const apart = produce(adopted, adoptEdits([b.id], { pairWithin: mm(1) }))
+        const regrouped = editsOf(apart.versions.find(version => version.id === b.id)!)
+        expect(regrouped.length).toBe(20)
+        // The edits of the other versions still belong to the first run's set, and b's to the second.
+        const [, first, second] = apart.propositionSets!
+        expect(first.id).toBe(adopted.propositionSets![1].id)
+        expect(regrouped.every(edit => propositionSetOf(edit) === second.id)).toBe(true)
+        // Once every version is regrouped so, nothing belongs to the first run's set any longer.
+        const allApart = produce(apart, adoptEdits(undefined, { pairWithin: mm(1) }))
+        expect(allApart.propositionSets!.map(set => set.id)).not.toContain(first.id)
     })
 })
 
@@ -263,7 +391,7 @@ describe.skipIf(!existsSync(welte225))('the stemma of WM 225, proposed from its 
         expect(proposed / written).toBeGreaterThan(0.89)
     })
 
-    it('types an edit as the editor did, but where the editor took a shift for a corrected error', () => {
+    it('types an edit as the editor did', () => {
         const edition = published()
         const disagreements = edition.versions.flatMap(version => {
             const proposed = new Map(proposeEdits(edition, version.id).map(edit => [exchangeOf(edit.insert, edit.delete), edit]))
@@ -272,7 +400,7 @@ describe.skipIf(!existsSync(welte225))('the stemma of WM 225, proposed from its 
                 return same && edit.editType && same.editType !== edit.editType ? [edit.editType] : []
             })
         })
-        expect(new Set(disagreements)).toEqual(new Set(['correct-error']))
+        expect(disagreements).toEqual([])
     })
 
     it('has most of the editor\'s edits proposed from the copies alone', () => {

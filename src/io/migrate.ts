@@ -92,6 +92,37 @@ const withRenamedEditType = (node: Json): Json =>
         ? { ...node, editType: renamedEditTypes[node.editType] }
         : node
 
+/** The motivation a corrected error is stated with, as `correctedErrorMotivation` was when the kind of edit was retired. */
+const correctedErrorMotivation = {
+    '@type': 'motivation',
+    '@id': 'corrected-error',
+    note: 'Puts right an error of the version it derives from.'
+}
+
+const isTypedCorrectError = (edit: Json): boolean =>
+    edit !== null && typeof edit === 'object' && (edit.editType === 'correct-error' || edit.classification === 'correct-error')
+
+/**
+ * Whether a change corrects an error was once one of the kinds of edit,
+ * though it is not read off the shape of a change but is a reason for
+ * it. An edit typed so states it as its motivation instead, where it
+ * gives none of its own, and the version states what the motivation
+ * means; one that gives a motivation of its own keeps that one. Either
+ * way it states no kind, its shape being left to be read again.
+ */
+const withCorrectedErrorsMotivated = (node: Json): Json => {
+    if (!Array.isArray(node.edits) || !node.edits.some(isTypedCorrectError)) return node
+    const edits = node.edits.map((edit: Json) => {
+        if (!isTypedCorrectError(edit)) return edit
+        const { editType: _kind, classification: _named, ...rest } = edit
+        return rest.motivation === undefined || rest.motivation === 'unchecked' ? { ...rest, motivation: correctedErrorMotivation['@id'] } : rest
+    })
+    const motivations: Json[] = Array.isArray(node.motivations) ? node.motivations : []
+    const declare = edits.some((edit: Json) => edit?.motivation === correctedErrorMotivation['@id'])
+        && !motivations.some(motivation => motivation?.['@id'] === correctedErrorMotivation['@id'])
+    return { ...node, edits, ...(declare && { motivations: [...motivations, correctedErrorMotivation] }) }
+}
+
 const withRenamedType = (node: Json): Json =>
     Object.hasOwn(renamedTypes, node['@type']) ? { ...node, '@type': renamedTypes[node['@type']] } : node
 
@@ -577,7 +608,7 @@ const withMeasuredByInReasons = (node: Json): Json => {
     }
 }
 
-const nodeSteps = [withRenamedKeys, withRenamedEditType, withTypology, withRenamedType, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
+const nodeSteps = [withRenamedKeys, withRenamedEditType, withCorrectedErrorsMotivated, withTypology, withRenamedType, withoutVersionType, withoutVersionSiglum, withLowerCaseTerms, withSplitMethod, withReferences, withKeeper, withoutEmptyKeeper,
     withPerforator, withProductionNodes, withTypedPerforator, withScale, withoutOps, withDerivationList, withReadingKind, withTimeSpanDates,
     withoutFeatureKind, withBorneFeaturesNamed, withFeaturesInActs, withOwnPlaces, withDriveOfStaggering, withoutPattern, withoutBearings, withoutEntailedType,
     withMeasuredByInReasons]

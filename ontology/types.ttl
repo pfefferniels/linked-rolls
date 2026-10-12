@@ -168,7 +168,9 @@ reot:remove-redundancy a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3i
 reot:recoding a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "recoding"@en ;
     skos:definition "An edit that carries the text into the coding of another reproducing system."@en .
 reot:shift a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "shift"@en .
-reot:correct-error a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "correct error"@en .
+reot:correct-error a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "correct error"@en ;
+    owl:deprecated true ;
+    rdfs:comment "No longer a kind of edit. The kinds of edit are read off the shape of a change, and whether a change corrects an error is not: it is a reason for the change, which the format states as the edit's motivation (P17 was motivated by)."@en .
 reot:shorten a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "shorten"@en .
 reot:prolong a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "prolong"@en .
 

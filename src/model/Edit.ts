@@ -3,7 +3,10 @@ import { AnySymbol } from "./Symbol.js";
 import { WithId } from "../shared/utils.js";
 
 /**
- * The types of editorial change an edit may state.
+ * The types of editorial change an edit may state. Each is read off the
+ * shape of the change, as `proposeEdits` reads it. Whether a change
+ * corrects an error is not: it is a reason for the change, and stated as
+ * its motivation (`correctedError`).
  * @category Vocabulary
  */
 export const editTypes = [
@@ -18,15 +21,15 @@ export const editTypes = [
      */
     'recoding',
     'shift',
-    'correct-error',
     'shorten',
     'prolong',
 ] as const;
 
 /**
  * The type of editorial change applied to a symbol or set of symbols.
- * Classifies the nature of the edit, e.g. whether it corrects an error,
- * adds an accent, shifts a note, or shortens/prolongs a perforation.
+ * Classifies the shape of the edit, e.g. whether it adds an accent,
+ * shifts a note, or shortens/prolongs a perforation. Why it was made is
+ * its motivation.
  * @category Format types
  */
 export type EditType = typeof editTypes[number];
@@ -35,7 +38,7 @@ export type EditType = typeof editTypes[number];
  * A set of edits transforms a version of a roll into another version.
  * Edits insert or delete symbols, or both (= replace).
  * Edits may be motivated by a given set of reasons, e.g.
- * to add an additional accent or to correct an error.
+ * to strengthen an accent or to correct an error.
  * If an edit is the interpretation of a metamark,
  * such as a pencil mark, this should be made explicit
  * using a meaning comprehension on the `@annotation` field.
@@ -49,7 +52,7 @@ export type EditType = typeof editTypes[number];
 export interface Edit extends WithId, Assumption {
     type: 'edit';
     /**
-     * The type of editorial change (e.g. 'correct-error', 'additional-accent').
+     * The type of editorial change, as its shape shows it (e.g. 'shift', 'additional-accent').
      * @see crm:P2 has type
      */
     editType?: EditType;

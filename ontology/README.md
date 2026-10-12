@@ -95,6 +95,17 @@ for the purpose). The export states a creation for every
 version so that these have a node to reach, and the import drops those
 that state nothing.
 
+In October 2026 `reot:correct-error` stopped being a kind of edit. The
+kinds of edit are read off the shape of a change, and whether a change
+corrects an error is not: it is a reason for the change, which the format
+states as the edit's motivation. The term resolves, so it is kept and
+marked `owl:deprecated`, and `migrate` turns an edit typed so into one
+motivated so. In the same month the format came to state the
+proposition sets of CRMinf: statements one reasoning concluded together,
+such as the derivations of a stemma a program found, held under one
+belief whose reason names the program (`crmdig:L23 used software or
+firmware`). This added no term to REO.
+
 ## Publishing
 
 The docs workflow renders `reo.ttl` and `types.ttl` with pyLODE and

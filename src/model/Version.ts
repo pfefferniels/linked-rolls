@@ -1,6 +1,6 @@
 import { Edit } from "./Edit.js";
 import { Concept } from "./Agent.js";
-import { ActorAssignment, Belief, certainties, certaintyOf, Certainty, DateAssignment, idOf, ObjectAssumption, ReferenceAssumption } from "./Assumption.js";
+import { ActorAssignment, Belief, beliefIn, certainties, certaintyOf, Certainty, DateAssignment, idOf, ObjectAssumption, PropositionSet, ReferenceAssumption } from "./Assumption.js";
 import { CollationTolerance, defaultCollationTolerance } from "../collation/Collation.js";
 import { AnySymbol } from "./Symbol.js";
 import { WithId, WithNote, WithType } from "../shared/utils.js";
@@ -12,6 +12,28 @@ import { WithId, WithNote, WithType } from "../shared/utils.js";
  * @category Format types
  */
 export type Motivation = WithType<'motivation'> & WithId & WithNote
+
+/**
+ * The motivation of an edit that puts right what the version it derives
+ * from got wrong: a perforation put in the wrong place, struck or left
+ * out. Whether a change corrects an error is not read off its shape, as
+ * its type is, but is a reason for it, and so the editor's to give.
+ * The edit types held it once, and a document written then is read with
+ * this motivation in place of that type.
+ * @category Versions and stemma
+ */
+export const correctedError = 'corrected-error'
+
+/**
+ * The version's statement of what the motivation of a corrected error
+ * means, to stand in its `motivations`.
+ * @category Versions and stemma
+ */
+export const correctedErrorMotivation = {
+    type: 'motivation',
+    id: correctedError,
+    note: 'Puts right an error of the version it derives from.'
+} as const
 
 /**
  * A derivation names the version another one was derived from, together
@@ -191,13 +213,25 @@ export const deletedBy = (version: Readonly<Version>): string[] =>
 
 /**
  * The parents the version names, in the order of `basedOn`, each with the
- * certainty its derivation is held with and the belief it rests on.
+ * certainty its derivation is held with and the belief it rests on. Given
+ * the edition, a derivation that belongs to a proposition set, as an
+ * adopted stemma's do, is read with the belief of the set, and names it
+ * (`propositionSet`); without it, only a belief of its own is read.
  * @category Versions and stemma
  */
-export const derivationsOf = (version: Readonly<Version>): { parent: string, certainty: Certainty, belief?: Belief }[] =>
+export const derivationsOf = (
+    version: Readonly<Version>,
+    edition: { propositionSets?: readonly PropositionSet[] } = {}
+): { parent: string, certainty: Certainty, belief?: Belief, propositionSet?: string }[] =>
     (version.basedOn ?? []).map(derivation => {
-        const belief = derivation['@annotation']?.belief
-        return { parent: idOf(derivation), certainty: certaintyOf(derivation), ...(belief && { belief }) }
+        const belief = beliefIn(edition, derivation)
+        const set = derivation['@annotation']?.belief === undefined ? derivation['@annotation']?.id : undefined
+        return {
+            parent: idOf(derivation),
+            certainty: belief?.certainty ?? 'true',
+            ...(belief && { belief }),
+            ...(set !== undefined && { propositionSet: set })
+        }
     })
 
 const rankOf = (derivation: Readonly<Derivation>): number => certainties.indexOf(certaintyOf(derivation))

@@ -9,6 +9,7 @@ export { defaultCosts, type Costs, type Scored, type Support } from "./search.js
 export { transfersOf, systemAbove } from "./systems.js"
 export { proposeStemma, defaultMovedWithin, type FiliationOptions, type ProposedVersion, type StemmaProposal, type Unpinned } from "./proposal.js"
 export { adoptionOf, adoptStemma, type Adoption } from "./adoption.js"
+export { stemmaRules, editRules, type Run } from "./record.js"
 export { stemmaChanges, type VersionChange } from "./changes.js"
 export { sharedTexts, differencesBetween, defaultSameText, type SharedText, type KeptApart } from "./texts.js"
 export {

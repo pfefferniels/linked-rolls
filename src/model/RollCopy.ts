@@ -622,7 +622,7 @@ const exportedMeasurementsOf = (copy: Pick<RollCopy, 'measurements'>) =>
  */
 export const measuringSoftwareOf = (copy: Pick<RollCopy, 'measurements'>): Software[] => {
     const named = exportedMeasurementsOf(copy)
-        .flatMap(value => value['@annotation']?.belief.reasons ?? [])
+        .flatMap(value => value['@annotation']?.belief?.reasons ?? [])
         .flatMap(reason => reason.type === 'measurement' ? reason.software ?? [] : [])
     return [...new Map(named.map(software => [`${software.name}\u0000${software.version ?? ''}`, software])).values()]
 }

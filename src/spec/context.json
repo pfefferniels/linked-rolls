@@ -70,9 +70,14 @@
         "applies": {
           "@id": "crminf:J3_applied",
           "@type": "@id"
+        },
+        "software": {
+          "@id": "crmdig:L23_used_software_or_firmware",
+          "@context": { "version": "owl:versionInfo" }
         }
       }
     },
+    "propositionSet": "crminf:I4_Proposition_Set",
     "beliefAdoption": {
       "@id": "crminf:I7_Belief_Adoption",
       "@context": {
@@ -160,6 +165,7 @@
     "created": "lrmoo:R17_created",
     "copies": "reo:witness",
     "versions": "lrmoo:R75_incorporates",
+    "propositionSets": "@included",
 
     "name": "rdfs:label",
     "sameAs": {

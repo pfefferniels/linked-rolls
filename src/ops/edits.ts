@@ -3,7 +3,7 @@ import { v4 } from "uuid"
 import { AnySymbol, Expression } from "../model/Symbol.js"
 import { Edit, EditType } from "../model/Edit.js"
 import { editsOf } from "../model/Version.js"
-import { TrackerBar } from "../systems/TrackerBar.js"
+import { keyOf, TrackerBar } from "../systems/TrackerBar.js"
 import { trackerBarOf } from "../systems/index.js"
 import { HorizontalSpan } from "../model/Feature.js"
 import { distance, Millimeters, mm, subtract } from "../model/Quantity.js"
@@ -36,11 +36,17 @@ const replacementType = (edition: Edition, inserted: AnySymbol, deleted: AnySymb
     return lengthOf(after) < lengthOf(before) ? 'shorten' : 'prolong'
 }
 
+/** Whether the two symbols say the same thing, as a perforation put elsewhere does. */
+const sameKind = (a: AnySymbol, b: AnySymbol): boolean =>
+    a.type !== 'text' && b.type !== 'text' && keyOf(a) === keyOf(b)
+
 /**
  * A guess at what an edit does, from the symbols it exchanges and from
- * the systems the version and the one it is based on are coded for.
+ * the systems the version and the one it is based on are coded for, or
+ * nothing where its shape does not say. Whether it corrects an error is
+ * not guessed: that is a motivation, the editor's to give.
  */
-const guessEditType = (edition: Edition, versionId: string, edit: Edit): EditType => {
+const guessEditType = (edition: Edition, versionId: string, edit: Edit): EditType | undefined => {
     const inserts = edit.insert ?? []
     const deletes = symbolsIn(edition, edit.delete ?? [])
     const inserted = expressionTypesOf(inserts)
@@ -69,26 +75,34 @@ const guessEditType = (edition: Edition, versionId: string, edit: Edit): EditTyp
     if (transferred && onlyExpressions && inserted.length + deleted.length > 0) return 'recoding'
     if (inserted.length > 1 && sameSequence(inserted, deleted)) return 'shift'
     if (inserted.length === 0 && deleted.length === 1) return 'remove-redundancy'
-    if (inserts.length === 1 && deletes.length === 1) return replacementType(edition, inserts[0], deletes[0]) ?? 'correct-error'
+    if (inserts.length === 1 && deletes.length === 1) {
+        return replacementType(edition, inserts[0], deletes[0]) ?? (sameKind(inserts[0], deletes[0]) ? 'shift' : undefined)
+    }
 
-    return 'correct-error'
+    return undefined
 }
 
 /**
  * Replaces the edits with a single one carrying all their insertions
- * and deletions, classified by a guess at what the exchange does.
+ * and deletions, classified by a guess at what the exchange does, where
+ * its shape says. The edit is the editor's: it belongs to no proposition
+ * set a program's run concluded, as one of those merged may have.
  * @category Operations
  */
 export const mergeEdits = (versionId: string, toMerge: readonly Edit[]): EditionOp => reading(edition => {
     if (toMerge.length === 0) return noChange
 
+    // The edit is the editor's grouping, whatever set of a program's the first one belonged to.
+    const { editType: _guessed, '@annotation': annotation, ...first } = toMerge[0]
     const merged: Edit = {
-        ...toMerge[0],
+        ...first,
+        ...(annotation?.belief && { '@annotation': annotation }),
         id: v4(),
         insert: toMerge.flatMap(edit => edit.insert ?? []),
         delete: toMerge.flatMap(edit => edit.delete ?? [])
     }
-    merged.editType = guessEditType(edition, versionId, merged)
+    const editType = guessEditType(edition, versionId, merged)
+    if (editType) merged.editType = editType
     const mergedIds = new Set(toMerge.map(edit => edit.id))
 
     return onVersion(versionId, version => {

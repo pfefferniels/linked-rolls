@@ -9,7 +9,8 @@ import { Edition } from "../model/Edition.js"
 import { HorizontalSpan } from "../model/Feature.js"
 import { AnyCommand, AnySymbol, Expression } from "../model/Symbol.js"
 import { Edit, EditType } from "../model/Edit.js"
-import { deletedBy, editsOf, insertedBy, Version } from "../model/Version.js"
+import { beliefIn, PropositionSet } from "../model/Assumption.js"
+import { deletedBy, editsOf, insertedBy, principalDerivationOf, Version } from "../model/Version.js"
 import { distance, Millimeters, mm, subtract } from "../model/Quantity.js"
 import { TrackerBar, TrackMeaning } from "../systems/TrackerBar.js"
 import { trackerBarOf } from "../systems/index.js"
@@ -22,6 +23,7 @@ import { groupBy } from "../shared/utils.js"
 import { declaring, EditionOp, reading } from "../ops/draft.js"
 import { ineffectiveAmong } from "./presence.js"
 import { reads } from "./readings.js"
+import { editRules, inMillimetres, keptSets, memberOf, recorded, Run } from "./record.js"
 
 /**
  * How far a perforation may be put from where it stood for the two to be
@@ -558,7 +560,7 @@ export const isRegroupable = (edit: Readonly<Edit>): boolean =>
  * The edits the version comes to state when the proposal is adopted:
  * those it keeps, and those put in place of the rest.
  */
-const adoptedEditsOf = (edition: Edition, version: Readonly<Version>, options: EditOptions): Edit[] => {
+const adoptedEditsOf = (edition: Edition, version: Readonly<Version>, options: EditOptions): { held: Edit[], proposed: Edit[] } => {
     const edits = editsOf(version)
     const held = edits.filter(edit => !isRegroupable(edit))
     const spoken = new Set(held.flatMap(edit => [...(edit.insert ?? []).map(symbol => symbol.id), ...(edit.delete ?? [])]))
@@ -588,8 +590,19 @@ const adoptedEditsOf = (edition: Edition, version: Readonly<Version>, options: E
         // What an edit that stays leaves of a proposed one stands symbol by symbol.
         return [...inserted.map(id => made([id], [])), ...deleted.map(id => made([], [id]))]
     })
-    return [...held, ...proposed]
+    return { held, proposed }
 }
+
+/**
+ * What the run of `proposeEdits` was computed with, in words, so that it
+ * can be run again.
+ */
+const noteOn = (settings: Required<EditOptions>): string =>
+    'The changes of each version against the version it derives from, grouped line by line and never across a command both texts keep. '
+    + `A perforation put elsewhere within ${inMillimetres(settings.shiftWithin)} is one move with the one it replaces, `
+    + `an Off within ${inMillimetres(settings.pairWithin)} of an On one function turned on and off again, `
+    + `a perforation beginning within ${inMillimetres(settings.resizeWithin)} of the one it replaces a shortened or prolonged one, `
+    + `and perforations within ${inMillimetres(settings.samePlaceWithin)} of each other at one place.`
 
 /**
  * Puts the proposed edits (`proposeEdits`) in place of those of the
@@ -605,18 +618,34 @@ const adoptedEditsOf = (edition: Edition, version: Readonly<Version>, options: E
  *
  * Applied on the same draft after `adoptStemma`, it proposes the edits of
  * the stemma adopted, as one undo step.
+ *
+ * The edits it proposes are recorded as one proposition set, held under
+ * one belief, likely unless the run says otherwise, whose reason is the
+ * inference the program drew: it names this library and its release,
+ * the versions it read, the rule that keeps an edit at one place and, in
+ * its note, the distances it grouped with, and it rests on the beliefs
+ * the derivations of the versions are held with. An edit of the set
+ * that nobody has motivated is the program's, typed and all, and a
+ * later proposal groups it again. The run gives who ran the program and
+ * when (`Run`).
  * @category Operations
  */
-export const adoptEdits = (versionIds?: readonly string[], options: EditOptions = {}): EditionOp => reading(edition => {
+export const adoptEdits = (versionIds?: readonly string[], options: EditOptions = {}, run: Run = {}): EditionOp => reading(edition => {
     const targets = (versionIds ?? edition.versions.map(version => version.id))
         .map(id => versionIn(edition, id))
         .filter((version): version is Readonly<Version> => version !== undefined && predecessorOf(edition, version.id) !== undefined)
-    const adopted = new Map(targets.flatMap(version => {
-        const edits = adoptedEditsOf(edition, version, options)
+    const regrouped = targets.map(version => ({ version, ...adoptedEditsOf(edition, version, options) }))
+    const set = editSetOf(edition, regrouped, options, run)
+    const adopted = new Map(regrouped.flatMap(({ version, held, proposed }) => {
+        const edits = [...held, ...proposed.map(edit => memberOf(set.id, edit))]
         const stated = editsOf(version)
         if (edits.length === stated.length && edits.every((edit, index) => edit === stated[index])) return []
         return [[version.id, { ...version, edits, motivations: declaring(version.motivations, edits) }]]
     }))
+    const sets = keptSets({
+        ...edition,
+        versions: edition.versions.map(version => adopted.get(version.id) ?? version)
+    }, [set])
     // Each version is put in place whole: one that an operation before put
     // on the same draft, as adopting a stemma does, is no draft to write to.
     return draft => {
@@ -624,5 +653,36 @@ export const adoptEdits = (versionIds?: readonly string[], options: EditOptions 
             const changed = adopted.get(version.id)
             if (changed) draft.versions[index] = changed as Draft<Version>
         })
+        if (sets) draft.propositionSets = sets as Draft<PropositionSet>[]
+        else delete draft.propositionSets
     }
 })
+
+/**
+ * The set the run of `proposeEdits` concluded: the edits it proposed for
+ * the versions, held with the belief the run gives them. Its premises
+ * are the beliefs the derivations of those versions are held with, since
+ * what a version changes is read against the version it derives from: a
+ * proposed stemma's, where the derivation belongs to one.
+ */
+const editSetOf = (
+    edition: Edition,
+    regrouped: readonly { version: Readonly<Version>, proposed: readonly Edit[] }[],
+    options: EditOptions,
+    run: Run
+): PropositionSet => {
+    const settings = settingsOf(options)
+    const proposing = regrouped.filter(({ proposed }) => proposed.length > 0)
+    const premises = [...new Set(proposing.flatMap(({ version }) => {
+        const derivation = principalDerivationOf(version)
+        const belief = derivation && beliefIn(edition, derivation)
+        return belief ? [belief.id] : []
+    }))]
+    const used = [...new Set(proposing.flatMap(({ version }) => [predecessorOf(edition, version.id)!.id, version.id]))]
+    return recorded(
+        'edits',
+        [settings, premises, proposing.map(({ version, proposed }) => [version.id, proposed.map(edit => edit.id)])],
+        { note: noteOn(settings), premises, used, applies: [editRules.onePlace] },
+        run
+    )
+}

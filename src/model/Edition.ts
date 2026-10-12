@@ -1,6 +1,6 @@
 import { featuresOf, RollCopy } from "./RollCopy.js";
 import { Version } from "./Version.js";
-import { DateAssignment } from "./Assumption.js";
+import { DateAssignment, PropositionSet } from "./Assumption.js";
 import { Editor, Person, Place } from "./Agent.js";
 
 /**
@@ -178,6 +178,16 @@ export interface Edition {
      * @see lrmoo:R75 incorporates
      */
     versions: Version[]
+
+    /**
+     * The statements the edition holds together under one belief, each
+     * set with the reasoning that concluded it: a stemma a program
+     * proposed and the editor adopted, the edits it grouped. A statement
+     * belongs to a set by naming it in its annotation. An edition that
+     * holds no such set leaves it out.
+     * @see crminf:I4 Proposition Set
+     */
+    propositionSets?: PropositionSet[]
 }
 
 /**

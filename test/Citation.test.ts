@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { linkedRolls } from '../src/software'
 
 /**
  * CITATION.cff names the release a citation points to. It is raised by
@@ -14,5 +15,10 @@ describe('CITATION.cff', () => {
     it('names the version package.json releases', () => {
         const { version } = JSON.parse(read('package.json'))
         expect(read('CITATION.cff')).toMatch(new RegExp(`^version: ${version.replace(/\./g, '\\.')}$`, 'm'))
+    })
+
+    it('names the release the library names itself by, in the reasonings it records', () => {
+        const { name, version } = JSON.parse(read('package.json'))
+        expect(linkedRolls).toEqual({ name, version })
     })
 })

@@ -4,16 +4,17 @@ import { Draft } from "immer"
 import { Edition } from "../model/Edition.js"
 import { AnySymbol } from "../model/Symbol.js"
 import { Edit } from "../model/Edit.js"
-import { assignReference, idOf, ReferenceAssumption } from "../model/Assumption.js"
+import { assignReference, idOf, isHeldForItself, PropositionSet, ReferenceAssumption } from "../model/Assumption.js"
 import { Derivation, derivesFrom, editsOf, insertedBy, principalDerivationOf, Version } from "../model/Version.js"
 import { systemOf } from "../systems/TrackerBar.js"
-import { unchecked } from "../collation/Collation.js"
+import { isCollationsOwn, unchecked } from "../collation/Collation.js"
 import { versionIn } from "../lookup/lookup.js"
 import { declaring, EditionOp, reading } from "../ops/draft.js"
 import { dropStatements } from "../ops/copies.js"
 import { CollatedReading } from "./readings.js"
 import { ProposedVersion, StemmaProposal, Unpinned } from "./proposal.js"
 import { barNamed } from "./systems.js"
+import { inMillimetres, keptSets, memberOf, recorded, Run, stemmaRules } from "./record.js"
 
 /** The namespace the names of adopted versions and edits are minted in, so that adopting again gives them again. */
 const ADOPTED = '6f1d2c8e-93a4-4f0b-b8a1-2f4c5d7e9a31'
@@ -34,7 +35,57 @@ export interface Adoption {
 
     /** The edits the editor wrote that the adoption leaves out, and why. */
     dropped: Unpinned[]
+
+    /**
+     * The record of the run: the proposition set the derivations and
+     * edits the proposal concluded belong to, held under one belief
+     * whose reason is the inference the program drew.
+     */
+    propositionSet: PropositionSet
 }
+
+/** The rules the proposal followed, as far as its costs and settings carry them out. */
+const rulesOf = (proposal: StemmaProposal): string[] => [
+    ...(proposal.costs.gain > 1 ? [stemmaRules.sharedAddition] : []),
+    ...(proposal.costs.redundantLoss < 1 ? [stemmaRules.independentCleanup] : []),
+    ...(proposal.costs.transferLoss < 1 ? [stemmaRules.recutLoss] : []),
+    ...(Number.isFinite(proposal.costs.copyDeviation) ? [stemmaRules.copyDeviation] : []),
+    ...(proposal.costs.lostState > 0 ? [stemmaRules.lostStates] : []),
+    ...(proposal.sameText >= 0 ? [stemmaRules.oneText] : []),
+    stemmaRules.refinement,
+    stemmaRules.noContamination
+]
+
+/** A number as a note gives it: to two places at most. */
+const amount = (value: number): string => String(Math.round(value * 100) / 100)
+
+/**
+ * What the run of `proposeStemma` was, and what it was computed with, in
+ * words, so that it can be run again: the copies by siglum, the costs,
+ * the settings, and the margin by which the copies decide each grouping.
+ */
+const noteOn = (edition: Edition, proposal: StemmaProposal): string => {
+    const siglumOf = new Map(edition.copies.map(copy => [copy.id, copy.siglum ?? copy.id]))
+    const named = (copies: readonly string[]) => copies.map(copy => siglumOf.get(copy) ?? copy).join(', ')
+    const { costs } = proposal
+    const supports = proposal.supports.map(support => support.ancestor
+        ? `${named(support.ancestor)} above ${named(support.copies.filter(copy => !support.ancestor!.includes(copy)))} by ${amount(support.margin)}`
+        : `${named(support.copies)} together by ${amount(support.margin)}`)
+    return [
+        `The stemma ${proposal.notation}, the best of ${proposal.scored} that ${named(proposal.copies)} admit, at a cost of ${amount(proposal.cost)}.`,
+        `A reading arising costs ${amount(costs.gain)}, a reading lost 1, a redundancy lost ${amount(costs.redundantLoss)}, a reading lost on the way into another system ${amount(costs.transferLoss)}, a copy lacking a reading of its version ${amount(costs.copyDeviation)}, and a lost state ${amount(costs.lostState)}.`,
+        `Copies of one system differing in ${proposal.sameText < 0 ? 'any reading' : `no more than ${proposal.sameText} readings`} are taken for one text; a reading of the same kind within ${inMillimetres(proposal.movedWithin)} on the other side of the root for a moved one; and ${inMillimetres(proposal.margin)} beyond a copy's text or a tear for what the copy cannot show.`,
+        ...(supports.length > 0 ? [`The copies decide its groupings by: ${supports.join('; ')}.`] : [])
+    ].join(' ')
+}
+
+/** The set the run of `proposeStemma` concluded, held with the belief the run gives it. */
+const stemmaSetOf = (edition: Edition, proposal: StemmaProposal, run: Run): PropositionSet => recorded(
+    'stemma',
+    [proposal.copies, proposal.notation, proposal.costs, proposal.sameText, proposal.movedWithin, proposal.margin],
+    { note: noteOn(edition, proposal), premises: [], used: [...proposal.copies], applies: rulesOf(proposal) },
+    run
+)
 
 const exchangeKey = (inserted: readonly string[], deleted: readonly string[]): string =>
     `${[...inserted].sort().join(',')}/${[...deleted].sort().join(',')}`
@@ -64,9 +115,21 @@ const carriersOf = (reading: CollatedReading, stated: readonly ReferenceAssumpti
  * id and whatever it states beside its carriers. A version of the edition
  * nothing stands for goes, unless it states no edits and derives from a
  * version that stays, as a version known only from a recording does.
+ *
+ * What the program concluded is recorded as one proposition set, since
+ * the search scores whole stemmata and concludes the whole: each
+ * derivation it states and each edit it makes belongs to the set, which
+ * holds them under one belief, likely unless the run says otherwise,
+ * concluded by an inference that names this library and its release,
+ * the copies it collated, the rules it followed and, in its note, what
+ * it was computed with. A derivation or an edit that is the editor's,
+ * held under a belief of its own or saying more than a program says,
+ * stays the editor's and outside the set. The run gives who ran the
+ * program and when (`Run`).
  * @category Filiation
  */
-export const adoptionOf = (edition: Edition, proposal: StemmaProposal): Adoption => {
+export const adoptionOf = (edition: Edition, proposal: StemmaProposal, run: Run = {}): Adoption => {
+    const set = stemmaSetOf(edition, proposal, run)
     const readingOf = new Map(proposal.collation.readings.map(reading => [reading.id, reading]))
     const symbolIdOf = (reading: string) => proposal.symbols[reading] ?? reading
     const existing = new Map(edition.versions.flatMap(insertedBy).map(symbol => [symbol.id, symbol]))
@@ -143,15 +206,18 @@ export const adoptionOf = (edition: Edition, proposal: StemmaProposal): Adoption
             const key = exchangeKey(inserted, deleted)
             const same = statedBefore.get(key)
             const insert = inserts.map(reading => symbolOf(reading, proposed.id))
-            if (same) return { ...same, ...(insert.length > 0 && { insert }), ...(deleted.length > 0 && { delete: deleted }) }
-            return {
+            if (same) {
+                const taken: Edit = { ...same, ...(insert.length > 0 && { insert }), ...(deleted.length > 0 && { delete: deleted }) }
+                return isCollationsOwn(same) ? memberOf(set.id, taken) : taken
+            }
+            return memberOf<Edit>(set.id, {
                 type: 'edit',
                 id: v5(`edit|${id}|${key}`, ADOPTED),
                 ...(recoding && { editType: 'recoding' as const }),
                 motivation: unchecked,
                 ...(insert.length > 0 && { insert }),
                 ...(deleted.length > 0 && { delete: deleted })
-            }
+            })
         }
         // A recoding an edit of the editor's cuts into is stated reading by reading.
         const whole = proposed.recodings.filter(recoding =>
@@ -165,11 +231,13 @@ export const adoptionOf = (edition: Edition, proposal: StemmaProposal): Adoption
             ...proposed.deletes.filter(reading => !recoded.has(reading)).map(reading => made([], [reading], false))
         ].filter((edit): edit is Edit => edit !== undefined)
 
+        // The derivation is the set's, unless the editor holds it for reasons of their own.
         const parent = proposed.parent ? ids.get(proposed.parent) : undefined
         const principal = before && principalDerivationOf(before)
+        const same = principal && idOf(principal) === parent ? principal : undefined
         const derivation: Derivation | undefined = parent === undefined
             ? undefined
-            : principal && idOf(principal) === parent ? principal : assignReference(parent)
+            : same && isHeldForItself(same) ? same : memberOf<Derivation>(set.id, same ?? assignReference(parent))
         const hypotheses = (before?.basedOn ?? [])
             .filter(other => other !== principal && staying.has(idOf(other)) && idOf(other) !== parent)
         const basedOn = [...(derivation ? [derivation] : []), ...hypotheses]
@@ -209,20 +277,27 @@ export const adoptionOf = (edition: Edition, proposal: StemmaProposal): Adoption
     const ordered = [...pruned, ...statedOnly].sort((a, b) =>
         (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity))
 
-    return { versions: ordered, ids: Object.fromEntries(ids), removed, dropped: proposal.unpinned }
+    return { versions: ordered, ids: Object.fromEntries(ids), removed, dropped: proposal.unpinned, propositionSet: set }
 }
 
 /**
  * Puts the proposed stemma in place of the edition's, as `adoptionOf`
- * describes, and takes back a copy's statement that it carries a version
- * that goes. One operation, and so one undo step.
+ * describes, with the record of the run, and takes back a copy's
+ * statement that it carries a version that goes. The record of an
+ * earlier run whose conclusions are all replaced goes with them, and
+ * one of the very same run, by the same release on the same copies with
+ * the same result, stays as it was first recorded. One operation, and
+ * so one undo step.
  * @category Operations
  */
-export const adoptStemma = (proposal: StemmaProposal): EditionOp => reading(edition => {
-    const { versions, removed } = adoptionOf(edition, proposal)
+export const adoptStemma = (proposal: StemmaProposal, run: Run = {}): EditionOp => reading(edition => {
+    const { versions, removed, propositionSet } = adoptionOf(edition, proposal, run)
     const gone = new Set(removed)
+    const sets = keptSets({ ...edition, versions }, [propositionSet])
     return draft => {
         draft.versions = versions as Draft<Version>[]
         draft.copies.forEach(copy => dropStatements(copy, statement => gone.has(idOf(statement))))
+        if (sets) draft.propositionSets = sets as Draft<PropositionSet>[]
+        else delete draft.propositionSets
     }
 })

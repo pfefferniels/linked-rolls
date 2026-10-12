@@ -132,6 +132,24 @@ edits the editor wrote, which hold their versions to what they insert
 and delete. Motivations, beliefs and versions known only from a
 recording remain the editor's to state.
 
+What the program concluded is recorded as a program's conclusion. A
+search scores whole stemmata, so the derivations and edits it states
+are one proposition set (CRMinf I4) held under one belief. Each of
+them names the set in its annotation, and the set states the belief
+once. The belief, likely unless the editor says otherwise, rests on an
+inference that names this library and its release, the copies it
+collated, the published rules its costs carry out (`stemmaRules`) and,
+in its note, the costs and settings it ran with and the margin of each
+grouping. Who ran it and when are the editor's to give. A derivation or
+an edit the editor holds for reasons of their own stays theirs, outside
+the set.
+
+```ts
+const run = { actor: editor, date: { within: new Date() } }
+const adopted = produce(edition, adoptStemma(proposal, run))
+adopted.propositionSets // [{ type: 'propositionSet', id, belief: { certainty: 'likely', reasons: [{ type: 'inference', software: [linkedRolls], … }] } }]
+```
+
 The costs are those with which the stemma of WM 225 comes out of its
 six copies. They were found by searching for such values, so they show
 that the stemma is consistent with these principles, not that the
@@ -151,7 +169,11 @@ edit, a note struck again or two tied; a held command standing for a
 latched pair is one recoding; a command the text makes no use of is a
 redundancy added or removed; cancels punched across lines at one place
 are one row. `adoptEdits` puts the proposal in place of the edits a
-collation wrote and nobody has motivated, and keeps the rest.
+collation or a program's run wrote and nobody has motivated, and keeps
+the rest. The edits it proposes are a proposition set of their own. The
+inference behind its belief names the beliefs the derivations of the
+versions are held with as its premises, so that edits grouped against
+a proposed stemma rest on it.
 
 ```ts
 import { adoptEdits, adoptStemma, proposeEdits, proposeStemma } from 'linked-rolls'
@@ -167,10 +189,12 @@ const adopted = produce(edition, draft => {
 
 Why an edit was made is not read off its shape, and neither is whether
 a shift corrects an error: what is left to the editor is the
-motivation. On WM 225 the proposal reproduces 370 of the 414 edits the
-editor wrote, from what each version changes, and all of their types
-but the shifts the editor took for corrected errors. From the copies
-alone, through the proposed stemma, it reproduces 326.
+motivation. Correcting an error is therefore one of the motivations
+(`correctedError`), not one of the edit types, and a document written
+while it was a type is read with that motivation in its place. On
+WM 225 the proposal reproduces 370 of the 414 edits the editor wrote,
+from what each version changes, and every type the editor gave them.
+From the copies alone, through the proposed stemma, it reproduces 326.
 
 ## Format
 
@@ -182,7 +206,12 @@ https://pfefferniels.github.io/linked-rolls/, to which the w3id.org
 identifiers redirect.
 
 Beliefs are written as JSON-LD-star annotations (`@annotation`), so you
-need a processor that supports JSON-LD-star to read them.
+need a processor that supports JSON-LD-star to read them. A statement
+that belongs to a proposition set carries no belief of its own: its
+annotation names the set by its `@id`, which makes the set the reifier
+of every statement that names it, as RDF 1.2 allows. The set is stated
+once, under `propositionSets`, as a `crminf:I4_Proposition_Set` with its
+belief.
 
 ## Development
 
@@ -199,11 +228,12 @@ TypeScript 7 no longer has the compiler API it reads the source with.
 
 ## Releasing
 
-Raise the version in `package.json` and in `CITATION.cff`, there with
-the day as `date-released`, commit, and push a tag `v<version>`. The
-`publish.yml` workflow builds, tests and publishes to npm, then makes a
-GitHub release of the tag, which Zenodo archives with a DOI. A test fails
-while the two versions differ.
+Raise the version in `package.json`, in `CITATION.cff`, there with the
+day as `date-released`, and in `src/software.ts`, which names the release
+in the reasonings the library records. Then commit, and push a tag
+`v<version>`. The `publish.yml` workflow builds, tests and publishes to
+npm, then makes a GitHub release of the tag, which Zenodo archives with
+a DOI. A test fails while the versions differ.
 
 ## About
 

@@ -99,9 +99,22 @@ interface QuotedReference {
     reference: Json
 }
 
-/** The reference a quoted statement made, annotated again with the belief the export set beside it. */
+/**
+ * A belief named by its id alone, as a quoted statement names the belief
+ * of the proposition set it belongs to, which is stated with the set.
+ */
+const isNamedBelief = (belief: Json): boolean =>
+    belief !== null && typeof belief === 'object' && Object.keys(belief).every(key => key === '@id')
+
+/**
+ * The reference a quoted statement made, annotated again with the belief
+ * the export set beside it, or where it belongs to a proposition set,
+ * naming the set again.
+ */
 const referenceOf = (statement: Json): QuotedReference => {
-    const { '@id': { '@id': subject, ...made }, annotation, ...about } = statement
+    const { '@id': { '@id': subject, ...made }, annotation, ...stated } = statement
+    const { belief, ...rest } = stated
+    const about = isNamedBelief(belief) ? rest : stated
     const [key, value] = Object.entries<Json>(made)[0]
     const listed = Array.isArray(value)
     return {
