@@ -51,7 +51,8 @@ export {
 } from "./collation.js"
 export {
     mergeEdits,
-    splitEdit
+    splitEdit,
+    shapeOf
 } from "./edits.js"
 export {
     placeCommand,
