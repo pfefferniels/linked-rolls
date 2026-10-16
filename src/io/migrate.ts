@@ -6,6 +6,7 @@ import { welteT100 } from "../systems/welteT100/bar.js";
 import { Track } from "../model/Quantity.js";
 import { isDateString } from "../shared/utils.js";
 import { mapped, withValues } from "../ops/immutable.js";
+import { correctedError, musicalChange, safeguard } from "../model/Edit.js";
 
 /**
  * Brings the JSON of an edition written by an earlier release of the
@@ -810,6 +811,175 @@ const withReferenceCopy = (edition: Json): Json => {
 const editionSteps = [withoutFormatVersion, withoutTempoAdjustment, withoutEditionType, withSystems, withEditors, withDerivationTolerance, withReferenceCopy]
 
 /**
+ * The motivation an edit of a version that derives from another is left
+ * with where only the edition can tell what kind of change it is: one
+ * that states neither a kind nor a reason, as a collation once left
+ * them. `importJsonLd` reads its kind off its shape (`proposedMotivations`).
+ */
+export const uncheckedMotivation = 'unchecked'
+
+/** The kinds of edit, as they were stated once, whose shape is a musical decision. */
+const musicalEditTypes = new Set(['additional-accent', 'shift', 'shorten', 'prolong'])
+
+/** The kinds of edit, as they were stated once, whose shape is a technical change. */
+const technicalEditTypes = new Set(['recoding', 'remove-redundancy'])
+
+const isRecord = (value: unknown): value is Record<string, Json> =>
+    value !== null && typeof value === 'object' && !Array.isArray(value)
+
+/** Whether the version derives from another, so that its edits are changes rather than its text. */
+const derives = (version: Json): boolean =>
+    Array.isArray(version?.basedOn) ? version.basedOn.length > 0 : version?.basedOn !== undefined
+
+/**
+ * The motivation an edit states once motivations say what kind of
+ * change it is, from the kind it was given and the reason it gave.
+ */
+const motivationOfEdit = (editType: unknown, motivation: Json, derived: boolean): string | undefined => {
+    const stated = motivation === 'corrected-error' ? correctedError : motivation
+    if (!derived) return stated === uncheckedMotivation ? undefined : stated
+    if (stated === undefined || stated === uncheckedMotivation) {
+        if (typeof editType === 'string' && musicalEditTypes.has(editType)) return musicalChange
+        if (typeof editType === 'string' && (technicalEditTypes.has(editType) || editType === 'add-redundancy')) return undefined
+        return uncheckedMotivation
+    }
+    if (stated === musicalChange || stated === correctedError || stated === safeguard) return stated
+    // A reason given for a technical change explained what the change or the procedure says already.
+    if (typeof editType === 'string' && technicalEditTypes.has(editType)) return undefined
+    return editType === 'add-redundancy' ? safeguard : stated
+}
+
+/** Whether the document still states what motivations and kinds of edit were before 0.76. */
+const statesMotivationsPerVersion = (versions: readonly Json[]): boolean =>
+    versions.some(version => Array.isArray(version?.motivations)
+        || (Array.isArray(version?.edits) && version.edits.some((edit: Json) =>
+            isRecord(edit) && (Object.hasOwn(edit, 'editType') || edit.motivation === 'corrected-error'))))
+
+/**
+ * Before 0.76 each version stated the motivations its edits named, and
+ * an edit stated its kind beside its reason. The motivations are the
+ * edition's now, once each, and the motivation alone says what kind of
+ * change an edit is (`kindOfChange`):
+ *
+ * - A motivation two versions stated under one id with different notes
+ *   is kept under an id of its own for the second.
+ * - The unchecked motivation goes, and so does the declaration of a
+ *   corrected error, which is named by the IRI of the vocabulary's.
+ * - An edit of a version that derives from another, that gave no reason
+ *   or only that it was unchecked, is a musical change whose reason is
+ *   not given where its kind was an added accent, a shift, a shortening
+ *   or a prolongation, and a technical change, with no motivation, where
+ *   it was a recoding or a redundancy. One that stated no kind is left
+ *   unchecked, for an import to read its kind off its shape.
+ * - A reason given for a recoding or a redundancy removed goes, since a
+ *   technical change needs none, and a motivation nothing names any
+ *   longer goes with it; one given for a redundancy added makes the
+ *   edit a safeguard. Every other reason stays, and makes the change a
+ *   musical one.
+ * - The edits of a version that derives from none state its text and
+ *   keep no motivation but a reason someone gave.
+ */
+const withMotivationsOfTheEdition = (edition: Json): Json => {
+    const versions = listAt(edition, 'versions')
+    if (!versions || !statesMotivationsPerVersion(versions)) return edition
+
+    const notes = new Map<string, Json>((listAt(edition, 'motivations') ?? []).filter(isRecord).map(motivation => [motivation['@id'], motivation]))
+    const referencedBefore = new Set<string>()
+    const migrated = versions.map((version: Json, index: number) => {
+        if (!isRecord(version)) return version
+        const renamed = new Map<string, string>()
+        for (const motivation of Array.isArray(version.motivations) ? version.motivations.filter(isRecord) : []) {
+            const id = motivation['@id']
+            if (typeof id !== 'string' || id === uncheckedMotivation || id === 'corrected-error') continue
+            const known = notes.get(id)
+            if (!known) notes.set(id, motivation)
+            else if (known.note !== motivation.note) {
+                const own = `${id}-${index}`
+                renamed.set(id, own)
+                notes.set(own, { ...motivation, '@id': own })
+            }
+        }
+        const derived = derives(version)
+        const { motivations: _declared, ...rest } = version
+        if (!Array.isArray(version.edits)) return rest
+        return {
+            ...rest,
+            edits: version.edits.map((edit: Json) => {
+                if (!isRecord(edit)) return edit
+                const { editType, motivation: given, ...stated } = edit
+                const named = typeof given === 'string' ? renamed.get(given) ?? given : given
+                if (typeof named === 'string') referencedBefore.add(named)
+                const motivation = motivationOfEdit(editType, named, derived)
+                return motivation === undefined ? stated : { ...stated, motivation }
+            })
+        }
+    })
+
+    const referenced = new Set(migrated.flatMap((version: Json) =>
+        (Array.isArray(version?.edits) ? version.edits : []).map((edit: Json) => edit?.motivation).filter((id: unknown) => typeof id === 'string')))
+    const motivations = [...notes.values()].filter(motivation => referenced.has(motivation['@id']) || !referencedBefore.has(motivation['@id']))
+    const { motivations: _stated, ...rest } = edition
+    return { ...rest, versions: migrated, ...(motivations.length > 0 && { motivations }) }
+}
+
+/**
+ * Before 0.76 an adopted proposal was recorded as a proposition set: each
+ * statement of it named the set in its annotation, and the set held them
+ * under one belief whose inference named the release that found them and
+ * the rules it followed. The edition states what a program concluded
+ * plainly now, and its creation names the rules among its principles and
+ * the release among its software. A statement of a set the edition held
+ * below likely keeps the doubt, under a belief of its own that is the
+ * set's.
+ */
+const withoutPropositionSets = (edition: Json): Json => {
+    const sets = listAt(edition, 'propositionSets')
+    if (!sets) return edition
+
+    const beliefOf = new Map<string, Json>(sets.filter(isRecord).map(set => [set['@id'], set.belief]))
+    const inferences: Json[] = sets.filter(isRecord).flatMap(set => Array.isArray(set.belief?.reasons) ? set.belief.reasons : [])
+    const rules = inferences.flatMap(inference => Array.isArray(inference?.applies) ? inference.applies : [])
+    const programs = inferences.flatMap(inference => Array.isArray(inference?.software) ? inference.software : [])
+
+    let held = 0
+    const unset = (value: Json): Json => {
+        if (Array.isArray(value)) return mapped(value, unset)
+        if (!isRecord(value)) return value
+        const annotation = value['@annotation']
+        const set = isRecord(annotation) && typeof annotation['@id'] === 'string' ? beliefOf.get(annotation['@id']) : undefined
+        if (!set || (isRecord(annotation.belief) && Object.keys(annotation.belief).some(key => key !== '@id'))) return withValues(value, unset)
+        const { '@annotation': _member, ...rest } = value
+        if (set.certainty === 'true' || set.certainty === 'likely') return withValues(rest, unset)
+        held += 1
+        return withValues({
+            ...rest,
+            '@annotation': { '@id': `${annotation['@id']}/${held}`, belief: { ...set, '@id': `${set['@id']}/${held}` } }
+        }, unset)
+    }
+
+    const { propositionSets: _recorded, ...rest } = edition
+    const unsetted = unset(rest)
+    const creation = isRecord(unsetted.creation) ? unsetted.creation : undefined
+    if (!creation) return unsetted
+    const principles = [...new Set([...(Array.isArray(creation.principles) ? creation.principles : []), ...rules])]
+    const known = Array.isArray(creation.software) ? creation.software : []
+    const software = [...known, ...programs.filter((program, index) =>
+        !known.some((other: Json) => other?.name === program?.name && other?.version === program?.version)
+        && programs.findIndex(other => other?.name === program?.name && other?.version === program?.version) === index)]
+    return {
+        ...unsetted,
+        creation: {
+            ...creation,
+            ...(principles.length > 0 && { principles }),
+            ...(software.length > 0 && { software })
+        }
+    }
+}
+
+/** Steps that read the document as the node steps leave it, an old document's kinds of edit renamed. */
+const finalSteps = [withoutPropositionSets, withMotivationsOfTheEdition]
+
+/**
  * Brings the JSON of an edition written by an earlier release of the
  * format up to the current shape. A document that is current already
  * passes through unchanged, and one may be migrated any number of
@@ -818,4 +988,4 @@ const editionSteps = [withoutFormatVersion, withoutTempoAdjustment, withoutEditi
  * @category Reading and writing
  */
 export const migrate = (edition: Json): Json =>
-    walk(editionSteps.reduce((result, step) => step(result), edition))
+    finalSteps.reduce((result, step) => step(result), walk(editionSteps.reduce((result, step) => step(result), edition)))

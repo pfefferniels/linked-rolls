@@ -77,7 +77,7 @@ reot:treble a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/t
 <https://w3id.org/reo/type/procedure/umstanzung/welte-t100-to-welte-green> a crm:E29_Design_or_Procedure, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     skos:broader <https://w3id.org/reo/type/procedure/umstanzung> ;
     rdfs:label "Umstanzung vom T-100 ins grüne System"@de , "re-punching, T-100 to the green system"@en ;
-    rdfs:comment "The rule by which a T-100 roll was re-punched for the Welte-Mignon T-98 (green). The notes stand at their pitch, on the middle 80 of the system's 88 positions, which is the T-100's compass. The expression has to be re-spelled: the T-98 holds a function for as long as one perforation lasts where the T-100 latches it on with one perforation and cancels it with a second (Hagmann, pp. 89 f. and 100–103), so each pair of the T-100 becomes a single perforation running from the one to the other. The motor tracks fall away, and the rewind is driven by a long perforation on the bass sforzando-piano line rather than by a valve of its own. Lawson (The Pianola Journal 20, 2009, p. 26) reports that the name Kähle stands on some of the second master rolls at USC as the man who 'corrected' them for this system, and that part of the work was to re-lay the pedal tracks so that no perforation grew long enough to weaken the paper."@en .
+    rdfs:comment "The rule by which a T-100 roll was re-punched for the Welte-Mignon T-98 (green). The notes stand at their pitch, on the middle 80 of the system's 88 positions, which is the T-100's compass. The expression has to be re-spelled: the T-98 holds a function for as long as one perforation lasts where the T-100 latches it on with one perforation and cancels it with a second (Hagmann, pp. 89 f. and 100–103), so each pair of the T-100 becomes a single perforation running from the one to the other. The re-cut also puts in the T-98's own sforzando-piano command, which the T-100 has no word for, to lower the dynamics. The motor tracks fall away, and the rewind is driven by a long perforation on the bass sforzando-piano line rather than by a valve of its own. Lawson (The Pianola Journal 20, 2009, p. 26) reports that the name Kähle stands on some of the second master rolls at USC as the man who 'corrected' them for this system, and that part of the work was to re-lay the pedal tracks so that no perforation grew long enough to weaken the paper."@en .
 
 
 # Kind of a version (P2 has type on a version, an F2 Expression). The
@@ -160,19 +160,50 @@ reot:proofreading a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org
     rdfs:comment "The editor checked the edition against the copies and against itself."@en .
 
 
-# Kind of an edit (P2 has type on reo:Edit)
+# Kind of an edit (P2 has type on reo:Edit). The format no longer types
+# edits: what kind of change an edit is follows from its motivation, and
+# the shape of a change is read off what it inserts and deletes rather
+# than stated. The concepts stay for documents written before.
 
-reot:additional-accent a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "additional accent"@en .
-reot:add-redundancy a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "add redundancy"@en .
-reot:remove-redundancy a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "remove redundancy"@en .
+reot:additional-accent a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "additional accent"@en ;
+    owl:deprecated true .
+reot:add-redundancy a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "add redundancy"@en ;
+    owl:deprecated true .
+reot:remove-redundancy a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "remove redundancy"@en ;
+    owl:deprecated true .
 reot:recoding a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "recoding"@en ;
-    skos:definition "An edit that carries the text into the coding of another reproducing system."@en .
-reot:shift a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "shift"@en .
+    skos:definition "An edit that carries the text into the coding of another reproducing system."@en ;
+    owl:deprecated true .
+reot:shift a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "shift"@en ;
+    owl:deprecated true .
 reot:correct-error a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "correct error"@en ;
     owl:deprecated true ;
-    rdfs:comment "No longer a kind of edit. The kinds of edit are read off the shape of a change, and whether a change corrects an error is not: it is a reason for the change, which the format states as the edit's motivation (P17 was motivated by)."@en .
-reot:shorten a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "shorten"@en .
-reot:prolong a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "prolong"@en .
+    rdfs:comment "No longer a kind of edit. Whether a change corrects an error is not read off its shape: it is a reason for the change, stated as the edit's motivation, the corrected error the vocabulary publishes."@en ;
+    rdfs:seeAlso <https://w3id.org/reo/type/motivation/corrected-error> .
+reot:shorten a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "shorten"@en ;
+    owl:deprecated true .
+reot:prolong a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "prolong"@en ;
+    owl:deprecated true .
+
+
+# Motivation of an edit (P17 was motivated by on reo:Edit) that the
+# vocabulary publishes. An edition names these by IRI and states its own
+# motivations, the reasons for musical changes in the editor's words,
+# once for the edition. What kind of change an edit is follows from its
+# motivation: an edit without one is a technical change, such as a
+# redundancy cleaned up or a command recoded for another system, which
+# the procedure of the version's creation explains; one of the
+# edition's own is a musical change.
+
+<https://w3id.org/reo/type/motivation/musical> a crm:E33_Linguistic_Object, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "musical change"@en ;
+    skos:definition "A change of the performance whose reason is not given. A program gives it to a change whose shape a musical decision makes, such as an added accent or a perforation put elsewhere, under the rule that later versions are the more refined; the editor puts a reason of their own in its place."@en .
+<https://w3id.org/reo/type/motivation/corrected-error> a crm:E33_Linguistic_Object, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "corrected error"@en ;
+    skos:definition "The edit puts right what the version it derives from got wrong: a perforation put in the wrong place, struck or left out. It makes the edit a repair."@en .
+<https://w3id.org/reo/type/motivation/safeguard> a crm:E33_Linguistic_Object, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "safeguard"@en ;
+    skos:definition "A command the text makes no use of, added on purpose so that the instrument is left as it should be, as a soft pedal released once more after the last note is. It makes the edit a technical change, the one that has to be said, since an added redundancy is otherwise not expected of a later version."@en .
 
 
 # Purpose of a modification of a copy (P21 had general purpose)

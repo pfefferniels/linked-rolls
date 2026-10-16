@@ -82,24 +82,29 @@ import { carriersOf, copyOfFeature, isCommand, placeOf, snapshotOf } from 'linke
 A version states only how it differs from the version it derives from,
 which {@linkcode linked-rolls!predecessorOf | predecessorOf} gives. Each edit
 inserts symbols, deletes by id symbols that version shows, or both, and
-may name an edit type and a motivation, the latter by the id of one of the
-version's `motivations`. A collation
+may name a motivation: one of the edition's `motivations` by id, or one the
+vocabulary publishes by IRI. A collation
 ({@linkcode linked-rolls!connectVersions | connectVersions}) writes each
-difference it finds with the motivation `unchecked`, which the version
-declares with a note saying that no editor has read the edit yet. Any
+difference it finds with the motivation its shape calls for: the generic
+musical one, whose reason no editor has given yet, or none for a
+technical change. Any
 statement can carry a belief under `@annotation`, a JSON-LD-star
 annotation that holds the statement with a certainty from `true` to
 `false` for the reasons it lists. {@linkcode linked-rolls!certaintyOf | certaintyOf}
 reads the certainty; a statement without a belief is held true.
 
+What kind of change an edit is follows from its motivation
+({@linkcode linked-rolls!kindOfChange | kindOfChange}): none for a technical
+change, the generic musical one or one of the edition's own for a musical
+change, and the corrected error for a repair.
 {@linkcode linked-rolls!proposeEdits | proposeEdits} groups what a version
-changes into edits and types each by its shape, an accent added, a command
+changes into edits and reads the shape of each, an accent added, a command
 put elsewhere, a note struck again, and
 {@linkcode linked-rolls!adoptEdits | adoptEdits} puts them in place of the
-edits a collation wrote, keeping those somebody motivated.
+program's edits, keeping those somebody motivated.
 
 ```ts
-import { certaintyOf, editsOf, symbolsIn } from 'linked-rolls'
+import { certaintyOf, editsOf, kindOfChange, symbolsIn } from 'linked-rolls'
 ```
 
 {@includeCode ../test/recipes.test.ts#changes}

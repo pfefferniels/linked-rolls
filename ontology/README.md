@@ -9,7 +9,7 @@
 | Version | 1.0, in preparation |
 
 `reo.ttl` holds the classes and properties, `types.ttl` the closed
-value lists of the format (edit types, purposes, units, condition
+value lists of the format (motivations, purposes, units, condition
 types and so on) as CRM types. The JSON-LD context in
 `src/spec/context.json` maps every key of the format to a term of
 REO, CIDOC CRM, LRMoo, CRMinf, CRMdig or DCMI, or sets it to `null`
@@ -95,16 +95,21 @@ for the purpose). The export states a creation for every
 version so that these have a node to reach, and the import drops those
 that state nothing.
 
-In October 2026 `reot:correct-error` stopped being a kind of edit. The
-kinds of edit are read off the shape of a change, and whether a change
-corrects an error is not: it is a reason for the change, which the format
-states as the edit's motivation. The term resolves, so it is kept and
-marked `owl:deprecated`, and `migrate` turns an edit typed so into one
-motivated so. In the same month the format came to state the
-proposition sets of CRMinf: statements one reasoning concluded together,
-such as the derivations of a stemma a program found, held under one
-belief whose reason names the program (`crmdig:L23 used software or
-firmware`). This added no term to REO.
+In October 2026 `reot:correct-error` stopped being a kind of edit, and
+shortly after the kinds of edit went altogether. What kind of change an
+edit is follows from its motivation (`crm:P17 was motivated by`): an
+edit without one is technical, and the vocabulary publishes the three
+motivations an edition names by IRI, a musical change whose reason is
+not given, a corrected error and a safeguard, under
+`https://w3id.org/reo/type/motivation/`. The shape of a change is read
+off what it adds and removes. The edit types resolve, so they are kept
+and marked `owl:deprecated`, and `migrate` reads a document written
+with them. For a while in the same month the format stated the
+proposition sets of CRMinf for what a program concluded. It no longer
+does: the stemma and edits are stated plainly, and the edition's
+creation names the rules it follows (`crm:P33 used specific technique`)
+and the release of the library it was made with (`crm:P16 used
+specific object`). Neither change added a term to REO.
 
 ## Publishing
 

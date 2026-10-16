@@ -117,7 +117,6 @@ const placements: Record<string, (value: string) => Json> = {
     side: value => altered(node('Writing', { side: value })),
     material: value => gluedOn(node('Patch', { material: value })),
     purpose: value => copyWith({ modifications: [{ '@type': 'Alteration', purpose: value }] }),
-    editType: value => ({ versions: [node('Version', { edits: [node('edit', { editType: value })] })] }),
     scope: value => expressionWith({ scope: value }),
     expressionType: value => expressionWith({ expressionType: value })
 }

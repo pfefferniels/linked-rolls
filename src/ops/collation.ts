@@ -4,16 +4,17 @@ import { v4 } from "uuid"
 import { getAt, pathIn } from "../lookup/paths.js"
 import { Edition } from "../model/Edition.js"
 import { AnySymbol } from "../model/Symbol.js"
-import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance, isCollationsOwn, unchecked } from "../collation/Collation.js"
+import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance, isCollationsOwn } from "../collation/Collation.js"
 import { Edit } from "../model/Edit.js"
 import { collationToleranceOf, derivesFrom, editsOf, insertedBy, principalDerivationOf, Version } from "../model/Version.js"
 import { Substitution, substitutionsBetween } from "../collation/substitution.js"
 import { trackerBarOf } from "../systems/index.js"
 import { ObjectAssumption, ReferenceAssumption, assignReference, idOf } from "../model/Assumption.js"
-import { EditionOp, noChange, onVersion, insertion, deletion, asUnchecked, declaring, dropInsertions, reading } from "./draft.js"
+import { EditionOp, noChange, onVersion, insertion, deletion, dropInsertions, reading } from "./draft.js"
 import { hypothesesBeside } from "./versions.js"
 import { placeOf, snapshotOf } from "../analysis/text.js"
 import { copyOfFeature, versionIn } from "../lookup/lookup.js"
+import { motivationOfChanges, proposedMotivations } from "../filiation/edits.js"
 
 /** The carriers of each collated symbol pass to its counterpart. */
 const handOverCarriers = (edition: Edition, draft: Draft<Edition>, collations: readonly Collation[]) =>
@@ -59,15 +60,18 @@ const byExchange = (edits: readonly Readonly<Edit>[]): Map<string, Readonly<Edit
  * tolerance it was collated at and becomes the principal one; the
  * hypotheses the child stated beside its former one stay.
  *
- * The edits the child already stated are rewritten only as far as a
- * collation wrote them (`isCollationsOwn`). An editor's reading of the
+ * The edits the child already stated are rewritten only as far as they
+ * are the program's (`isCollationsOwn`). An editor's reading of the
  * difference between the two texts stays, and the symbols it speaks for
  * are left out of the collation, so that connecting the two again
  * neither doubles them nor silently drops what somebody established by
  * hand. An equivalence is the collation's own, since it is drawn from
  * the two systems' vocabularies rather than read off the paper, but one
  * drawn again over the very same symbols is kept as it stands, with its
- * identifier and whatever was written on it.
+ * identifier and whatever was written on it. An insertion or deletion
+ * drawn anew has the motivation its shape calls for
+ * (`motivationProposedFor`): the generic musical one, or none where it
+ * is technical, as an equivalence always is.
  *
  * The child's own text is what it shows less what the parent hands
  * down, so that connecting two versions already connected collates the
@@ -130,34 +134,39 @@ export const connectVersions = (
         return alreadyStated.get(exchangeKey(inserted, deleted)) ?? {
             type: 'edit',
             id: v4(),
-            editType: 'recoding',
-            motivation: unchecked,
             insert: [...by],
             delete: deleted
         }
     }
 
-    const edits = [
-        ...established,
-        ...substituted.map(equivalence),
-        ...own.filter(symbol => !collated.has(symbol.id) && !paired.has(symbol.id)).map(insertion).map(asUnchecked),
+    const bare = [
+        ...own.filter(symbol => !collated.has(symbol.id) && !paired.has(symbol.id)).map(insertion),
         ...inherited
             .filter(symbol => !matched.has(symbol.id) && !paired.has(symbol.id))
-            .map(symbol => asUnchecked(deletion(symbol.id)))
+            .map(symbol => deletion(symbol.id))
     ]
+    const drawn = [...established, ...substituted.map(equivalence), ...bare]
 
     // Read off the child as it stands, since once its edits are written a
     // reading of it would copy them all.
-    const motivations = declaring(child?.motivations ?? [], edits)
     const basedOn = [
         { ...assignReference(parentId), collationTolerance: tolerance },
         ...(child ? hypothesesBeside(child, parentId) : [])
     ]
 
+    // What kind of change an insertion or a deletion is depends on what it stands among.
+    const connected = { ...edition, versions: edition.versions.map(version => version.id === childId ? { ...version, edits: drawn, basedOn } : version) }
+    const motivations = proposedMotivations(connected, childId)
+    const anew = new Set(bare.map(edit => edit.id))
+    const edits = drawn.map(edit => {
+        if (!anew.has(edit.id)) return edit
+        const motivation = motivationOfChanges(motivations, [...(edit.insert ?? []).map(symbol => symbol.id), ...(edit.delete ?? [])])
+        return motivation ? { ...edit, motivation } : edit
+    })
+
     return onVersion(childId, (version, draft) => {
         handOverCarriers(edition, draft, collations)
         version.edits = edits
-        version.motivations = motivations
         version.basedOn = basedOn
     })
 })

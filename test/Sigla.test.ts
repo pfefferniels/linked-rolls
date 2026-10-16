@@ -15,7 +15,6 @@ const version = (id: string, bar: TrackerBar, basedOn?: string): Version => ({
     id,
     system: systemOf(bar),
     edits: [],
-    motivations: [],
     ...(basedOn ? { basedOn: [assignReference(basedOn)] } : {})
 })
 

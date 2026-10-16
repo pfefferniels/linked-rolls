@@ -3,8 +3,8 @@ import { produce } from 'immer'
 import { Edition } from '../src/model/Edition'
 import { snapshotOf } from '../src/analysis/text'
 import { symbolIn } from '../src/lookup/lookup'
-import { Edit } from '../src/model/Edit'
-import { admits, CollationTolerance, isCollatable, isCollationsOwn, unchecked } from '../src/collation/Collation'
+import { correctedError, Edit, musicalChange, safeguard } from '../src/model/Edit'
+import { admits, CollationTolerance, isCollatable, isCollationsOwn } from '../src/collation/Collation'
 import { connectVersions } from '../src/ops'
 import { idsOf } from '../src/model/Assumption'
 import { mm } from '../src/model/Quantity'
@@ -58,37 +58,27 @@ describe('collating two symbols the copies put apart', () => {
 describe('which edits a collation may rewrite', () => {
     const bare = (id: string): Edit => ({ type: 'edit', id, insert: [note('n', 60)] })
 
-    it('claims a bare insertion, a bare deletion and a recoding exchanging two spellings', () => {
+    it('claims an edit that says nothing of why it was made, however it is grouped', () => {
         expect(isCollationsOwn(bare('a'))).toBe(true)
         expect(isCollationsOwn({ type: 'edit', id: 'b', delete: ['n'] })).toBe(true)
-        expect(isCollationsOwn({ ...bare('c'), delete: ['m'], editType: 'recoding' })).toBe(true)
+        expect(isCollationsOwn({ ...bare('c'), delete: ['m'] })).toBe(true)
     })
 
     /**
-     * A collation types no one-sided edit, so a recoding that only
-     * inserts or only deletes is an editor's reading of the transfer and
-     * must survive collating the two versions again.
-     */
-    it('leaves a recoding that only inserts or only deletes to the editor', () => {
-        expect(isCollationsOwn({ ...bare('d'), editType: 'recoding' })).toBe(false)
-        expect(isCollationsOwn({ type: 'edit', id: 'e', delete: ['n'], editType: 'recoding' })).toBe(false)
-    })
-
-    /**
-     * A collation marks what it makes as unread, so that an edition can
-     * publish the readings without presenting a rule's output as an
-     * editor's. That mark must not make them the editor's, or the next
+     * A program gives a musical change it cannot explain the generic
+     * motivation. That must not make it the editor's, or the next
      * collation would freeze against its own previous output.
      */
-    it('claims what it marked unchecked itself, which is not somebody having read it', () => {
-        expect(isCollationsOwn({ ...bare('a'), motivation: unchecked })).toBe(true)
+    it('claims one that says only that it is a musical change, which is not somebody having said why', () => {
+        expect(isCollationsOwn({ ...bare('a'), motivation: musicalChange })).toBe(true)
     })
 
-    it('leaves alone an edit that says what the change is, why it was made, or what it rests on', () => {
-        expect(isCollationsOwn({ ...bare('a'), editType: 'shift' })).toBe(false)
+    it('leaves alone an edit that says why it was made, or what it rests on', () => {
         expect(isCollationsOwn({ ...bare('b'), motivation: 'a pencil mark' })).toBe(false)
+        expect(isCollationsOwn({ ...bare('c'), motivation: correctedError })).toBe(false)
+        expect(isCollationsOwn({ ...bare('d'), motivation: safeguard })).toBe(false)
         expect(isCollationsOwn({
-            ...bare('c'),
+            ...bare('e'),
             '@annotation': { id: 'x', belief: { type: 'belief', id: 'y', certainty: 'likely', reasons: [] } }
         })).toBe(false)
     })
@@ -111,7 +101,6 @@ const twoRootsWithAReading = (): Edition => editionOf(
             {
                 type: 'edit',
                 id: 'established',
-                editType: 'correct-error',
                 motivation: 'the copy reads the tone a step higher',
                 insert: [note('own', 62, 'hole-own')]
             }
@@ -130,7 +119,6 @@ describe('connecting two versions where an editor has already read the differenc
     it('keeps the edit the editor established, with its identifier and everything on it', () => {
         const kept = editsIn(connected(), 'B').find(edit => edit.id === 'established')!
 
-        expect(kept.editType).toBe('correct-error')
         expect(kept.motivation).toBe('the copy reads the tone a step higher')
         expect(kept.insert!.map(symbol => symbol.id)).toEqual(['own'])
     })
@@ -173,19 +161,18 @@ describe('what a collation says about the edits it makes', () => {
         return produce(before, connectVersions('B', 'A'))
     }
 
-    it('marks them as unread, and says in the version what that means', () => {
+    it('calls a change of a note a musical one, whose reason nobody has given', () => {
         const next = connected()
 
         expect(editsIn(next, 'B').length).toBe(2)
-        expect(editsIn(next, 'B').every(edit => edit.motivation === unchecked)).toBe(true)
-        expect(next.versions[1].motivations.map(motivation => motivation.id)).toEqual([unchecked])
-        expect(next.versions[1].motivations[0].note).toMatch(/not yet read/)
+        expect(editsIn(next, 'B').every(edit => edit.motivation === musicalChange)).toBe(true)
+        expect(next.motivations).toBeUndefined()
     })
 
     /**
-     * The mark says a rule made the edit and nobody has weighed it. It
-     * must not read as somebody having weighed it, or the next
-     * collation would freeze against its own previous output.
+     * The generic motivation says a rule made the edit and nobody has
+     * said why. It must not read as somebody having weighed it, or the
+     * next collation would freeze against its own previous output.
      */
     it('rewrites what it marked before, rather than freezing against its own output', () => {
         const once = connected()
@@ -195,10 +182,10 @@ describe('what a collation says about the edits it makes', () => {
         expect(snapshotOf(twice, 'B').map(symbol => symbol.id)).toEqual(['new'])
     })
 
-    it('declares the motivation once, however often it collates', () => {
+    it('declares no motivation of the edition\'s, however often it collates', () => {
         const once = connected()
         const twice = produce(once, connectVersions('B', 'A'))
 
-        expect(twice.versions[1].motivations.map(motivation => motivation.id)).toEqual([unchecked])
+        expect(twice.motivations).toBeUndefined()
     })
 })

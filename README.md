@@ -132,22 +132,20 @@ edits the editor wrote, which hold their versions to what they insert
 and delete. Motivations, beliefs and versions known only from a
 recording remain the editor's to state.
 
-What the program concluded is recorded as a program's conclusion. A
-search scores whole stemmata, so the derivations and edits it states
-are one proposition set (CRMinf I4) held under one belief. Each of
-them names the set in its annotation, and the set states the belief
-once. The belief, likely unless the editor says otherwise, rests on an
-inference that names this library and its release, the copies it
-collated, the published rules its costs carry out (`stemmaRules`) and,
-in its note, the costs and settings it ran with and the margin of each
-grouping. Who ran it and when are the editor's to give. A derivation or
-an edit the editor holds for reasons of their own stays theirs, outside
-the set.
+What the program concluded is stated plainly, as an edition states its
+stemma. The edition's creation names how it was found: the published
+rules the costs carry out among its principles (`stemmaRules`), and
+this release of the library among its software, which finds the
+stemma again with the defaults it has. A derivation the editor holds
+under a belief of their own, and an edit that says why it was made,
+stay as they are. Among the versions, derivations and edits, whatever
+carries neither a belief nor a motivation of the editor's is the
+program's.
 
 ```ts
-const run = { actor: editor, date: { within: new Date() } }
-const adopted = produce(edition, adoptStemma(proposal, run))
-adopted.propositionSets // [{ type: 'propositionSet', id, belief: { certainty: 'likely', reasons: [{ type: 'inference', software: [linkedRolls], … }] } }]
+const adopted = produce(edition, adoptStemma(proposal))
+adopted.creation.principles // ['https://welte225.org/rules#shared-addition', …]
+adopted.creation.software   // [{ name: 'linked-rolls', version: '0.76.0' }]
 ```
 
 The costs are those with which the stemma of WM 225 comes out of its
@@ -157,28 +155,26 @@ principles confirm it.
 
 ## Proposing the edits
 
-What a version inserts and deletes can be grouped into edits and typed
-by their shape alone. `proposeEdits` reads a version's changes line by
-line, a latched function, a held one or a pitch, and never across a
-command both texts keep, so that an edit stays at one place. A function
-turned on and off again is one edit, typed an additional accent where
-the bar spells an accent so; a perforation put elsewhere is one move
-with the one it replaces, typed a shift, or shortened or prolonged
-where it begins about where the other did; overlapping notes are one
-edit, a note struck again or two tied; a held command standing for a
-latched pair is one recoding; a command the text makes no use of is a
-redundancy added or removed; cancels punched across lines at one place
-are one row. `adoptEdits` puts the proposal in place of the edits a
-collation or a program's run wrote and nobody has motivated, and keeps
-the rest. The edits it proposes are a proposition set of their own. The
-inference behind its belief names the beliefs the derivations of the
-versions are held with as its premises, so that edits grouped against
-a proposed stemma rest on it.
+What a version inserts and deletes can be grouped into edits, and the
+shape of each read off them alone. `proposeEdits` reads a version's
+changes line by line, a latched function, a held one or a pitch, and
+never across a command both texts keep, so that an edit stays at one
+place. A function turned on and off again is one edit, an additional
+accent where the bar spells an accent so; a perforation put elsewhere
+is one move with the one it replaces, a shift, or shortened or
+prolonged where it begins about where the other did; overlapping notes
+are one edit, a note struck again or two tied; a held command standing
+for a latched pair is one recoding; a command the text makes no use of
+is a redundancy added or removed; cancels punched across lines at one
+place are one row. `adoptEdits` puts the proposal in place of the
+program's edits, those that say nothing of why they were made or only
+that they are musical changes, and keeps the rest. Its creation comes to
+name the rule that keeps an edit at one place among its principles.
 
 ```ts
 import { adoptEdits, adoptStemma, proposeEdits, proposeStemma } from 'linked-rolls'
 
-proposeEdits(edition, versionId)  // [{ insert, delete, editType, grouping }, …]
+proposeEdits(edition, versionId)  // [{ insert, delete, shape, grouping }, …]
 
 // The stemma and the edits of its versions, as one undo step
 const adopted = produce(edition, draft => {
@@ -187,14 +183,28 @@ const adopted = produce(edition, draft => {
 })
 ```
 
-Why an edit was made is not read off its shape, and neither is whether
-a shift corrects an error: what is left to the editor is the
-motivation. Correcting an error is therefore one of the motivations
-(`correctedError`), not one of the edit types, and a document written
-while it was a type is read with that motivation in its place. On
-WM 225 the proposal reproduces 370 of the 414 edits the editor wrote,
-from what each version changes, and every type the editor gave them.
-From the copies alone, through the proposed stemma, it reproduces 326.
+What kind of change an edit is follows from its motivation
+(`kindOfChange`). An edit without one is a technical change: a
+redundancy cleaned up, or a command recoded for another system, which
+the procedure of the version's creation explains. A program gives a
+change whose shape is a musical decision, an added accent, a shift, a
+shortening or a prolongation, the generic motivation of a musical
+change (`musicalChange`), under the rule that later versions are the
+more refined; why it was made is left to the editor, whose motivations
+the edition states once (`Edition.motivations`) and any version's edits
+name. Whether a change corrects an error is not read off its shape
+either: a repair names the corrected error the vocabulary publishes
+(`correctedError`), and a redundancy added on purpose, such as a pedal
+released once more after the last note, names the safeguard
+(`safeguard`). A redundancy added for no reason the editor gives
+contradicts the rule that redundancies are not added, and is left for
+the editor to look at.
+
+On WM 225 the proposal reproduces 601 of the 690 edits of the versions
+that derive from another, from what each version changes, and from the
+copies alone, through the proposed stemma, 554. It agrees with the
+editor on what kind of change an edit is but for two, each a reason the
+editor gives for what the program reads as a redundancy.
 
 ## Format
 
@@ -206,12 +216,10 @@ https://pfefferniels.github.io/linked-rolls/, to which the w3id.org
 identifiers redirect.
 
 Beliefs are written as JSON-LD-star annotations (`@annotation`), so you
-need a processor that supports JSON-LD-star to read them. A statement
-that belongs to a proposition set carries no belief of its own: its
-annotation names the set by its `@id`, which makes the set the reifier
-of every statement that names it, as RDF 1.2 allows. The set is stated
-once, under `propositionSets`, as a `crminf:I4_Proposition_Set` with its
-belief.
+need a processor that supports JSON-LD-star to read them. They are kept
+for what the editor doubts; everything else, the stemma and the edits a
+program found among it, is stated plainly and reaches RDF with any
+JSON-LD processor.
 
 ## Development
 
@@ -230,7 +238,7 @@ TypeScript 7 no longer has the compiler API it reads the source with.
 
 Raise the version in `package.json`, in `CITATION.cff`, there with the
 day as `date-released`, and in `src/software.ts`, which names the release
-in the reasonings the library records. Then commit, and push a tag
+in the edition's creation when a proposal is adopted. Then commit, and push a tag
 `v<version>`. The `publish.yml` workflow builds, tests and publishes to
 npm, then makes a GitHub release of the tag, which Zenodo archives with
 a DOI. A test fails while the versions differ.

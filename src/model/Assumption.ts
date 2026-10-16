@@ -32,14 +32,12 @@ export const isAsserted = (certainty: Certainty): boolean =>
     certainty === 'true' || certainty === 'likely'
 
 /**
- * The certainty a statement is held with for itself. One that carries
- * no belief is stated plainly, and so held true; one that belongs to a
- * proposition set is held with the set's belief, which `certaintyIn`
- * reads.
+ * The certainty a statement is held with. One that carries no belief is
+ * stated plainly, and so held true.
  * @category Assumptions and beliefs
  */
 export const certaintyOf = (assumption: Readonly<Assumption>): Certainty =>
-    assumption['@annotation']?.belief?.certainty ?? 'true'
+    assumption['@annotation']?.belief.certainty ?? 'true'
 
 /**
  * An argumentation provides reasons for a belief and
@@ -110,26 +108,6 @@ export interface Inference extends Argumentation<'inference'> {
      * @see crminf:J3 applied
      */
     applies?: string[]
-
-    /**
-     * The programs that drew the conclusion, each with its version,
-     * where a program drew it: a stemma `proposeStemma` found, which the
-     * editor ran and holds. The actor is the one who ran it, since a
-     * program holds no belief. Naming software makes the inference a
-     * digital machine event in the sense of CRMdig, which can be run
-     * again on what it used, and the note states what it was run with.
-     * @see crmdig:L23 used software or firmware
-     */
-    software?: Software[]
-
-    /**
-     * When the conclusion was drawn. It is part of the reason and
-     * carries no belief of its own, and it tells a run of a program
-     * from the next, since a program may conclude otherwise once it, or
-     * what it used, has changed.
-     * @see crm:P4 has time-span
-     */
-    date?: TimeSpan
 }
 
 /**
@@ -252,93 +230,20 @@ export interface Assumption {
      * Uses the JSON-LD-star `@annotation` mechanism to attach
      * epistemic metadata (certainty and reasons) to any triple.
      *
-     * An annotation that carries no belief names, by its `id`, the
-     * proposition set the statement belongs to (`PropositionSet`): the
-     * statement is held with the belief the set states, together with
-     * the other statements that name it.
+     * A statement that carries none is stated plainly, and what a
+     * program concluded is stated so too: an edition asserts its stemma
+     * and its edits, as a printed edition does, and its creation names
+     * the principles and the release they were found by
+     * (`EditionCreation`). A belief is kept for what the editor doubts.
      */
     '@annotation'?: WithId & {
         /**
-         * The belief held about the annotated statement, where it is
-         * held for itself rather than as one of a proposition set.
+         * The belief held about the annotated statement.
          * @see crminf:J4i is subject of
          */
-        belief?: Belief;
+        belief: Belief;
     }
 }
-
-/**
- * Statements held together under one belief, because one reasoning
- * concluded them together: the derivations and edits of a stemma, which
- * a search such as `proposeStemma` scores as a whole rather than one
- * derivation at a time, or the edits a proposal grouped the changes of
- * versions into. Each statement belongs to the set by naming it in its
- * annotation, which carries the set's id and no belief of its own, and
- * the belief is stated here, once, with the reasoning that concluded
- * it. Read as RDF, the set is the reifier of each statement that names
- * it, which RDF 1.2 lets reify several.
- *
- * A statement the editor takes out of the set by giving it a belief of
- * its own is the editor's, and its reasons can name the set's belief as
- * a premise, so that what the editor decided apart from the program
- * stays apart from it.
- * @see crminf:I4 Proposition Set
- * @category Format types
- */
-export interface PropositionSet extends WithId {
-    type: 'propositionSet'
-
-    /**
-     * The belief the statements of the set are held with, and the
-     * reasons for it.
-     * @see crminf:J4i is subject of
-     */
-    belief: Belief
-}
-
-/**
- * Whether the statement carries a belief of its own, rather than none
- * or the belief of the proposition set it belongs to.
- * @category Assumptions and beliefs
- */
-export const isHeldForItself = (assumption: Readonly<Assumption>): boolean =>
-    assumption['@annotation']?.belief !== undefined
-
-/**
- * The id of the proposition set the statement belongs to, where its
- * annotation names one instead of carrying a belief.
- * @category Assumptions and beliefs
- */
-export const propositionSetOf = (assumption: Readonly<Assumption>): string | undefined => {
-    const annotation = assumption['@annotation']
-    return annotation && annotation.belief === undefined ? annotation.id : undefined
-}
-
-/**
- * The belief the statement is held with in the edition: its own, or
- * that of the proposition set it belongs to.
- * @category Assumptions and beliefs
- */
-export const beliefIn = (
-    edition: { propositionSets?: readonly PropositionSet[] },
-    assumption: Readonly<Assumption>
-): Belief | undefined => {
-    const own = assumption['@annotation']?.belief
-    if (own) return own
-    const set = propositionSetOf(assumption)
-    return set === undefined ? undefined : edition.propositionSets?.find(candidate => candidate.id === set)?.belief
-}
-
-/**
- * The certainty the statement is held with in the edition: that of its
- * own belief, or of the proposition set it belongs to. One that carries
- * neither is stated plainly, and so held true.
- * @category Assumptions and beliefs
- */
-export const certaintyIn = (
-    edition: { propositionSets?: readonly PropositionSet[] },
-    assumption: Readonly<Assumption>
-): Certainty => beliefIn(edition, assumption)?.certainty ?? 'true'
 
 /**
  * A value assumption wraps a literal value, e.g. a string, a number, a date, with an optional annotation.

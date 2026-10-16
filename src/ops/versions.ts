@@ -31,8 +31,9 @@ const dropDerivations = (version: Draft<Version>, matches: (derivation: Readonly
 
 /**
  * Makes the version stand on its own: what it inherited becomes its
- * own insertions, and its derivations go, the hypotheses among them,
- * with the motivations that belonged to them.
+ * own insertions, and its derivations go, the hypotheses among them.
+ * Its edits now state its text rather than a change, and say nothing of
+ * why they were made.
  * @category Operations
  */
 export const detachVersion = (versionId: string): EditionOp => reading(edition => {
@@ -41,7 +42,6 @@ export const detachVersion = (versionId: string): EditionOp => reading(edition =
     return onVersion(versionId, version => {
         version.edits = edits
         delete version.basedOn
-        version.motivations = []
     })
 })
 
@@ -85,8 +85,7 @@ export const deriveVersion = (versionId: string, editIds: readonly string[]): Ed
             id: v4(),
             system: stateOf<Version>(version).system,
             basedOn: [assignReference(versionId)],
-            edits: moved,
-            motivations: []
+            edits: moved
         })
     })
 

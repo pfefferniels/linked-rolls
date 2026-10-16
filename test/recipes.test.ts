@@ -27,6 +27,7 @@ import {
     importJsonLd,
     insertedBy,
     isCommand,
+    kindOfChange,
     midiOf,
     migrate,
     pathIn,
@@ -152,10 +153,10 @@ describe('read the text of a version', () => {
 describe('see what a version changed', () => {
     it('lists the edits against the parent with their motivations and certainty', () => {
         // #region changes
-        const motivationOf = (id?: string) => version.motivations.find(motivation => motivation.id === id)
+        const motivationOf = (id?: string) => edition.motivations?.find(motivation => motivation.id === id)
 
         const changes = editsOf(version).map(edit => ({
-            type: edit.editType,
+            kind: kindOfChange(edit),
             motivation: motivationOf(edit.motivation)?.note,
             inserted: edit.insert ?? [],
             deleted: symbolsIn(edition, edit.delete ?? []),
@@ -180,12 +181,12 @@ describe('see what a version changed', () => {
         })
     })
 
-    it('marks what a collation writes as unchecked, a motivation the version declares', () => {
+    it('calls what a collation writes a musical or a technical change, giving no reason of its own', () => {
         const collated = produce(edition, connectVersions(R2, R1))
         const recollated = versionIn(collated, R2)!
 
-        expect(editsOf(recollated).filter(edit => edit.motivation === 'unchecked').length).toBeGreaterThan(0)
-        expect(recollated.motivations.find(motivation => motivation.id === 'unchecked')?.note).toMatch(/not yet read by an editor/)
+        expect(editsOf(recollated).filter(edit => kindOfChange(edit) === 'musical').length).toBeGreaterThan(0)
+        expect(collated.motivations).toEqual(edition.motivations)
     })
 })
 

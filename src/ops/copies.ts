@@ -27,8 +27,7 @@ export const createVersion = (copy: RollCopy): EditionOp =>
         draft.versions.push({
             id: v4(),
             system: systemOf(bar),
-            edits: asSymbols(featuresOf(copy), bar).map(insertion),
-            motivations: []
+            edits: asSymbols(featuresOf(copy), bar).map(insertion)
         })
     }
 

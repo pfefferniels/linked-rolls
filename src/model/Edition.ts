@@ -1,11 +1,13 @@
 import { featuresOf, RollCopy } from "./RollCopy.js";
 import { Version } from "./Version.js";
-import { DateAssignment, PropositionSet } from "./Assumption.js";
-import { Editor, Person, Place } from "./Agent.js";
+import { Motivation } from "./Edit.js";
+import { DateAssignment } from "./Assumption.js";
+import { Editor, Person, Place, Software } from "./Agent.js";
 
 /**
- * This type describes the creation of an edition,
- * i.e. the editor, publisher, and publication date.
+ * This type describes the creation of an edition: the editors,
+ * publisher and publication date, the editorial principles the edition
+ * follows, and the programs it was made with.
  * @see lrmoo:F28 Expression Creation
  * @category Format types
  */
@@ -31,6 +33,27 @@ export interface EditionCreation {
      * @see dcterms:date
      */
     publicationDate: Date
+
+    /**
+     * The editorial principles the edition follows, by IRI: the
+     * published rules its stemma and its edits rest on, whether the
+     * editor applied them or a program did, such as that the same
+     * addition at the same place is not made twice independently
+     * (`stemmaRules`, `editRules`). Adopting a proposal names those it
+     * follows. An edition that names none leaves it out.
+     * @see crm:P33 used specific technique
+     */
+    principles?: string[]
+
+    /**
+     * The programs the edition was made with, each with its release:
+     * the release of this library that found its stemma and grouped its
+     * edits, which finds them again with the defaults it has. Adopting a
+     * proposal names it, and saving the edition does not, so that the
+     * release named is the one that found what the edition states.
+     * @see crm:P16 used specific object
+     */
+    software?: Software[]
 }
 
 /**
@@ -180,14 +203,13 @@ export interface Edition {
     versions: Version[]
 
     /**
-     * The statements the edition holds together under one belief, each
-     * set with the reasoning that concluded it: a stemma a program
-     * proposed and the editor adopted, the edits it grouped. A statement
-     * belongs to a set by naming it in its annotation. An edition that
-     * holds no such set leaves it out.
-     * @see crminf:I4 Proposition Set
+     * The editor's motivations, each a reason for musical changes in
+     * words, stated once and named by the edits of any version
+     * (`Edit.motivation`). The motivations the vocabulary publishes are
+     * named by IRI and not stated here (`musicalChange`,
+     * `correctedError`, `safeguard`).
      */
-    propositionSets?: PropositionSet[]
+    motivations?: Motivation[]
 }
 
 /**

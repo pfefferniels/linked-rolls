@@ -4,7 +4,8 @@ import { Edition } from '../src/model/Edition'
 import { snapshotOf } from '../src/analysis/text'
 import { symbolIn } from '../src/lookup/lookup'
 import { getAt, Path } from '../src/lookup/paths'
-import { Edit } from '../src/model/Edit'
+import { Edit, musicalChange } from '../src/model/Edit'
+import { shapeOf } from '../src/ops/edits'
 import { AnySymbol, isCommand, placementsOf } from '../src/model/Symbol'
 import { featuresOf } from '../src/model/RollCopy'
 import { constraintProblems } from '../src/analysis/constraints'
@@ -177,7 +178,7 @@ describe('detaching a version', () => {
         const detached = next.versions[1]
 
         expect(detached.basedOn).toBeUndefined()
-        expect(detached.motivations).toEqual([])
+        expect(detached.edits.every(edit => edit.motivation === undefined)).toBe(true)
         expect(detached.edits.map(insertedIds)).toEqual([['label'], ['note'], ['forzando-off'], ['other-note']])
         expect(snapshotOf(next, 'B').map(symbol => symbol.id)).toEqual(['label', 'note', 'forzando-off', 'other-note'])
     })
@@ -316,31 +317,43 @@ describe('merging edits', () => {
         expect(['e1', 'e2']).not.toContain(merged.id)
     })
 
-    it('classifies the merged edit by what it exchanges', () => {
-        const typeOf = (edits: Edit[]) => mergedIn(edits).at(-1)!.editType
+    /** The merged edit, and the shape read off it in the edition it is merged in. */
+    const mergedOn = (edits: Edit[], green = false) => {
+        const before = withC(edits)
+        if (green) before.versions.find(version => version.id === 'C')!.system = systemOf(welteT98)
+        const merged = editsOf(produce(before, mergeEdits('C', edits)), 'C').at(-1)!
+        return { merged, shape: shapeOf(before, 'C', merged) }
+    }
 
-        expect(typeOf([inserting('e1', noteShort), deleting('e2', 'note')])).toBe('shorten')
-        expect(typeOf([inserting('e1', noteLong), deleting('e2', 'note')])).toBe('prolong')
-        expect(typeOf([inserting('e1', noteFar), deleting('e2', 'note')])).toBe('shift')
-        expect(typeOf([inserting('e1', on2), inserting('e2', off2)])).toBe('additional-accent')
-        expect(typeOf([inserting('e1', on2, off2), deleting('e2', 'forzando-on', 'forzando-off')])).toBe('shift')
-        expect(typeOf([deleting('e1', 'forzando-on')])).toBe('remove-redundancy')
+    it('reads the shape of the merged edit off what it exchanges, and has the motivation it calls for', () => {
+        const shapeOfMerged = (edits: Edit[]) => mergedOn(edits).shape
+
+        expect(shapeOfMerged([inserting('e1', noteShort), deleting('e2', 'note')])).toBe('shorten')
+        expect(shapeOfMerged([inserting('e1', noteLong), deleting('e2', 'note')])).toBe('prolong')
+        expect(shapeOfMerged([inserting('e1', noteFar), deleting('e2', 'note')])).toBe('shift')
+        expect(shapeOfMerged([inserting('e1', on2), inserting('e2', off2)])).toBe('additional-accent')
+        expect(shapeOfMerged([inserting('e1', on2, off2), deleting('e2', 'forzando-on', 'forzando-off')])).toBe('shift')
+        expect(shapeOfMerged([deleting('e1', 'forzando-on')])).toBe('remove-redundancy')
+
+        expect(mergedOn([inserting('e1', noteShort), deleting('e2', 'note')]).merged.motivation).toBe(musicalChange)
+        expect(mergedOn([deleting('e1', 'forzando-on')]).merged.motivation).toBeUndefined()
     })
 
     /** Whether a change corrects an error is a reason for it, not its shape, and so no guess of the merge's. */
-    it('states no type where the shape of the exchange does not say', () => {
-        const typeOf = (edits: Edit[]) => mergedIn(edits).at(-1)!.editType
-
-        expect(typeOf([inserting('e1', note('other-far', 64, 'hole-far')), deleting('e2', 'note')])).toBeUndefined()
-        expect(typeOf([inserting('e1', noteShort, noteFar), deleting('e2', 'note')])).toBeUndefined()
+    it('takes a change of no shape it knows for a musical one', () => {
+        const unshaped = mergedOn([inserting('e1', note('other-far', 64, 'hole-far')), deleting('e2', 'note')])
+        expect(unshaped.shape).toBeUndefined()
+        expect(unshaped.merged.motivation).toBe(musicalChange)
+        expect(mergedOn([inserting('e1', noteShort, noteFar), deleting('e2', 'note')]).shape).toBeUndefined()
     })
 
-    it('makes the edit the editor\'s, though the first merged was one of a program\'s set', () => {
-        const member: Edit = { ...inserting('e1', noteShort), '@annotation': { id: 'propositions_run' } }
-        const merged = mergedIn([member, deleting('e2', 'note')]).at(-1)!
+    it('keeps a motivation of the editor\'s that an edit merged states, and a belief the first holds', () => {
+        const belief = { type: 'belief' as const, id: 'b', certainty: 'possible' as const, reasons: [] }
+        const first: Edit = { ...inserting('e1', noteShort), '@annotation': { id: 'a', belief } }
+        const merged = mergedIn([first, { ...deleting('e2', 'note'), motivation: 'melody' }]).at(-1)!
 
-        expect(merged['@annotation']).toBeUndefined()
-        expect(merged.editType).toBe('shorten')
+        expect(merged.motivation).toBe('melody')
+        expect(merged['@annotation']).toEqual({ id: 'a', belief })
     })
 
     it('leaves the edition as it is with nothing to merge', () => {
@@ -358,40 +371,31 @@ describe('merging edits', () => {
         const green = expression('sforzando', 'SforzandoForte', 'hole-on-2')
         const edits = [inserting('e1', green), deleting('e2', 'forzando-on', 'forzando-off')]
 
-        const before = withC(edits)
-        before.versions.find(version => version.id === 'C')!.system = systemOf(welteT98)
-        const merged = editsOf(produce(before, mergeEdits('C', edits)), 'C').at(-1)!
-
-        expect(merged.editType).toBe('recoding')
+        const { merged, shape } = mergedOn(edits, true)
+        expect(shape).toBe('recoding')
+        expect(merged.motivation).toBeUndefined()
     })
 
     /** A red command the green bar cannot read, struck in the transfer, is part of the recoding too. */
     it('calls a command struck across two systems a recoding', () => {
-        const edits = [deleting('e1', 'forzando-on')]
-        const before = withC(edits)
-        before.versions.find(version => version.id === 'C')!.system = systemOf(welteT98)
-        const merged = editsOf(produce(before, mergeEdits('C', edits)), 'C').at(-1)!
-
-        expect(merged.editType).toBe('recoding')
+        const { merged, shape } = mergedOn([deleting('e1', 'forzando-on')], true)
+        expect(shape).toBe('recoding')
+        expect(merged.motivation).toBeUndefined()
     })
 
     it('keeps the rules of one system where the version does not change it', () => {
         const green = expression('sforzando', 'SforzandoForte', 'hole-on-2')
         const edits = [inserting('e1', green), deleting('e2', 'forzando-on', 'forzando-off')]
 
-        expect(mergedIn(edits).at(-1)!.editType).toBeUndefined()
+        expect(mergedOn(edits).shape).toBeUndefined()
     })
 
     it('offers each bar only the accents it can spell', () => {
         const held = expression('held', 'Crescendo', 'hole-on-2')
         const edits = [inserting('e1', held)]
 
-        const before = withC(edits)
-        before.versions.find(version => version.id === 'C')!.system = systemOf(welteT98)
-        const onGreen = editsOf(produce(before, mergeEdits('C', edits)), 'C').at(-1)!
-        expect(onGreen.editType).toBe('additional-accent')
-
-        expect(mergedIn(edits).at(-1)!.editType).toBeUndefined()
+        expect(mergedOn(edits, true).shape).toBe('additional-accent')
+        expect(mergedOn(edits).shape).toBeUndefined()
     })
 })
 
@@ -561,7 +565,8 @@ describe('attaching a version coded for another system', () => {
             .find(edit => (edit.insert ?? []).some(symbol => symbol.id === 'cresc-green'))!
 
         expect(replacement.delete).toEqual(['cresc-on', 'cresc-off'])
-        expect(replacement.editType).toBe('recoding')
+        expect(replacement.motivation).toBeUndefined()
+        expect(shapeOf(attached(), 'B', replacement)).toBe('recoding')
     })
 
     it('collates the notes away, the two scales agreeing on the pitch', () => {

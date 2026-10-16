@@ -129,7 +129,9 @@ export type Concept =
 /**
  * Software that captured a copy or measured it: the transcriber that
  * read a recording into notes, the emulator that wrote a MIDI file, the
- * program that found the holes on a scan or aligned two copies.
+ * program that found the holes on a scan or aligned two copies. Or the
+ * software an edition was made with, such as the release of this
+ * library that found its stemma.
  * @see crmdig:D14 Software
  * @category Format types
  */

@@ -60,7 +60,6 @@ export const version = (id: string, edits: Version['edits'], basedOn?: string): 
     id,
     system: systemOf(welteT100),
     edits,
-    motivations: [],
     ...(basedOn ? { basedOn: [assignReference(basedOn)] } : {})
 })
 

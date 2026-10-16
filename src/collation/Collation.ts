@@ -1,5 +1,4 @@
-import { Edit, EditType } from "../model/Edit.js"
-import { isHeldForItself, propositionSetOf } from "../model/Assumption.js"
+import { Edit, musicalChange } from "../model/Edit.js"
 import { HorizontalSpan } from "../model/Feature.js"
 import { AnySymbol } from "../model/Symbol.js"
 import { keyOf } from "../systems/TrackerBar.js"
@@ -211,64 +210,24 @@ export const collationsOf = (
             .map(({ symbol: counterpart }) => ({ symbol, counterpart })))
 }
 
-/** The edit type a collation draws by itself, from the two systems' vocabularies rather than off the paper. */
-const drawnByCollation: EditType = 'recoding'
-
 /**
- * The motivation a collation writes on what it makes, saying that
- * nobody has read it yet.
+ * Whether the edit is the program's: one that a collation or a proposal
+ * wrote and nobody has explained, so that collating again or proposing
+ * the edits again may write it anew. It carries no belief and names no
+ * motivation of the editor's: none, as a technical change does, or the
+ * generic one a program gives a musical change whose reason it cannot
+ * know (`musicalChange`).
  *
- * A collation produces its edits by a rule, and an edition that
- * publishes them unmarked would present a machine's output as an
- * editor's reading. Stating that they are unchecked is the honest
- * middle: the readings are there to be seen and argued with, and a
- * reader can tell which of them anybody has weighed.
+ * Everything else is the editor's and stays: an edit that says why it
+ * was made, a corrected error or a safeguard among them, or that is held
+ * under a belief. A grouping of the editor's stays theirs once it says
+ * why; one that says nothing reads as the program's would.
  *
- * It does not make an edit the editor's. `isCollationsOwn` passes over
- * this motivation exactly, so a collation rewrites what it marked
- * before, and only what somebody has actually written stays.
- * @category Collation and alignment
- */
-export const unchecked = 'unchecked'
-
-/**
- * The version's statement of what the unchecked motivation means, to stand in its `motivations`.
- * @category Collation and alignment
- */
-export const uncheckedMotivation = {
-    type: 'motivation',
-    id: unchecked,
-    note: 'Made by collating the two texts and not yet read by an editor.'
-} as const
-
-/**
- * Whether the edit is one a collation writes by itself: a bare
- * insertion or a bare deletion saying nothing further, or a recoding
- * that exchanges two systems' spellings for one command.
- *
- * Collating again rewrites these and keeps the rest. An edit that says
- * what the change is, or why it was made, or what it rests on, is an
- * editor's reading of the difference between two texts, and collating
- * the two again is no reason to discard it.
- *
- * Such an exchange counts as the collation's own even where an editor
- * added a motivation to it, because it is derived rather than read:
- * freezing it would leave the transfers, where nearly every edit is
- * one, unable to be collated again at all. What an editor wrote on it
- * is not lost by that, since `connectVersions` keeps an exchange it
- * draws a second time over the very same symbols.
- *
- * A recoding that only inserts or only deletes is the editor's: a
- * collation types no one-sided edit, so one typed so is a reading of
- * the transfer that collating again must not undo.
- *
- * An edit a program proposed and typed is no reading of the editor's
- * either, as long as nobody has motivated it: it says so by belonging
- * to the proposition set the program's run concluded (`adoptEdits`).
+ * An exchange a collation draws again over the very same symbols is
+ * kept as it stands, with its identifier and whatever was written on
+ * it (`connectVersions`).
  * @category Collation and alignment
  */
 export const isCollationsOwn = (edit: Readonly<Edit>): boolean =>
-    (edit.editType === drawnByCollation && !!edit.insert?.length && !!edit.delete?.length)
-    || ((edit.editType === undefined || propositionSetOf(edit) !== undefined)
-        && (edit.motivation === undefined || edit.motivation === unchecked)
-        && !isHeldForItself(edit))
+    edit['@annotation'] === undefined
+    && (edit.motivation === undefined || edit.motivation === musicalChange)

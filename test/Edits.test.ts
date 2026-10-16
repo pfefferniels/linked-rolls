@@ -8,7 +8,8 @@ import { assignReference } from '../src/model/Assumption'
 import { HoleChain } from '../src/model/Feature'
 import { TrackMeaning } from '../src/systems/TrackerBar'
 import { welteT100 } from '../src/systems/welteT100/bar'
-import { unchecked } from '../src/collation/Collation'
+import { motivationProposedFor } from '../src/model/Edit'
+import { editRules } from '../src/filiation/record'
 import { adoptEdits, proposeEdits, ProposedEdit } from '../src/filiation/edits'
 
 /** A symbol of the meaning, carried by a hole of its own where the bar reads it. */
@@ -59,8 +60,8 @@ const changed = (): { edition: Edition, inserted: AnySymbol[], deleted: string[]
     const edition = editionOf([copy('x', holes)], [
         version('p', base.map(symbol => ({ type: 'edit', id: `e-${symbol.id}`, insert: [symbol] }))),
         version('c', [
-            ...inserted.map((symbol): Edit => ({ type: 'edit', id: `e-${symbol.id}`, motivation: unchecked, insert: [symbol] })),
-            ...deleted.map((id): Edit => ({ type: 'edit', id: `d-${id}`, motivation: unchecked, delete: [id] }))
+            ...inserted.map((symbol): Edit => ({ type: 'edit', id: `e-${symbol.id}`, insert: [symbol] })),
+            ...deleted.map((id): Edit => ({ type: 'edit', id: `d-${id}`, delete: [id] }))
         ], 'p')
     ])
     return { edition, inserted, deleted }
@@ -74,31 +75,31 @@ describe('the edits proposed for a version', () => {
     const proposed = proposeEdits(edition, 'c')
 
     it('take an accent added for one edit', () => {
-        expect(exchanging(proposed, 'accent-on', 'accent-off')).toMatchObject({ editType: 'additional-accent', grouping: 'pair' })
+        expect(exchanging(proposed, 'accent-on', 'accent-off')).toMatchObject({ shape: 'additional-accent', grouping: 'pair' })
     })
 
     it('take an accent put elsewhere whole for one shift', () => {
-        expect(exchanging(proposed, 'moved-on', 'moved-off', 'put-on', 'put-off')).toMatchObject({ editType: 'shift', grouping: 'move' })
+        expect(exchanging(proposed, 'moved-on', 'moved-off', 'put-on', 'put-off')).toMatchObject({ shape: 'shift', grouping: 'move' })
     })
 
     it('take a command put elsewhere on its own for a shift', () => {
-        expect(exchanging(proposed, 'alone-on', 'later-on')).toMatchObject({ editType: 'shift', grouping: 'move' })
+        expect(exchanging(proposed, 'alone-on', 'later-on')).toMatchObject({ shape: 'shift', grouping: 'move' })
     })
 
     it('take a note that ends earlier for a shortened one', () => {
-        expect(exchanging(proposed, 'long-note', 'shorter-note')).toMatchObject({ editType: 'shorten', grouping: 'overlap' })
+        expect(exchanging(proposed, 'long-note', 'shorter-note')).toMatchObject({ shape: 'shorten', grouping: 'overlap' })
     })
 
     it('take a note struck again for one edit', () => {
-        expect(exchanging(proposed, 'struck-note', 'first-stroke', 'second-stroke')).toMatchObject({ editType: 'shorten' })
+        expect(exchanging(proposed, 'struck-note', 'first-stroke', 'second-stroke')).toMatchObject({ shape: 'shorten' })
     })
 
     it('take a command the text makes no use of for a redundancy', () => {
-        expect(exchanging(proposed, 'idle-off')).toMatchObject({ editType: 'add-redundancy', grouping: 'single' })
+        expect(exchanging(proposed, 'idle-off')).toMatchObject({ shape: 'add-redundancy', grouping: 'single' })
     })
 
     it('take cancels punched across lines at one place for one row', () => {
-        expect(exchanging(proposed, 'row-1', 'row-2', 'row-3', 'row-4')).toMatchObject({ grouping: 'row', editType: 'add-redundancy' })
+        expect(exchanging(proposed, 'row-1', 'row-2', 'row-3', 'row-4')).toMatchObject({ grouping: 'row', shape: 'add-redundancy' })
     })
 
     it('account for every change once', () => {
@@ -121,13 +122,19 @@ describe('the edits proposed for a version', () => {
 })
 
 describe('adopting the proposed edits', () => {
-    it('puts them in place of what the collation wrote, unchecked', () => {
+    it('puts them in place of what the collation wrote, each with the motivation its shape calls for', () => {
         const { edition } = changed()
         const adopted = produce(edition, adoptEdits())
         const edits = adopted.versions[1].edits!
-        expect(edits).toHaveLength(proposeEdits(edition, 'c').length)
-        expect(edits.every(edit => edit.motivation === unchecked)).toBe(true)
+        const proposed = proposeEdits(edition, 'c')
+        expect(edits).toHaveLength(proposed.length)
+        const key = (inserted: readonly string[], deleted: readonly string[]) => [...inserted, ...deleted].sort().join()
+        const shapes = new Map(proposed.map(edit => [key(edit.insert, edit.delete), edit.shape]))
+        expect(edits.every(edit =>
+            edit.motivation === motivationProposedFor(shapes.get(key((edit.insert ?? []).map(symbol => symbol.id), edit.delete ?? []))))).toBe(true)
+        expect(edits.filter(edit => edit.motivation === undefined).length).toBeGreaterThan(0)
         expect(adopted.versions[0]).toEqual(edition.versions[0])
+        expect(adopted.creation.principles).toEqual([editRules.onePlace])
     })
 
     it('keeps an edit somebody motivated, and states what it leaves of a proposed one symbol by symbol', () => {
@@ -135,7 +142,7 @@ describe('adopting the proposed edits', () => {
         const motivated = produce(edition, draft => {
             const edit = draft.versions[1].edits!.find(edit => edit.id === 'e-accent-on')!
             edit.motivation = 'melody'
-            draft.versions[1].motivations.push({ type: 'motivation', id: 'melody', note: 'The melody brought out.' })
+            draft.motivations = [{ type: 'motivation', id: 'melody', note: 'The melody brought out.' }]
         })
         const edits = produce(motivated, adoptEdits()).versions[1].edits!
         expect(edits).toContainEqual(motivated.versions[1].edits!.find(edit => edit.id === 'e-accent-on'))

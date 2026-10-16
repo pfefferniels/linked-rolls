@@ -1,39 +1,9 @@
 import { Edit } from "./Edit.js";
 import { Concept } from "./Agent.js";
-import { ActorAssignment, Belief, beliefIn, certainties, certaintyOf, Certainty, DateAssignment, idOf, ObjectAssumption, PropositionSet, ReferenceAssumption } from "./Assumption.js";
+import { ActorAssignment, Belief, certainties, certaintyOf, Certainty, DateAssignment, idOf, ObjectAssumption, ReferenceAssumption } from "./Assumption.js";
 import { CollationTolerance, defaultCollationTolerance } from "../collation/Collation.js";
 import { AnySymbol } from "./Symbol.js";
-import { WithId, WithNote, WithType } from "../shared/utils.js";
-
-/**
- * A motivation provides a reason or rationale for an editorial change.
- * Motivations are defined at the version level and referenced by edits.
- * @see crm:E33 Linguistic Object
- * @category Format types
- */
-export type Motivation = WithType<'motivation'> & WithId & WithNote
-
-/**
- * The motivation of an edit that puts right what the version it derives
- * from got wrong: a perforation put in the wrong place, struck or left
- * out. Whether a change corrects an error is not read off its shape, as
- * its type is, but is a reason for it, and so the editor's to give.
- * The edit types held it once, and a document written then is read with
- * this motivation in place of that type.
- * @category Versions and stemma
- */
-export const correctedError = 'corrected-error'
-
-/**
- * The version's statement of what the motivation of a corrected error
- * means, to stand in its `motivations`.
- * @category Versions and stemma
- */
-export const correctedErrorMotivation = {
-    type: 'motivation',
-    id: correctedError,
-    note: 'Puts right an error of the version it derives from.'
-} as const
+import { WithId } from "../shared/utils.js";
 
 /**
  * A derivation names the version another one was derived from, together
@@ -184,11 +154,6 @@ export interface Version extends WithId {
      * @see reo:involvedEdit
      */
     edits?: Edit[];
-
-    /**
-     * A collection of motivations used in this version's edits.
-     */
-    motivations: Motivation[]
 }
 
 /**
@@ -213,24 +178,17 @@ export const deletedBy = (version: Readonly<Version>): string[] =>
 
 /**
  * The parents the version names, in the order of `basedOn`, each with the
- * certainty its derivation is held with and the belief it rests on. Given
- * the edition, a derivation that belongs to a proposition set, as an
- * adopted stemma's do, is read with the belief of the set, and names it
- * (`propositionSet`); without it, only a belief of its own is read.
+ * certainty its derivation is held with and the belief it rests on, where
+ * it carries one.
  * @category Versions and stemma
  */
-export const derivationsOf = (
-    version: Readonly<Version>,
-    edition: { propositionSets?: readonly PropositionSet[] } = {}
-): { parent: string, certainty: Certainty, belief?: Belief, propositionSet?: string }[] =>
+export const derivationsOf = (version: Readonly<Version>): { parent: string, certainty: Certainty, belief?: Belief }[] =>
     (version.basedOn ?? []).map(derivation => {
-        const belief = beliefIn(edition, derivation)
-        const set = derivation['@annotation']?.belief === undefined ? derivation['@annotation']?.id : undefined
+        const belief = derivation['@annotation']?.belief
         return {
             parent: idOf(derivation),
             certainty: belief?.certainty ?? 'true',
-            ...(belief && { belief }),
-            ...(set !== undefined && { propositionSet: set })
+            ...(belief && { belief })
         }
     })
 

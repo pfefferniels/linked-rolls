@@ -340,11 +340,11 @@
         {
           "properties": {
             "@annotation": {
-              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
               "properties": {
                 "belief": {
                   "$ref": "#/definitions/Belief",
-                  "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+                  "description": "The belief held about the annotated statement.",
                   "ontology": "crminf:J4i is subject of"
                 },
                 "@id": {
@@ -353,6 +353,7 @@
                 }
               },
               "required": [
+                "belief",
                 "@id"
               ],
               "type": "object"
@@ -372,11 +373,11 @@
         {
           "properties": {
             "@annotation": {
-              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
               "properties": {
                 "belief": {
                   "$ref": "#/definitions/Belief",
-                  "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+                  "description": "The belief held about the annotated statement.",
                   "ontology": "crminf:J4i is subject of"
                 },
                 "@id": {
@@ -385,6 +386,7 @@
                 }
               },
               "required": [
+                "belief",
                 "@id"
               ],
               "type": "object"
@@ -410,11 +412,11 @@
         {
           "properties": {
             "@annotation": {
-              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
               "properties": {
                 "belief": {
                   "$ref": "#/definitions/Belief",
-                  "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+                  "description": "The belief held about the annotated statement.",
                   "ontology": "crminf:J4i is subject of"
                 },
                 "@id": {
@@ -423,6 +425,7 @@
                 }
               },
               "required": [
+                "belief",
                 "@id"
               ],
               "type": "object"
@@ -453,11 +456,11 @@
       "description": "A derivation names the version another one was derived from, together with the tolerance the two were collated at. How precisely the copies put a symbol depends on what they are and on how their features were obtained, so the tolerance can differ from derivation to derivation.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -466,6 +469,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -494,14 +498,14 @@
       "type": "string"
     },
     "Edit": {
-      "description": "A set of edits transforms a version of a roll into another version. Edits insert or delete symbols, or both (= replace). Edits may be motivated by a given set of reasons, e.g. to strengthen an accent or to correct an error. If an edit is the interpretation of a metamark, such as a pencil mark, this should be made explicit using a meaning comprehension on the `@annotation` field. An edit states no date. That it ended no later than the act that made a feature carrying a symbol it inserts, a reasoner derives with the axioms of reo.ttl; which of those dates bounds it closest is for a query to pick.",
+      "description": "A set of edits transforms a version of a roll into another version. Edits insert or delete symbols, or both (= replace). What kind of change an edit is follows from its motivation (`kindOfChange`). If an edit is the interpretation of a metamark, such as a pencil mark, this should be made explicit using a meaning comprehension on the `@annotation` field. An edit states no date. That it ended no later than the act that made a feature carrying a symbol it inserts, a reasoner derives with the axioms of reo.ttl; which of those dates bounds it closest is for a query to pick.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -510,6 +514,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -522,11 +527,6 @@
           "type": "array",
           "ontology": "reo:removed"
         },
-        "editType": {
-          "$ref": "#/definitions/EditType",
-          "description": "The type of editorial change, as its shape shows it (e.g. 'shift', 'additional-accent').",
-          "ontology": "crm:P2 has type"
-        },
         "insert": {
           "description": "The symbols to be inserted by this edit.",
           "items": {
@@ -536,7 +536,7 @@
           "ontology": "reo:added"
         },
         "motivation": {
-          "description": "A textual description of the motivation for this edit, referencing a motivation defined in the version's motivations list.",
+          "description": "Why the edit was made: one of the edition's motivations, by id, or a motivation the vocabulary publishes, by IRI. A technical change states none.",
           "type": "string",
           "ontology": "crm:P17 was motivated by"
         },
@@ -557,19 +557,6 @@
       ],
       "type": "object",
       "ontology": "reo:Edit"
-    },
-    "EditType": {
-      "description": "The type of editorial change applied to a symbol or set of symbols. Classifies the shape of the edit, e.g. whether it adds an accent, shifts a note, or shortens/prolongs a perforation. Why it was made is its motivation.",
-      "enum": [
-        "additional-accent",
-        "add-redundancy",
-        "remove-redundancy",
-        "recoding",
-        "shift",
-        "shorten",
-        "prolong"
-      ],
-      "type": "string"
     },
     "Edition": {
       "description": "Describes the specific digital edition of a piano roll.",
@@ -595,13 +582,12 @@
           "type": "string",
           "ontology": "dcterms:license"
         },
-        "propositionSets": {
-          "description": "The statements the edition holds together under one belief, each set with the reasoning that concluded it: a stemma a program proposed and the editor adopted, the edits it grouped. A statement belongs to a set by naming it in its annotation. An edition that holds no such set leaves it out.",
+        "motivations": {
+          "description": "The editor's motivations, each a reason for musical changes in words, stated once and named by the edits of any version (`Edit.motivation`). The motivations the vocabulary publishes are named by IRI and not stated here (`musicalChange`, `correctedError`, `safeguard`).",
           "items": {
-            "$ref": "#/definitions/PropositionSet"
+            "$ref": "#/definitions/Motivation"
           },
-          "type": "array",
-          "ontology": "crminf:I4 Proposition Set"
+          "type": "array"
         },
         "referenceCopy": {
           "description": "The copy whose millimetres are the edition's axis, by id: every place the edition gives along the roll is a place on this copy's paper, counted from where its scan begins, and every other copy is aligned onto it. Choosing it is the one editorial decision the alignment leaves; a copy scanned whole and without tears serves best, since its places are what notes and readers cite. Left out, it is the first copy with features that is not aligned (`referenceCopyOf`).",
@@ -650,7 +636,7 @@
       "ontology": "lrmoo:F2 Expression"
     },
     "EditionCreation": {
-      "description": "This type describes the creation of an edition, i.e. the editor, publisher, and publication date.",
+      "description": "This type describes the creation of an edition: the editors, publisher and publication date, the editorial principles the edition follows, and the programs it was made with.",
       "properties": {
         "editors": {
           "description": "The persons who prepared the edition, each with the part they took in the editorial work. An edition written before this field existed carries none.",
@@ -659,6 +645,14 @@
           },
           "type": "array",
           "ontology": "crm:P14 carried out by"
+        },
+        "principles": {
+          "description": "The editorial principles the edition follows, by IRI: the published rules its stemma and its edits rest on, whether the editor applied them or a program did, such as that the same addition at the same place is not made twice independently (`stemmaRules`, `editRules`). Adopting a proposal names those it follows. An edition that names none leaves it out.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "ontology": "crm:P33 used specific technique"
         },
         "publicationDate": {
           "description": "The date on which the edition was published: where it states a version, the date of that version.",
@@ -670,6 +664,14 @@
           "$ref": "#/definitions/Person",
           "description": "The person or institution responsible for publishing the edition.",
           "ontology": "crm:P14 carried out by"
+        },
+        "software": {
+          "description": "The programs the edition was made with, each with its release: the release of this library that found its stemma and grouped its edits, which finds them again with the defaults it has. Adopting a proposal names it, and saving the edition does not, so that the release named is the one that found what the edition states.",
+          "items": {
+            "$ref": "#/definitions/Software"
+          },
+          "type": "array",
+          "ontology": "crm:P16 used specific object"
         }
       },
       "required": [
@@ -938,11 +940,6 @@
           "type": "array",
           "ontology": "crminf:J3 applied"
         },
-        "date": {
-          "$ref": "#/definitions/TimeSpan",
-          "description": "When the conclusion was drawn. It is part of the reason and carries no belief of its own, and it tells a run of a program from the next, since a program may conclude otherwise once it, or what it used, has changed.",
-          "ontology": "crm:P4 has time-span"
-        },
         "note": {
           "description": "A free-text note providing additional context.",
           "type": "string",
@@ -955,14 +952,6 @@
           },
           "type": "array",
           "ontology": "crminf:J1 used as premise"
-        },
-        "software": {
-          "description": "The programs that drew the conclusion, each with its version, where a program drew it: a stemma `proposeStemma` found, which the editor ran and holds. The actor is the one who ran it, since a program holds no belief. Naming software makes the inference a digital machine event in the sense of CRMdig, which can be run again on what it used, and the note states what it was run with.",
-          "items": {
-            "$ref": "#/definitions/Software"
-          },
-          "type": "array",
-          "ontology": "crmdig:L23 used software or firmware"
         },
         "used": {
           "description": "References (by `@id`) to what the inference worked on besides beliefs, such as the versions it compared, the analysis output it cites, or the document holding a premise named by IRI, in the state it was read in, since a belief published elsewhere may move after the edition has used it.",
@@ -1396,7 +1385,7 @@
       "type": "string"
     },
     "Motivation": {
-      "description": "A motivation provides a reason or rationale for an editorial change. Motivations are defined at the version level and referenced by edits.",
+      "description": "A reason for a musical change, in the editor's words. The edition states its motivations once (`Edition.motivations`), and an edit of any version names the one it was made for. Speculating about why a change was made is kept to musical changes: a technical change needs no motivation, and a repair or a safeguard names one the vocabulary publishes (`correctedError`, `safeguard`).",
       "properties": {
         "note": {
           "description": "A free-text note providing additional context.",
@@ -1725,11 +1714,11 @@
         {
           "properties": {
             "@annotation": {
-              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
               "properties": {
                 "belief": {
                   "$ref": "#/definitions/Belief",
-                  "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+                  "description": "The belief held about the annotated statement.",
                   "ontology": "crminf:J4i is subject of"
                 },
                 "@id": {
@@ -1738,6 +1727,7 @@
                 }
               },
               "required": [
+                "belief",
                 "@id"
               ],
               "type": "object"
@@ -1762,11 +1752,11 @@
         {
           "properties": {
             "@annotation": {
-              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
               "properties": {
                 "belief": {
                   "$ref": "#/definitions/Belief",
-                  "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+                  "description": "The belief held about the annotated statement.",
                   "ontology": "crminf:J4i is subject of"
                 },
                 "@id": {
@@ -1775,6 +1765,7 @@
                 }
               },
               "required": [
+                "belief",
                 "@id"
               ],
               "type": "object"
@@ -1809,11 +1800,11 @@
         {
           "properties": {
             "@annotation": {
-              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
               "properties": {
                 "belief": {
                   "$ref": "#/definitions/Belief",
-                  "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+                  "description": "The belief held about the annotated statement.",
                   "ontology": "crminf:J4i is subject of"
                 },
                 "@id": {
@@ -1822,6 +1813,7 @@
                 }
               },
               "required": [
+                "belief",
                 "@id"
               ],
               "type": "object"
@@ -1876,11 +1868,11 @@
         {
           "properties": {
             "@annotation": {
-              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
               "properties": {
                 "belief": {
                   "$ref": "#/definitions/Belief",
-                  "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+                  "description": "The belief held about the annotated statement.",
                   "ontology": "crminf:J4i is subject of"
                 },
                 "@id": {
@@ -1889,6 +1881,7 @@
                 }
               },
               "required": [
+                "belief",
                 "@id"
               ],
               "type": "object"
@@ -1914,11 +1907,11 @@
         {
           "properties": {
             "@annotation": {
-              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
               "properties": {
                 "belief": {
                   "$ref": "#/definitions/Belief",
-                  "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+                  "description": "The belief held about the annotated statement.",
                   "ontology": "crminf:J4i is subject of"
                 },
                 "@id": {
@@ -1927,6 +1920,7 @@
                 }
               },
               "required": [
+                "belief",
                 "@id"
               ],
               "type": "object"
@@ -1956,11 +1950,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -1969,6 +1963,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -2005,11 +2000,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -2018,6 +2013,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -2058,11 +2054,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -2071,6 +2067,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -2112,11 +2109,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -2125,6 +2122,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -2157,11 +2155,11 @@
         {
           "properties": {
             "@annotation": {
-              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
               "properties": {
                 "belief": {
                   "$ref": "#/definitions/Belief",
-                  "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+                  "description": "The belief held about the annotated statement.",
                   "ontology": "crminf:J4i is subject of"
                 },
                 "@id": {
@@ -2170,6 +2168,7 @@
                 }
               },
               "required": [
+                "belief",
                 "@id"
               ],
               "type": "object"
@@ -2203,11 +2202,11 @@
         {
           "properties": {
             "@annotation": {
-              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
               "properties": {
                 "belief": {
                   "$ref": "#/definitions/Belief",
-                  "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+                  "description": "The belief held about the annotated statement.",
                   "ontology": "crminf:J4i is subject of"
                 },
                 "@id": {
@@ -2216,6 +2215,7 @@
                 }
               },
               "required": [
+                "belief",
                 "@id"
               ],
               "type": "object"
@@ -2254,11 +2254,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -2267,6 +2267,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -2292,11 +2293,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -2305,6 +2306,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -2333,11 +2335,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -2346,6 +2348,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -2371,11 +2374,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -2384,6 +2387,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -2409,11 +2413,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -2422,6 +2426,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -2450,11 +2455,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -2463,6 +2468,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -2481,11 +2487,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -2494,6 +2500,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -2529,11 +2536,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -2542,6 +2549,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -2565,11 +2573,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -2578,6 +2586,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -2604,11 +2613,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -2617,6 +2626,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -2644,11 +2654,11 @@
         {
           "properties": {
             "@annotation": {
-              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
               "properties": {
                 "belief": {
                   "$ref": "#/definitions/Belief",
-                  "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+                  "description": "The belief held about the annotated statement.",
                   "ontology": "crminf:J4i is subject of"
                 },
                 "@id": {
@@ -2657,6 +2667,7 @@
                 }
               },
               "required": [
+                "belief",
                 "@id"
               ],
               "type": "object"
@@ -2682,11 +2693,11 @@
         {
           "properties": {
             "@annotation": {
-              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+              "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
               "properties": {
                 "belief": {
                   "$ref": "#/definitions/Belief",
-                  "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+                  "description": "The belief held about the annotated statement.",
                   "ontology": "crminf:J4i is subject of"
                 },
                 "@id": {
@@ -2695,6 +2706,7 @@
                 }
               },
               "required": [
+                "belief",
                 "@id"
               ],
               "type": "object"
@@ -2724,11 +2736,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -2737,6 +2749,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -2777,11 +2790,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -2790,6 +2803,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -2822,11 +2836,11 @@
       "description": "An object assumption wraps a complex object with an optional annotation. Used for structured values (e.g. persons, conditions) whose properties may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -2835,6 +2849,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -3084,33 +3099,6 @@
       "type": "object",
       "ontology": "lrmoo:F32 Item Production Event"
     },
-    "PropositionSet": {
-      "description": "Statements held together under one belief, because one reasoning concluded them together: the derivations and edits of a stemma, which a search such as `proposeStemma` scores as a whole rather than one derivation at a time, or the edits a proposal grouped the changes of versions into. Each statement belongs to the set by naming it in its annotation, which carries the set's id and no belief of its own, and the belief is stated here, once, with the reasoning that concluded it. Read as RDF, the set is the reifier of each statement that names it, which RDF 1.2 lets reify several.\n\nA statement the editor takes out of the set by giving it a belief of its own is the editor's, and its reasons can name the set's belief as a premise, so that what the editor decided apart from the program stays apart from it.",
-      "properties": {
-        "belief": {
-          "$ref": "#/definitions/Belief",
-          "description": "The belief the statements of the set are held with, and the reasons for it.",
-          "ontology": "crminf:J4i is subject of"
-        },
-        "@id": {
-          "description": "A unique identifier for this object.",
-          "type": "string"
-        },
-        "@type": {
-          "const": "propositionSet",
-          "type": "string",
-          "description": "The type discriminator for this object.",
-          "ontology": "rdf:type"
-        }
-      },
-      "required": [
-        "belief",
-        "@id",
-        "@type"
-      ],
-      "type": "object",
-      "ontology": "crminf:I4 Proposition Set"
-    },
     "Quantity<\"deg\">": {
       "type": "number"
     },
@@ -3187,11 +3175,11 @@
       "description": "A reference assumption wraps a reference (by `@id`) with an optional annotation. Used when pointing to another entity whose association may be uncertain.",
       "properties": {
         "@annotation": {
-          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nAn annotation that carries no belief names, by its `id`, the proposition set the statement belongs to (`PropositionSet`): the statement is held with the belief the set states, together with the other statements that name it.",
+          "description": "An optional annotation expressing a belief about this assumption. Uses the JSON-LD-star `@annotation` mechanism to attach epistemic metadata (certainty and reasons) to any triple.\n\nA statement that carries none is stated plainly, and what a program concluded is stated so too: an edition asserts its stemma and its edits, as a printed edition does, and its creation names the principles and the release they were found by (`EditionCreation`). A belief is kept for what the editor doubts.",
           "properties": {
             "belief": {
               "$ref": "#/definitions/Belief",
-              "description": "The belief held about the annotated statement, where it is held for itself rather than as one of a proposition set.",
+              "description": "The belief held about the annotated statement.",
               "ontology": "crminf:J4i is subject of"
             },
             "@id": {
@@ -3200,6 +3188,7 @@
             }
           },
           "required": [
+            "belief",
             "@id"
           ],
           "type": "object"
@@ -3401,7 +3390,7 @@
       "type": "object"
     },
     "Software": {
-      "description": "Software that captured a copy or measured it: the transcriber that read a recording into notes, the emulator that wrote a MIDI file, the program that found the holes on a scan or aligned two copies.",
+      "description": "Software that captured a copy or measured it: the transcriber that read a recording into notes, the emulator that wrote a MIDI file, the program that found the holes on a scan or aligned two copies. Or the software an edition was made with, such as the release of this library that found its stemma.",
       "properties": {
         "name": {
           "type": "string",
@@ -3619,13 +3608,6 @@
           "type": "array",
           "ontology": "reo:involvedEdit"
         },
-        "motivations": {
-          "description": "A collection of motivations used in this version's edits.",
-          "items": {
-            "$ref": "#/definitions/Motivation"
-          },
-          "type": "array"
-        },
         "system": {
           "$ref": "#/definitions/Concept",
           "description": "The reproducing system this version is coded for. One roll was often issued for several of them, and a version is a reading in one system's words: its expression types are that system's vocabulary and its notes sit on that bar's positions. A system the type vocabulary knows carries the IRI of its concept as `id`, from which the export takes the system's own context.",
@@ -3638,7 +3620,6 @@
       },
       "required": [
         "@id",
-        "motivations",
         "system"
       ],
       "type": "object",

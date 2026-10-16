@@ -1,29 +1,29 @@
 /**
  * The edits of a version, proposed from what it inserts and deletes:
- * which of its changes belong together, and what kind of change each
- * group is. Why a change was made is left to the editor.
+ * which of its changes belong together, and what shape each group
+ * takes, from which the motivation a program can give it follows. Why
+ * a musical change was made is left to the editor.
  */
 import { v5 } from "uuid"
 import { Draft } from "immer"
 import { Edition } from "../model/Edition.js"
 import { HorizontalSpan } from "../model/Feature.js"
 import { AnyCommand, AnySymbol, Expression } from "../model/Symbol.js"
-import { Edit, EditType } from "../model/Edit.js"
-import { beliefIn, PropositionSet } from "../model/Assumption.js"
-import { deletedBy, editsOf, insertedBy, principalDerivationOf, Version } from "../model/Version.js"
+import { Edit, EditShape, motivationProposedFor, musicalChange } from "../model/Edit.js"
+import { deletedBy, editsOf, insertedBy, Version } from "../model/Version.js"
 import { distance, Millimeters, mm, subtract } from "../model/Quantity.js"
 import { TrackerBar, TrackMeaning } from "../systems/TrackerBar.js"
 import { trackerBarOf } from "../systems/index.js"
 import { operationOf, substitutionsBetween } from "../collation/substitution.js"
-import { isCollationsOwn, unchecked } from "../collation/Collation.js"
+import { isCollationsOwn } from "../collation/Collation.js"
 import { predecessorOf } from "../analysis/stemma.js"
 import { placeOf, snapshotOf } from "../analysis/text.js"
 import { symbolsIn, versionIn } from "../lookup/lookup.js"
 import { groupBy } from "../shared/utils.js"
-import { declaring, EditionOp, reading } from "../ops/draft.js"
+import { EditionOp, reading } from "../ops/draft.js"
 import { ineffectiveAmong } from "./presence.js"
 import { reads } from "./readings.js"
-import { editRules, inMillimetres, keptSets, memberOf, recorded, Run } from "./record.js"
+import { editRules, madeWith } from "./record.js"
 
 /**
  * How far a perforation may be put from where it stood for the two to be
@@ -98,8 +98,8 @@ export interface ProposedEdit {
     insert: string[]
     /** The ids of the symbols it deletes, in the order of their places. */
     delete: string[]
-    /** The kind of change, where its shape says. */
-    editType?: EditType
+    /** The shape of the change, where it takes one the program knows. */
+    shape?: EditShape
     grouping: EditGrouping
 }
 
@@ -376,8 +376,8 @@ const rowsAmong = (groups: readonly Group[], within: Millimeters): Group[] => {
 const spellsAccent = (bar: TrackerBar | undefined, types: readonly string[]): boolean =>
     (bar?.accents ?? []).some(accent => sameSequence(types, accent))
 
-/** What kind of change a group is, where its shape says. */
-const typeOf = (group: Group, bar: TrackerBar | undefined, accentsAt: readonly number[], options: Required<EditOptions>): EditType | undefined => {
+/** The shape a group of changes takes, where it is one the program knows. */
+const shapeOfGroup = (group: Group, bar: TrackerBar | undefined, accentsAt: readonly number[], options: Required<EditOptions>): EditShape | undefined => {
     const inserted = inOrder(ofSide(group.changes, 'insert'))
     const deleted = inOrder(ofSide(group.changes, 'delete'))
 
@@ -436,8 +436,8 @@ const settingsOf = (options: EditOptions): Required<EditOptions> => ({
  * punched across three lines or more at one place are one edit, as a
  * cancel row is.
  *
- * The type is read off the shape: a pair the bar spells an accent with is
- * an additional accent, as is a note set off from its chord by a few
+ * The shape is read off the group: a pair the bar spells an accent with
+ * is an additional accent, as is a note set off from its chord by a few
  * millimetres where the version puts an accent's On; a perforation put
  * elsewhere is a shift, or where it begins about where the other did,
  * shortened or prolonged; a note struck again is shortened, two tied
@@ -531,11 +531,11 @@ export const proposeEdits = (edition: Edition, versionId: string, options: EditO
     const proposed = [...substituted, ...recoded, ...lines, ...rows]
         .sort((a, b) => byPlace(inOrder(a.changes)[0], inOrder(b.changes)[0]))
         .map((group): ProposedEdit => {
-            const editType = typeOf(group, bar, accentsAt, settings)
+            const shape = shapeOfGroup(group, bar, accentsAt, settings)
             return {
                 insert: inOrder(ofSide(group.changes, 'insert')).map(change => change.symbol.id),
                 delete: inOrder(ofSide(group.changes, 'delete')).map(change => change.symbol.id),
-                ...(editType && { editType }),
+                ...(shape && { shape }),
                 grouping: group.grouping
             }
         })
@@ -549,12 +549,30 @@ const exchangeKey = (inserted: readonly string[], deleted: readonly string[]): s
     `${[...inserted].sort().join(',')}/${[...deleted].sort().join(',')}`
 
 /**
- * Whether the edit is left for a proposal to group again: one a
- * collation or an adoption wrote, that nobody has given a motivation.
+ * The motivation a program gives each change the version makes, by the
+ * id of the symbol it inserts or deletes: the one the shape of the
+ * proposed edit it belongs to calls for (`motivationProposedFor`). A
+ * version that derives from none makes no change, and its symbols are
+ * given none.
  * @category Filiation
  */
-export const isRegroupable = (edit: Readonly<Edit>): boolean =>
-    isCollationsOwn(edit) && (edit.motivation === undefined || edit.motivation === unchecked)
+export const proposedMotivations = (edition: Edition, versionId: string, options: EditOptions = {}): ReadonlyMap<string, string | undefined> => {
+    const motivations = new Map<string, string | undefined>()
+    if (!predecessorOf(edition, versionId)) return motivations
+    for (const edit of proposeEdits(edition, versionId, options)) {
+        const motivation = motivationProposedFor(edit.shape)
+        for (const id of [...edit.insert, ...edit.delete]) motivations.set(id, motivation)
+    }
+    return motivations
+}
+
+/**
+ * The motivation a program gives an edit making these changes: the
+ * generic musical one where any of them is a musical change, none where
+ * all are technical.
+ */
+export const motivationOfChanges = (motivations: ReadonlyMap<string, string | undefined>, symbolIds: readonly string[]): string | undefined =>
+    symbolIds.some(id => (motivations.has(id) ? motivations.get(id) : musicalChange) === musicalChange) ? musicalChange : undefined
 
 /**
  * The edits the version comes to state when the proposal is adopted:
@@ -562,90 +580,69 @@ export const isRegroupable = (edit: Readonly<Edit>): boolean =>
  */
 const adoptedEditsOf = (edition: Edition, version: Readonly<Version>, options: EditOptions): { held: Edit[], proposed: Edit[] } => {
     const edits = editsOf(version)
-    const held = edits.filter(edit => !isRegroupable(edit))
+    const held = edits.filter(edit => !isCollationsOwn(edit))
     const spoken = new Set(held.flatMap(edit => [...(edit.insert ?? []).map(symbol => symbol.id), ...(edit.delete ?? [])]))
     const symbolOf = new Map(insertedBy(version).map(symbol => [symbol.id, symbol]))
     const stated = new Map(edits.map(edit => [exchangeKey((edit.insert ?? []).map(symbol => symbol.id), edit.delete ?? []), edit]))
 
-    const made = (inserted: readonly string[], deleted: readonly string[], editType?: EditType): Edit => {
+    const made = (inserted: readonly string[], deleted: readonly string[], motivation: string | undefined): Edit => {
         const key = exchangeKey(inserted, deleted)
         const same = stated.get(key)
-        if (same) return same.editType || !editType ? same : { ...same, editType }
+        if (same) return same
         return {
             type: 'edit',
             id: v5(`edit|${version.id}|${key}`, EDITS),
-            ...(editType && { editType }),
-            motivation: unchecked,
+            ...(motivation && { motivation }),
             ...(inserted.length > 0 && { insert: inserted.map(id => symbolOf.get(id)!) }),
             ...(deleted.length > 0 && { delete: [...deleted] })
         }
     }
 
     const proposed = proposeEdits(edition, version.id, options).flatMap(edit => {
+        const motivation = motivationProposedFor(edit.shape)
         const free = (ids: readonly string[]) => ids.filter(id => !spoken.has(id))
         const [inserted, deleted] = [free(edit.insert), free(edit.delete)]
         if (inserted.length === edit.insert.length && deleted.length === edit.delete.length) {
-            return [made(inserted, deleted, edit.editType)]
+            return [made(inserted, deleted, motivation)]
         }
         // What an edit that stays leaves of a proposed one stands symbol by symbol.
-        return [...inserted.map(id => made([id], [])), ...deleted.map(id => made([], [id]))]
+        return [...inserted.map(id => made([id], [], motivation)), ...deleted.map(id => made([], [id], motivation))]
     })
     return { held, proposed }
 }
 
 /**
- * What the run of `proposeEdits` was computed with, in words, so that it
- * can be run again.
- */
-const noteOn = (settings: Required<EditOptions>): string =>
-    'The changes of each version against the version it derives from, grouped line by line and never across a command both texts keep. '
-    + `A perforation put elsewhere within ${inMillimetres(settings.shiftWithin)} is one move with the one it replaces, `
-    + `an Off within ${inMillimetres(settings.pairWithin)} of an On one function turned on and off again, `
-    + `a perforation beginning within ${inMillimetres(settings.resizeWithin)} of the one it replaces a shortened or prolonged one, `
-    + `and perforations within ${inMillimetres(settings.samePlaceWithin)} of each other at one place.`
-
-/**
- * Puts the proposed edits (`proposeEdits`) in place of those of the
- * versions that a collation or an adoption wrote and nobody has given a
- * motivation, every version but the root where none are named. An edit
- * someone motivated, typed beyond what a collation types, or held under a
- * belief stays as it is, and what a proposed edit shares with it stands
- * symbol by symbol beside it. An edit stated already over the very same
- * symbols as a proposed one is kept with its id and what was written on
- * it, the proposed type filled in where it states none; the others are
- * new, with ids that adopting again gives again, and marked unchecked,
- * so that what is left to the editor is to say why.
+ * Puts the proposed edits (`proposeEdits`) in place of the program's
+ * edits of the versions, every version but the root where none are
+ * named: those that say nothing of why they were made, or only that they
+ * are musical changes (`isCollationsOwn`). An edit with a motivation of
+ * the editor's or held under a belief stays as it is, and what a
+ * proposed edit shares with it stands symbol by symbol beside it. An
+ * edit stated already over the very same symbols as a proposed one is
+ * kept with its id and what was written on it; the others are new, with
+ * ids that adopting again gives again, and with the motivation their
+ * shape calls for (`motivationProposedFor`): the generic musical one for
+ * a musical change, whose reason is left to the editor, and none for a
+ * technical one.
  *
  * Applied on the same draft after `adoptStemma`, it proposes the edits of
- * the stemma adopted, as one undo step.
- *
- * The edits it proposes are recorded as one proposition set, held under
- * one belief, likely unless the run says otherwise, whose reason is the
- * inference the program drew: it names this library and its release,
- * the versions it read, the rule that keeps an edit at one place and, in
- * its note, the distances it grouped with, and it rests on the beliefs
- * the derivations of the versions are held with. An edit of the set
- * that nobody has motivated is the program's, typed and all, and a
- * later proposal groups it again. The run gives who ran the program and
- * when (`Run`).
+ * the stemma adopted, as one undo step. The edition's creation comes to
+ * name the rule that keeps an edit at one place among its principles,
+ * and this release among its software.
  * @category Operations
  */
-export const adoptEdits = (versionIds?: readonly string[], options: EditOptions = {}, run: Run = {}): EditionOp => reading(edition => {
+export const adoptEdits = (versionIds?: readonly string[], options: EditOptions = {}): EditionOp => reading(edition => {
     const targets = (versionIds ?? edition.versions.map(version => version.id))
         .map(id => versionIn(edition, id))
         .filter((version): version is Readonly<Version> => version !== undefined && predecessorOf(edition, version.id) !== undefined)
-    const regrouped = targets.map(version => ({ version, ...adoptedEditsOf(edition, version, options) }))
-    const set = editSetOf(edition, regrouped, options, run)
-    const adopted = new Map(regrouped.flatMap(({ version, held, proposed }) => {
-        const edits = [...held, ...proposed.map(edit => memberOf(set.id, edit))]
+    const adopted = new Map(targets.flatMap(version => {
+        const { held, proposed } = adoptedEditsOf(edition, version, options)
+        const edits = [...held, ...proposed]
         const stated = editsOf(version)
         if (edits.length === stated.length && edits.every((edit, index) => edit === stated[index])) return []
-        return [[version.id, { ...version, edits, motivations: declaring(version.motivations, edits) }]]
+        return [[version.id, { ...version, edits }]]
     }))
-    const sets = keptSets({
-        ...edition,
-        versions: edition.versions.map(version => adopted.get(version.id) ?? version)
-    }, [set])
+    const creation = madeWith(edition.creation, [editRules.onePlace])
     // Each version is put in place whole: one that an operation before put
     // on the same draft, as adopting a stemma does, is no draft to write to.
     return draft => {
@@ -653,36 +650,6 @@ export const adoptEdits = (versionIds?: readonly string[], options: EditOptions 
             const changed = adopted.get(version.id)
             if (changed) draft.versions[index] = changed as Draft<Version>
         })
-        if (sets) draft.propositionSets = sets as Draft<PropositionSet>[]
-        else delete draft.propositionSets
+        if (adopted.size > 0) draft.creation = creation as Draft<Edition['creation']>
     }
 })
-
-/**
- * The set the run of `proposeEdits` concluded: the edits it proposed for
- * the versions, held with the belief the run gives them. Its premises
- * are the beliefs the derivations of those versions are held with, since
- * what a version changes is read against the version it derives from: a
- * proposed stemma's, where the derivation belongs to one.
- */
-const editSetOf = (
-    edition: Edition,
-    regrouped: readonly { version: Readonly<Version>, proposed: readonly Edit[] }[],
-    options: EditOptions,
-    run: Run
-): PropositionSet => {
-    const settings = settingsOf(options)
-    const proposing = regrouped.filter(({ proposed }) => proposed.length > 0)
-    const premises = [...new Set(proposing.flatMap(({ version }) => {
-        const derivation = principalDerivationOf(version)
-        const belief = derivation && beliefIn(edition, derivation)
-        return belief ? [belief.id] : []
-    }))]
-    const used = [...new Set(proposing.flatMap(({ version }) => [predecessorOf(edition, version.id)!.id, version.id]))]
-    return recorded(
-        'edits',
-        [settings, premises, proposing.map(({ version, proposed }) => [version.id, proposed.map(edit => edit.id)])],
-        { note: noteOn(settings), premises, used, applies: [editRules.onePlace] },
-        run
-    )
-}

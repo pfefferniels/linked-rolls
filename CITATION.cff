@@ -13,8 +13,8 @@ authors:
     given-names: Niels
     orcid: https://orcid.org/0000-0002-6210-7255
 doi: 10.5281/zenodo.23270944
-version: 0.75.0
-date-released: 2026-10-12
+version: 0.76.0
+date-released: 2026-10-16
 license: MIT
 repository-code: https://github.com/pfefferniels/linked-rolls
 url: https://pfefferniels.github.io/linked-rolls/

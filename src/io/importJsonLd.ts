@@ -1,8 +1,10 @@
 import { Edition } from "../model/Edition.js";
 import { derivedKeys } from "./asJsonLd.js";
-import { migrate, plainCopyId } from "./migrate.js";
+import { migrate, plainCopyId, uncheckedMotivation } from "./migrate.js";
 import { isDateString } from "../shared/utils.js";
 import { putOnAxis } from "../collation/alignment.js";
+import { editsOf } from "../model/Version.js";
+import { motivationOfChanges, proposedMotivations } from "../filiation/edits.js";
 import schema from "../schema.json" with { type: 'json' };
 
 export const importDate = (str: string): Date => {
@@ -100,16 +102,17 @@ interface QuotedReference {
 }
 
 /**
- * A belief named by its id alone, as a quoted statement names the belief
- * of the proposition set it belongs to, which is stated with the set.
+ * A belief named by its id alone, as a quoted statement of a document
+ * written before 0.76 named the belief of the proposition set it
+ * belonged to, which was stated with the set (`migrate`).
  */
 const isNamedBelief = (belief: Json): boolean =>
     belief !== null && typeof belief === 'object' && Object.keys(belief).every(key => key === '@id')
 
 /**
  * The reference a quoted statement made, annotated again with the belief
- * the export set beside it, or where it belongs to a proposition set,
- * naming the set again.
+ * the export set beside it, or where it belonged to a proposition set,
+ * naming the set again for `migrate` to resolve.
  */
 const referenceOf = (statement: Json): QuotedReference => {
     const { '@id': { '@id': subject, ...made }, annotation, ...stated } = statement
@@ -177,5 +180,31 @@ export const importJsonLd = (json: Json): Edition => {
         : '';
     (edition.copies ?? []).forEach(putOnAxis);
 
-    return edition;
+    return withKindsReadOffShapes(edition);
+}
+
+/**
+ * Gives an edit that a document written before 0.76 left unchecked the
+ * motivation its shape calls for, read in the edition as it stands: the
+ * generic musical one, or none for a technical change (`migrate`). The
+ * shapes are read off a copy, since what reads an edition settles it
+ * for good, and the edition an import returns is the caller's to change.
+ */
+const withKindsReadOffShapes = (edition: Edition): Edition => {
+    if (!(edition.versions ?? []).some(version => editsOf(version).some(edit => edit.motivation === uncheckedMotivation))) return edition
+    const probe = structuredClone(edition)
+    const versions = edition.versions.map(version => {
+        if (!editsOf(version).some(edit => edit.motivation === uncheckedMotivation)) return version
+        const motivations = proposedMotivations(probe, version.id)
+        return {
+            ...version,
+            edits: editsOf(version).map(edit => {
+                if (edit.motivation !== uncheckedMotivation) return edit
+                const { motivation: _unchecked, ...rest } = edit
+                const motivation = motivationOfChanges(motivations, [...(edit.insert ?? []).map(symbol => symbol.id), ...(edit.delete ?? [])])
+                return motivation ? { ...rest, motivation } : rest
+            })
+        }
+    })
+    return { ...edition, versions }
 }

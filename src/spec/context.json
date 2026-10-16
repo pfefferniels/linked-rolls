@@ -33,11 +33,6 @@
     "edit": {
       "@id": "reo:Edit",
       "@context": {
-        "editType": {
-          "@id": "crm:P2_has_type",
-          "@type": "@vocab",
-          "@context": { "@vocab": "https://w3id.org/reo/type/" }
-        },
         "motivation": {
           "@id": "crm:P17_was_motivated_by",
           "@type": "@id"
@@ -70,14 +65,9 @@
         "applies": {
           "@id": "crminf:J3_applied",
           "@type": "@id"
-        },
-        "software": {
-          "@id": "crmdig:L23_used_software_or_firmware",
-          "@context": { "version": "owl:versionInfo" }
         }
       }
     },
-    "propositionSet": "crminf:I4_Proposition_Set",
     "beliefAdoption": {
       "@id": "crminf:I7_Belief_Adoption",
       "@context": {
@@ -124,6 +114,14 @@
     },
     "editors": "crm:P14_carried_out_by",
     "publisher": "crm:P14_carried_out_by",
+    "principles": {
+      "@id": "crm:P33_used_specific_technique",
+      "@type": "@id"
+    },
+    "software": {
+      "@id": "crm:P16_used_specific_object",
+      "@context": { "version": "owl:versionInfo" }
+    },
     "publicationDate": {
       "@id": "dcterms:date",
       "@type": "xsd:date"
@@ -165,7 +163,6 @@
     "created": "lrmoo:R17_created",
     "copies": "reo:witness",
     "versions": "lrmoo:R75_incorporates",
-    "propositionSets": "@included",
 
     "name": "rdfs:label",
     "sameAs": {

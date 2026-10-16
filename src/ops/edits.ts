@@ -1,7 +1,7 @@
 /** Merging and splitting the edits of a version. */
 import { v4 } from "uuid"
 import { AnySymbol, Expression } from "../model/Symbol.js"
-import { Edit, EditType } from "../model/Edit.js"
+import { Edit, EditShape, motivationProposedFor, musicalChange } from "../model/Edit.js"
 import { editsOf } from "../model/Version.js"
 import { keyOf, TrackerBar } from "../systems/TrackerBar.js"
 import { trackerBarOf } from "../systems/index.js"
@@ -28,7 +28,7 @@ const lengthOf = (span: HorizontalSpan): Millimeters => subtract(span.to, span.f
 const REPLACEMENT_TOLERANCE = mm(5)
 
 /** Shorten or prolong, where the inserted symbol starts about where the deleted one did. */
-const replacementType = (edition: Edition, inserted: AnySymbol, deleted: AnySymbol): EditType | undefined => {
+const replacementShape = (edition: Edition, inserted: AnySymbol, deleted: AnySymbol): EditShape | undefined => {
     const after = placeOf(edition, inserted)
     const before = placeOf(edition, deleted)
     if (!after || !before || distance(after.from, before.from) >= REPLACEMENT_TOLERANCE) return undefined
@@ -41,12 +41,16 @@ const sameKind = (a: AnySymbol, b: AnySymbol): boolean =>
     a.type !== 'text' && b.type !== 'text' && keyOf(a) === keyOf(b)
 
 /**
- * A guess at what an edit does, from the symbols it exchanges and from
- * the systems the version and the one it is based on are coded for, or
- * nothing where its shape does not say. Whether it corrects an error is
- * not guessed: that is a motivation, the editor's to give.
+ * A guess at the shape of an edit, from the symbols it exchanges and
+ * from the systems the version and the one it is based on are coded
+ * for, or nothing where it takes no shape the guess knows. It looks at
+ * the edit alone: a single expression deleted is taken for a redundancy
+ * removed, which `proposeEdits` checks against the text. Whether it
+ * corrects an error is not guessed: that is a motivation, the editor's
+ * to give.
+ * @category Lookups
  */
-const guessEditType = (edition: Edition, versionId: string, edit: Edit): EditType | undefined => {
+export const shapeOf = (edition: Edition, versionId: string, edit: Readonly<Edit>): EditShape | undefined => {
     const inserts = edit.insert ?? []
     const deletes = symbolsIn(edition, edit.delete ?? [])
     const inserted = expressionTypesOf(inserts)
@@ -76,7 +80,7 @@ const guessEditType = (edition: Edition, versionId: string, edit: Edit): EditTyp
     if (inserted.length > 1 && sameSequence(inserted, deleted)) return 'shift'
     if (inserted.length === 0 && deleted.length === 1) return 'remove-redundancy'
     if (inserts.length === 1 && deletes.length === 1) {
-        return replacementType(edition, inserts[0], deletes[0]) ?? (sameKind(inserts[0], deletes[0]) ? 'shift' : undefined)
+        return replacementShape(edition, inserts[0], deletes[0]) ?? (sameKind(inserts[0], deletes[0]) ? 'shift' : undefined)
     }
 
     return undefined
@@ -84,25 +88,27 @@ const guessEditType = (edition: Edition, versionId: string, edit: Edit): EditTyp
 
 /**
  * Replaces the edits with a single one carrying all their insertions
- * and deletions, classified by a guess at what the exchange does, where
- * its shape says. The edit is the editor's: it belongs to no proposition
- * set a program's run concluded, as one of those merged may have.
+ * and deletions. It keeps the first motivation of the editor's that any
+ * of them states, and where none does, it has the one its shape calls
+ * for (`motivationProposedFor`), so that a merge says it is a musical
+ * change, or nothing for a technical one. A grouping that says no more
+ * is the program's by rule (`isCollationsOwn`), until the editor says
+ * why it was made.
  * @category Operations
  */
 export const mergeEdits = (versionId: string, toMerge: readonly Edit[]): EditionOp => reading(edition => {
     if (toMerge.length === 0) return noChange
 
-    // The edit is the editor's grouping, whatever set of a program's the first one belonged to.
-    const { editType: _guessed, '@annotation': annotation, ...first } = toMerge[0]
+    const { motivation: _first, ...first } = toMerge[0]
     const merged: Edit = {
         ...first,
-        ...(annotation?.belief && { '@annotation': annotation }),
         id: v4(),
         insert: toMerge.flatMap(edit => edit.insert ?? []),
         delete: toMerge.flatMap(edit => edit.delete ?? [])
     }
-    const editType = guessEditType(edition, versionId, merged)
-    if (editType) merged.editType = editType
+    const motivation = toMerge.find(edit => edit.motivation !== undefined && edit.motivation !== musicalChange)?.motivation
+        ?? motivationProposedFor(shapeOf(edition, versionId, merged))
+    if (motivation) merged.motivation = motivation
     const mergedIds = new Set(toMerge.map(edit => edit.id))
 
     return onVersion(versionId, version => {

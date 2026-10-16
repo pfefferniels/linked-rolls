@@ -3,9 +3,8 @@ import { Draft, isDraft } from "immer"
 import { v4 } from "uuid"
 import { Edition } from "../model/Edition.js"
 import { AnySymbol } from "../model/Symbol.js"
-import { unchecked, uncheckedMotivation } from "../collation/Collation.js"
 import { Edit } from "../model/Edit.js"
-import { insertedBy, Motivation, Version } from "../model/Version.js"
+import { insertedBy, Version } from "../model/Version.js"
 import { featuresOf, RollCopy } from "../model/RollCopy.js"
 import { Belief, ReferenceAssumption, assignReference } from "../model/Assumption.js"
 import { FeatureOrPatch } from "../model/Feature.js"
@@ -73,20 +72,6 @@ export type Ids = ReadonlySet<string>
 export const insertion = (symbol: AnySymbol): Edit => ({ type: 'edit', id: v4(), insert: [symbol] })
 
 export const deletion = (symbolId: string): Edit => ({ type: 'edit', id: v4(), delete: [symbolId] })
-
-/** The edit as a collation leaves it: made by rule, and not yet read by anybody. */
-export const asUnchecked = (edit: Edit): Edit => ({ ...edit, motivation: unchecked })
-
-/**
- * The motivations with the unchecked one declared, where any edit
- * names it and the version does not state it yet. An edit naming a
- * motivation the version leaves undeclared points at nothing.
- */
-export const declaring = (motivations: Motivation[], edits: readonly Edit[]): Motivation[] =>
-    edits.some(edit => edit.motivation === unchecked)
-        && !motivations.some(motivation => motivation.id === unchecked)
-        ? [...motivations, uncheckedMotivation]
-        : motivations
 
 const isEmpty = (edit: Edit): boolean => !edit.insert?.length && !edit.delete?.length
 
