@@ -1,4 +1,4 @@
-import { Edit, musicalChange } from "../model/Edit.js"
+import { Edit, musicalChange, technicalChange } from "../model/Edit.js"
 import { HorizontalSpan } from "../model/Feature.js"
 import { AnySymbol } from "../model/Symbol.js"
 import { keyOf } from "../systems/TrackerBar.js"
@@ -214,13 +214,12 @@ export const collationsOf = (
  * Whether the edit is the program's: one that a collation or a proposal
  * wrote and nobody has explained, so that collating again or proposing
  * the edits again may write it anew. It carries no belief and names no
- * motivation of the editor's: none, as a technical change does, or the
- * generic one a program gives a musical change whose reason it cannot
- * know (`musicalChange`).
+ * motivation of the editor's: only the kind of change it is, the generic
+ * musical or technical one a program states (`musicalChange`,
+ * `technicalChange`), or none.
  *
  * Everything else is the editor's and stays: an edit that says why it
- * was made, a corrected error or a safeguard among them, or that is held
- * under a belief. A grouping of the editor's stays theirs once it says
+ * was made, or that is held under a belief. A grouping of the editor's stays theirs once it says
  * why; one that says nothing reads as the program's would.
  *
  * An exchange a collation draws again over the very same symbols is
@@ -230,4 +229,4 @@ export const collationsOf = (
  */
 export const isCollationsOwn = (edit: Readonly<Edit>): boolean =>
     edit['@annotation'] === undefined
-    && (edit.motivation === undefined || edit.motivation === musicalChange)
+    && (edit.motivation === undefined || edit.motivation === musicalChange || edit.motivation === technicalChange)

@@ -6,7 +6,7 @@ import { welteT100 } from "../systems/welteT100/bar.js";
 import { Track } from "../model/Quantity.js";
 import { isDateString } from "../shared/utils.js";
 import { mapped, withValues } from "../ops/immutable.js";
-import { correctedError, musicalChange, safeguard } from "../model/Edit.js";
+import { musicalChange, technicalChange } from "../model/Edit.js";
 
 /**
  * Brings the JSON of an edition written by an earlier release of the
@@ -109,7 +109,9 @@ const isTypedCorrectError = (edit: Json): boolean =>
  * it. An edit typed so states it as its motivation instead, where it
  * gives none of its own, and the version states what the motivation
  * means; one that gives a motivation of its own keeps that one. Either
- * way it states no kind, its shape being left to be read again.
+ * way it states no kind, its shape being left to be read again. Once
+ * motivations are the edition's, a corrected error is a musical change
+ * (`withMotivationsOfTheEdition`).
  */
 const withCorrectedErrorsMotivated = (node: Json): Json => {
     if (!Array.isArray(node.edits) || !node.edits.some(isTypedCorrectError)) return node
@@ -822,7 +824,7 @@ export const uncheckedMotivation = 'unchecked'
 const musicalEditTypes = new Set(['additional-accent', 'shift', 'shorten', 'prolong'])
 
 /** The kinds of edit, as they were stated once, whose shape is a technical change. */
-const technicalEditTypes = new Set(['recoding', 'remove-redundancy'])
+const technicalEditTypes = new Set(['recoding', 'remove-redundancy', 'add-redundancy'])
 
 const isRecord = (value: unknown): value is Record<string, Json> =>
     value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -836,17 +838,16 @@ const derives = (version: Json): boolean =>
  * change it is, from the kind it was given and the reason it gave.
  */
 const motivationOfEdit = (editType: unknown, motivation: Json, derived: boolean): string | undefined => {
-    const stated = motivation === 'corrected-error' ? correctedError : motivation
-    if (!derived) return stated === uncheckedMotivation ? undefined : stated
-    if (stated === undefined || stated === uncheckedMotivation) {
-        if (typeof editType === 'string' && musicalEditTypes.has(editType)) return musicalChange
-        if (typeof editType === 'string' && (technicalEditTypes.has(editType) || editType === 'add-redundancy')) return undefined
-        return uncheckedMotivation
-    }
-    if (stated === musicalChange || stated === correctedError || stated === safeguard) return stated
+    // A corrected error put back a perforation in its place, and so made a musical change.
+    const stated = motivation === 'corrected-error' ? musicalChange : motivation
+    if (!derived) return stated === uncheckedMotivation || stated === musicalChange ? undefined : stated
+    const technical = typeof editType === 'string' && technicalEditTypes.has(editType)
     // A reason given for a technical change explained what the change or the procedure says already.
-    if (typeof editType === 'string' && technicalEditTypes.has(editType)) return undefined
-    return editType === 'add-redundancy' ? safeguard : stated
+    if (technical) return technicalChange
+    if (stated === undefined || stated === uncheckedMotivation) {
+        return typeof editType === 'string' && musicalEditTypes.has(editType) ? musicalChange : uncheckedMotivation
+    }
+    return stated
 }
 
 /** Whether the document still states what motivations and kinds of edit were before 0.76. */
@@ -864,18 +865,18 @@ const statesMotivationsPerVersion = (versions: readonly Json[]): boolean =>
  * - A motivation two versions stated under one id with different notes
  *   is kept under an id of its own for the second.
  * - The unchecked motivation goes, and so does the declaration of a
- *   corrected error, which is named by the IRI of the vocabulary's.
+ *   corrected error: it put a perforation back in its place, and so is
+ *   a musical change whose reason is not given.
  * - An edit of a version that derives from another, that gave no reason
  *   or only that it was unchecked, is a musical change whose reason is
  *   not given where its kind was an added accent, a shift, a shortening
- *   or a prolongation, and a technical change, with no motivation, where
- *   it was a recoding or a redundancy. One that stated no kind is left
+ *   or a prolongation, and a technical change where it was a recoding or
+ *   a redundancy removed or added. One that stated no kind is left
  *   unchecked, for an import to read its kind off its shape.
- * - A reason given for a recoding or a redundancy removed goes, since a
+ * - A reason given for a recoding or a redundancy goes, since a
  *   technical change needs none, and a motivation nothing names any
- *   longer goes with it; one given for a redundancy added makes the
- *   edit a safeguard. Every other reason stays, and makes the change a
- *   musical one.
+ *   longer goes with it. Every other reason stays, and makes the change
+ *   a musical one.
  * - The edits of a version that derives from none state its text and
  *   keep no motivation but a reason someone gave.
  */

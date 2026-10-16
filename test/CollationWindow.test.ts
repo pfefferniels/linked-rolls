@@ -3,7 +3,7 @@ import { produce } from 'immer'
 import { Edition } from '../src/model/Edition'
 import { snapshotOf } from '../src/analysis/text'
 import { symbolIn } from '../src/lookup/lookup'
-import { correctedError, Edit, musicalChange, safeguard } from '../src/model/Edit'
+import { Edit, musicalChange, technicalChange } from '../src/model/Edit'
 import { admits, CollationTolerance, isCollatable, isCollationsOwn } from '../src/collation/Collation'
 import { connectVersions } from '../src/ops'
 import { idsOf } from '../src/model/Assumption'
@@ -65,18 +65,17 @@ describe('which edits a collation may rewrite', () => {
     })
 
     /**
-     * A program gives a musical change it cannot explain the generic
-     * motivation. That must not make it the editor's, or the next
+     * A program states the kind of every change it draws, with the
+     * generic motivation of a musical or a technical change. That must not make it the editor's, or the next
      * collation would freeze against its own previous output.
      */
-    it('claims one that says only that it is a musical change, which is not somebody having said why', () => {
+    it('claims one that says only that it is a musical or a technical change, which is not somebody having said why', () => {
         expect(isCollationsOwn({ ...bare('a'), motivation: musicalChange })).toBe(true)
+        expect(isCollationsOwn({ ...bare('a'), motivation: technicalChange })).toBe(true)
     })
 
     it('leaves alone an edit that says why it was made, or what it rests on', () => {
         expect(isCollationsOwn({ ...bare('b'), motivation: 'a pencil mark' })).toBe(false)
-        expect(isCollationsOwn({ ...bare('c'), motivation: correctedError })).toBe(false)
-        expect(isCollationsOwn({ ...bare('d'), motivation: safeguard })).toBe(false)
         expect(isCollationsOwn({
             ...bare('e'),
             '@annotation': { id: 'x', belief: { type: 'belief', id: 'y', certainty: 'likely', reasons: [] } }

@@ -9,7 +9,7 @@ import { Draft } from "immer"
 import { Edition } from "../model/Edition.js"
 import { HorizontalSpan } from "../model/Feature.js"
 import { AnyCommand, AnySymbol, Expression } from "../model/Symbol.js"
-import { Edit, EditShape, motivationProposedFor, musicalChange } from "../model/Edit.js"
+import { Edit, EditShape, motivationProposedFor, musicalChange, technicalChange } from "../model/Edit.js"
 import { deletedBy, editsOf, insertedBy, Version } from "../model/Version.js"
 import { distance, Millimeters, mm, subtract } from "../model/Quantity.js"
 import { TrackerBar, TrackMeaning } from "../systems/TrackerBar.js"
@@ -549,15 +549,15 @@ const exchangeKey = (inserted: readonly string[], deleted: readonly string[]): s
     `${[...inserted].sort().join(',')}/${[...deleted].sort().join(',')}`
 
 /**
- * The motivation a program gives each change the version makes, by the
- * id of the symbol it inserts or deletes: the one the shape of the
- * proposed edit it belongs to calls for (`motivationProposedFor`). A
- * version that derives from none makes no change, and its symbols are
- * given none.
+ * The motivation a program states for each change the version makes,
+ * by the id of the symbol it inserts or deletes: the one the shape of
+ * the proposed edit it belongs to calls for (`motivationProposedFor`),
+ * musical or technical. A version that derives from none makes no
+ * change, and its symbols are given none.
  * @category Filiation
  */
-export const proposedMotivations = (edition: Edition, versionId: string, options: EditOptions = {}): ReadonlyMap<string, string | undefined> => {
-    const motivations = new Map<string, string | undefined>()
+export const proposedMotivations = (edition: Edition, versionId: string, options: EditOptions = {}): ReadonlyMap<string, string> => {
+    const motivations = new Map<string, string>()
     if (!predecessorOf(edition, versionId)) return motivations
     for (const edit of proposeEdits(edition, versionId, options)) {
         const motivation = motivationProposedFor(edit.shape)
@@ -567,12 +567,13 @@ export const proposedMotivations = (edition: Edition, versionId: string, options
 }
 
 /**
- * The motivation a program gives an edit making these changes: the
- * generic musical one where any of them is a musical change, none where
- * all are technical.
+ * The motivation a program states for an edit making these changes:
+ * the generic musical one where any of them is a musical change, or one
+ * the proposal does not see, and the technical one where all are
+ * technical.
  */
-export const motivationOfChanges = (motivations: ReadonlyMap<string, string | undefined>, symbolIds: readonly string[]): string | undefined =>
-    symbolIds.some(id => (motivations.has(id) ? motivations.get(id) : musicalChange) === musicalChange) ? musicalChange : undefined
+export const motivationOfChanges = (motivations: ReadonlyMap<string, string>, symbolIds: readonly string[]): string =>
+    symbolIds.some(id => (motivations.get(id) ?? musicalChange) === musicalChange) ? musicalChange : technicalChange
 
 /**
  * The edits the version comes to state when the proposal is adopted:
@@ -585,14 +586,15 @@ const adoptedEditsOf = (edition: Edition, version: Readonly<Version>, options: E
     const symbolOf = new Map(insertedBy(version).map(symbol => [symbol.id, symbol]))
     const stated = new Map(edits.map(edit => [exchangeKey((edit.insert ?? []).map(symbol => symbol.id), edit.delete ?? []), edit]))
 
-    const made = (inserted: readonly string[], deleted: readonly string[], motivation: string | undefined): Edit => {
+    const made = (inserted: readonly string[], deleted: readonly string[], motivation: string): Edit => {
         const key = exchangeKey(inserted, deleted)
         const same = stated.get(key)
-        if (same) return same
+        // The program's edit over the same changes keeps its id, and states the kind of change anew.
+        if (same) return { ...same, motivation }
         return {
             type: 'edit',
             id: v5(`edit|${version.id}|${key}`, EDITS),
-            ...(motivation && { motivation }),
+            motivation,
             ...(inserted.length > 0 && { insert: inserted.map(id => symbolOf.get(id)!) }),
             ...(deleted.length > 0 && { delete: [...deleted] })
         }
@@ -615,15 +617,15 @@ const adoptedEditsOf = (edition: Edition, version: Readonly<Version>, options: E
  * Puts the proposed edits (`proposeEdits`) in place of the program's
  * edits of the versions, every version but the root where none are
  * named: those that say nothing of why they were made, or only that they
- * are musical changes (`isCollationsOwn`). An edit with a motivation of
- * the editor's or held under a belief stays as it is, and what a
- * proposed edit shares with it stands symbol by symbol beside it. An
- * edit stated already over the very same symbols as a proposed one is
- * kept with its id and what was written on it; the others are new, with
- * ids that adopting again gives again, and with the motivation their
- * shape calls for (`motivationProposedFor`): the generic musical one for
- * a musical change, whose reason is left to the editor, and none for a
- * technical one.
+ * are musical or technical changes (`isCollationsOwn`). An edit with a
+ * motivation of the editor's or held under a belief stays as it is, and
+ * what a proposed edit shares with it stands symbol by symbol beside it.
+ * An edit stated already over the very same symbols as a proposed one
+ * is kept with its id; the others are new, with ids that adopting again
+ * gives again. Each has the motivation its shape calls for
+ * (`motivationProposedFor`): the generic musical one for a musical
+ * change, whose reason is left to the editor, and the technical one for
+ * a technical change.
  *
  * Applied on the same draft after `adoptStemma`, it proposes the edits of
  * the stemma adopted, as one undo step. The edition's creation comes to

@@ -5,51 +5,43 @@ import { WithId, WithNote, WithType } from "../shared/utils.js";
 /**
  * A reason for a musical change, in the editor's words. The edition
  * states its motivations once (`Edition.motivations`), and an edit of
- * any version names the one it was made for. Speculating about why a
- * change was made is kept to musical changes: a technical change needs
- * no motivation, and a repair or a safeguard names one the vocabulary
- * publishes (`correctedError`, `safeguard`).
+ * any version names the one it was made for. Every change of a version
+ * that derives from another states a motivation: a program states
+ * whether it is musical or technical (`musicalChange`,
+ * `technicalChange`), and the editor puts a reason of their own in
+ * place of a musical one. Speculating about why a change was made is
+ * kept to the musical changes.
  * @see crm:E33 Linguistic Object
  * @category Format types
  */
 export type Motivation = WithType<'motivation'> & WithId & WithNote
 
 /**
- * The motivation of a musical change whose reason is not given yet. A
- * program gives it to a change whose shape a musical decision makes,
- * such as an added accent or a perforation put elsewhere, under the
- * rule that later versions are the more refined; the editor puts a
- * reason of their own in its place.
+ * The motivation of a musical change whose reason is not given yet: a
+ * change of the performance, such as an added accent or a perforation
+ * put elsewhere. A program states it for a change whose shape a musical
+ * decision makes, under the rule that later versions are the more
+ * refined; the editor puts a reason of their own in its place.
  * @category Versions and stemma
  */
 export const musicalChange = 'https://w3id.org/reo/type/motivation/musical'
 
 /**
- * The motivation of a repair: the edit puts right what the version it
- * derives from got wrong, a perforation put in the wrong place, struck
- * or left out. Whether a change corrects an error is not read off its
- * shape, and so it is the editor's to say.
+ * The motivation of a technical change: one that changes only how the
+ * performance is carried, a redundancy cleaned up or added, or a
+ * command recoded for another reproducing system. A program states it
+ * for a change of such a shape, and the procedure of the version's
+ * creation explains it, so that no reason of its own is given.
  * @category Versions and stemma
  */
-export const correctedError = 'https://w3id.org/reo/type/motivation/corrected-error'
-
-/**
- * The motivation of a safeguard: a command the text makes no use of,
- * added on purpose so that the instrument is left as it should be, as
- * a soft pedal released once more after the last note is. It is a
- * technical change, and the one that has to be said, since an added
- * redundancy is otherwise not expected of a later version.
- * @category Versions and stemma
- */
-export const safeguard = 'https://w3id.org/reo/type/motivation/safeguard'
+export const technicalChange = 'https://w3id.org/reo/type/motivation/technical'
 
 /**
  * The kinds of change an edit can be: one that changes the
- * performance, one that changes only how it is carried, and one that
- * puts back what the version derived from got wrong.
+ * performance, and one that changes only how it is carried.
  * @category Vocabulary
  */
-export const changeKinds = ['musical', 'technical', 'repair'] as const;
+export const changeKinds = ['musical', 'technical'] as const;
 
 /**
  * The kind of change an edit is (`kindOfChange`).
@@ -58,21 +50,18 @@ export const changeKinds = ['musical', 'technical', 'repair'] as const;
 export type ChangeKind = typeof changeKinds[number];
 
 /**
- * What kind of change the edit is, as its motivation says. One without
- * a motivation is technical: a redundancy cleaned up, or a command
- * recoded for another system, which the procedure of the version's
- * creation explains. A safeguard is technical too, a corrected error a
- * repair, and every other motivation, the generic `musicalChange`
- * among them, makes it musical.
+ * What kind of change the edit is, as its motivation says: technical
+ * if it is `technicalChange`, musical if it is `musicalChange` or a
+ * reason of the editor's.
  *
- * The edits of a version that derives from none state its text rather
- * than a change, and are of no kind.
+ * An edit without a motivation is of no kind: the edits of a version
+ * that derives from none state its text rather than a change.
  * @category Versions and stemma
  */
-export const kindOfChange = (edit: Readonly<Pick<Edit, 'motivation'>>): ChangeKind =>
-    edit.motivation === undefined || edit.motivation === safeguard
-        ? 'technical'
-        : edit.motivation === correctedError ? 'repair' : 'musical'
+export const kindOfChange = (edit: Readonly<Pick<Edit, 'motivation'>>): ChangeKind | undefined =>
+    edit.motivation === undefined
+        ? undefined
+        : edit.motivation === technicalChange ? 'technical' : 'musical'
 
 /**
  * The shapes a change can take, read off what it inserts and deletes
@@ -104,17 +93,16 @@ export const editShapes = [
 export type EditShape = typeof editShapes[number];
 
 /**
- * The motivation a program gives a change of this shape. It gives none
- * where the shape shows a technical change, a recoding or a redundancy
- * removed, and none where it shows one it cannot explain, a redundancy
- * added, which the editor states as a safeguard where it is one. Every
- * other change of a later version is taken for a refinement, and so
- * for a musical change whose reason is not given yet (`musicalChange`).
+ * The motivation a program states for a change of this shape. A
+ * recoding and a redundancy removed or added are technical changes
+ * (`technicalChange`). Every other change of a later version is taken
+ * for a refinement, and so for a musical change whose reason is not
+ * given yet (`musicalChange`).
  * @category Versions and stemma
  */
-export const motivationProposedFor = (shape: EditShape | undefined): string | undefined =>
+export const motivationProposedFor = (shape: EditShape | undefined): string =>
     shape === 'recoding' || shape === 'remove-redundancy' || shape === 'add-redundancy'
-        ? undefined
+        ? technicalChange
         : musicalChange
 
 /**
@@ -136,8 +124,9 @@ export interface Edit extends WithId, Assumption {
     type: 'edit';
     /**
      * Why the edit was made: one of the edition's motivations, by id,
-     * or a motivation the vocabulary publishes, by IRI. A technical
-     * change states none.
+     * or one the vocabulary publishes, by IRI (`musicalChange`,
+     * `technicalChange`). An edit of a version that derives from none
+     * states none.
      * @see crm:P17 was motivated by
      */
     motivation?: string;

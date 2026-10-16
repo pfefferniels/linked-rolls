@@ -97,11 +97,11 @@ that state nothing.
 
 In October 2026 `reot:correct-error` stopped being a kind of edit, and
 shortly after the kinds of edit went altogether. What kind of change an
-edit is follows from its motivation (`crm:P17 was motivated by`): an
-edit without one is technical, and the vocabulary publishes the three
-motivations an edition names by IRI, a musical change whose reason is
-not given, a corrected error and a safeguard, under
-`https://w3id.org/reo/type/motivation/`. The shape of a change is read
+edit is follows from its motivation (`crm:P17 was motivated by`): the
+vocabulary publishes the two a program states, a musical change whose
+reason is not given and a technical change, under
+`https://w3id.org/reo/type/motivation/`, and a reason of the editor's
+makes a change musical. The shape of a change is read
 off what it adds and removes. The edit types resolve, so they are kept
 and marked `owl:deprecated`, and `migrate` reads a document written
 with them. For a while in the same month the format stated the

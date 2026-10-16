@@ -12,7 +12,7 @@ import { collateSymbols } from '../src/ops'
 import { idsOf } from '../src/model/Assumption'
 import { mm } from '../src/model/Quantity'
 import { copy, edition as smallEdition, editionOf, hole, note, version } from './editionFixture'
-import { correctedError, musicalChange, safeguard } from '../src/model/Edit'
+import { musicalChange, technicalChange } from '../src/model/Edit'
 
 const edition01 = () =>
     JSON.parse(readFileSync(path.join(__dirname, 'fixtures', 'roll-0.1.json'), 'utf8'))
@@ -466,9 +466,9 @@ describe('a copy whose ops and measurements disagreed', () => {
 })
 
 describe('an edit typed as a replacement with an equivalent', () => {
-    it('is read as a recoding, a technical change that states no motivation', () => {
+    it('is read as a recoding, a technical change', () => {
         const migrated = migrate({ versions: [{ '@type': 'Version', basedOn: [{ '@id': 'A' }], edits: [{ '@type': 'edit', '@id': 'e', editType: 'replace-with-equivalent', motivation: 'unchecked' }] }] })
-        expect(migrated.versions[0].edits[0]).toEqual({ '@type': 'edit', '@id': 'e' })
+        expect(migrated.versions[0].edits[0]).toEqual({ '@type': 'edit', '@id': 'e', motivation: technicalChange })
     })
 })
 
@@ -476,16 +476,16 @@ describe('an edit typed as the correction of an error', () => {
     const written = (edits: object[], motivations: object[] = []) =>
         migrate({ versions: [{ '@type': 'Version', basedOn: [{ '@id': 'A' }], motivations, edits }] })
 
-    it('names the corrected error the vocabulary publishes, and no type, since its shape is read again', () => {
+    it('is a musical change, since it puts a perforation back in its place, and states no type', () => {
         const edition = written([{ '@type': 'edit', '@id': 'e', editType: 'correct-error' }])
-        expect(edition.versions[0].edits[0]).toEqual({ '@type': 'edit', '@id': 'e', motivation: correctedError })
+        expect(edition.versions[0].edits[0]).toEqual({ '@type': 'edit', '@id': 'e', motivation: musicalChange })
         expect(edition.versions[0]).not.toHaveProperty('motivations')
         expect(edition).not.toHaveProperty('motivations')
     })
 
     it('takes the place of the motivation that says nobody has read the edit', () => {
         const edition = written([{ '@type': 'edit', '@id': 'e', editType: 'correct-error', motivation: 'unchecked' }])
-        expect(edition.versions[0].edits[0].motivation).toBe(correctedError)
+        expect(edition.versions[0].edits[0].motivation).toBe(musicalChange)
     })
 
     it('keeps a motivation of its own, which the edition comes to state', () => {
@@ -497,7 +497,7 @@ describe('an edit typed as the correction of an error', () => {
 
     it('is read so under the name the type once had', () => {
         const edition = written([{ '@type': 'edit', '@id': 'e', classification: 'correct-error' }])
-        expect(edition.versions[0].edits[0]).toEqual({ '@type': 'edit', '@id': 'e', motivation: correctedError })
+        expect(edition.versions[0].edits[0]).toEqual({ '@type': 'edit', '@id': 'e', motivation: musicalChange })
     })
 
     it('is migrated once, however often it is migrated', () => {
@@ -523,7 +523,7 @@ describe('the motivations and kinds of edit a document stated before 0.76', () =
         expect(migrated.versions.every((version: any) => !('motivations' in version))).toBe(true)
     })
 
-    it('make a change of a musical kind a musical change, and one of a technical kind one with no motivation', () => {
+    it('make a change of a musical kind a musical change, and one of a technical kind a technical change', () => {
         const migrated = migrate({ versions: [derived([
             edit('accent', { editType: 'additional-accent', motivation: 'unchecked' }),
             edit('shift', { editType: 'shift' }),
@@ -534,14 +534,14 @@ describe('the motivations and kinds of edit a document stated before 0.76', () =
         expect(migrated.versions[0].edits).toEqual([
             edit('accent', { motivation: musicalChange }),
             edit('shift', { motivation: musicalChange }),
-            edit('recoded', {}),
-            edit('cleaned', {}),
-            edit('added', {})
+            edit('recoded', { motivation: technicalChange }),
+            edit('cleaned', { motivation: technicalChange }),
+            edit('added', { motivation: technicalChange })
         ])
         expect(migrated).not.toHaveProperty('motivations')
     })
 
-    it('drop a reason given for a technical change, with the motivation nothing names any longer, and make an added redundancy a safeguard', () => {
+    it('drop a reason given for a technical change, a redundancy added among them, with the motivation nothing names any longer', () => {
         const recoding = { '@type': 'motivation', '@id': 'held', note: 'Held, as the T-98 asks.' }
         const kept = { '@type': 'motivation', '@id': 'end', note: 'After the last note.' }
         const unused = { '@type': 'motivation', '@id': 'spare', note: 'Not named yet.' }
@@ -551,8 +551,8 @@ describe('the motivations and kinds of edit a document stated before 0.76', () =
             edit('own', { editType: 'shift', motivation: 'end' })
         ], [recoding, kept, unused])] })
         expect(migrated.versions[0].edits).toEqual([
-            edit('recoded', {}),
-            edit('added', { motivation: safeguard }),
+            edit('recoded', { motivation: technicalChange }),
+            edit('added', { motivation: technicalChange }),
             edit('own', { motivation: 'end' })
         ])
         expect(migrated.motivations).toEqual([kept, unused])

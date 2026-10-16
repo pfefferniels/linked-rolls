@@ -24,7 +24,7 @@ import { adoptEdits, proposeEdits } from '../src/filiation/edits'
 import { editRules, stemmaRules } from '../src/filiation/record'
 import { importJsonLd } from '../src/io/importJsonLd'
 import { mm } from '../src/model/Quantity'
-import { kindOfChange, motivationProposedFor, musicalChange } from '../src/model/Edit'
+import { kindOfChange, motivationProposedFor, musicalChange, technicalChange } from '../src/model/Edit'
 import { linkedRolls } from '../src/software'
 
 /** A reading of the text: what it says and where it begins. */
@@ -296,13 +296,20 @@ describe('the edits of an adopted stemma', () => {
         expect(e.filter(edit => edit.insert === undefined && edit.delete?.length === 1 && edit.motivation === musicalChange)).toHaveLength(3)
     })
 
+    it('state the text of the root, and no motivation', () => {
+        const adopted = withEdits(editionOfTradition())
+        const root = adopted.versions.find(version => !version.basedOn?.length)!
+        expect(editsOf(root).length).toBeGreaterThan(0)
+        expect(editsOf(root).every(edit => edit.motivation === undefined)).toBe(true)
+    })
+
     it('have the shape an accent is proposed with', () => {
         const adopted = withEdits(editionOfTradition())
         const b = versionOf(adopted, 'b')
         const shapes = proposeEdits(adopted, b.id).map(edit => edit.shape)
         expect(shapes).toEqual(Array(10).fill('additional-accent'))
         expect(motivationProposedFor('additional-accent')).toBe(musicalChange)
-        expect(motivationProposedFor('recoding')).toBeUndefined()
+        expect(motivationProposedFor('recoding')).toBe(technicalChange)
     })
 
     it('name the rule that keeps an edit at one place among the principles', () => {
@@ -386,9 +393,8 @@ describe.skipIf(!existsSync(welte225))('the stemma of WM 225, proposed from its 
             const proposed = new Map(proposeEdits(edition, version.id).map(edit => [exchangeOf(edit.insert, edit.delete), edit]))
             return editsOf(version).flatMap(edit => {
                 const same = proposed.get(exchangeOf((edit.insert ?? []).map(symbol => symbol.id), edit.delete ?? []))
-                if (!same || kindOfChange(edit) === 'repair') return []
-                const read = motivationProposedFor(same.shape) === musicalChange ? 'musical' : 'technical'
-                return read === kindOfChange(edit) ? [] : [{ motivation: edit.motivation, shape: same.shape }]
+                if (!same) return []
+                return kindOfChange({ motivation: motivationProposedFor(same.shape) }) === kindOfChange(edit) ? [] : [{ motivation: edit.motivation, shape: same.shape }]
             })
         })
         expect(disagreements).toHaveLength(2)

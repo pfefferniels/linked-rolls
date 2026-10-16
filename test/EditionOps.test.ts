@@ -4,7 +4,7 @@ import { Edition } from '../src/model/Edition'
 import { snapshotOf } from '../src/analysis/text'
 import { symbolIn } from '../src/lookup/lookup'
 import { getAt, Path } from '../src/lookup/paths'
-import { Edit, musicalChange } from '../src/model/Edit'
+import { Edit, musicalChange, technicalChange } from '../src/model/Edit'
 import { shapeOf } from '../src/ops/edits'
 import { AnySymbol, isCommand, placementsOf } from '../src/model/Symbol'
 import { featuresOf } from '../src/model/RollCopy'
@@ -336,10 +336,10 @@ describe('merging edits', () => {
         expect(shapeOfMerged([deleting('e1', 'forzando-on')])).toBe('remove-redundancy')
 
         expect(mergedOn([inserting('e1', noteShort), deleting('e2', 'note')]).merged.motivation).toBe(musicalChange)
-        expect(mergedOn([deleting('e1', 'forzando-on')]).merged.motivation).toBeUndefined()
+        expect(mergedOn([deleting('e1', 'forzando-on')]).merged.motivation).toBe(technicalChange)
     })
 
-    /** Whether a change corrects an error is a reason for it, not its shape, and so no guess of the merge's. */
+    /** A change of no shape the program knows is taken for a refinement, as later versions are the more refined. */
     it('takes a change of no shape it knows for a musical one', () => {
         const unshaped = mergedOn([inserting('e1', note('other-far', 64, 'hole-far')), deleting('e2', 'note')])
         expect(unshaped.shape).toBeUndefined()
@@ -373,14 +373,14 @@ describe('merging edits', () => {
 
         const { merged, shape } = mergedOn(edits, true)
         expect(shape).toBe('recoding')
-        expect(merged.motivation).toBeUndefined()
+        expect(merged.motivation).toBe(technicalChange)
     })
 
     /** A red command the green bar cannot read, struck in the transfer, is part of the recoding too. */
     it('calls a command struck across two systems a recoding', () => {
         const { merged, shape } = mergedOn([deleting('e1', 'forzando-on')], true)
         expect(shape).toBe('recoding')
-        expect(merged.motivation).toBeUndefined()
+        expect(merged.motivation).toBe(technicalChange)
     })
 
     it('keeps the rules of one system where the version does not change it', () => {
@@ -412,6 +412,12 @@ describe('splitting an edit', () => {
             [[], ['forzando-on']]
         ])
         expect(parts.map(part => part.id)).not.toContain('edit-c')
+    })
+
+    it('keeps the motivation of the edit on each part, since splitting it does not change why it was made', () => {
+        const toSplit: Edit = { type: 'edit', id: 'edit-c', motivation: 'melody', insert: [noteShort], delete: ['note'] }
+        const [, ...parts] = editsOf(produce(withC([toSplit]), splitEdit('C', toSplit)), 'C')
+        expect(parts.map(part => part.motivation)).toEqual(['melody', 'melody'])
     })
 })
 
@@ -565,7 +571,7 @@ describe('attaching a version coded for another system', () => {
             .find(edit => (edit.insert ?? []).some(symbol => symbol.id === 'cresc-green'))!
 
         expect(replacement.delete).toEqual(['cresc-on', 'cresc-off'])
-        expect(replacement.motivation).toBeUndefined()
+        expect(replacement.motivation).toBe(technicalChange)
         expect(shapeOf(attached(), 'B', replacement)).toBe('recoding')
     })
 

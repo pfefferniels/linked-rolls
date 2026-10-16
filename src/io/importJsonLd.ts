@@ -186,7 +186,7 @@ export const importJsonLd = (json: Json): Edition => {
 /**
  * Gives an edit that a document written before 0.76 left unchecked the
  * motivation its shape calls for, read in the edition as it stands: the
- * generic musical one, or none for a technical change (`migrate`). The
+ * generic musical one or the technical one (`migrate`). The
  * shapes are read off a copy, since what reads an edition settles it
  * for good, and the edition an import returns is the caller's to change.
  */
@@ -198,12 +198,9 @@ const withKindsReadOffShapes = (edition: Edition): Edition => {
         const motivations = proposedMotivations(probe, version.id)
         return {
             ...version,
-            edits: editsOf(version).map(edit => {
-                if (edit.motivation !== uncheckedMotivation) return edit
-                const { motivation: _unchecked, ...rest } = edit
-                const motivation = motivationOfChanges(motivations, [...(edit.insert ?? []).map(symbol => symbol.id), ...(edit.delete ?? [])])
-                return motivation ? { ...rest, motivation } : rest
-            })
+            edits: editsOf(version).map(edit => edit.motivation === uncheckedMotivation
+                ? { ...edit, motivation: motivationOfChanges(motivations, [...(edit.insert ?? []).map(symbol => symbol.id), ...(edit.delete ?? [])]) }
+                : edit)
         }
     })
     return { ...edition, versions }

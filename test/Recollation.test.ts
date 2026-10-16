@@ -3,7 +3,7 @@ import { produce } from 'immer'
 import { Edition } from '../src/model/Edition'
 import { snapshotOf } from '../src/analysis/text'
 import { symbolIn } from '../src/lookup/lookup'
-import { Edit } from '../src/model/Edit'
+import { Edit, musicalChange, technicalChange } from '../src/model/Edit'
 import { AnySymbol, Note } from '../src/model/Symbol'
 import { CollationTolerance } from '../src/collation/Collation'
 import { connectVersions, separateReadings } from '../src/ops'
@@ -104,6 +104,10 @@ describe("taking a copy's reading back out of a collated symbol", () => {
         expect(exchanges.length).toBe(3)
         expect(exchanges.map(([, deleted]) => deleted))
             .toEqual([['ground-note-0'], ['ground-note-1'], ['ground-note-2']])
+    })
+
+    it('says what kind of change each exchange is, as the shape of a note put elsewhere calls for', () => {
+        expect(editsIn(separated(), 'B').every(edit => edit.motivation === musicalChange)).toBe(true)
     })
 
     it('passes over a symbol the copy alone carries, so a reading separated by hand keeps its identifier', () => {
@@ -339,7 +343,7 @@ describe('an equivalence an editor has written on', () => {
         const attached = produce(before, connectVersions('B', 'A'))
         const [struck] = editsIn(attached, 'B').filter(e => e.delete?.includes('motor-on'))
 
-        expect(struck.motivation).toBeUndefined()
+        expect(struck.motivation).toBe(technicalChange)
         expect(shapeOf(attached, 'B', struck)).toBe('recoding')
     })
 

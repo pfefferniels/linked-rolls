@@ -3,7 +3,7 @@ import jsonld from 'jsonld'
 import context from '../src/spec/context.json'
 import welteT100Context from '../src/spec/welte-t100.context.json'
 import { Edition } from '../src/model/Edition'
-import { correctedError, Edit, kindOfChange, musicalChange, safeguard } from '../src/model/Edit'
+import { Edit, kindOfChange, musicalChange, technicalChange } from '../src/model/Edit'
 import { asJsonLd } from '../src/io/asJsonLd'
 import { importJsonLd } from '../src/io/importJsonLd'
 import { validate } from '../src/validate'
@@ -45,13 +45,12 @@ const motivated = (): Edition => {
 describe('the kind of change an edit is', () => {
     const edit = (motivation?: string): Edit => ({ type: 'edit', id: 'e', ...(motivation && { motivation }) })
 
-    it('is technical where it states no motivation, or a safeguard', () => {
-        expect(kindOfChange(edit())).toBe('technical')
-        expect(kindOfChange(edit(safeguard))).toBe('technical')
+    it('is technical where it states the technical change the vocabulary publishes', () => {
+        expect(kindOfChange(edit(technicalChange))).toBe('technical')
     })
 
-    it('is a repair where it puts right an error', () => {
-        expect(kindOfChange(edit(correctedError))).toBe('repair')
+    it('is of no kind where it states no motivation, as the text of a version that derives from none', () => {
+        expect(kindOfChange(edit())).toBeUndefined()
     })
 
     it('is musical for the generic motivation and for every reason of the edition\'s own', () => {

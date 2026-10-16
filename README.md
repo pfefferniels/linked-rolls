@@ -168,7 +168,7 @@ for a latched pair is one recoding; a command the text makes no use of
 is a redundancy added or removed; cancels punched across lines at one
 place are one row. `adoptEdits` puts the proposal in place of the
 program's edits, those that say nothing of why they were made or only
-that they are musical changes, and keeps the rest. Its creation comes to
+that they are musical or technical changes, and keeps the rest. Its creation comes to
 name the rule that keeps an edit at one place among its principles.
 
 ```ts
@@ -183,22 +183,19 @@ const adopted = produce(edition, draft => {
 })
 ```
 
-What kind of change an edit is follows from its motivation
-(`kindOfChange`). An edit without one is a technical change: a
-redundancy cleaned up, or a command recoded for another system, which
-the procedure of the version's creation explains. A program gives a
-change whose shape is a musical decision, an added accent, a shift, a
-shortening or a prolongation, the generic motivation of a musical
-change (`musicalChange`), under the rule that later versions are the
-more refined; why it was made is left to the editor, whose motivations
-the edition states once (`Edition.motivations`) and any version's edits
-name. Whether a change corrects an error is not read off its shape
-either: a repair names the corrected error the vocabulary publishes
-(`correctedError`), and a redundancy added on purpose, such as a pedal
-released once more after the last note, names the safeguard
-(`safeguard`). A redundancy added for no reason the editor gives
-contradicts the rule that redundancies are not added, and is left for
-the editor to look at.
+Every change of a version that derives from another states a
+motivation, and the motivation says what kind of change it is
+(`kindOfChange`). A program states it from the shape of the change: a
+redundancy cleaned up or added, or a command recoded for another
+system, is a technical change (`technicalChange`), which the procedure
+of the version's creation explains; an added accent, a shift, a
+shortening or a prolongation is a musical change (`musicalChange`),
+under the rule that later versions are the more refined. The editor
+may say otherwise, and speculates on the musical changes only: a reason
+of their own, which the edition states once (`Edition.motivations`) and
+any version's edits name, takes the place of the generic musical
+motivation. The edits of a version that derives from none state its
+text, and no motivation.
 
 On WM 225 the proposal reproduces 601 of the 690 edits of the versions
 that derive from another, from what each version changes, and from the

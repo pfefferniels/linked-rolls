@@ -5,13 +5,15 @@ import { getAt, pathIn } from "../lookup/paths.js"
 import { Edition } from "../model/Edition.js"
 import { AnySymbol } from "../model/Symbol.js"
 import { Collation, CollationTolerance, collationsOf, defaultCollationTolerance, isCollationsOwn } from "../collation/Collation.js"
-import { Edit } from "../model/Edit.js"
+import { Edit, motivationProposedFor, technicalChange } from "../model/Edit.js"
 import { collationToleranceOf, derivesFrom, editsOf, insertedBy, principalDerivationOf, Version } from "../model/Version.js"
 import { Substitution, substitutionsBetween } from "../collation/substitution.js"
 import { trackerBarOf } from "../systems/index.js"
 import { ObjectAssumption, ReferenceAssumption, assignReference, idOf } from "../model/Assumption.js"
 import { EditionOp, noChange, onVersion, insertion, deletion, dropInsertions, reading } from "./draft.js"
 import { hypothesesBeside } from "./versions.js"
+import { shapeOf } from "./edits.js"
+import { predecessorOf } from "../analysis/stemma.js"
 import { placeOf, snapshotOf } from "../analysis/text.js"
 import { copyOfFeature, versionIn } from "../lookup/lookup.js"
 import { motivationOfChanges, proposedMotivations } from "../filiation/edits.js"
@@ -70,8 +72,8 @@ const byExchange = (edits: readonly Readonly<Edit>[]): Map<string, Readonly<Edit
  * drawn again over the very same symbols is kept as it stands, with its
  * identifier and whatever was written on it. An insertion or deletion
  * drawn anew has the motivation its shape calls for
- * (`motivationProposedFor`): the generic musical one, or none where it
- * is technical, as an equivalence always is.
+ * (`motivationProposedFor`): the generic musical one, or the technical
+ * one, which an equivalence drawn anew always has.
  *
  * The child's own text is what it shows less what the parent hands
  * down, so that connecting two versions already connected collates the
@@ -134,6 +136,7 @@ export const connectVersions = (
         return alreadyStated.get(exchangeKey(inserted, deleted)) ?? {
             type: 'edit',
             id: v4(),
+            motivation: technicalChange,
             insert: [...by],
             delete: deleted
         }
@@ -160,8 +163,7 @@ export const connectVersions = (
     const anew = new Set(bare.map(edit => edit.id))
     const edits = drawn.map(edit => {
         if (!anew.has(edit.id)) return edit
-        const motivation = motivationOfChanges(motivations, [...(edit.insert ?? []).map(symbol => symbol.id), ...(edit.delete ?? [])])
-        return motivation ? { ...edit, motivation } : edit
+        return { ...edit, motivation: motivationOfChanges(motivations, [...(edit.insert ?? []).map(symbol => symbol.id), ...(edit.delete ?? [])]) }
     })
 
     return onVersion(childId, (version, draft) => {
@@ -245,7 +247,8 @@ const sharedWith = (edition: Edition, symbol: Readonly<AnySymbol>, copies: Reado
  * Takes the named copies' reading of a symbol back out of the symbol it
  * was collated into: their carriers pass to a new symbol of the
  * version's own, the remaining copies keep the symbol they had, and the
- * version states the exchange.
+ * version states the exchange, with the motivation its shape calls for
+ * (`motivationProposedFor`) where the version derives from another.
  *
  * This is the inverse of the hand-over a collation makes, and it is
  * what lets a derivation be collated a second time. A collated symbol
@@ -282,14 +285,18 @@ export const separateReadings = (
 
     const inserted = new Set(insertedBy(version).map(symbol => symbol.id))
     const stated = editsOf(version)
-    const separations = shared.map(({ symbol, mine }): Edit => ({
-        type: 'edit',
-        id: v4(),
-        insert: [readingOf(symbol, [...mine])],
-        // A symbol the version inserts itself stays where it is, minus
-        // the carriers that leave it. Only one it inherits is exchanged.
-        ...(inserted.has(symbol.id) ? {} : { delete: [symbol.id] })
-    }))
+    const derived = predecessorOf(edition, versionId) !== undefined
+    const separations = shared.map(({ symbol, mine }): Edit => {
+        const separation: Edit = {
+            type: 'edit',
+            id: v4(),
+            insert: [readingOf(symbol, [...mine])],
+            // A symbol the version inserts itself stays where it is, minus
+            // the carriers that leave it. Only one it inherits is exchanged.
+            ...(inserted.has(symbol.id) ? {} : { delete: [symbol.id] })
+        }
+        return derived ? { ...separation, motivation: motivationProposedFor(shapeOf(edition, versionId, separation)) } : separation
+    })
 
     return onVersion(versionId, (version, draft) => {
         shared.forEach(({ symbol, theirs }) => {

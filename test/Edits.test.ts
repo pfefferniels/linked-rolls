@@ -8,7 +8,7 @@ import { assignReference } from '../src/model/Assumption'
 import { HoleChain } from '../src/model/Feature'
 import { TrackMeaning } from '../src/systems/TrackerBar'
 import { welteT100 } from '../src/systems/welteT100/bar'
-import { motivationProposedFor } from '../src/model/Edit'
+import { motivationProposedFor, technicalChange } from '../src/model/Edit'
 import { editRules } from '../src/filiation/record'
 import { adoptEdits, proposeEdits, ProposedEdit } from '../src/filiation/edits'
 
@@ -132,7 +132,7 @@ describe('adopting the proposed edits', () => {
         const shapes = new Map(proposed.map(edit => [key(edit.insert, edit.delete), edit.shape]))
         expect(edits.every(edit =>
             edit.motivation === motivationProposedFor(shapes.get(key((edit.insert ?? []).map(symbol => symbol.id), edit.delete ?? []))))).toBe(true)
-        expect(edits.filter(edit => edit.motivation === undefined).length).toBeGreaterThan(0)
+        expect(edits.filter(edit => edit.motivation === technicalChange).length).toBeGreaterThan(0)
         expect(adopted.versions[0]).toEqual(edition.versions[0])
         expect(adopted.creation.principles).toEqual([editRules.onePlace])
     })

@@ -536,7 +536,7 @@
           "ontology": "reo:added"
         },
         "motivation": {
-          "description": "Why the edit was made: one of the edition's motivations, by id, or a motivation the vocabulary publishes, by IRI. A technical change states none.",
+          "description": "Why the edit was made: one of the edition's motivations, by id, or one the vocabulary publishes, by IRI (`musicalChange`, `technicalChange`). An edit of a version that derives from none states none.",
           "type": "string",
           "ontology": "crm:P17 was motivated by"
         },
@@ -583,7 +583,7 @@
           "ontology": "dcterms:license"
         },
         "motivations": {
-          "description": "The editor's motivations, each a reason for musical changes in words, stated once and named by the edits of any version (`Edit.motivation`). The motivations the vocabulary publishes are named by IRI and not stated here (`musicalChange`, `correctedError`, `safeguard`).",
+          "description": "The editor's motivations, each a reason for musical changes in words, stated once and named by the edits of any version (`Edit.motivation`). The motivations the vocabulary publishes are named by IRI and not stated here (`musicalChange`, `technicalChange`).",
           "items": {
             "$ref": "#/definitions/Motivation"
           },
@@ -1385,7 +1385,7 @@
       "type": "string"
     },
     "Motivation": {
-      "description": "A reason for a musical change, in the editor's words. The edition states its motivations once (`Edition.motivations`), and an edit of any version names the one it was made for. Speculating about why a change was made is kept to musical changes: a technical change needs no motivation, and a repair or a safeguard names one the vocabulary publishes (`correctedError`, `safeguard`).",
+      "description": "A reason for a musical change, in the editor's words. The edition states its motivations once (`Edition.motivations`), and an edit of any version names the one it was made for. Every change of a version that derives from another states a motivation: a program states whether it is musical or technical (`musicalChange`, `technicalChange`), and the editor puts a reason of their own in place of a musical one. Speculating about why a change was made is kept to the musical changes.",
       "properties": {
         "note": {
           "description": "A free-text note providing additional context.",

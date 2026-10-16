@@ -1,7 +1,7 @@
 /** Merging and splitting the edits of a version. */
 import { v4 } from "uuid"
 import { AnySymbol, Expression } from "../model/Symbol.js"
-import { Edit, EditShape, motivationProposedFor, musicalChange } from "../model/Edit.js"
+import { Edit, EditShape, motivationProposedFor, musicalChange, technicalChange } from "../model/Edit.js"
 import { editsOf } from "../model/Version.js"
 import { keyOf, TrackerBar } from "../systems/TrackerBar.js"
 import { trackerBarOf } from "../systems/index.js"
@@ -45,9 +45,7 @@ const sameKind = (a: AnySymbol, b: AnySymbol): boolean =>
  * from the systems the version and the one it is based on are coded
  * for, or nothing where it takes no shape the guess knows. It looks at
  * the edit alone: a single expression deleted is taken for a redundancy
- * removed, which `proposeEdits` checks against the text. Whether it
- * corrects an error is not guessed: that is a motivation, the editor's
- * to give.
+ * removed, which `proposeEdits` checks against the text.
  * @category Lookups
  */
 export const shapeOf = (edition: Edition, versionId: string, edit: Readonly<Edit>): EditShape | undefined => {
@@ -66,8 +64,7 @@ export const shapeOf = (edition: Edition, versionId: string, edit: Readonly<Edit
      * SforzandoForte says the same thing in the other system's words, and
      * a red command the green bar cannot read struck, or a green hold put
      * in where the red had no word for it, belongs to the same act. That
-     * is a recoding. Calling it a corrected error would say the editor
-     * made a mistake. Only an insertion spelling the bar's own accent
+     * is a recoding. Only an insertion spelling the bar's own accent
      * reads more narrowly, as the accent it spells.
      */
     const transferred = bar && parentBar && bar.id !== parentBar.id
@@ -91,9 +88,9 @@ export const shapeOf = (edition: Edition, versionId: string, edit: Readonly<Edit
  * and deletions. It keeps the first motivation of the editor's that any
  * of them states, and where none does, it has the one its shape calls
  * for (`motivationProposedFor`), so that a merge says it is a musical
- * change, or nothing for a technical one. A grouping that says no more
- * is the program's by rule (`isCollationsOwn`), until the editor says
- * why it was made.
+ * or a technical change, unless the version derives from none. A
+ * grouping that says no more is the program's by rule
+ * (`isCollationsOwn`), until the editor says why it was made.
  * @category Operations
  */
 export const mergeEdits = (versionId: string, toMerge: readonly Edit[]): EditionOp => reading(edition => {
@@ -106,9 +103,9 @@ export const mergeEdits = (versionId: string, toMerge: readonly Edit[]): Edition
         insert: toMerge.flatMap(edit => edit.insert ?? []),
         delete: toMerge.flatMap(edit => edit.delete ?? [])
     }
-    const motivation = toMerge.find(edit => edit.motivation !== undefined && edit.motivation !== musicalChange)?.motivation
-        ?? motivationProposedFor(shapeOf(edition, versionId, merged))
-    if (motivation) merged.motivation = motivation
+    const editors = toMerge.find(edit => edit.motivation !== undefined && edit.motivation !== musicalChange && edit.motivation !== technicalChange)
+    if (editors) merged.motivation = editors.motivation
+    else if (predecessorOf(edition, versionId)) merged.motivation = motivationProposedFor(shapeOf(edition, versionId, merged))
     const mergedIds = new Set(toMerge.map(edit => edit.id))
 
     return onVersion(versionId, version => {
@@ -117,13 +114,16 @@ export const mergeEdits = (versionId: string, toMerge: readonly Edit[]): Edition
 })
 
 /**
- * Replaces the edit with one edit per inserted and one per deleted symbol.
+ * Replaces the edit with one edit per inserted and one per deleted
+ * symbol. Each part keeps the motivation of the edit, since splitting
+ * an edit does not change why it was made.
  * @category Operations
  */
 export const splitEdit = (versionId: string, toSplit: Edit): EditionOp => {
+    const kept = toSplit.motivation === undefined ? {} : { motivation: toSplit.motivation }
     const parts = [
-        ...(toSplit.insert ?? []).map(insertion),
-        ...(toSplit.delete ?? []).map(deletion)
+        ...(toSplit.insert ?? []).map(symbol => ({ ...insertion(symbol), ...kept })),
+        ...(toSplit.delete ?? []).map(id => ({ ...deletion(id), ...kept }))
     ]
 
     return onVersion(versionId, version => {

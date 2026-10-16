@@ -178,8 +178,8 @@ reot:shift a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/ty
     owl:deprecated true .
 reot:correct-error a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "correct error"@en ;
     owl:deprecated true ;
-    rdfs:comment "No longer a kind of edit. Whether a change corrects an error is not read off its shape: it is a reason for the change, stated as the edit's motivation, the corrected error the vocabulary publishes."@en ;
-    rdfs:seeAlso <https://w3id.org/reo/type/motivation/corrected-error> .
+    rdfs:comment "No longer a kind of edit. Whether a change corrects an error is not read off its shape. A corrected error puts a perforation back in its place, and so is a musical change, for which the editor may give a reason."@en ;
+    rdfs:seeAlso <https://w3id.org/reo/type/motivation/musical> .
 reot:shorten a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "shorten"@en ;
     owl:deprecated true .
 reot:prolong a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ; rdfs:label "prolong"@en ;
@@ -187,23 +187,20 @@ reot:prolong a crm:E55_Type, skos:Concept ; skos:inScheme <https://w3id.org/reo/
 
 
 # Motivation of an edit (P17 was motivated by on reo:Edit) that the
-# vocabulary publishes. An edition names these by IRI and states its own
-# motivations, the reasons for musical changes in the editor's words,
-# once for the edition. What kind of change an edit is follows from its
-# motivation: an edit without one is a technical change, such as a
-# redundancy cleaned up or a command recoded for another system, which
-# the procedure of the version's creation explains; one of the
-# edition's own is a musical change.
+# vocabulary publishes. Every change of a version that derives from
+# another states a motivation, and the motivation says what kind of
+# change it is. A program states one of these two, by IRI, from the
+# shape of the change. The editor may put a reason of their own in
+# place of the musical one, stated once for the edition, which makes the
+# change musical too. An edit without a motivation states the text of a
+# version that derives from none.
 
 <https://w3id.org/reo/type/motivation/musical> a crm:E33_Linguistic_Object, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
     rdfs:label "musical change"@en ;
-    skos:definition "A change of the performance whose reason is not given. A program gives it to a change whose shape a musical decision makes, such as an added accent or a perforation put elsewhere, under the rule that later versions are the more refined; the editor puts a reason of their own in its place."@en .
-<https://w3id.org/reo/type/motivation/corrected-error> a crm:E33_Linguistic_Object, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
-    rdfs:label "corrected error"@en ;
-    skos:definition "The edit puts right what the version it derives from got wrong: a perforation put in the wrong place, struck or left out. It makes the edit a repair."@en .
-<https://w3id.org/reo/type/motivation/safeguard> a crm:E33_Linguistic_Object, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
-    rdfs:label "safeguard"@en ;
-    skos:definition "A command the text makes no use of, added on purpose so that the instrument is left as it should be, as a soft pedal released once more after the last note is. It makes the edit a technical change, the one that has to be said, since an added redundancy is otherwise not expected of a later version."@en .
+    skos:definition "A change of the performance whose reason is not given. A program states it for a change whose shape a musical decision makes, such as an added accent or a perforation put elsewhere, under the rule that later versions are the more refined; the editor puts a reason of their own in its place."@en .
+<https://w3id.org/reo/type/motivation/technical> a crm:E33_Linguistic_Object, skos:Concept ; skos:inScheme <https://w3id.org/reo/type/> ;
+    rdfs:label "technical change"@en ;
+    skos:definition "A change of how the performance is carried, not of the performance: a redundancy cleaned up or added, or a command recoded for another reproducing system. A program states it for a change of such a shape; the procedure of the version's creation explains it, and no reason of its own is given."@en .
 
 
 # Purpose of a modification of a copy (P21 had general purpose)

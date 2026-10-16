@@ -3,7 +3,8 @@ import { v5 } from "uuid"
 import { Draft } from "immer"
 import { Edition } from "../model/Edition.js"
 import { AnySymbol } from "../model/Symbol.js"
-import { Edit } from "../model/Edit.js"
+import { Edit, technicalChange } from "../model/Edit.js"
+import { isCollationsOwn } from "../collation/Collation.js"
 import { assignReference, idOf, ReferenceAssumption } from "../model/Assumption.js"
 import { Derivation, derivesFrom, editsOf, insertedBy, principalDerivationOf, Version } from "../model/Version.js"
 import { systemOf } from "../systems/TrackerBar.js"
@@ -76,11 +77,13 @@ const carriersOf = (reading: CollatedReading, stated: readonly ReferenceAssumpti
  * still there and does not derive from it. Its edits are the proposal's:
  * the edits the editor wrote that the proposal keeps, as they are, and
  * one edit for each further reading it inserts or deletes, or for each
- * recoding. An edit the version stated before over the very same
- * readings is taken over with its id and what was written on it; the
- * others are new, with the motivation the shape of the change calls for
+ * recoding. An edit of the editor's the version stated before over the
+ * very same readings is taken over with its id and what was written on
+ * it, and one of the program's with its id; the others are new. Those
+ * not the editor's have the motivation the shape of the change calls for
  * (`motivationProposedFor`): the generic musical one, whose reason is
- * left to the editor, or none for a technical change.
+ * left to the editor, or the technical one, which a recoding always has.
+ * The edits of the root state its text, and no motivation.
  *
  * A reading that stands for a symbol of the edition keeps that symbol's
  * id and whatever it states beside its carriers. A version of the edition
@@ -170,13 +173,11 @@ export const adoptionOf = (edition: Edition, proposal: StemmaProposal): Adoption
             const key = exchangeKey(inserted, deleted)
             const same = statedBefore.get(key)
             const insert = inserts.map(reading => symbolOf(reading, proposed.id))
-            if (same) return { ...same, ...(insert.length > 0 && { insert }), ...(deleted.length > 0 && { delete: deleted }) }
-            const made: Edit = {
-                type: 'edit',
-                id: v5(`edit|${id}|${key}`, ADOPTED),
-                ...(insert.length > 0 && { insert }),
-                ...(deleted.length > 0 && { delete: deleted })
-            }
+            const exchange = { ...(insert.length > 0 && { insert }), ...(deleted.length > 0 && { delete: deleted }) }
+            if (same && !isCollationsOwn(same)) return { ...same, ...exchange }
+            // The program's edit over the same changes keeps its id, and states the kind of change anew.
+            const { motivation: _stated, ...taken } = same ?? { type: 'edit', id: v5(`edit|${id}|${key}`, ADOPTED) }
+            const made: Edit = { ...taken, ...(recoding && { motivation: technicalChange }), ...exchange }
             // A recoding is technical; the motivation of any other change is read off its shape below.
             if (!recoding) fresh.add(made.id)
             return made
@@ -240,14 +241,13 @@ export const adoptionOf = (edition: Edition, proposal: StemmaProposal): Adoption
     const adopted = { ...edition, versions: ordered }
     const motivated = ordered.map(version => {
         if (!editsOf(version).some(edit => fresh.has(edit.id))) return version
+        if (!principalDerivationOf(version)) return version
         const motivations = proposedMotivations(adopted, version.id)
         return {
             ...version,
-            edits: editsOf(version).map(edit => {
-                if (!fresh.has(edit.id)) return edit
-                const motivation = motivationOfChanges(motivations, [...(edit.insert ?? []).map(symbol => symbol.id), ...(edit.delete ?? [])])
-                return motivation ? { ...edit, motivation } : edit
-            })
+            edits: editsOf(version).map(edit => fresh.has(edit.id)
+                ? { ...edit, motivation: motivationOfChanges(motivations, [...(edit.insert ?? []).map(symbol => symbol.id), ...(edit.delete ?? [])]) }
+                : edit)
         }
     })
 

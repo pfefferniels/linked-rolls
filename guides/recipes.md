@@ -86,17 +86,18 @@ may name a motivation: one of the edition's `motivations` by id, or one the
 vocabulary publishes by IRI. A collation
 ({@linkcode linked-rolls!connectVersions | connectVersions}) writes each
 difference it finds with the motivation its shape calls for: the generic
-musical one, whose reason no editor has given yet, or none for a
-technical change. Any
+musical one, whose reason no editor has given yet, or the technical
+one. Any
 statement can carry a belief under `@annotation`, a JSON-LD-star
 annotation that holds the statement with a certainty from `true` to
 `false` for the reasons it lists. {@linkcode linked-rolls!certaintyOf | certaintyOf}
 reads the certainty; a statement without a belief is held true.
 
 What kind of change an edit is follows from its motivation
-({@linkcode linked-rolls!kindOfChange | kindOfChange}): none for a technical
-change, the generic musical one or one of the edition's own for a musical
-change, and the corrected error for a repair.
+({@linkcode linked-rolls!kindOfChange | kindOfChange}): the technical one
+for a technical change, the generic musical one or one of the edition's own
+for a musical change, and none for the text of a version that derives from
+none.
 {@linkcode linked-rolls!proposeEdits | proposeEdits} groups what a version
 changes into edits and reads the shape of each, an accent added, a command
 put elsewhere, a note struck again, and

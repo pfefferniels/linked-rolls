@@ -207,7 +207,7 @@ export interface Edition {
      * words, stated once and named by the edits of any version
      * (`Edit.motivation`). The motivations the vocabulary publishes are
      * named by IRI and not stated here (`musicalChange`,
-     * `correctedError`, `safeguard`).
+     * `technicalChange`).
      */
     motivations?: Motivation[]
 }
