@@ -589,8 +589,8 @@ const adoptedEditsOf = (edition: Edition, version: Readonly<Version>, options: E
     const made = (inserted: readonly string[], deleted: readonly string[], motivation: string): Edit => {
         const key = exchangeKey(inserted, deleted)
         const same = stated.get(key)
-        // The program's edit over the same changes keeps its id, and states the kind of change anew.
-        if (same) return { ...same, motivation }
+        // An edit over the same changes stays, with the kind of change it states, which the editor may have said.
+        if (same) return same.motivation === undefined ? { ...same, motivation } : same
         return {
             type: 'edit',
             id: v5(`edit|${version.id}|${key}`, EDITS),
@@ -621,8 +621,10 @@ const adoptedEditsOf = (edition: Edition, version: Readonly<Version>, options: E
  * motivation of the editor's or held under a belief stays as it is, and
  * what a proposed edit shares with it stands symbol by symbol beside it.
  * An edit stated already over the very same symbols as a proposed one
- * is kept with its id; the others are new, with ids that adopting again
- * gives again. Each has the motivation its shape calls for
+ * is kept with its id and the kind of change it states, which the
+ * editor may have said otherwise than the program read it; the others
+ * are new, with ids that adopting again gives again. An edit that
+ * states no kind has the motivation its shape calls for
  * (`motivationProposedFor`): the generic musical one for a musical
  * change, whose reason is left to the editor, and the technical one for
  * a technical change.

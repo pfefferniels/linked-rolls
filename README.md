@@ -191,10 +191,11 @@ system, is a technical change (`technicalChange`), which the procedure
 of the version's creation explains; an added accent, a shift, a
 shortening or a prolongation is a musical change (`musicalChange`),
 under the rule that later versions are the more refined. The editor
-may say otherwise, and speculates on the musical changes only: a reason
-of their own, which the edition states once (`Edition.motivations`) and
-any version's edits name, takes the place of the generic musical
-motivation. The edits of a version that derives from none state its
+may say otherwise, and adopting the edits again keeps the kind an edit
+over the same changes states. The editor speculates on the musical
+changes only: a reason of their own, which the edition states once
+(`Edition.motivations`) and any version's edits name, takes the place of
+the generic musical motivation. The edits of a version that derives from none state its
 text, and no motivation.
 
 On WM 225 the proposal reproduces 601 of the 690 edits of the versions

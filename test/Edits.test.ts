@@ -8,7 +8,7 @@ import { assignReference } from '../src/model/Assumption'
 import { HoleChain } from '../src/model/Feature'
 import { TrackMeaning } from '../src/systems/TrackerBar'
 import { welteT100 } from '../src/systems/welteT100/bar'
-import { motivationProposedFor, technicalChange } from '../src/model/Edit'
+import { motivationProposedFor, musicalChange, technicalChange } from '../src/model/Edit'
 import { editRules } from '../src/filiation/record'
 import { adoptEdits, proposeEdits, ProposedEdit } from '../src/filiation/edits'
 
@@ -135,6 +135,18 @@ describe('adopting the proposed edits', () => {
         expect(edits.filter(edit => edit.motivation === technicalChange).length).toBeGreaterThan(0)
         expect(adopted.versions[0]).toEqual(edition.versions[0])
         expect(adopted.creation.principles).toEqual([editRules.onePlace])
+    })
+
+    it('keeps the kind of change an edit over the same changes states, which the editor may have said otherwise', () => {
+        const { edition } = changed()
+        const adopted = produce(edition, adoptEdits())
+        const accent = adopted.versions[1].edits!.find(edit => edit.insert?.some(symbol => symbol.id === 'accent-on'))!
+        expect(accent.motivation).toBe(musicalChange)
+        const flipped = produce(adopted, draft => {
+            draft.versions[1].edits!.find(edit => edit.id === accent.id)!.motivation = technicalChange
+        })
+        const again = produce(flipped, adoptEdits())
+        expect(again.versions[1].edits!.find(edit => edit.id === accent.id)!.motivation).toBe(technicalChange)
     })
 
     it('keeps an edit somebody motivated, and states what it leaves of a proposed one symbol by symbol', () => {

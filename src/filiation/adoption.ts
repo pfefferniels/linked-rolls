@@ -3,7 +3,7 @@ import { v5 } from "uuid"
 import { Draft } from "immer"
 import { Edition } from "../model/Edition.js"
 import { AnySymbol } from "../model/Symbol.js"
-import { Edit, technicalChange } from "../model/Edit.js"
+import { Edit, musicalChange, technicalChange } from "../model/Edit.js"
 import { isCollationsOwn } from "../collation/Collation.js"
 import { assignReference, idOf, ReferenceAssumption } from "../model/Assumption.js"
 import { Derivation, derivesFrom, editsOf, insertedBy, principalDerivationOf, Version } from "../model/Version.js"
@@ -66,6 +66,20 @@ const carriersOf = (reading: CollatedReading, stated: readonly ReferenceAssumpti
     return reading.carriers.map(id => known.get(id) ?? assignReference(id))
 }
 
+/** The version with its edits stating its text: no kind of change, though any reason the editor gave. */
+const withoutKinds = (version: Version): Version => {
+    const kindOnly = (edit: Edit) => edit.motivation === musicalChange || edit.motivation === technicalChange
+    if (!editsOf(version).some(kindOnly)) return version
+    return {
+        ...version,
+        edits: editsOf(version).map(edit => {
+            if (!kindOnly(edit)) return edit
+            const { motivation: _kind, ...text } = edit
+            return text
+        })
+    }
+}
+
 /**
  * What adopting the proposal makes of the edition's stemma, worked out
  * without changing it, so that it can be looked at first.
@@ -77,13 +91,14 @@ const carriersOf = (reading: CollatedReading, stated: readonly ReferenceAssumpti
  * still there and does not derive from it. Its edits are the proposal's:
  * the edits the editor wrote that the proposal keeps, as they are, and
  * one edit for each further reading it inserts or deletes, or for each
- * recoding. An edit of the editor's the version stated before over the
- * very same readings is taken over with its id and what was written on
- * it, and one of the program's with its id; the others are new. Those
- * not the editor's have the motivation the shape of the change calls for
+ * recoding. An edit the version stated before over the very same
+ * readings is taken over with its id and what was written on it, the
+ * kind of change it states among it, which the editor may have said
+ * otherwise than the program read it; the others are new. An edit that
+ * states no kind has the motivation the shape of the change calls for
  * (`motivationProposedFor`): the generic musical one, whose reason is
  * left to the editor, or the technical one, which a recoding always has.
- * The edits of the root state its text, and no motivation.
+ * The edits of the root state its text, and no kind of change.
  *
  * A reading that stands for a symbol of the edition keeps that symbol's
  * id and whatever it states beside its carriers. A version of the edition
@@ -174,10 +189,9 @@ export const adoptionOf = (edition: Edition, proposal: StemmaProposal): Adoption
             const same = statedBefore.get(key)
             const insert = inserts.map(reading => symbolOf(reading, proposed.id))
             const exchange = { ...(insert.length > 0 && { insert }), ...(deleted.length > 0 && { delete: deleted }) }
-            if (same && !isCollationsOwn(same)) return { ...same, ...exchange }
-            // The program's edit over the same changes keeps its id, and states the kind of change anew.
-            const { motivation: _stated, ...taken } = same ?? { type: 'edit', id: v5(`edit|${id}|${key}`, ADOPTED) }
-            const made: Edit = { ...taken, ...(recoding && { motivation: technicalChange }), ...exchange }
+            // An edit over the same changes stays, with the kind of change it states, which the editor may have said.
+            if (same && (!isCollationsOwn(same) || same.motivation !== undefined)) return { ...same, ...exchange }
+            const made: Edit = { ...(same ?? { type: 'edit', id: v5(`edit|${id}|${key}`, ADOPTED) }), ...(recoding && { motivation: technicalChange }), ...exchange }
             // A recoding is technical; the motivation of any other change is read off its shape below.
             if (!recoding) fresh.add(made.id)
             return made
@@ -240,8 +254,8 @@ export const adoptionOf = (edition: Edition, proposal: StemmaProposal): Adoption
     // A new edit's motivation follows from the shape of the change, read in the stemma adopted.
     const adopted = { ...edition, versions: ordered }
     const motivated = ordered.map(version => {
+        if (!principalDerivationOf(version)) return withoutKinds(version)
         if (!editsOf(version).some(edit => fresh.has(edit.id))) return version
-        if (!principalDerivationOf(version)) return version
         const motivations = proposedMotivations(adopted, version.id)
         return {
             ...version,
