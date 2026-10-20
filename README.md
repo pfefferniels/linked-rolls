@@ -48,29 +48,26 @@ show how to read an edition, get the text of a version, see what a
 version changed, play it and write a change back. What the reference
 leaves out is internal and may change in any release.
 
-What is read off an edition, such as `snapshotOf`, `placeOf`,
-`versionIn` or `pathIn`, is worked out once for each state of it and
-kept for as long as the state is. Every change through `produce` yields
-a new state, so nothing needs to be told that the edition changed. For
-the same reason an edition is frozen once anything has been asked of it,
-as immer freezes what it produces: change it through an operation, not
-in place. A draft is asked about as `stateOf(draft)`.
+Queries such as `snapshotOf`, `placeOf`, `versionIn` and `pathIn` are
+cached per state of the edition. Every change through `produce` yields a
+new state, so the cache never goes stale. That is also why an edition is
+frozen once queried: change it through an operation, not in place. To
+query a draft, use `stateOf(draft)`.
 
-Within the library every place along the roll is a place on the edition's
-axis, the millimetres of its reference copy. A document holds each copy's
-features at the copy's own places, as they were read, together with the
-alignment that carries them onto the axis; the import and the export map
-between the two. What the alignments say about the paper of the copies,
-how far each has stretched and how the papers of the systems relate, is
-worked out by `paperOf`.
+Inside the library, every position is in millimetres along the reference
+copy, the edition's axis. A document stores each copy's features at that
+copy's own measured positions, plus the alignment onto the axis; import
+and export convert between the two. `paperOf` uses the alignments to
+work out how far each copy's paper has stretched and how the papers of
+different systems relate.
 
-What is worked out is not stated. Where the edition holds to the ratio a
-re-cut gave the paper of its version, the creation of the version states
-it (`lengthRatio`, as `lengthRatioOf` gives it), so that others can take
-it as a premise. A measured value, such as that ratio, a copy's
-dimensions and hole separation, or the setting of its perforator, is
-held on the strength of a measurement, which names what it was taken
-on, the program and its version, and the day.
+Derived values are not stored. The exception is the length ratio a
+re-cut gave its version's paper: where the edition commits to it, the
+version's creation records it as `lengthRatio` (as `lengthRatioOf`
+computes it), so others can use it as a premise. Measured values, such
+as that ratio, a copy's dimensions and hole separation, or its
+perforator setting, are stored with their measurement: what it was taken
+on, the program and its version, and the date.
 
 Documents written by earlier releases are brought up to date on import.
 To check a document against the schema:
@@ -97,112 +94,45 @@ const midi = midiOf(events, welteT100System.name, welteT100System.defaultOptions
 The systems are `linked-rolls/welte-t100` (red Welte),
 `linked-rolls/welte-t98` (green Welte) and `linked-rolls/welte-licensee`.
 
-## Proposing a stemma
+## Proposing a stemma and its edits
 
-Which versions there are, lost ones included, how they derive from each
-other and which edits belong to which can be proposed from the copies
-alone. `proposeStemma` collates the transcribed copies all at once,
-notes which copies have, lack or cannot show each reading, and scores
-every stemma the copies admit. Copies of one system that differ in no
-more than a few readings, or that the edition gives one version, are
-taken to carry one text, and so one version, as pressings of one master
-do; what one of them lacks is a deviation of that copy. The search
-covers up to seven such texts, however many copies carry them. A reading arising
-costs ten times a reading lost. Losses count for less where the
-editorial principles of an edition say they are weak evidence: a
-redundancy cleaned up, or what a re-cut for another system lacks. On
-the best stemma, each reading arises in the latest version all copies
-carrying it descend from.
+`proposeStemma` proposes, from the copies alone, which versions there
+are, lost ones included, and how they derive from one another. It
+collates the transcribed copies at once and scores every stemma they
+admit; a reading arising costs ten times one lost. The search covers up
+to seven distinct texts, however many copies carry them. `proposeEdits`
+groups what a version inserts and deletes into edits, such as a shift,
+an added accent or a redundancy removed, each at one place on the roll.
 
 ```ts
 import { produce } from 'immer'
-import { adoptStemma, proposeStemma, stemmaChanges } from 'linked-rolls'
+import { adoptEdits, adoptStemma, proposeEdits, proposeStemma } from 'linked-rolls'
 
 const proposal = proposeStemma(edition)
 proposal.notation   // '*(St1(*(Ne1,St2(Bo1,Ch1))),Wi1)' for WM 225
 proposal.supports   // by how much the copies decide each grouping
-
-const adopted = produce(edition, adoptStemma(proposal))
-const changes = stemmaChanges(edition, adopted)
-```
-
-Adopting keeps what the edition holds wherever the proposal stands for
-it: the ids of versions and symbols, a derivation's belief, and the
-edits the editor wrote, which hold their versions to what they insert
-and delete. Motivations, beliefs and versions known only from a
-recording remain the editor's to state.
-
-What the program concluded is stated plainly, as an edition states its
-stemma. The edition's creation names how it was found: the published
-rules the costs carry out among its principles (`stemmaRules`), and
-this release of the library among its software, which finds the
-stemma again with the defaults it has. A derivation the editor holds
-under a belief of their own, and an edit that says why it was made,
-stay as they are. Among the versions, derivations and edits, whatever
-carries neither a belief nor a motivation of the editor's is the
-program's.
-
-```ts
-const adopted = produce(edition, adoptStemma(proposal))
-adopted.creation.principles // ['https://welte225.org/rules#shared-addition', …]
-adopted.creation.software   // [{ name: 'linked-rolls', version: '0.76.0' }]
-```
-
-The costs are those with which the stemma of WM 225 comes out of its
-six copies. They were found by searching for such values, so they show
-that the stemma is consistent with these principles, not that the
-principles confirm it.
-
-## Proposing the edits
-
-What a version inserts and deletes can be grouped into edits, and the
-shape of each read off them alone. `proposeEdits` reads a version's
-changes line by line, a latched function, a held one or a pitch, and
-never across a command both texts keep, so that an edit stays at one
-place. A function turned on and off again is one edit, an additional
-accent where the bar spells an accent so; a perforation put elsewhere
-is one move with the one it replaces, a shift, or shortened or
-prolonged where it begins about where the other did; overlapping notes
-are one edit, a note struck again or two tied; a held command standing
-for a latched pair is one recoding; a command the text makes no use of
-is a redundancy added or removed; cancels punched across lines at one
-place are one row. `adoptEdits` puts the proposal in place of the
-program's edits, those that say nothing of why they were made or only
-that they are musical or technical changes, and keeps the rest. Its creation comes to
-name the rule that keeps an edit at one place among its principles.
-
-```ts
-import { adoptEdits, adoptStemma, proposeEdits, proposeStemma } from 'linked-rolls'
-
 proposeEdits(edition, versionId)  // [{ insert, delete, shape, grouping }, …]
 
-// The stemma and the edits of its versions, as one undo step
+// Adopt the stemma and the edits of its versions, as one undo step
 const adopted = produce(edition, draft => {
-    adoptStemma(proposeStemma(edition))(draft)
+    adoptStemma(proposal)(draft)
     adoptEdits()(draft)
 })
 ```
 
-Every change of a version that derives from another states a
-motivation, and the motivation says what kind of change it is
-(`kindOfChange`). A program states it from the shape of the change: a
-redundancy cleaned up or added, or a command recoded for another
-system, is a technical change (`technicalChange`), which the procedure
-of the version's creation explains; an added accent, a shift, a
-shortening or a prolongation is a musical change (`musicalChange`),
-under the rule that later versions are the more refined. The editor
-may say otherwise, and adopting the edits again keeps the kind an edit
-over the same changes states. The editor speculates on the musical
-changes only: a reason of their own, which the edition states once
-(`Edition.motivations`) and any version's edits name, takes the place of
-the generic musical motivation. The edits of a version that derives from none state its
-text, and no motivation.
+Adopting keeps what the editor wrote: the ids of versions and symbols, a
+derivation's belief, and edits that say why they were made. Anything
+without a belief or motivation from the editor counts as the program's,
+and the edition's creation names the rules (`stemmaRules`) and the
+release of the library that found it. Each edit is classed as a
+technical change (a redundancy, a recoding for another system) or a
+musical change (an accent, a shift, a shortening or prolongation); the
+editor may say otherwise.
 
-On WM 225 the proposal reproduces 601 of the 690 edits of the versions
-that derive from another, from what each version changes, and from the
-copies alone, through the proposed stemma, 554. It agrees with the
-editor on what kind of change an edit is but for two, each a reason the
-editor gives for what the program reads as a redundancy.
+The costs were tuned on the six copies of WM 225, where the proposal
+reproduces 601 of the editor's 690 edits, or 554 through the proposed
+stemma. They show that the stemma is consistent with these rules, not
+that the rules confirm it.
 
 ## Format
 
