@@ -480,4 +480,22 @@ describe('copies carrying the same text', () => {
         const same = matrix(['111', '111'])
         expect(sharedTexts(same, ['red', 'red', 'green'], 3).texts.map(text => text.copies)).toEqual([['a', 'b'], ['c']])
     })
+
+    /**
+     * Two copies of WM 371 in Stanford's archive, one of them read off
+     * its tracks, never aligned: neither could say what the other
+     * lacked, so they differed in nothing, and were proposed as one
+     * version holding the readings of both.
+     */
+    it('does not take copies for one text that show no reading in common', () => {
+        const nowhere: PresenceMatrix = {
+            copies: ['a', 'b'],
+            redundant: [],
+            presence: { r0: { a: 'present', b: 'unknown' }, r1: { a: 'unknown', b: 'present' } }
+        }
+        expect(sharedTexts(nowhere, ['red', 'red'], 3).texts.map(text => text.copies)).toEqual([['a'], ['b']])
+
+        const somewhere: PresenceMatrix = { ...nowhere, presence: { ...nowhere.presence, r2: { a: 'present', b: 'present' } } }
+        expect(sharedTexts(somewhere, ['red', 'red'], 3).texts.map(text => text.copies)).toEqual([['a', 'b']])
+    })
 })

@@ -50,6 +50,10 @@ export const differencesBetween = (matrix: PresenceMatrix, one: string, other: s
     return count
 }
 
+/** How many readings both copies show. */
+const commonTo = (matrix: PresenceMatrix, one: string, other: string): number =>
+    Object.values(matrix.presence).filter(presence => presence[one] === 'present' && presence[other] === 'present').length
+
 /**
  * The copies in groups that carry the same text.
  *
@@ -60,7 +64,10 @@ export const differencesBetween = (matrix: PresenceMatrix, one: string, other: s
  * differs from every copy of the other in no more than `within` readings
  * where both can tell, so that a chain of small differences never joins
  * copies far apart. Ties go to the order the copies were given in.
- * `within` below zero joins only what the edition states.
+ * `within` below zero joins only what the edition states. Copies that
+ * show no reading in common are never joined: they differ in nothing
+ * where both can tell only because nowhere can both tell, as two copies
+ * that were never aligned, and that is no agreement.
  * @category Filiation
  */
 export const sharedTexts = (
@@ -74,6 +81,8 @@ export const sharedTexts = (
     const distance = copies.map((one, i) => copies.map((other, j) =>
         i === j ? 0 : j < i ? NaN : differencesBetween(matrix, one, other)))
     const between = (i: number, j: number) => i < j ? distance[i][j] : distance[j][i]
+    const common = copies.map((one, i) => copies.map((other, j) => j > i ? commonTo(matrix, one, other) : NaN))
+    const agree = (i: number, j: number) => i === j || (i < j ? common[i][j] : common[j][i]) > 0
 
     const groupOf = copies.map((_, i) => i)
     const members = new Map(copies.map((_, i) => [i, [i]]))
@@ -108,7 +117,7 @@ export const sharedTexts = (
             const a = groupOf[i]
             const b = groupOf[j]
             if (a === b) continue
-            const close = members.get(a)!.every(x => members.get(b)!.every(y => between(x, y) <= within))
+            const close = members.get(a)!.every(x => members.get(b)!.every(y => between(x, y) <= within && agree(x, y)))
             if (!close) continue
             const wasStated = statedGroups.has(a) || statedGroups.has(b)
             join(a, b)
