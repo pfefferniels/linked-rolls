@@ -105,6 +105,66 @@ describe('the collation of copies', () => {
     })
 })
 
+/**
+ * Two copies of one text whose papers do not lie on one line: the same
+ * notes, the second copy's displaced along the roll by `by`.
+ */
+const displaced = (by: (at: number) => number) => {
+    const random = generator(5)
+    const text: Item[] = []
+    for (let at = 200; at < 9000; at += 14) text.push(noteAt(40 + Math.floor(random() * 40), at))
+    return editionOf([
+        punched('one', text, 1),
+        punched('other', text.map(item => ({ ...item, at: item.at + by(item.at) })), 2)
+    ], [])
+}
+
+describe('copies whose papers do not lie on one line', () => {
+    /**
+     * WM 570: by the end of the roll Stanford's second copy lies 2.9 mm
+     * from the first and Phillips's reading 19 mm, with a window of 2 mm
+     * and 10 mm about one offset for the whole roll. The closing notes
+     * were read as three notes each, one to a copy.
+     */
+    it('are read as one text where the second bows against the first', () => {
+        // Nought in the middle of the roll, twelve millimetres off at either end.
+        const bow = (at: number) => -12 * ((at - 4600) / 4400) ** 2
+        const edition = displaced(bow)
+        const collation = collateCopies(edition, ['one', 'other'])
+
+        expect(collation.readings.filter(reading => reading.copies.length < 2)).toEqual([])
+        const drift = collation.drift['one|other']
+        expect(drift.length).toBeGreaterThan(20)
+        for (const { at, by } of drift) expect(by).toBeCloseTo(bow(at), 0)
+    })
+
+    it('are read as one text across a place where the offset steps, as at a splice', () => {
+        const step = (at: number) => at < 3000 ? 23 : 0
+        const collation = collateCopies(displaced(step), ['one', 'other'])
+        const apart = collation.readings.filter(reading => reading.copies.length < 2)
+
+        // Only where the offset turns from the one to the other can a reading be missed.
+        expect(apart.length).toBeLessThan(0.02 * collation.readings.length)
+        for (const reading of apart) expect(Math.abs(reading.place.from - 3000)).toBeLessThan(400)
+    })
+
+    it('are told no drift where they lie on one line', () => {
+        const collation = collateCopies(displaced(() => 0), ['one', 'other'])
+        expect(collation.readings.filter(reading => reading.copies.length < 2)).toEqual([])
+        for (const { by } of collation.drift['one|other']) expect(Math.abs(by)).toBeLessThan(0.2)
+    })
+
+    it('do not take the period of a repeated note for a drift', () => {
+        // One pitch struck every nine millimetres over the whole roll: displaced by its period it agrees with itself.
+        const trill: Item[] = Array.from({ length: 600 }, (_, i) => ({ ...noteAt(60, 200 + i * 9), length: 5 }))
+        const edition = editionOf([punched('one', trill, 1), punched('other', trill, 2)], [])
+        const collation = collateCopies(edition, ['one', 'other'])
+
+        for (const { by } of collation.drift['one|other']) expect(Math.abs(by)).toBeLessThan(0.3)
+        expect(collation.readings.filter(reading => reading.copies.length < 2)).toEqual([])
+    })
+})
+
 describe('the ineffective commands of a text', () => {
     it('are those that set what is set, or cancel what is cancelled', () => {
         const at = (id: string, expressionType: string, from: number) =>
