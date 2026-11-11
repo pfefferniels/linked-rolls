@@ -16,6 +16,7 @@ import {
     detachVersion, mergeEdits, nameCopy, pairCommands, placeCommand, removeFeatures, removeReason, removeSymbols,
     removeVersion, setCertainty, splitEdit, unpairCommand, unplaceCommand
 } from '../src/ops'
+import { EditionOp } from '../src/ops/draft'
 import { copy, cutFor, edition, editionOf, expression, hole, note, version } from './editionFixture'
 import { mm } from '../src/model/Quantity'
 import { systemOf } from '../src/systems/TrackerBar'
@@ -86,6 +87,28 @@ const derivedWithin = (tolerance: CollationTolerance): Edition => {
 }
 
 describe('creating a version from a copy', () => {
+    /**
+     * React's strict mode runs a reducer twice with the same operation.
+     * The first run leaves what it put into the edition frozen, so an
+     * operation that put in the very object it was given could not be
+     * followed, the second time, by one that names or aligns that copy.
+     */
+    it('can be applied again, and leaves what it was given as it was', () => {
+        const given = copy('first', [hole('hole-note', 1000, 1010, 47)])
+        const adding: EditionOp = draft => {
+            createVersion(given)(draft)
+            nameCopy('first', 'St1')(draft)
+        }
+
+        const once = produce(editionOf([], []), adding)
+        const again = produce(editionOf([], []), adding)
+
+        expect(again.copies[0].siglum).toEqual('St1')
+        expect(again.copies).toEqual(once.copies)
+        expect(given.siglum).toBeUndefined()
+        expect(Object.isFrozen(given)).toBe(false)
+    })
+
     it('adds the copy and a version inserting what the tracker bar reads on it', () => {
         const next = produce(editionOf([], []), createVersion(copy('first', [
             hole('hole-note', 1000, 1010, 47),
