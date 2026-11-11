@@ -135,8 +135,19 @@ export interface StemmaProposal {
     matrix: PresenceMatrix
     /** From the root down. */
     versions: ProposedVersion[]
-    /** The stemma in the notation `Scored` uses, the copies by siglum. */
+    /** The stemma the search found, in the notation `Scored` uses, the copies by siglum. Its cost, the runners-up and the supports speak of this one. */
     notation: string
+    /**
+     * The stemma of the versions as proposed, in the same notation. It
+     * is the one the search found, unless taking readings for the base
+     * text left a version with nothing of its own: a version that
+     * changes nothing is the version it derives from, so its copies
+     * carry that one and what derived from it derives from that one.
+     * Two copies below a lost version, the one with every reading of
+     * its own taken for the base text, come out as that copy with the
+     * other derived from it.
+     */
+    stemma: string
     cost: number
     /** How many admissible stemmata were scored. */
     scored: number
@@ -319,7 +330,11 @@ const recode = (tree: LaidOut, readings: readonly CollatedReading[], placement: 
  * states. On it, each reading arises in the latest version all copies
  * carrying it descend from, and is deleted where a branch lacks it. A
  * reading only the less refined side of the root carries is taken for
- * the base text where the other side has it moved or cleaned up.
+ * the base text where the other side has it moved or cleaned up. A
+ * version left with nothing of its own by that, neither inserting nor
+ * deleting a reading, is no version beside the one it derives from: its
+ * copies carry that one (`StemmaProposal.stemma`). So no version is
+ * proposed that no copy carries and nothing derives from.
  *
  * Where the edition has versions already, a version of the proposal
  * that a copy carries at first hand stands for the version that copy
@@ -480,8 +495,30 @@ export const proposeStemma = (edition: Edition, options: FiliationOptions = {}):
     }
     const released = new Set(unpinned.map(({ edit }) => edit))
 
+    // A node that changes nothing is the version it derives from, and stands in it.
+    const all = fromRoot(tree)
+    const changesAt = (v: number) => collation.readings.some(reading => {
+        const states = placement.get(reading.id)!
+        return inserting(tree, states, v) || deleting(tree, states, v)
+    })
+    const within = new Map<number, number>()
+    for (const v of all) {
+        const parent = tree.parent[v]
+        const same = parent >= 0 && tree.system[v] === tree.system[parent] && !(pins.get(v)?.length) && !changesAt(v)
+        within.set(v, same ? within.get(parent)! : v)
+    }
+    const standingIn = (v: number) => all.filter(u => within.get(u) === v)
+    const order = all.filter(v => within.get(v) === v)
+    const parentOf = (v: number) => tree.parent[v] >= 0 ? within.get(tree.parent[v])! : -1
+    const carryingAt = (v: number) => standingIn(v).flatMap(u => tree.copy[u] >= 0 ? texts[tree.copy[u]] : [])
+    const stemmaFrom = (v: number): string => {
+        const carried = standingIn(v).flatMap(u => tree.copy[u] >= 0 ? [names[tree.copy[u]]] : [])
+        const label = carried.length > 0 ? carried.join('+') : '*'
+        const derived = order.filter(u => parentOf(u) === v).map(stemmaFrom).sort()
+        return derived.length > 0 ? `${label}(${derived.join(',')})` : label
+    }
+
     // Pre-order numbering, so that the root is p0.
-    const order = fromRoot(tree)
     const nameOf = new Map(order.map((v, index) => [v, `p${index}`]))
     const versions = order.map((v): ProposedVersion => {
         const inserts = collation.readings.filter(reading => inserting(tree, placement.get(reading.id)!, v)).map(reading => reading.id)
@@ -497,7 +534,9 @@ export const proposeStemma = (edition: Edition, options: FiliationOptions = {}):
                 return fits
             })
             : []
-        const carrying = tree.copy[v] >= 0 ? texts[tree.copy[v]] : []
+        const carrying = carryingAt(v)
+        // It stands for the edition's version it stood for, or for the one a node standing in it did.
+        const version = standingIn(v).map(u => standsFor.get(u)).find(found => found !== undefined)
         const deviations = carrying.flatMap(copy => collation.readings
             .filter(reading => placement.get(reading.id)![v] && matrix.presence[reading.id][copy] === 'absent')
             .map(reading => ({ copy, reading: reading.id })))
@@ -505,8 +544,8 @@ export const proposeStemma = (edition: Edition, options: FiliationOptions = {}):
             id: nameOf.get(v)!,
             copies: [...carrying],
             system: tree.system[v],
-            ...(tree.parent[v] >= 0 && { parent: nameOf.get(tree.parent[v]) }),
-            ...(standsFor.has(v) && { version: standsFor.get(v) }),
+            ...(parentOf(v) >= 0 && { parent: nameOf.get(parentOf(v)) }),
+            ...(version !== undefined && { version }),
             inserts,
             deletes,
             recodings,
@@ -531,6 +570,7 @@ export const proposeStemma = (edition: Edition, options: FiliationOptions = {}):
         matrix,
         versions,
         notation: tree.notation,
+        stemma: stemmaFrom(order[0]),
         cost: search.cost,
         scored: search.scored,
         alternatives: search.alternatives,

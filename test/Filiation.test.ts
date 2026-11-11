@@ -17,7 +17,9 @@ import { sharedTexts } from '../src/filiation/texts'
 import { PresenceMatrix } from '../src/filiation/presence'
 import { siglaOf } from '../src/analysis/sigla'
 import { snapshotOf } from '../src/analysis/text'
-import { versionsWitnessedBy } from '../src/analysis/witnesses'
+import { versionsWitnessedBy, witnessesOf } from '../src/analysis/witnesses'
+import { featuresOf } from '../src/model/RollCopy'
+import { idOf } from '../src/model/Assumption'
 import { editsOf, insertedBy } from '../src/model/Version'
 import { isCollationsOwn } from '../src/collation/Collation'
 import { adoptEdits, proposeEdits } from '../src/filiation/edits'
@@ -149,6 +151,68 @@ describe('a stemma proposed from the copies', () => {
         const proposal = proposeStemma(editionOfTradition())
         const grouping = proposal.supports.find(support => !support.ancestor && support.copies.join() === 'd,e')
         expect(grouping?.margin).toBeGreaterThan(0)
+    })
+})
+
+/**
+ * Two copies of one roll, the later one with every accent of the earlier
+ * moved a little along the paper and eight of its own. The search puts
+ * both below a lost version, each having readings the other lacks. The
+ * earlier copy's readings are then taken for the base text, the later
+ * copy having them moved, and nothing is left that its version changes.
+ */
+const moved = () => {
+    const random = generator(11)
+    const base: Item[] = []
+    for (let at = 200; at < 4000; at += 40) base.push(noteAt(48 + Math.floor(random() * 30), at))
+    const accents = (from: number, count: number, by = 0) =>
+        Array.from({ length: count }, (_, i) => accentAt(from + i * 200 + 20 + by)).flat()
+    const early = [...base, ...accents(300, 6)]
+    const late = [...base, ...accents(300, 6, 12), ...accents(1700, 8)]
+    return editionOf([punched('early', early, 1), punched('late', late, 2)], [])
+}
+
+/** The versions no copy carries at first hand that fewer than two versions derive from, which a stemma has no use for. */
+const idleLostVersions = (versions: readonly { id: string, copies: readonly string[], parent?: string }[]) =>
+    versions.filter(version => version.copies.length === 0
+        && versions.filter(other => other.parent === version.id).length < 2).map(version => version.id)
+
+describe('a version left with nothing of its own', () => {
+    it('is found by the search as two copies below a lost version', () => {
+        const proposal = proposeStemma(moved())
+        expect(proposal.notation).toBe('*(early,late)')
+        expect(proposal.baseText).toHaveLength(12)
+    })
+
+    it('is the version it derives from, which its copy then carries', () => {
+        const proposal = proposeStemma(moved())
+
+        expect(proposal.stemma).toBe('early(late)')
+        expect(proposal.versions.map(version => version.copies)).toEqual([['early'], ['late']])
+        expect(proposal.versions[1].parent).toBe(proposal.versions[0].id)
+        expect(proposal.versions[1].deletes).toHaveLength(12)
+        expect(idleLostVersions(proposal.versions)).toEqual([])
+    })
+
+    it('leaves no lost version in the edition that nothing derives from', () => {
+        const edition = moved()
+        const adopted = produce(edition, adoptStemma(proposeStemma(edition)))
+
+        expect(adopted.versions).toHaveLength(2)
+        const sigla = siglaOf(adopted)
+        expect(adopted.versions.map(version => sigla.get(version.id)).sort()).toEqual(['R1', 'R2'])
+        for (const copy of adopted.copies) {
+            const version = adopted.versions.find(candidate => witnessesOf(adopted, candidate.id)
+                .some(witness => witness.copy === copy.id && witness.through === undefined))!
+            expect(new Set(snapshotOf(adopted, version.id).flatMap(symbol => symbol.carriers.map(idOf)))
+                .isSupersetOf(new Set(featuresOf(copy).map(feature => feature.id)))).toBe(true)
+        }
+    })
+
+    it('is the same stemma as the search found where every version changes something', () => {
+        const proposal = proposeStemma(editionOfTradition())
+        expect(proposal.stemma).toBe(proposal.notation)
+        expect(idleLostVersions(proposal.versions)).toEqual([])
     })
 })
 
