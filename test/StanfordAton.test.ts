@@ -289,4 +289,44 @@ describe('calibrating a scan whose rewind cannot be found', () => {
     it('still prefers the rewind chain where the roll has one', () => {
         expect(readFromStanfordAton(aton).measurements.trackCalibration?.shift).toEqual(-3)
     })
+
+    /**
+     * Stanford's analyses show both ways the columns miss the span of
+     * the bar while the rewind cannot be told: a stray hole beside the
+     * bar makes them one too many, as on vj076nk8220, and a roll that
+     * leaves an outermost position unpunched makes them too few. Read at
+     * a shift of nought, such a copy comes out three tracks off without
+     * a word, and aligns with no other copy of its roll.
+     */
+    it('keeps the chains on the bar where a stray hole lies beside it', () => {
+        // Every position punched twice, and one hole beyond the last.
+        const copy = readFromStanfordAton(t98Analysis([...spanning(13, 110), ...spanning(13, 110), 111]), {
+            system: welteT98, bar: welteT98
+        })
+
+        expect(copy.measurements.trackCalibration?.shift).toEqual(-12)
+        expect(featuresOf(copy)).toHaveLength(196)
+    })
+
+    it('lets the middle of the paper choose where the columns fall short of the bar', () => {
+        // The paper lies between columns 358 and 3738 of the image, so its
+        // middle is at 2048 px, which the grid puts between the columns 61
+        // and 62: the middle of a bar of 98 positions, twelve further down.
+        const stated = t98Analysis(spanning(20, 100)).replace('@IMAGE_LENGTH:', '@IMAGE_WIDTH:\t4096px\n\n@IMAGE_LENGTH:')
+        const copy = readFromStanfordAton(stated, { system: welteT98, bar: welteT98 })
+
+        expect(copy.measurements.trackCalibration?.shift).toEqual(-12)
+    })
+
+    it('does not take a stray hole past the last attack for the rewind', () => {
+        // One hole trails the last attack, far from the rewind track, as on gx107hd3026.
+        const trailing = [
+            '@@BEGIN: HOLE', '@ORIGIN_ROW:\t99000px', `@ORIGIN_COL:\t${40 * 33.2957}px`, '@WIDTH_ROW:\t20px', '@WIDTH_COL:\t19px',
+            `@CENTROID_COL:\t${40 * 33.2957 + 1.51476}px`, '@PERIMETER:\t60px', '@CIRCULARITY:\t0.9', '@TRACKER_HOLE:\t40', '@@END: HOLE'
+        ].join('\n')
+        const analysis = t98Analysis(spanning(13, 110)).replace('@@END: HOLES', `${trailing}\n\n@@END: HOLES`)
+        const copy = readFromStanfordAton(analysis, { system: welteT98, bar: welteT98 })
+
+        expect(copy.measurements.trackCalibration?.shift).toEqual(-12)
+    })
 })

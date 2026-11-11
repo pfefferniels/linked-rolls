@@ -94,16 +94,93 @@ const spannedShiftIn = (holes: AtonHole[], bar: TrackerBar): Track | undefined =
     return Math.max(...columns) - lowest + 1 === bar.trackCount ? track(1 - lowest) : undefined
 }
 
+/** The columns of the chains, each with how many chains it holds. */
+const chainsByColumn = (holes: AtonHole[]): Map<number, number> => {
+    const counts = new Map<number, number>()
+    for (const hole of holes) {
+        const column = +hole.TRACKER_HOLE
+        if (hole.NOTE_ATTACK && Number.isFinite(column)) counts.set(column, (counts.get(column) ?? 0) + 1)
+    }
+    return counts
+}
+
+/** How many chains a shift leaves on positions the bar does not read. */
+const lostUnder = (columns: ReadonlyMap<number, number>, bar: TrackerBar) => (shift: number): number =>
+    [...columns].reduce((sum, [column, chains]) => bar.meaningOf(track(column + shift)) ? sum : sum + chains, 0)
+
+/**
+ * The shifts that leave the fewest chains on positions the bar does not
+ * read, and how many those leave there. A roll is punched for its bar,
+ * so a shift that puts chains beside it is wrong by as much as it puts
+ * there; one that keeps them all is right only where the columns span
+ * the whole bar, and one of several otherwise.
+ */
+const fittingShiftsIn = (columns: ReadonlyMap<number, number>, bar: TrackerBar): { shifts: Track[], lost: number } => {
+    if (columns.size === 0) return { shifts: [], lost: 0 }
+
+    const lowest = Math.min(...columns.keys())
+    const highest = Math.max(...columns.keys())
+    // Every shift that still puts a column on the bar.
+    const shifts = Array.from({ length: highest - lowest + bar.trackCount }, (_, i) => 1 - highest + i)
+    const losses = shifts.map(lostUnder(columns, bar))
+    const lost = Math.min(...losses)
+    return { shifts: shifts.filter((_, i) => losses[i] === lost).map(shift => track(shift)), lost }
+}
+
+/**
+ * The share of a roll's chains that may lie beside the bar without
+ * calling the rewind into question: dust or a tear taken for a hole,
+ * which an analysis has a few of, and far less than a shift off by a
+ * track puts there.
+ */
+const STRAY_SHARE = 0.01
+
+/**
+ * Where the paper puts the bar: the positions lie centred between the
+ * edges of the roll, so the column at the middle of the paper is the
+ * middle of the bar. It is a measurement and comes out between two
+ * positions as often as on one, which is why it only chooses among
+ * shifts the holes admit. Nothing where the file does not say where the
+ * paper lies in the image.
+ */
+const centredShiftIn = (rollinfo: Record<string, string>, bar: TrackerBar): number | undefined => {
+    const width = readPx(rollinfo.IMAGE_WIDTH)
+    const bass = readPx(rollinfo.HARD_MARGIN_BASS)
+    const treble = readPx(rollinfo.HARD_MARGIN_TREBLE)
+    const offset = readPx(rollinfo.HOLE_OFFSET)
+    const separation = readPx(rollinfo.HOLE_SEPARATION)
+    if (![width, bass, treble, offset, separation].every(Number.isFinite) || separation <= 0) return undefined
+
+    const middle = (bass + (width - treble)) / 2
+    return (bar.trackCount + 1) / 2 - (middle - offset) / separation
+}
+
 /**
  * How far the scanner's own hole numbering has to move to reach the
- * bar. The rewind perforation is the usual landmark; where the roll
- * carries punches past it, as Dyer's T-98 scans do, the span of the
- * columns settles it instead.
+ * bar. The rewind perforation is the usual landmark, and is taken where
+ * it leaves the chains on the bar, give or take a stray. It cannot
+ * be told on every scan: a rewind slot punched in one piece is a chain
+ * like any other and nothing trails the last attack, a stray hole past
+ * the end is taken for it, and rolls carry punches after it, as Dyer's
+ * T-98 scans do. There the holes themselves say which shifts keep them
+ * on the bar, and where they admit several, the middle of the paper
+ * chooses.
  */
-const calibrationShiftIn = (holes: AtonHole[], bar: TrackerBar): Track => {
+const calibrationShiftIn = (holes: AtonHole[], bar: TrackerBar, rollinfo: Record<string, string>): Track => {
+    const columns = chainsByColumn(holes)
+    const chains = [...columns.values()].reduce((sum, count) => sum + count, 0)
+    const fitting = fittingShiftsIn(columns, bar)
+
     const rewind = rewindTrackIn(holes)
-    if (rewind !== undefined) return track(bar.rewindTrack - rewind)
-    return spannedShiftIn(holes, bar) ?? track(0)
+    const byRewind = rewind === undefined ? undefined : track(bar.rewindTrack - rewind)
+    if (byRewind !== undefined && lostUnder(columns, bar)(byRewind) - fitting.lost <= STRAY_SHARE * chains) return byRewind
+    if (fitting.shifts.length === 1) return fitting.shifts[0]
+
+    const centred = centredShiftIn(rollinfo, bar)
+    if (centred !== undefined && fitting.shifts.length > 0) {
+        return fitting.shifts.reduce((nearest, shift) => Math.abs(shift - centred) < Math.abs(nearest - centred) ? shift : nearest)
+    }
+    return spannedShiftIn(holes, bar) ?? byRewind ?? track(0)
 }
 
 /**
@@ -144,7 +221,8 @@ export interface StanfordAtonOptions {
     /**
      * Added to the scanning software's hole numbering to reach the
      * tracker bar. Left out, it is inferred by putting the rewind
-     * perforation on the bar's rewind track.
+     * perforation on the bar's rewind track, and where that cannot be
+     * told, by keeping the chains on the bar.
      */
     trackShift?: Track
 
@@ -252,7 +330,7 @@ export function readFromStanfordAton(
     const dpi = parseFloat(json.ROLLINFO.LENGTH_DPI)
     const measured = takenBy(measurementOf(json.ROLLINFO))
 
-    const shift = trackShift ?? calibrationShiftIn(holes, system)
+    const shift = trackShift ?? calibrationShiftIn(holes, system, json.ROLLINFO)
 
     const calibration: TrackCalibration = {
         unit: 'px',
