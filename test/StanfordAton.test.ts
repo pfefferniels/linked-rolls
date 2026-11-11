@@ -264,6 +264,21 @@ const t98Analysis = (columns: readonly number[]): string => {
 const spanning = (from: number, to: number) =>
     Array.from({ length: to - from + 1 }, (_, i) => from + i)
 
+describe('reading a file that is not quite an analysis', () => {
+    it('reads an analysis that never closes its description of the roll', () => {
+        // bb988jx6754 of Stanford's archive ends on `@END: ROLLINFO`.
+        const unclosed = aton.replace(/@@END:\s*ROLLINFO\s*$/, '@END: ROLLINFO\n')
+        expect(unclosed).not.toEqual(aton)
+
+        expect(featuresOf(readFromStanfordAton(unclosed))).toHaveLength(featuresOf(readFromStanfordAton(aton)).length)
+    })
+
+    it('says so where a file describes no roll with holes', () => {
+        expect(() => readFromStanfordAton('@@BEGIN: ROLLINFO\n@DRUID:\tnone\n@@END: ROLLINFO\n')).toThrow(/not a roll analysis/)
+        expect(() => readFromStanfordAton('MThd, or anything else')).toThrow(/not a roll analysis/)
+    })
+})
+
 describe('calibrating a scan whose rewind cannot be found', () => {
     it('reads the phase off columns that span the whole bar', () => {
         const copy = readFromStanfordAton(t98Analysis(spanning(13, 110)), {

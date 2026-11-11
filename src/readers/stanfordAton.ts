@@ -308,6 +308,21 @@ const takenBy = (measurement: Measurement | undefined) => <O extends object>(val
         : value
 
 /**
+ * The description of the roll in a parsed analysis. A file that never
+ * closes it, as bb988jx6754 of Stanford's archive ends on `@END:` for
+ * `@@END:`, is left by the parser standing inside it, and is read all
+ * the same. Anything without holes is not an analysis, and is refused
+ * by name rather than by whatever reading it would have tripped first.
+ */
+const rollinfoOf = (parsed: any): any => {
+    const rollinfo = parsed?.ROLLINFO ?? parsed
+    if (!rollinfo?.HOLES?.HOLE) {
+        throw new Error('This is not a roll analysis: it describes no roll with holes (ROLLINFO, HOLES)')
+    }
+    return rollinfo
+}
+
+/**
  * Reads a hole analysis of a scan, in the ATON format of Stanford's
  * SUPRA collection, as a copy of the roll: its chains of holes in
  * millimetres of paper on the bar it was cut for, its edge tears, its
@@ -320,10 +335,10 @@ export function readFromStanfordAton(
     atonString: string,
     { trackShift, system = welteT100, scan }: StanfordAtonOptions = {}
 ): RollCopy {
-    const parser = new AtonParser()
-    const json = parser.parse(atonString)
+    const rollinfo = rollinfoOf(new AtonParser().parse(atonString))
+    const json = { ROLLINFO: rollinfo }
 
-    const holes: AtonHole[] = json.ROLLINFO.HOLES.HOLE
+    const holes: AtonHole[] = listOf(rollinfo.HOLES.HOLE)
     const druid: string = json.ROLLINFO.DRUID
     const stanford = druid ? stanfordScan(druid) : undefined
     const separation = readPx(json.ROLLINFO.HOLE_SEPARATION)
