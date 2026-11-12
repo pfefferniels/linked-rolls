@@ -468,3 +468,71 @@ describe('chaining the holes of an analysis', () => {
         expect(extents(held)).toEqual([[1000, 1104], [1400, 1494], [1700, 1728], [1758, 1786]])
     })
 })
+
+/**
+ * A red roll as the parser describes one scan of WM 371
+ * (hc909pp9868): it misjudged the edges of the paper and set every
+ * hole it took to lie beyond them aside, as `bass` or `treble`. The
+ * holes it lists are those of the middle tracks, the tail of the last
+ * note among them trails the last attack as a rewind would, and the
+ * paper wanders sideways under the scanner by half a track.
+ */
+const margined = ({ wander = 0 }: { wander?: number } = {}): string => {
+    const offset = 3.69502, separation = 37.8123
+    const hole = (column: number, row: number, { attack = true, aside }: { attack?: boolean, aside?: string } = {}) => [
+        '@@BEGIN: HOLE',
+        `@ORIGIN_ROW:\t${row}px`,
+        `@ORIGIN_COL:\t${offset + column * separation - 10 - wander}px`,
+        '@WIDTH_ROW:\t40px',
+        '@WIDTH_COL:\t20px',
+        `@CENTROID_COL:\t${offset + column * separation - wander}px`,
+        '@PERIMETER:\t100px',
+        '@CIRCULARITY:\t0.8',
+        ...(attack ? [`@NOTE_ATTACK:\t${row}px`, `@OFF_TIME:\t${row + 40}px`] : []),
+        `@TRACKER_HOLE:\t${aside ? 0 : column}`,
+        `@HPIXCOR:\t${wander}px`,
+        ...(aside ? [`@REASON:\t${aside}`] : []),
+        '@@END: HOLE'
+    ].join('\n')
+    const columns = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => from + i)
+
+    return [
+        '@@BEGIN: ROLLINFO',
+        '@DRUID:',
+        '@ROLL_TYPE:\twelte-red',
+        '@LENGTH_DPI:\t300.25ppi',
+        '@IMAGE_WIDTH:\t4096px',
+        '@IMAGE_LENGTH:\t20000px',
+        '@ROLL_WIDTH:\t3886.54px',
+        // the paper lies between 84 and 3970, its middle on column 53.5
+        '@HARD_MARGIN_BASS:\t84px',
+        '@HARD_MARGIN_TREBLE:\t126px',
+        `@HOLE_SEPARATION:\t${separation}px`,
+        `@HOLE_OFFSET:\t${offset}px`,
+        '@@BEGIN: HOLES',
+        ...columns(40, 65).map((column, i) => hole(column, 1000 + i * 100)),
+        // the last note, held over three punches
+        hole(60, 5000), hole(60, 5045, { attack: false }), hole(60, 5090, { attack: false }),
+        '@@END: HOLES',
+        '@@BEGIN: BADHOLES',
+        ...columns(4, 39).map((column, i) => hole(column, 1050 + i * 100, { aside: 'bass' })),
+        ...columns(66, 103).map((column, i) => hole(column, 1050 + i * 100, { aside: 'treble' })),
+        '@@END: BADHOLES',
+        '@@END: ROLLINFO'
+    ].join('\n')
+}
+
+describe('reading a roll whose outer tracks the parser set aside', () => {
+    const tracksOf = (analysis: string) => featuresOf(readFromStanfordAton(analysis)).map(feature => feature.vertical.from)
+
+    it('does not take the tail of the last note for the rewind', () => {
+        const tracks = tracksOf(margined())
+        expect(Math.min(...tracks)).toEqual(1)
+        expect(Math.max(...tracks)).toEqual(100)
+        expect(tracks).toHaveLength(101)
+    })
+
+    it('puts a hole set aside on its track by where the paper would lie had it run straight', () => {
+        expect(tracksOf(margined({ wander: 19 })).sort((a, b) => a - b)).toEqual(tracksOf(margined()).sort((a, b) => a - b))
+    })
+})

@@ -23,6 +23,10 @@ interface AtonHole {
     OFF_TIME?: string
     /** Why the parser set a hole aside; only its bad holes say. */
     REASON?: string
+    /** How far the paper had wandered sideways where the hole lies, to be added to its column. */
+    HPIXCOR?: string
+    /** The same at the leading edge of a hole long enough to wander within itself. */
+    HPIXCOR_LEAD?: string
 }
 
 /** A tear record, as the analysis lists the edge tears on either side. */
@@ -46,15 +50,25 @@ const readPx = (value: string): Pixels => px(parseFloat(value))
 const listOf = <T,>(value: T | T[] | undefined): T[] =>
     value === undefined ? [] : Array.isArray(value) ? value : [value]
 
-/** The hole on the track its column falls on: what the parser sets aside carries no track number of its own. */
-const onItsTrack = (hole: AtonHole, calibration: TrackCalibration): AtonHole => ({
-    ...hole,
-    TRACKER_HOLE: `${Math.round((readPx(hole.CENTROID_COL) - calibration.offset) / calibration.separation)}`
-})
+/** Where the tracks lie in the image: the column of the first and how far apart they are. */
+type Grid = Pick<TrackCalibration, 'offset' | 'separation'>
+
+/**
+ * The hole on the track its column falls on: what the parser sets
+ * aside carries no track number of its own. The paper wanders sideways
+ * as it runs past the scanner, by more than a track on some rolls, and
+ * the parser says for every hole by how much; the column counts from
+ * where the paper would lie had it run straight.
+ */
+const onItsTrack = (hole: AtonHole, grid: Grid): AtonHole => {
+    const wander = parseFloat(hole.HPIXCOR ?? hole.HPIXCOR_LEAD ?? '0')
+    const column = readPx(hole.CENTROID_COL) + (Number.isFinite(wander) ? wander : 0)
+    return { ...hole, TRACKER_HOLE: `${Math.round((column - grid.offset) / grid.separation)}` }
+}
 
 /** Whether a hole set aside can be a punch at all: what is wider than a track is torn paper. */
-const punchSized = (hole: AtonHole, calibration: TrackCalibration): boolean =>
-    readPx(hole.WIDTH_COL) <= calibration.separation
+const punchSized = (hole: AtonHole, grid: Grid): boolean =>
+    readPx(hole.WIDTH_COL) <= grid.separation
 
 /**
  * Whether a hole set aside is a speck too small for a punch. The
@@ -68,14 +82,15 @@ const isSpeck = (hole: AtonHole): boolean =>
 /**
  * The holes the parser set aside that are punches all the same: one
  * that came out a little short, or skewed, still heads its note or
- * holds it together in the middle. They carry no track number of their
- * own, so the column says which track they sit on. What is wider than
- * a track is torn paper and is left out.
+ * holds it together in the middle, and where the parser misjudges the
+ * edges of the paper it sets aside every hole it takes to lie beyond
+ * them, which on one scan of WM 371 is all but the middle 38 tracks.
+ * What is wider than a track is torn paper and is left out.
  */
-const punchedBadHoles = (holes: AtonHole[], calibration: TrackCalibration): AtonHole[] =>
+const punchedBadHoles = (holes: AtonHole[], grid: Grid): AtonHole[] =>
     holes
-        .filter(hole => punchSized(hole, calibration))
-        .map(hole => onItsTrack(hole, calibration))
+        .filter(hole => punchSized(hole, grid))
+        .map(hole => onItsTrack(hole, grid))
 
 const mostFrequent = (values: number[]) => {
     const counts = values.reduce(
@@ -185,15 +200,30 @@ const centredShiftIn = (rollinfo: Record<string, string>, bar: TrackerBar): numb
  * T-98 scans do. There the holes themselves say which shifts keep them
  * on the bar, and where they admit several, the middle of the paper
  * chooses.
+ *
+ * The holes the parser set aside do not choose, since some of them are
+ * torn paper beside the bar. But they are heard on the rewind: where
+ * the parser misjudged the edges of the paper and set every outer
+ * track aside, the holes it lists span the middle of the bar only, the
+ * tail of the last note is taken for the rewind, and a shift that
+ * keeps the middle on the bar throws the rest far off it.
  */
-const calibrationShiftIn = (holes: AtonHole[], bar: TrackerBar, rollinfo: Record<string, string>): Track => {
+const calibrationShiftIn = (
+    holes: AtonHole[],
+    bar: TrackerBar,
+    rollinfo: Record<string, string>,
+    setAside: AtonHole[] = []
+): Track => {
     const columns = chainsByColumn(holes)
-    const chains = [...columns.values()].reduce((sum, count) => sum + count, 0)
     const fitting = fittingShiftsIn(columns, bar)
+
+    const punched = chainsByColumn([...holes, ...setAside])
+    const chains = [...punched.values()].reduce((sum, count) => sum + count, 0)
 
     const rewind = rewindTrackIn(holes)
     const byRewind = rewind === undefined ? undefined : track(bar.rewindTrack - rewind)
-    if (byRewind !== undefined && lostUnder(columns, bar)(byRewind) - fitting.lost <= STRAY_SHARE * chains) return byRewind
+    if (byRewind !== undefined
+        && lostUnder(punched, bar)(byRewind) - fittingShiftsIn(punched, bar).lost <= STRAY_SHARE * chains) return byRewind
     if (fitting.shifts.length === 1) return fitting.shifts[0]
 
     const centred = centredShiftIn(rollinfo, bar)
@@ -410,19 +440,18 @@ export function readFromStanfordAton(
     const dpi = parseFloat(json.ROLLINFO.LENGTH_DPI)
     const measured = takenBy(measurementOf(json.ROLLINFO))
 
-    const shift = trackShift ?? calibrationShiftIn(holes, system, json.ROLLINFO)
+    const grid: Grid = { offset: gridOffsetOf(holes, separation, json.ROLLINFO.HOLE_OFFSET), separation }
 
-    const calibration: TrackCalibration = {
-        unit: 'px',
-        offset: gridOffsetOf(holes, separation, json.ROLLINFO.HOLE_OFFSET),
-        separation,
-        shift
-    }
+    const setAside = punchedBadHoles(listOf(json.ROLLINFO.BADHOLES?.HOLE), grid)
+
+    const shift = trackShift
+        ?? calibrationShiftIn(holes, system, json.ROLLINFO, setAside.filter(hole => !isSpeck(hole)))
+
+    const calibration: TrackCalibration = { unit: 'px', ...grid, shift }
 
     const punchDiameter = punchDiameterOf(holes, dpi)
 
-    const setAside: AtonHole[] = listOf(json.ROLLINFO.BADHOLES?.HOLE)
-    const chains = chainsAmong([...holes, ...punchedBadHoles(setAside, calibration)], inPixels(bridge, dpi))
+    const chains = chainsAmong([...holes, ...setAside], inPixels(bridge, dpi))
 
     const features = chains
         .flatMap(({ hole, attack, release }): HoleChain[] => {
