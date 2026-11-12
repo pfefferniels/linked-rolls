@@ -374,21 +374,22 @@ describe('calibrating a scan whose rewind cannot be found', () => {
 })
 
 /**
- * A roll with a ragged end, as the parser describes WM 1253's second
- * copy (hp956bx4547): it takes its average hole width before it sets
- * the torn paper aside, so the average comes out several times the
- * width of a hole, and since it joins what lies closer than 1.37 of
- * those widths, a note repeated within two centimetres is joined with
- * the one before it.
+ * One track of an analysis, as the parser describes WM 1253's second
+ * copy (hp956bx4547), a roll cut with round punches 28px wide. The
+ * parser joins what lies closer than 1.37 average hole widths, and it
+ * takes that average before it sets torn paper aside; this roll ends
+ * in white paper spliced on, which it took for tears, so the average
+ * came out at 197.71px and a note repeated within two centimetres was
+ * joined with the one before it.
  */
-const raggedAnalysis = (averageHoleWidth: number): string => {
+const repeatingAnalysis = (averageHoleWidth: number, setAside: string[] = []): string => {
     const hole = (row: number, attack?: { off: number }) => [
         '@@BEGIN: HOLE',
         `@ORIGIN_ROW:\t${row}px`,
-        '@ORIGIN_COL:\t1870px',
+        '@ORIGIN_COL:\t1889px',
         '@WIDTH_ROW:\t28px',
         '@WIDTH_COL:\t28px',
-        '@CENTROID_COL:\t1884px',
+        '@CENTROID_COL:\t1903px',
         '@PERIMETER:\t88px',
         '@CIRCULARITY:\t0.97',
         ...(attack ? [`@NOTE_ATTACK:\t${row}px`, `@OFF_TIME:\t${attack.off}px`] : []),
@@ -412,40 +413,58 @@ const raggedAnalysis = (averageHoleWidth: number): string => {
         '@@BEGIN: HOLES',
         // a note held over three punches, 10px of paper between them
         hole(1000, { off: 1104 }), hole(1038), hole(1076),
-        // and the same key struck three more times, 265px apart: the
-        // parser has joined the last two
+        // the same key struck again, and then twice in a fast
+        // repetition with 30px of paper between the strokes, which the
+        // parser joins on punches this wide whatever its average
         hole(1400, { off: 1428 }),
-        hole(1700, { off: 2021 }), hole(1993),
+        hole(1700, { off: 1786 }), hole(1758),
         '@@END: HOLES',
+        ...(setAside.length > 0 ? ['@@BEGIN: BADHOLES', ...setAside, '@@END: BADHOLES'] : []),
         '@@END: ROLLINFO'
     ].join('\n')
 }
 
-describe('reading a roll whose torn end widened the parser\'s bridge', () => {
-    const extents = (analysis: string) =>
-        featuresOf(readFromStanfordAton(analysis, { trackShift: track(0) }))
+describe('chaining the holes of an analysis', () => {
+    const extents = (analysis: string, bridge?: number) =>
+        featuresOf(readFromStanfordAton(analysis, { trackShift: track(0), ...(bridge !== undefined && { bridge: mm(bridge) }) }))
             .map(feature => [feature.horizontal.from, feature.horizontal.to].map(place => Math.round(inPixels(place, 300.25))))
 
-    it('chains the holes anew over a bridge as wide as the holes it lists', () => {
-        expect(extents(raggedAnalysis(197.71))).toEqual([[1000, 1104], [1400, 1428], [1700, 1728], [1993, 2021]])
+    const strokes = [[1000, 1104], [1400, 1428], [1700, 1728], [1758, 1786]]
+
+    it('parts the strokes of a repetition that the parser joined on wide punches', () => {
+        expect(extents(repeatingAnalysis(28))).toEqual(strokes)
     })
 
-    it('takes the parser\'s chains where its average is that of the holes', () => {
-        expect(extents(raggedAnalysis(28))).toEqual([[1000, 1104], [1400, 1428], [1700, 2021]])
+    it('chains the same whatever average the parser took its bridge from', () => {
+        expect(extents(repeatingAnalysis(197.71))).toEqual(strokes)
+    })
+
+    it('chains over the bridge it is given', () => {
+        expect(extents(repeatingAnalysis(28), 3)).toEqual([[1000, 1104], [1400, 1428], [1700, 1786]])
+        expect(extents(repeatingAnalysis(28), 0.5)).toHaveLength(6)
     })
 
     /**
-     * On round punches 28px wide the parser joins over 38px of paper,
-     * which is more than lies between two strokes of a fast
-     * repetition. Whoever reads the file can say how much paper a
-     * chain may hold instead.
+     * The parser sets a punch aside for its shape wherever it lies,
+     * and one in the middle of a note still holds that note together.
      */
-    it('chains over the bridge it is given', () => {
-        const within = (bridge: number) =>
-            featuresOf(readFromStanfordAton(raggedAnalysis(28), { trackShift: track(0), bridge: mm(bridge) }))
-                .map(feature => [feature.horizontal.from, feature.horizontal.to].map(place => Math.round(inPixels(place, 300.25))))
+    it('keeps a note whole whose middle punch the parser set aside', () => {
+        const middle = [
+            '@@BEGIN: HOLE', '@ID:\tbad001',
+            '@ORIGIN_ROW:\t1438px', '@ORIGIN_COL:\t1888px', '@WIDTH_ROW:\t18px', '@WIDTH_COL:\t30px',
+            '@CENTROID_COL:\t1903px', '@PERIMETER:\t80px', '@CIRCULARITY:\t0.8',
+            '@TRACKER_HOLE:\t0', '@REASON:\taspect',
+            '@@END: HOLE'
+        ].join('\n')
+        const further = [
+            '@@BEGIN: HOLE',
+            '@ORIGIN_ROW:\t1466px', '@ORIGIN_COL:\t1889px', '@WIDTH_ROW:\t28px', '@WIDTH_COL:\t28px',
+            '@CENTROID_COL:\t1903px', '@PERIMETER:\t88px', '@CIRCULARITY:\t0.97',
+            '@NOTE_ATTACK:\t1466px', '@OFF_TIME:\t1494px', '@TRACKER_HOLE:\t50',
+            '@@END: HOLE'
+        ].join('\n')
+        const held = repeatingAnalysis(28, [middle]).replace('@@END: HOLES', `${further}\n@@END: HOLES`)
 
-        expect(within(1)).toEqual([[1000, 1104], [1400, 1428], [1700, 1728], [1993, 2021]])
-        expect(within(0.5)).toHaveLength(6)
+        expect(extents(held)).toEqual([[1000, 1104], [1400, 1494], [1700, 1728], [1758, 1786]])
     })
 })

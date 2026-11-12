@@ -21,6 +21,8 @@ interface AtonHole {
     PERIMETER: string
     NOTE_ATTACK?: string
     OFF_TIME?: string
+    /** Why the parser set a hole aside; only its bad holes say. */
+    REASON?: string
 }
 
 /** A tear record, as the analysis lists the edge tears on either side. */
@@ -44,26 +46,36 @@ const readPx = (value: string): Pixels => px(parseFloat(value))
 const listOf = <T,>(value: T | T[] | undefined): T[] =>
     value === undefined ? [] : Array.isArray(value) ? value : [value]
 
+/** The hole on the track its column falls on: what the parser sets aside carries no track number of its own. */
+const onItsTrack = (hole: AtonHole, calibration: TrackCalibration): AtonHole => ({
+    ...hole,
+    TRACKER_HOLE: `${Math.round((readPx(hole.CENTROID_COL) - calibration.offset) / calibration.separation)}`
+})
+
+/** Whether a hole set aside can be a punch at all: what is wider than a track is torn paper. */
+const punchSized = (hole: AtonHole, calibration: TrackCalibration): boolean =>
+    readPx(hole.WIDTH_COL) <= calibration.separation
+
 /**
- * Holes the parser set aside as suspicious after it had already chained
- * them into a note: the head of such a chain is usually a punch that
- * came out a little short, and leaving it out would lose the whole
- * chain. They carry no track number of their own, so the column says
- * which track they sit on.
- *
- * Not everything set aside is a punch. What is wider than a track is
- * torn paper, and a speck too small for a hole is given an attack but
- * an off time of nought; neither is a chain.
+ * Whether a hole set aside is a speck too small for a punch. The
+ * parser says so, and gives such a hole an attack with an off time of
+ * nought.
  */
-const chainedBadHoles = (holes: AtonHole[], calibration: TrackCalibration): AtonHole[] =>
+const isSpeck = (hole: AtonHole): boolean =>
+    hole.REASON === 'small'
+    || (hole.NOTE_ATTACK !== undefined && hole.OFF_TIME !== undefined && readPx(hole.OFF_TIME) <= readPx(hole.NOTE_ATTACK))
+
+/**
+ * The holes the parser set aside that are punches all the same: one
+ * that came out a little short, or skewed, still heads its note or
+ * holds it together in the middle. They carry no track number of their
+ * own, so the column says which track they sit on. What is wider than
+ * a track is torn paper and is left out.
+ */
+const punchedBadHoles = (holes: AtonHole[], calibration: TrackCalibration): AtonHole[] =>
     holes
-        .filter(hole => hole.NOTE_ATTACK && hole.OFF_TIME
-            && readPx(hole.OFF_TIME) > readPx(hole.NOTE_ATTACK)
-            && readPx(hole.WIDTH_COL) <= calibration.separation)
-        .map(hole => ({
-            ...hole,
-            TRACKER_HOLE: `${Math.round((readPx(hole.CENTROID_COL) - calibration.offset) / calibration.separation)}`
-        }))
+        .filter(hole => punchSized(hole, calibration))
+        .map(hole => onItsTrack(hole, calibration))
 
 const mostFrequent = (values: number[]) => {
     const counts = values.reduce(
@@ -206,47 +218,29 @@ const gridOffsetOf = (holes: AtonHole[], separation: Pixels, stated?: string): P
 type Chain = { hole: AtonHole, attack: Pixels, release: Pixels }
 
 /**
- * The parser joins the holes of a track into one chain where the paper
- * between them is no longer than this many average hole widths.
- */
-const BRIDGE_FACTOR = 1.37
-
-/**
- * How many times the width of the holes it lists the parser's average
- * hole width may be before its chains are not taken as they stand.
- */
-const BRIDGE_TRUSTED = 1.25
-
-/**
- * The bridge the parser should have joined holes over, where the one it
- * used cannot be right; nothing where its chains can be taken as they
- * stand.
+ * How much paper may lie between two holes of a track for them to make
+ * one chain, where nothing else is said.
  *
- * The parser takes its average hole width before it sets the torn
- * paper aside. On a roll with a ragged end the tears, hundreds of
- * pixels wide, raise that average several times over, and every note
- * repeated within a few centimetres is then joined with the one before
- * it into a single long chain. The holes it lists say how wide a hole
- * is, and the bridge is taken from them.
+ * The analysis lists every hole and says which ones the parser joined
+ * into a note, over 1.37 average widths of a hole. That rule moves
+ * with the punch: 2.5 mm on the oblong slots of most red rolls, 3.3 mm
+ * on the round punches of the rest, where it joins the strokes of a
+ * fast repetition; and the average is taken before torn paper is set
+ * aside, so one ragged end can raise it sevenfold. The paper itself
+ * does not move with the punch. Over the 457 analyses of SUPRA the
+ * webs within a chain run out at 1.7 mm and the gaps between two
+ * strokes begin at 2 mm, whichever punch cut them. So the holes are
+ * chained here, over a length of paper.
  */
-const mendedBridgeIn = (rollinfo: any, holes: AtonHole[]): Pixels | undefined => {
-    const stated = parseFloat(rollinfo.AVG_HOLE_WIDTH)
-    const listed = holes.length > 0 ? mean(holes.map(hole => readPx(hole.WIDTH_COL))) : NaN
-    if (!(stated > BRIDGE_TRUSTED * listed)) return undefined
+const BRIDGE = mm(1.7)
 
-    const factor = parseFloat(rollinfo.BRIDGE_FACTOR)
-    return px((Number.isFinite(factor) ? factor : BRIDGE_FACTOR) * listed)
-}
-
-/** The chains as the parser made them, each on the hole that carries its attack and off time. */
-const chainsStated = (holes: AtonHole[]): Chain[] =>
-    holes
-        .filter(hole => hole.NOTE_ATTACK && hole.OFF_TIME)
-        .map(hole => ({ hole, attack: readPx(hole.NOTE_ATTACK!), release: readPx(hole.OFF_TIME!) }))
-
-/** The chains made anew from the holes themselves: those of a track no further apart than the bridge make one. */
-const chainsBridged = (holes: AtonHole[], bridge: Pixels): Chain[] => {
-    const open = new Map<string, Chain>()
+/**
+ * The chains among the holes: those of a track no further apart than
+ * the bridge make one. A speck lengthens a chain it lies in and makes
+ * none of its own.
+ */
+const chainsAmong = (holes: AtonHole[], bridge: Pixels): Chain[] => {
+    const open = new Map<string, Chain & { punched: boolean }>()
     return [...holes]
         .sort((a, b) => readPx(a.ORIGIN_ROW) - readPx(b.ORIGIN_ROW))
         .flatMap(hole => {
@@ -255,18 +249,16 @@ const chainsBridged = (holes: AtonHole[], bridge: Pixels): Chain[] => {
             const last = open.get(hole.TRACKER_HOLE)
             if (last && attack - last.release <= bridge) {
                 last.release = px(Math.max(last.release, release))
+                last.punched ||= !isSpeck(hole)
                 return []
             }
-            const chain = { hole, attack, release }
+            const chain = { hole, attack, release, punched: !isSpeck(hole) }
             open.set(hole.TRACKER_HOLE, chain)
             return [chain]
         })
-}
-
-/** The chains among the holes: the parser's own, or those a mended bridge makes of them. */
-const chainsAmong = (holes: AtonHole[], bridge?: Pixels): Chain[] =>
-    (bridge === undefined ? chainsStated(holes) : chainsBridged(holes, bridge))
+        .filter(chain => chain.punched)
         .sort((a, b) => a.attack - b.attack)
+}
 
 const punchDiameterOf = (holes: AtonHole[], dpi: number): Millimeters | undefined => {
     const circular = holes
@@ -307,8 +299,9 @@ export interface StanfordAtonOptions {
 
     /**
      * How much paper may lie between two holes of a track for them to
-     * make one chain. Left out, the chains are the parser's own, which
-     * joins over 1.37 widths of a hole.
+     * make one chain. Left out, it is 1.7 mm, which lies between the
+     * webs within a chain and the gaps of a repetition on either kind
+     * of punch.
      */
     bridge?: Millimeters
 }
@@ -405,7 +398,7 @@ const rollinfoOf = (parsed: any): any => {
  */
 export function readFromStanfordAton(
     atonString: string,
-    { trackShift, system = welteT100, scan, bridge }: StanfordAtonOptions = {}
+    { trackShift, system = welteT100, scan, bridge = BRIDGE }: StanfordAtonOptions = {}
 ): RollCopy {
     const rollinfo = rollinfoOf(new AtonParser().parse(atonString))
     const json = { ROLLINFO: rollinfo }
@@ -428,10 +421,8 @@ export function readFromStanfordAton(
 
     const punchDiameter = punchDiameterOf(holes, dpi)
 
-    const chains = chainsAmong(
-        [...holes, ...chainedBadHoles(listOf(json.ROLLINFO.BADHOLES?.HOLE), calibration)],
-        bridge !== undefined ? inPixels(bridge, dpi) : mendedBridgeIn(json.ROLLINFO, holes)
-    )
+    const setAside: AtonHole[] = listOf(json.ROLLINFO.BADHOLES?.HOLE)
+    const chains = chainsAmong([...holes, ...punchedBadHoles(setAside, calibration)], inPixels(bridge, dpi))
 
     const features = chains
         .flatMap(({ hole, attack, release }): HoleChain[] => {
