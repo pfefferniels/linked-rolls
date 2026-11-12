@@ -17,11 +17,16 @@ import { featureIdsOf, carriedOnlyOn, forgetFeatures } from "./forget.js"
  * Puts the copy into the edition with a version of its own, which
  * inserts every symbol the copy's own tracker bar reads on it. The
  * version is a reading in that system's words, so it is coded for the
- * system the copy was cut for.
+ * system the copy was cut for. The edition takes a copy of what it is
+ * given, so the operation may be applied again, as a reducer is run
+ * twice under React's strict mode: what the first run put into the
+ * edition is frozen there, and the second could neither name nor align
+ * it.
  * @category Operations
  */
-export const createVersion = (copy: RollCopy): EditionOp =>
+export const createVersion = (given: RollCopy): EditionOp =>
     draft => {
+        const copy = structuredClone(given)
         const bar = barOf(copy)
         draft.copies.push(copy)
         draft.versions.push({
@@ -39,7 +44,7 @@ export const createVersion = (copy: RollCopy): EditionOp =>
  */
 export const addCopy = (copy: RollCopy): EditionOp =>
     draft => {
-        draft.copies.push(copy)
+        draft.copies.push(structuredClone(copy))
     }
 
 /**

@@ -17,7 +17,9 @@ import { sharedTexts } from '../src/filiation/texts'
 import { PresenceMatrix } from '../src/filiation/presence'
 import { siglaOf } from '../src/analysis/sigla'
 import { snapshotOf } from '../src/analysis/text'
-import { versionsWitnessedBy } from '../src/analysis/witnesses'
+import { versionsWitnessedBy, witnessesOf } from '../src/analysis/witnesses'
+import { featuresOf } from '../src/model/RollCopy'
+import { idOf } from '../src/model/Assumption'
 import { editsOf, insertedBy } from '../src/model/Version'
 import { isCollationsOwn } from '../src/collation/Collation'
 import { adoptEdits, proposeEdits } from '../src/filiation/edits'
@@ -103,6 +105,66 @@ describe('the collation of copies', () => {
     })
 })
 
+/**
+ * Two copies of one text whose papers do not lie on one line: the same
+ * notes, the second copy's displaced along the roll by `by`.
+ */
+const displaced = (by: (at: number) => number) => {
+    const random = generator(5)
+    const text: Item[] = []
+    for (let at = 200; at < 9000; at += 14) text.push(noteAt(40 + Math.floor(random() * 40), at))
+    return editionOf([
+        punched('one', text, 1),
+        punched('other', text.map(item => ({ ...item, at: item.at + by(item.at) })), 2)
+    ], [])
+}
+
+describe('copies whose papers do not lie on one line', () => {
+    /**
+     * WM 570: by the end of the roll Stanford's second copy lies 2.9 mm
+     * from the first and Phillips's reading 19 mm, with a window of 2 mm
+     * and 10 mm about one offset for the whole roll. The closing notes
+     * were read as three notes each, one to a copy.
+     */
+    it('are read as one text where the second bows against the first', () => {
+        // Nought in the middle of the roll, twelve millimetres off at either end.
+        const bow = (at: number) => -12 * ((at - 4600) / 4400) ** 2
+        const edition = displaced(bow)
+        const collation = collateCopies(edition, ['one', 'other'])
+
+        expect(collation.readings.filter(reading => reading.copies.length < 2)).toEqual([])
+        const drift = collation.drift['one|other']
+        expect(drift.length).toBeGreaterThan(20)
+        for (const { at, by } of drift) expect(by).toBeCloseTo(bow(at), 0)
+    })
+
+    it('are read as one text across a place where the offset steps, as at a splice', () => {
+        const step = (at: number) => at < 3000 ? 23 : 0
+        const collation = collateCopies(displaced(step), ['one', 'other'])
+        const apart = collation.readings.filter(reading => reading.copies.length < 2)
+
+        // Only where the offset turns from the one to the other can a reading be missed.
+        expect(apart.length).toBeLessThan(0.02 * collation.readings.length)
+        for (const reading of apart) expect(Math.abs(reading.place.from - 3000)).toBeLessThan(400)
+    })
+
+    it('are told no drift where they lie on one line', () => {
+        const collation = collateCopies(displaced(() => 0), ['one', 'other'])
+        expect(collation.readings.filter(reading => reading.copies.length < 2)).toEqual([])
+        for (const { by } of collation.drift['one|other']) expect(Math.abs(by)).toBeLessThan(0.2)
+    })
+
+    it('do not take the period of a repeated note for a drift', () => {
+        // One pitch struck every nine millimetres over the whole roll: displaced by its period it agrees with itself.
+        const trill: Item[] = Array.from({ length: 600 }, (_, i) => ({ ...noteAt(60, 200 + i * 9), length: 5 }))
+        const edition = editionOf([punched('one', trill, 1), punched('other', trill, 2)], [])
+        const collation = collateCopies(edition, ['one', 'other'])
+
+        for (const { by } of collation.drift['one|other']) expect(Math.abs(by)).toBeLessThan(0.3)
+        expect(collation.readings.filter(reading => reading.copies.length < 2)).toEqual([])
+    })
+})
+
 describe('the ineffective commands of a text', () => {
     it('are those that set what is set, or cancel what is cancelled', () => {
         const at = (id: string, expressionType: string, from: number) =>
@@ -149,6 +211,68 @@ describe('a stemma proposed from the copies', () => {
         const proposal = proposeStemma(editionOfTradition())
         const grouping = proposal.supports.find(support => !support.ancestor && support.copies.join() === 'd,e')
         expect(grouping?.margin).toBeGreaterThan(0)
+    })
+})
+
+/**
+ * Two copies of one roll, the later one with every accent of the earlier
+ * moved a little along the paper and eight of its own. The search puts
+ * both below a lost version, each having readings the other lacks. The
+ * earlier copy's readings are then taken for the base text, the later
+ * copy having them moved, and nothing is left that its version changes.
+ */
+const moved = () => {
+    const random = generator(11)
+    const base: Item[] = []
+    for (let at = 200; at < 4000; at += 40) base.push(noteAt(48 + Math.floor(random() * 30), at))
+    const accents = (from: number, count: number, by = 0) =>
+        Array.from({ length: count }, (_, i) => accentAt(from + i * 200 + 20 + by)).flat()
+    const early = [...base, ...accents(300, 6)]
+    const late = [...base, ...accents(300, 6, 12), ...accents(1700, 8)]
+    return editionOf([punched('early', early, 1), punched('late', late, 2)], [])
+}
+
+/** The versions no copy carries at first hand that fewer than two versions derive from, which a stemma has no use for. */
+const idleLostVersions = (versions: readonly { id: string, copies: readonly string[], parent?: string }[]) =>
+    versions.filter(version => version.copies.length === 0
+        && versions.filter(other => other.parent === version.id).length < 2).map(version => version.id)
+
+describe('a version left with nothing of its own', () => {
+    it('is found by the search as two copies below a lost version', () => {
+        const proposal = proposeStemma(moved())
+        expect(proposal.notation).toBe('*(early,late)')
+        expect(proposal.baseText).toHaveLength(12)
+    })
+
+    it('is the version it derives from, which its copy then carries', () => {
+        const proposal = proposeStemma(moved())
+
+        expect(proposal.stemma).toBe('early(late)')
+        expect(proposal.versions.map(version => version.copies)).toEqual([['early'], ['late']])
+        expect(proposal.versions[1].parent).toBe(proposal.versions[0].id)
+        expect(proposal.versions[1].deletes).toHaveLength(12)
+        expect(idleLostVersions(proposal.versions)).toEqual([])
+    })
+
+    it('leaves no lost version in the edition that nothing derives from', () => {
+        const edition = moved()
+        const adopted = produce(edition, adoptStemma(proposeStemma(edition)))
+
+        expect(adopted.versions).toHaveLength(2)
+        const sigla = siglaOf(adopted)
+        expect(adopted.versions.map(version => sigla.get(version.id)).sort()).toEqual(['R1', 'R2'])
+        for (const copy of adopted.copies) {
+            const version = adopted.versions.find(candidate => witnessesOf(adopted, candidate.id)
+                .some(witness => witness.copy === copy.id && witness.through === undefined))!
+            expect(new Set(snapshotOf(adopted, version.id).flatMap(symbol => symbol.carriers.map(idOf)))
+                .isSupersetOf(new Set(featuresOf(copy).map(feature => feature.id)))).toBe(true)
+        }
+    })
+
+    it('is the same stemma as the search found where every version changes something', () => {
+        const proposal = proposeStemma(editionOfTradition())
+        expect(proposal.stemma).toBe(proposal.notation)
+        expect(idleLostVersions(proposal.versions)).toEqual([])
     })
 })
 
@@ -479,5 +603,23 @@ describe('copies carrying the same text', () => {
         expect(sharedTexts(chain, ['red', 'red', 'red'], 3).texts.map(text => text.copies)).toEqual([['a', 'b'], ['c']])
         const same = matrix(['111', '111'])
         expect(sharedTexts(same, ['red', 'red', 'green'], 3).texts.map(text => text.copies)).toEqual([['a', 'b'], ['c']])
+    })
+
+    /**
+     * Two copies of WM 371 in Stanford's archive, one of them read off
+     * its tracks, never aligned: neither could say what the other
+     * lacked, so they differed in nothing, and were proposed as one
+     * version holding the readings of both.
+     */
+    it('does not take copies for one text that show no reading in common', () => {
+        const nowhere: PresenceMatrix = {
+            copies: ['a', 'b'],
+            redundant: [],
+            presence: { r0: { a: 'present', b: 'unknown' }, r1: { a: 'unknown', b: 'present' } }
+        }
+        expect(sharedTexts(nowhere, ['red', 'red'], 3).texts.map(text => text.copies)).toEqual([['a'], ['b']])
+
+        const somewhere: PresenceMatrix = { ...nowhere, presence: { ...nowhere.presence, r2: { a: 'present', b: 'present' } } }
+        expect(sharedTexts(somewhere, ['red', 'red'], 3).texts.map(text => text.copies)).toEqual([['a', 'b']])
     })
 })

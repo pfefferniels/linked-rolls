@@ -6,19 +6,23 @@ import { assignDate, Measurement, ObjectAssumption } from "../model/Assumption.j
 import { TrackCalibration } from "../model/TrackCalibration.js";
 import { systemOf, TrackerBar } from "../systems/TrackerBar.js";
 import { welteT100 } from "../systems/welteT100/bar.js";
-import { inMillimeters, mean, Millimeters, mm, Pixels, pixelsPerInch, px, subtract, Track, track } from "../model/Quantity.js";
+import { inMillimeters, inPixels, mean, Millimeters, mm, Pixels, pixelsPerInch, px, subtract, Track, track } from "../model/Quantity.js";
 import { medianOf } from "../collation/statistics.js";
 
 /** A hole record as the Stanford analysis files spell it. */
 interface AtonHole {
     TRACKER_HOLE: string
     CENTROID_COL: string
+    ORIGIN_ROW: string
+    WIDTH_ROW: string
     ORIGIN_COL: string
     WIDTH_COL: string
     CIRCULARITY: string
     PERIMETER: string
     NOTE_ATTACK?: string
     OFF_TIME?: string
+    /** Why the parser set a hole aside; only its bad holes say. */
+    REASON?: string
 }
 
 /** A tear record, as the analysis lists the edge tears on either side. */
@@ -42,20 +46,36 @@ const readPx = (value: string): Pixels => px(parseFloat(value))
 const listOf = <T,>(value: T | T[] | undefined): T[] =>
     value === undefined ? [] : Array.isArray(value) ? value : [value]
 
+/** The hole on the track its column falls on: what the parser sets aside carries no track number of its own. */
+const onItsTrack = (hole: AtonHole, calibration: TrackCalibration): AtonHole => ({
+    ...hole,
+    TRACKER_HOLE: `${Math.round((readPx(hole.CENTROID_COL) - calibration.offset) / calibration.separation)}`
+})
+
+/** Whether a hole set aside can be a punch at all: what is wider than a track is torn paper. */
+const punchSized = (hole: AtonHole, calibration: TrackCalibration): boolean =>
+    readPx(hole.WIDTH_COL) <= calibration.separation
+
 /**
- * Holes the parser set aside as suspicious after it had already chained
- * them into a note: the head of such a chain is usually a punch that
- * came out a little short, and leaving it out would lose the whole
- * chain. They carry no track number of their own, so the column says
- * which track they sit on.
+ * Whether a hole set aside is a speck too small for a punch. The
+ * parser says so, and gives such a hole an attack with an off time of
+ * nought.
  */
-const chainedBadHoles = (holes: AtonHole[], calibration: TrackCalibration): AtonHole[] =>
+const isSpeck = (hole: AtonHole): boolean =>
+    hole.REASON === 'small'
+    || (hole.NOTE_ATTACK !== undefined && hole.OFF_TIME !== undefined && readPx(hole.OFF_TIME) <= readPx(hole.NOTE_ATTACK))
+
+/**
+ * The holes the parser set aside that are punches all the same: one
+ * that came out a little short, or skewed, still heads its note or
+ * holds it together in the middle. They carry no track number of their
+ * own, so the column says which track they sit on. What is wider than
+ * a track is torn paper and is left out.
+ */
+const punchedBadHoles = (holes: AtonHole[], calibration: TrackCalibration): AtonHole[] =>
     holes
-        .filter(hole => hole.NOTE_ATTACK && hole.OFF_TIME)
-        .map(hole => ({
-            ...hole,
-            TRACKER_HOLE: `${Math.round((readPx(hole.CENTROID_COL) - calibration.offset) / calibration.separation)}`
-        }))
+        .filter(hole => punchSized(hole, calibration))
+        .map(hole => onItsTrack(hole, calibration))
 
 const mostFrequent = (values: number[]) => {
     const counts = values.reduce(
@@ -94,16 +114,93 @@ const spannedShiftIn = (holes: AtonHole[], bar: TrackerBar): Track | undefined =
     return Math.max(...columns) - lowest + 1 === bar.trackCount ? track(1 - lowest) : undefined
 }
 
+/** The columns of the chains, each with how many chains it holds. */
+const chainsByColumn = (holes: AtonHole[]): Map<number, number> => {
+    const counts = new Map<number, number>()
+    for (const hole of holes) {
+        const column = +hole.TRACKER_HOLE
+        if (hole.NOTE_ATTACK && Number.isFinite(column)) counts.set(column, (counts.get(column) ?? 0) + 1)
+    }
+    return counts
+}
+
+/** How many chains a shift leaves on positions the bar does not read. */
+const lostUnder = (columns: ReadonlyMap<number, number>, bar: TrackerBar) => (shift: number): number =>
+    [...columns].reduce((sum, [column, chains]) => bar.meaningOf(track(column + shift)) ? sum : sum + chains, 0)
+
+/**
+ * The shifts that leave the fewest chains on positions the bar does not
+ * read, and how many those leave there. A roll is punched for its bar,
+ * so a shift that puts chains beside it is wrong by as much as it puts
+ * there; one that keeps them all is right only where the columns span
+ * the whole bar, and one of several otherwise.
+ */
+const fittingShiftsIn = (columns: ReadonlyMap<number, number>, bar: TrackerBar): { shifts: Track[], lost: number } => {
+    if (columns.size === 0) return { shifts: [], lost: 0 }
+
+    const lowest = Math.min(...columns.keys())
+    const highest = Math.max(...columns.keys())
+    // Every shift that still puts a column on the bar.
+    const shifts = Array.from({ length: highest - lowest + bar.trackCount }, (_, i) => 1 - highest + i)
+    const losses = shifts.map(lostUnder(columns, bar))
+    const lost = Math.min(...losses)
+    return { shifts: shifts.filter((_, i) => losses[i] === lost).map(shift => track(shift)), lost }
+}
+
+/**
+ * The share of a roll's chains that may lie beside the bar without
+ * calling the rewind into question: dust or a tear taken for a hole,
+ * which an analysis has a few of, and far less than a shift off by a
+ * track puts there.
+ */
+const STRAY_SHARE = 0.01
+
+/**
+ * Where the paper puts the bar: the positions lie centred between the
+ * edges of the roll, so the column at the middle of the paper is the
+ * middle of the bar. It is a measurement and comes out between two
+ * positions as often as on one, which is why it only chooses among
+ * shifts the holes admit. Nothing where the file does not say where the
+ * paper lies in the image.
+ */
+const centredShiftIn = (rollinfo: Record<string, string>, bar: TrackerBar): number | undefined => {
+    const width = readPx(rollinfo.IMAGE_WIDTH)
+    const bass = readPx(rollinfo.HARD_MARGIN_BASS)
+    const treble = readPx(rollinfo.HARD_MARGIN_TREBLE)
+    const offset = readPx(rollinfo.HOLE_OFFSET)
+    const separation = readPx(rollinfo.HOLE_SEPARATION)
+    if (![width, bass, treble, offset, separation].every(Number.isFinite) || separation <= 0) return undefined
+
+    const middle = (bass + (width - treble)) / 2
+    return (bar.trackCount + 1) / 2 - (middle - offset) / separation
+}
+
 /**
  * How far the scanner's own hole numbering has to move to reach the
- * bar. The rewind perforation is the usual landmark; where the roll
- * carries punches past it, as Dyer's T-98 scans do, the span of the
- * columns settles it instead.
+ * bar. The rewind perforation is the usual landmark, and is taken where
+ * it leaves the chains on the bar, give or take a stray. It cannot
+ * be told on every scan: a rewind slot punched in one piece is a chain
+ * like any other and nothing trails the last attack, a stray hole past
+ * the end is taken for it, and rolls carry punches after it, as Dyer's
+ * T-98 scans do. There the holes themselves say which shifts keep them
+ * on the bar, and where they admit several, the middle of the paper
+ * chooses.
  */
-const calibrationShiftIn = (holes: AtonHole[], bar: TrackerBar): Track => {
+const calibrationShiftIn = (holes: AtonHole[], bar: TrackerBar, rollinfo: Record<string, string>): Track => {
+    const columns = chainsByColumn(holes)
+    const chains = [...columns.values()].reduce((sum, count) => sum + count, 0)
+    const fitting = fittingShiftsIn(columns, bar)
+
     const rewind = rewindTrackIn(holes)
-    if (rewind !== undefined) return track(bar.rewindTrack - rewind)
-    return spannedShiftIn(holes, bar) ?? track(0)
+    const byRewind = rewind === undefined ? undefined : track(bar.rewindTrack - rewind)
+    if (byRewind !== undefined && lostUnder(columns, bar)(byRewind) - fitting.lost <= STRAY_SHARE * chains) return byRewind
+    if (fitting.shifts.length === 1) return fitting.shifts[0]
+
+    const centred = centredShiftIn(rollinfo, bar)
+    if (centred !== undefined && fitting.shifts.length > 0) {
+        return fitting.shifts.reduce((nearest, shift) => Math.abs(shift - centred) < Math.abs(nearest - centred) ? shift : nearest)
+    }
+    return spannedShiftIn(holes, bar) ?? byRewind ?? track(0)
 }
 
 /**
@@ -120,11 +217,48 @@ const gridOffsetOf = (holes: AtonHole[], separation: Pixels, stated?: string): P
 /** The head of a chain of holes, with the attack and the off time it carries read once. */
 type Chain = { hole: AtonHole, attack: Pixels, release: Pixels }
 
-const chainsAmong = (holes: AtonHole[]): Chain[] =>
-    holes
-        .filter(hole => hole.NOTE_ATTACK && hole.OFF_TIME)
-        .map(hole => ({ hole, attack: readPx(hole.NOTE_ATTACK!), release: readPx(hole.OFF_TIME!) }))
+/**
+ * How much paper may lie between two holes of a track for them to make
+ * one chain, where nothing else is said.
+ *
+ * The analysis lists every hole and says which ones the parser joined
+ * into a note, over 1.37 average widths of a hole. That rule moves
+ * with the punch: 2.5 mm on the oblong slots of most red rolls, 3.3 mm
+ * on the round punches of the rest, where it joins the strokes of a
+ * fast repetition; and the average is taken before torn paper is set
+ * aside, so one ragged end can raise it sevenfold. The paper itself
+ * does not move with the punch. Over the 457 analyses of SUPRA the
+ * webs within a chain run out at 1.7 mm and the gaps between two
+ * strokes begin at 2 mm, whichever punch cut them. So the holes are
+ * chained here, over a length of paper.
+ */
+const BRIDGE = mm(1.7)
+
+/**
+ * The chains among the holes: those of a track no further apart than
+ * the bridge make one. A speck lengthens a chain it lies in and makes
+ * none of its own.
+ */
+const chainsAmong = (holes: AtonHole[], bridge: Pixels): Chain[] => {
+    const open = new Map<string, Chain & { punched: boolean }>()
+    return [...holes]
+        .sort((a, b) => readPx(a.ORIGIN_ROW) - readPx(b.ORIGIN_ROW))
+        .flatMap(hole => {
+            const attack = readPx(hole.ORIGIN_ROW)
+            const release = px(attack + readPx(hole.WIDTH_ROW))
+            const last = open.get(hole.TRACKER_HOLE)
+            if (last && attack - last.release <= bridge) {
+                last.release = px(Math.max(last.release, release))
+                last.punched ||= !isSpeck(hole)
+                return []
+            }
+            const chain = { hole, attack, release, punched: !isSpeck(hole) }
+            open.set(hole.TRACKER_HOLE, chain)
+            return [chain]
+        })
+        .filter(chain => chain.punched)
         .sort((a, b) => a.attack - b.attack)
+}
 
 const punchDiameterOf = (holes: AtonHole[], dpi: number): Millimeters | undefined => {
     const circular = holes
@@ -144,7 +278,8 @@ export interface StanfordAtonOptions {
     /**
      * Added to the scanning software's hole numbering to reach the
      * tracker bar. Left out, it is inferred by putting the rewind
-     * perforation on the bar's rewind track.
+     * perforation on the bar's rewind track, and where that cannot be
+     * told, by keeping the chains on the bar.
      */
     trackShift?: Track
 
@@ -161,6 +296,14 @@ export interface StanfordAtonOptions {
      * analysis of a scan hosted elsewhere.
      */
     scan?: string
+
+    /**
+     * How much paper may lie between two holes of a track for them to
+     * make one chain. Left out, it is 1.7 mm, which lies between the
+     * webs within a chain and the gaps of a repetition on either kind
+     * of punch.
+     */
+    bridge?: Millimeters
 }
 
 /**
@@ -230,6 +373,21 @@ const takenBy = (measurement: Measurement | undefined) => <O extends object>(val
         : value
 
 /**
+ * The description of the roll in a parsed analysis. A file that never
+ * closes it, as bb988jx6754 of Stanford's archive ends on `@END:` for
+ * `@@END:`, is left by the parser standing inside it, and is read all
+ * the same. Anything without holes is not an analysis, and is refused
+ * by name rather than by whatever reading it would have tripped first.
+ */
+const rollinfoOf = (parsed: any): any => {
+    const rollinfo = parsed?.ROLLINFO ?? parsed
+    if (!rollinfo?.HOLES?.HOLE) {
+        throw new Error('This is not a roll analysis: it describes no roll with holes (ROLLINFO, HOLES)')
+    }
+    return rollinfo
+}
+
+/**
  * Reads a hole analysis of a scan, in the ATON format of Stanford's
  * SUPRA collection, as a copy of the roll: its chains of holes in
  * millimetres of paper on the bar it was cut for, its edge tears, its
@@ -240,19 +398,19 @@ const takenBy = (measurement: Measurement | undefined) => <O extends object>(val
  */
 export function readFromStanfordAton(
     atonString: string,
-    { trackShift, system = welteT100, scan }: StanfordAtonOptions = {}
+    { trackShift, system = welteT100, scan, bridge = BRIDGE }: StanfordAtonOptions = {}
 ): RollCopy {
-    const parser = new AtonParser()
-    const json = parser.parse(atonString)
+    const rollinfo = rollinfoOf(new AtonParser().parse(atonString))
+    const json = { ROLLINFO: rollinfo }
 
-    const holes: AtonHole[] = json.ROLLINFO.HOLES.HOLE
+    const holes: AtonHole[] = listOf(rollinfo.HOLES.HOLE)
     const druid: string = json.ROLLINFO.DRUID
     const stanford = druid ? stanfordScan(druid) : undefined
     const separation = readPx(json.ROLLINFO.HOLE_SEPARATION)
     const dpi = parseFloat(json.ROLLINFO.LENGTH_DPI)
     const measured = takenBy(measurementOf(json.ROLLINFO))
 
-    const shift = trackShift ?? calibrationShiftIn(holes, system)
+    const shift = trackShift ?? calibrationShiftIn(holes, system, json.ROLLINFO)
 
     const calibration: TrackCalibration = {
         unit: 'px',
@@ -263,8 +421,8 @@ export function readFromStanfordAton(
 
     const punchDiameter = punchDiameterOf(holes, dpi)
 
-    const chains = chainsAmong([...holes, ...chainedBadHoles(listOf(json.ROLLINFO.BADHOLES?.HOLE), calibration)])
-
+    const setAside: AtonHole[] = listOf(json.ROLLINFO.BADHOLES?.HOLE)
+    const chains = chainsAmong([...holes, ...punchedBadHoles(setAside, calibration)], inPixels(bridge, dpi))
 
     const features = chains
         .flatMap(({ hole, attack, release }): HoleChain[] => {

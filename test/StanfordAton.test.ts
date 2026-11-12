@@ -8,7 +8,7 @@ import { welteLicensee } from '../src/systems/welteLicensee/bar'
 import { welteT98 } from '../src/systems/welteT98/bar'
 import { columnOf } from '../src/model/TrackCalibration'
 import { Expression } from '../src/model/Symbol'
-import { inPixels, track } from '../src/model/Quantity'
+import { inPixels, mm, track } from '../src/model/Quantity'
 
 /**
  * mf320jq4997, a red Welte roll scanned at Stanford, reduced to its
@@ -209,6 +209,33 @@ describe('reading a Stanford analysis file', () => {
     })
 
     /**
+     * What the parser sets aside is not always a punch. Torn paper is
+     * far wider than a track, and a speck too small for a hole is
+     * given an attack with an off time of nought, which would make a
+     * chain that ends before the roll begins.
+     */
+    it('takes neither torn paper nor a speck among the bad holes for a chain', () => {
+        const bad = (id: string, widthRow: number, widthCol: number, offTime: number, reason: string) => [
+            '@@BEGIN: HOLE', `@ID:\t${id}`,
+            '@ORIGIN_ROW:\t50000px', '@ORIGIN_COL:\t3543px', `@WIDTH_ROW:\t${widthRow}px`, `@WIDTH_COL:\t${widthCol}px`,
+            '@CENTROID_ROW:\t50009px', '@CENTROID_COL:\t3556px', '@AREA:\t380px', '@PERIMETER:\t70px',
+            '@CIRCULARITY:\t0.85', '@NOTE_ATTACK:\t50000px', `@OFF_TIME:\t${offTime}px`,
+            '@TRACKER_HOLE:\t0', '@MIDI_KEY:\t-1', `@REASON:\t${reason}`,
+            '@@END: HOLE'
+        ].join('\n')
+        const setAside = [
+            '@@BEGIN: BADHOLES',
+            bad('bad001', 642, 3618, 50642, 'wide'),
+            bad('bad002', 10, 16, 0, 'small'),
+            '@@END: BADHOLES'
+        ].join('\n')
+        const torn = readFromStanfordAton(aton.replace('@@END: HOLES', `@@END: HOLES\n${setAside}`))
+
+        expect(featuresOf(torn)).toHaveLength(featuresOf(copy).length)
+        expect(featuresOf(torn).every(feature => feature.horizontal.to >= feature.horizontal.from)).toBe(true)
+    })
+
+    /**
      * An analysis of a scan hosted elsewhere names its own scan, and
      * since only an image server can crop a feature out of it, the
      * holes carry no depiction of their own.
@@ -264,6 +291,21 @@ const t98Analysis = (columns: readonly number[]): string => {
 const spanning = (from: number, to: number) =>
     Array.from({ length: to - from + 1 }, (_, i) => from + i)
 
+describe('reading a file that is not quite an analysis', () => {
+    it('reads an analysis that never closes its description of the roll', () => {
+        // bb988jx6754 of Stanford's archive ends on `@END: ROLLINFO`.
+        const unclosed = aton.replace(/@@END:\s*ROLLINFO\s*$/, '@END: ROLLINFO\n')
+        expect(unclosed).not.toEqual(aton)
+
+        expect(featuresOf(readFromStanfordAton(unclosed))).toHaveLength(featuresOf(readFromStanfordAton(aton)).length)
+    })
+
+    it('says so where a file describes no roll with holes', () => {
+        expect(() => readFromStanfordAton('@@BEGIN: ROLLINFO\n@DRUID:\tnone\n@@END: ROLLINFO\n')).toThrow(/not a roll analysis/)
+        expect(() => readFromStanfordAton('MThd, or anything else')).toThrow(/not a roll analysis/)
+    })
+})
+
 describe('calibrating a scan whose rewind cannot be found', () => {
     it('reads the phase off columns that span the whole bar', () => {
         const copy = readFromStanfordAton(t98Analysis(spanning(13, 110)), {
@@ -288,5 +330,141 @@ describe('calibrating a scan whose rewind cannot be found', () => {
 
     it('still prefers the rewind chain where the roll has one', () => {
         expect(readFromStanfordAton(aton).measurements.trackCalibration?.shift).toEqual(-3)
+    })
+
+    /**
+     * Stanford's analyses show both ways the columns miss the span of
+     * the bar while the rewind cannot be told: a stray hole beside the
+     * bar makes them one too many, as on vj076nk8220, and a roll that
+     * leaves an outermost position unpunched makes them too few. Read at
+     * a shift of nought, such a copy comes out three tracks off without
+     * a word, and aligns with no other copy of its roll.
+     */
+    it('keeps the chains on the bar where a stray hole lies beside it', () => {
+        // Every position punched twice, and one hole beyond the last.
+        const copy = readFromStanfordAton(t98Analysis([...spanning(13, 110), ...spanning(13, 110), 111]), {
+            system: welteT98, bar: welteT98
+        })
+
+        expect(copy.measurements.trackCalibration?.shift).toEqual(-12)
+        expect(featuresOf(copy)).toHaveLength(196)
+    })
+
+    it('lets the middle of the paper choose where the columns fall short of the bar', () => {
+        // The paper lies between columns 358 and 3738 of the image, so its
+        // middle is at 2048 px, which the grid puts between the columns 61
+        // and 62: the middle of a bar of 98 positions, twelve further down.
+        const stated = t98Analysis(spanning(20, 100)).replace('@IMAGE_LENGTH:', '@IMAGE_WIDTH:\t4096px\n\n@IMAGE_LENGTH:')
+        const copy = readFromStanfordAton(stated, { system: welteT98, bar: welteT98 })
+
+        expect(copy.measurements.trackCalibration?.shift).toEqual(-12)
+    })
+
+    it('does not take a stray hole past the last attack for the rewind', () => {
+        // One hole trails the last attack, far from the rewind track, as on gx107hd3026.
+        const trailing = [
+            '@@BEGIN: HOLE', '@ORIGIN_ROW:\t99000px', `@ORIGIN_COL:\t${40 * 33.2957}px`, '@WIDTH_ROW:\t20px', '@WIDTH_COL:\t19px',
+            `@CENTROID_COL:\t${40 * 33.2957 + 1.51476}px`, '@PERIMETER:\t60px', '@CIRCULARITY:\t0.9', '@TRACKER_HOLE:\t40', '@@END: HOLE'
+        ].join('\n')
+        const analysis = t98Analysis(spanning(13, 110)).replace('@@END: HOLES', `${trailing}\n\n@@END: HOLES`)
+        const copy = readFromStanfordAton(analysis, { system: welteT98, bar: welteT98 })
+
+        expect(copy.measurements.trackCalibration?.shift).toEqual(-12)
+    })
+})
+
+/**
+ * One track of an analysis, as the parser describes WM 1253's second
+ * copy (hp956bx4547), a roll cut with round punches 28px wide. The
+ * parser joins what lies closer than 1.37 average hole widths, and it
+ * takes that average before it sets torn paper aside; this roll ends
+ * in white paper spliced on, which it took for tears, so the average
+ * came out at 197.71px and a note repeated within two centimetres was
+ * joined with the one before it.
+ */
+const repeatingAnalysis = (averageHoleWidth: number, setAside: string[] = []): string => {
+    const hole = (row: number, attack?: { off: number }) => [
+        '@@BEGIN: HOLE',
+        `@ORIGIN_ROW:\t${row}px`,
+        '@ORIGIN_COL:\t1889px',
+        '@WIDTH_ROW:\t28px',
+        '@WIDTH_COL:\t28px',
+        '@CENTROID_COL:\t1903px',
+        '@PERIMETER:\t88px',
+        '@CIRCULARITY:\t0.97',
+        ...(attack ? [`@NOTE_ATTACK:\t${row}px`, `@OFF_TIME:\t${attack.off}px`] : []),
+        '@TRACKER_HOLE:\t50',
+        '@@END: HOLE'
+    ].join('\n')
+
+    return [
+        '@@BEGIN: ROLLINFO',
+        '@DRUID:',
+        '@ROLL_TYPE:\twelte-red',
+        '@LENGTH_DPI:\t300.25ppi',
+        '@IMAGE_LENGTH:\t57120px',
+        '@ROLL_WIDTH:\t3888.3px',
+        '@HARD_MARGIN_BASS:\t34px',
+        '@HARD_MARGIN_TREBLE:\t144px',
+        `@AVG_HOLE_WIDTH:\t${averageHoleWidth}px`,
+        '@HOLE_SEPARATION:\t37.8269px',
+        '@HOLE_OFFSET:\t11.9463px',
+        '@BRIDGE_FACTOR:\t1.37',
+        '@@BEGIN: HOLES',
+        // a note held over three punches, 10px of paper between them
+        hole(1000, { off: 1104 }), hole(1038), hole(1076),
+        // the same key struck again, and then twice in a fast
+        // repetition with 30px of paper between the strokes, which the
+        // parser joins on punches this wide whatever its average
+        hole(1400, { off: 1428 }),
+        hole(1700, { off: 1786 }), hole(1758),
+        '@@END: HOLES',
+        ...(setAside.length > 0 ? ['@@BEGIN: BADHOLES', ...setAside, '@@END: BADHOLES'] : []),
+        '@@END: ROLLINFO'
+    ].join('\n')
+}
+
+describe('chaining the holes of an analysis', () => {
+    const extents = (analysis: string, bridge?: number) =>
+        featuresOf(readFromStanfordAton(analysis, { trackShift: track(0), ...(bridge !== undefined && { bridge: mm(bridge) }) }))
+            .map(feature => [feature.horizontal.from, feature.horizontal.to].map(place => Math.round(inPixels(place, 300.25))))
+
+    const strokes = [[1000, 1104], [1400, 1428], [1700, 1728], [1758, 1786]]
+
+    it('parts the strokes of a repetition that the parser joined on wide punches', () => {
+        expect(extents(repeatingAnalysis(28))).toEqual(strokes)
+    })
+
+    it('chains the same whatever average the parser took its bridge from', () => {
+        expect(extents(repeatingAnalysis(197.71))).toEqual(strokes)
+    })
+
+    it('chains over the bridge it is given', () => {
+        expect(extents(repeatingAnalysis(28), 3)).toEqual([[1000, 1104], [1400, 1428], [1700, 1786]])
+        expect(extents(repeatingAnalysis(28), 0.5)).toHaveLength(6)
+    })
+
+    /**
+     * The parser sets a punch aside for its shape wherever it lies,
+     * and one in the middle of a note still holds that note together.
+     */
+    it('keeps a note whole whose middle punch the parser set aside', () => {
+        const middle = [
+            '@@BEGIN: HOLE', '@ID:\tbad001',
+            '@ORIGIN_ROW:\t1438px', '@ORIGIN_COL:\t1888px', '@WIDTH_ROW:\t18px', '@WIDTH_COL:\t30px',
+            '@CENTROID_COL:\t1903px', '@PERIMETER:\t80px', '@CIRCULARITY:\t0.8',
+            '@TRACKER_HOLE:\t0', '@REASON:\taspect',
+            '@@END: HOLE'
+        ].join('\n')
+        const further = [
+            '@@BEGIN: HOLE',
+            '@ORIGIN_ROW:\t1466px', '@ORIGIN_COL:\t1889px', '@WIDTH_ROW:\t28px', '@WIDTH_COL:\t28px',
+            '@CENTROID_COL:\t1903px', '@PERIMETER:\t88px', '@CIRCULARITY:\t0.97',
+            '@NOTE_ATTACK:\t1466px', '@OFF_TIME:\t1494px', '@TRACKER_HOLE:\t50',
+            '@@END: HOLE'
+        ].join('\n')
+        const held = repeatingAnalysis(28, [middle]).replace('@@END: HOLES', `${further}\n@@END: HOLES`)
+
+        expect(extents(held)).toEqual([[1000, 1104], [1400, 1494], [1700, 1728], [1758, 1786]])
     })
 })

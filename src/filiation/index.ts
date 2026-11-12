@@ -3,7 +3,7 @@
  * principles the rules of an edition state, and the edits of each of its
  * versions, and taking them into the edition.
  */
-export { collateCopies, readingsOfCopy, type CopyCollation, type CollatedReading, type CopyReading, type PairWindow, type Recoding } from "./readings.js"
+export { collateCopies, readingsOfCopy, type CopyCollation, type CollatedReading, type CopyReading, type Drift, type PairWindow, type Recoding } from "./readings.js"
 export { presenceIn, ineffectiveAmong, defaultMargin, type Presence, type PresenceMatrix } from "./presence.js"
 export { defaultCosts, type Costs, type Scored, type Support } from "./search.js"
 export { transfersOf, systemAbove } from "./systems.js"
