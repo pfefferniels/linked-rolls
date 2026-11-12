@@ -8,7 +8,7 @@ import { welteLicensee } from '../src/systems/welteLicensee/bar'
 import { welteT98 } from '../src/systems/welteT98/bar'
 import { columnOf } from '../src/model/TrackCalibration'
 import { Expression } from '../src/model/Symbol'
-import { inPixels, track } from '../src/model/Quantity'
+import { inPixels, mm, track } from '../src/model/Quantity'
 
 /**
  * mf320jq4997, a red Welte roll scanned at Stanford, reduced to its
@@ -432,5 +432,20 @@ describe('reading a roll whose torn end widened the parser\'s bridge', () => {
 
     it('takes the parser\'s chains where its average is that of the holes', () => {
         expect(extents(raggedAnalysis(28))).toEqual([[1000, 1104], [1400, 1428], [1700, 2021]])
+    })
+
+    /**
+     * On round punches 28px wide the parser joins over 38px of paper,
+     * which is more than lies between two strokes of a fast
+     * repetition. Whoever reads the file can say how much paper a
+     * chain may hold instead.
+     */
+    it('chains over the bridge it is given', () => {
+        const within = (bridge: number) =>
+            featuresOf(readFromStanfordAton(raggedAnalysis(28), { trackShift: track(0), bridge: mm(bridge) }))
+                .map(feature => [feature.horizontal.from, feature.horizontal.to].map(place => Math.round(inPixels(place, 300.25))))
+
+        expect(within(1)).toEqual([[1000, 1104], [1400, 1428], [1700, 1728], [1993, 2021]])
+        expect(within(0.5)).toHaveLength(6)
     })
 })

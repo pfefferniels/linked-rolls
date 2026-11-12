@@ -6,7 +6,7 @@ import { assignDate, Measurement, ObjectAssumption } from "../model/Assumption.j
 import { TrackCalibration } from "../model/TrackCalibration.js";
 import { systemOf, TrackerBar } from "../systems/TrackerBar.js";
 import { welteT100 } from "../systems/welteT100/bar.js";
-import { inMillimeters, mean, Millimeters, mm, Pixels, pixelsPerInch, px, subtract, Track, track } from "../model/Quantity.js";
+import { inMillimeters, inPixels, mean, Millimeters, mm, Pixels, pixelsPerInch, px, subtract, Track, track } from "../model/Quantity.js";
 import { medianOf } from "../collation/statistics.js";
 
 /** A hole record as the Stanford analysis files spell it. */
@@ -304,6 +304,13 @@ export interface StanfordAtonOptions {
      * analysis of a scan hosted elsewhere.
      */
     scan?: string
+
+    /**
+     * How much paper may lie between two holes of a track for them to
+     * make one chain. Left out, the chains are the parser's own, which
+     * joins over 1.37 widths of a hole.
+     */
+    bridge?: Millimeters
 }
 
 /**
@@ -398,7 +405,7 @@ const rollinfoOf = (parsed: any): any => {
  */
 export function readFromStanfordAton(
     atonString: string,
-    { trackShift, system = welteT100, scan }: StanfordAtonOptions = {}
+    { trackShift, system = welteT100, scan, bridge }: StanfordAtonOptions = {}
 ): RollCopy {
     const rollinfo = rollinfoOf(new AtonParser().parse(atonString))
     const json = { ROLLINFO: rollinfo }
@@ -423,7 +430,7 @@ export function readFromStanfordAton(
 
     const chains = chainsAmong(
         [...holes, ...chainedBadHoles(listOf(json.ROLLINFO.BADHOLES?.HOLE), calibration)],
-        mendedBridgeIn(json.ROLLINFO, holes)
+        bridge !== undefined ? inPixels(bridge, dpi) : mendedBridgeIn(json.ROLLINFO, holes)
     )
 
     const features = chains
